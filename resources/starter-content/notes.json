@@ -1,0 +1,1432 @@
+{
+  "version": 2,
+  "notes": [
+    {
+      "id": "tutorial-note-home",
+      "title": "LanCarbon: From 0 to 1",
+      "content": "# LanCarbon: From 0 to 1\n\n```{image} assets/8405f88769f513467cc1aa25973fa97e6ad60427ff943279ab2d299a3d70ca75.png\n:width: 50%\n:align: center\n:alt: LanCarbon manta orchid logo\n```\n\nWelcome. This book is for a reader who has never used Jupyter Book, MyST Markdown, Git, or GitHub Pages. By the end, you will create a Book in LanCarbon, write and organize its pages, check it as a local website, and publish it online.\n\nYou do not need to learn programming. LanCarbon keeps your writing in its own local data folder and presents the important actions as buttons. The supporting tools do specific jobs: Python and Jupyter Book turn your Book into a website; Git and GitHub CLI send that website to GitHub; GitHub Pages makes it public.\n\nFollow the four sections in order for your first Book:\n\n1. Install LanCarbon and understand the tools.\n2. Create, write, preview, and optionally export a source copy.\n3. Build and inspect the website on your computer.\n4. Connect GitHub, publish the website, and update it later.\n\n```text\nWrite in LanCarbon → Build locally → Publish to GitHub Pages → Update when needed\n```\n\nThe screenshots in this first draft show a real LanCarbon workspace. Account names, repository names, dates, and local folders are examples; use your own values.\n\n![The LanCarbon writing workspace](assets/2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png)\n\nThe LanCarbon workspace used throughout this book.\n\n---\n\n\n\n# LanCarbon：从 0 到 1\n\n欢迎阅读。本书面向从未接触过 Jupyter Book、MyST Markdown、Git 或 GitHub Pages 的新手。完成本书后，你将能够在 LanCarbon 中创建一本 Book，组织并撰写页面，在电脑上检查生成的网站，并将它在线发布。\n\n你不需要先学会编程。LanCarbon 把写作内容保存在自己的本地数据目录中，并把关键操作做成可点击的界面。几项配套工具各自完成一个明确任务：Python 和 Jupyter Book 把 Book 转换成网站；Git 和 GitHub CLI 把网站发送到 GitHub；GitHub Pages 让网站能够通过网络访问。\n\n第一次制作 Book 时，请按顺序完成四个 Section：\n\n1. 安装 LanCarbon 并理解所需工具。\n2. 创建、撰写、预览，并按需导出源文件副本。\n3. 在本地构建并检查网站。\n4. 连接 GitHub、发布网站，并在以后更新它。\n\n```text\n在 LanCarbon 中写作 → 本地 Build → 发布到 GitHub Pages → 按需 Update\n```\n\n本书初稿中的截图来自真实的 LanCarbon 工作区。账号、仓库、日期和本地目录均为示例，实际操作时请填写你自己的信息。\n\n![LanCarbon 写作工作区](assets/2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png)\n\n本书后续章节使用的 LanCarbon 主界面。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": true,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T11:22:07.912Z"
+    },
+    {
+      "id": "tutorial-note-s1",
+      "title": "1. Installation, Requirements, and Basic Concepts",
+      "content": "\n\n# Installation, Requirements, and Basic Concepts\n\nThis section prepares your computer and gives you a mental model of the whole workflow. Start here even if LanCarbon is already installed. A successful launch only proves that the desktop application can run; Build and Publish use additional tools that are checked in their own windows.\n\nAfter this section, you should know where LanCarbon stores data, what each external tool does, and where to find the main controls.\n\n---\n\n\n\n# 安装、使用要求与基本概念\n\n本 Section 用于准备电脑并建立完整流程的基本认识。即使你已经安装 LanCarbon，也建议从这里开始。软件能够正常启动，只代表桌面程序本身可以运行；Build 和 Publish 还会使用额外工具，并分别在对应窗口中检查。\n\n完成本 Section 后，你应该了解 LanCarbon 在哪里保存数据、每项外部工具负责什么，以及主界面的关键控制位于哪里。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s1-install",
+      "title": "Installing and Starting LanCarbon",
+      "content": "\n\n# Installing and Starting LanCarbon\n\n## Before installation\n\nDownload LanCarbon only from the project page or another source identified by the maintainer. The Windows installer has a name similar to `LanCarbon-x.y.z-x64-Setup.exe`; `x.y.z` is the version number. Keep the installer until you have confirmed that the application starts correctly.\n\n## Install and launch\n\n1. Close any older LanCarbon window.\n2. Run the installer and choose a destination. Installing over an older version is the normal upgrade method.\n3. Start LanCarbon from the Start menu or the installation folder.\n4. On first launch, wait for the main workspace to appear.\n5. Select **Data Location** at the bottom of the sidebar and note the displayed folder.\n\nLanCarbon stores Notes, Books, page order, Book settings, and managed Resources in that data location. Installing a new application version does not intentionally remove that folder. Before a major upgrade, copy the entire data folder to a safe backup location while LanCarbon is closed.\n\n## What LanCarbon does\n\nLanCarbon combines four tasks in one desktop interface:\n\n- Write ordinary Notes or structured Books.\n- Author Markdown and MyST with toolbar assistance.\n- Build a Book into a local Jupyter Book website.\n- Publish and later update that website through GitHub Pages.\n\nLanCarbon works locally for writing. An account is not required until you publish. The current workflow is designed for Markdown/MyST pages; executable notebook editing and execution are outside this version's main workflow.\n\n## Safe first-launch check\n\nCreate a temporary Note, type one sentence, wait for **All changes saved**, close LanCarbon, and reopen it. If the sentence remains, local saving works. Delete the temporary Note afterward.\n\n---\n\n\n\n# 安装并首次启动 LanCarbon\n\n## 安装前\n\n请只从项目主页或开发者明确提供的位置下载 LanCarbon。Windows 安装包名称类似 `LanCarbon-x.y.z-x64-Setup.exe`，其中 `x.y.z` 是版本号。在确认软件能够正常启动前，建议保留安装包。\n\n## 安装与启动\n\n1. 关闭所有旧版本 LanCarbon 窗口。\n2. 运行安装包并选择安装位置。升级时直接覆盖旧版本是正常方式。\n3. 从开始菜单或安装目录启动 LanCarbon。\n4. 第一次启动时，等待主工作区完整显示。\n5. 点击侧边栏底部的 **Data Location**，记下显示的数据目录。\n\nLanCarbon 会在 Data Location 中保存 Notes、Books、页面顺序、Book 设置和受管理的 Resources。安装新版软件不会主动删除这个目录。进行重要升级前，请先关闭 LanCarbon，再把整个数据目录复制到安全位置作为备份。\n\n## LanCarbon 能做什么\n\nLanCarbon 在一个桌面界面中整合了四项工作：\n\n- 撰写普通 Notes 或具有目录结构的 Books。\n- 借助工具栏撰写 Markdown 和 MyST。\n- 把 Book 构建成本地 Jupyter Book 网站。\n- 通过 GitHub Pages 在线发布，并在以后更新网站。\n\n写作本身完全在本地完成，不需要账号。只有 Publish 时才需要 GitHub。当前主要工作流面向 Markdown/MyST 页面；可执行 Notebook 的编辑与运行不属于这一版本的主要范围。\n\n## 安全的首次启动检查\n\n新建一篇临时 Note，输入一句话，等待顶部显示 **All changes saved**，关闭再重新打开 LanCarbon。如果句子仍然存在，说明本地保存正常。检查完成后可以删除这篇临时 Note。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s1-tools",
+      "title": "Tools Required from Writing to Publishing",
+      "content": "\n\n# Tools Required from Writing to Publishing\n\nLanCarbon is the writing and workflow application. Several independent tools perform the website and GitHub work. You do not need every tool merely to write.\n\n| Stage | Requirement | Purpose | Account needed? |\n|---|---|---|---|\n| Write and Preview | LanCarbon | Stores and edits your Book | No |\n| Build | Python 3 | Runs the Jupyter Book package | No |\n| Build | Jupyter Book 2 CLI | Converts MyST/Markdown into a website | No |\n| Publish | Git | Downloads and updates the publication branch | No |\n| Publish | GitHub account | Owns the repository and Pages site | Yes |\n| Publish | GitHub CLI (`gh`) | Lets LanCarbon authenticate and use GitHub services | Yes |\n| Publish | Internet access | Reaches GitHub API, Git HTTPS, and Pages | — |\n\n## Why Python and Jupyter Book are required\n\nLanCarbon creates a Jupyter Book 2 project from the Book stored inside the app. Python runs the official Jupyter Book command-line tool, which validates the project and produces HTML. Install Python 3 from [python.org](https://www.python.org/downloads/) and ensure the `python` or `py` command is available. Then install Jupyter Book 2 following the [official installation guide](https://jupyterbook.org/stable/get-started/install/). A common installation command is:\n\n```powershell\npython -m pip install \"jupyter-book>=2.0.0\"\n```\n\nThe **Build** window checks both Python and Jupyter Book CLI and displays their detected versions. Restart LanCarbon after installing or updating them so the app receives the updated command search path.\n\n## Why Git, GitHub, and GitHub CLI are required\n\nGit records and transfers a set of website files. GitHub hosts a repository. GitHub Pages serves one branch of that repository as a website. GitHub CLI connects LanCarbon to your signed-in GitHub account without asking LanCarbon to store your password.\n\n- Install Git from the [official Git for Windows page](https://git-scm.com/install/windows).\n- Create a personal account at [github.com](https://github.com/).\n- Install GitHub CLI from the [official installation page](https://cli.github.com/).\n- Authentication is completed later from LanCarbon's Publish window.\n\nGitHub Desktop is optional and does not replace the Git and GitHub CLI checks used by LanCarbon.\n\n## Network note\n\nWriting and most local Builds do not need GitHub. Signing in, creating or checking a repository, downloading its publication branch, publishing, and opening the public Pages site do need access to GitHub. On networks that require a proxy, a browser-only proxy may not cover Git or GitHub CLI. Enable the proxy's **system/global proxy** or **TUN mode** before those operations, then retry the check.\n\n---\n\n\n\n# 从写作到发布所需的工具\n\nLanCarbon 是写作和流程管理软件，另有几项独立工具负责生成网站及连接 GitHub。仅仅撰写内容时，不需要提前安装全部工具。\n\n| 阶段 | 必需项目 | 用途 | 是否需要账号 |\n|---|---|---|---|\n| Write 与 Preview | LanCarbon | 保存和编辑 Book | 否 |\n| Build | Python 3 | 运行 Jupyter Book 软件包 | 否 |\n| Build | Jupyter Book 2 CLI | 把 MyST/Markdown 转换成网站 | 否 |\n| Publish | Git | 下载并更新发布分支 | 否 |\n| Publish | GitHub 账号 | 拥有仓库和 Pages 网站 | 是 |\n| Publish | GitHub CLI（`gh`） | 让 LanCarbon 使用已登录的 GitHub 身份 | 是 |\n| Publish | 可访问 GitHub 的网络 | 连接 GitHub API、Git HTTPS 和 Pages | — |\n\n## 为什么 Build 需要 Python 和 Jupyter Book\n\nLanCarbon 会把软件内保存的 Book 转换成 Jupyter Book 2 项目。Python 负责运行官方 Jupyter Book 命令行工具，后者检查项目并生成 HTML 网站。请从 [python.org](https://www.python.org/downloads/) 安装 Python 3，并确保系统可以找到 `python` 或 `py` 命令。随后按照 [Jupyter Book 官方安装说明](https://jupyterbook.org/stable/get-started/install/)安装 Jupyter Book 2。常用命令为：\n\n```powershell\npython -m pip install \"jupyter-book>=2.0.0\"\n```\n\n**Build** 窗口会同时检查 Python 和 Jupyter Book CLI，并显示检测到的版本。安装或更新它们后，请重启 LanCarbon，使软件重新读取系统命令路径。\n\n## 为什么 Publish 需要 Git、GitHub 与 GitHub CLI\n\nGit 负责记录并传输一组网站文件；GitHub 用仓库存放这些文件；GitHub Pages 把仓库中的指定分支作为网站提供；GitHub CLI 让 LanCarbon 使用已经登录的 GitHub 账号，而不需要在 LanCarbon 中保存密码。\n\n- 从 [Git for Windows 官方页面](https://git-scm.com/install/windows)安装 Git。\n- 在 [github.com](https://github.com/)创建个人账号。\n- 从 [GitHub CLI 官方页面](https://cli.github.com/)安装 GitHub CLI。\n- 账号认证会在后面的 LanCarbon Publish 窗口中完成。\n\nGitHub Desktop 是可选工具，不能替代 LanCarbon 所检查的 Git 和 GitHub CLI。\n\n## 网络说明\n\n写作和大多数本地 Build 不需要连接 GitHub。登录账号、创建或检查仓库、下载发布分支、发布网站和打开公开 Pages 网站都需要能够访问 GitHub。如果所在网络需要代理，仅对浏览器生效的代理可能无法覆盖 Git 或 GitHub CLI。请先开启代理软件的 **系统/全局代理** 或 **TUN 模式**，再重试相关检查。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s1-interface",
+      "title": "Touring the LanCarbon Interface",
+      "content": "\n\n# Touring the LanCarbon Interface\n\n![LanCarbon main workspace](assets/2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png)\n\nThe main workspace has four areas.\n\n## 1. Sidebar\n\n- **Notes / Jupyter Book** switches between independent notes and structured Books.\n- The Book selector opens a different Book; the plus button creates one.\n- **+ Section** creates a top-level organizing page. **+ Child Page** creates a page under the current selection.\n- **Settings**, **Export**, **Build**, **Publish**, and **Delete** operate on the selected Book.\n- The tree is the Book's table of contents. Select a title to edit it. Expand or collapse a Section with its triangle.\n- **Light / Dark** changes the application theme only.\n- **Data Location** shows or moves the application data folder.\n\n## 2. Page header\n\n**All changes saved** confirms that the latest text is on disk. **Edit / Preview** switches between Markdown source and rendered reading view. **Page Properties** opens export and page metadata. **Remove from Book** keeps the Note but removes it from this Book. The pin and trash controls pin or delete the current item.\n\n## 3. Writing tools and editor\n\nThe first toolbar row manages files and citations: **Insert image**, **Image settings**, **Attach file**, **Resources**, and **Citations**. Files can also be dropped or pasted into the editor.\n\nThe second row changes Markdown/MyST source: Undo, Redo, paragraph/heading, Bold, Italic, Underline, Strikethrough, superscript, subscript, alignment, abbreviation, keyboard key, lists, quote, link, code, table, math, thematic break, and directives. Most tools act on selected text; some insert a template at the cursor.\n\nThe editor shows line numbers and stores plain Markdown text. The tag box below the editor adds searchable Note tags. The bottom status area shows character and line counts and autosave state.\n\n## 4. A useful habit\n\nAfter a large edit, pause until **All changes saved** appears before closing the application, changing Data Location, or starting a Build.\n\n---\n\n\n\n# 认识 LanCarbon 主界面\n\n![LanCarbon 主工作区](assets/2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png)\n\n主界面可以分成四个区域。\n\n## 1. 侧边栏\n\n- **Notes / Jupyter Book** 用于切换普通独立笔记和结构化 Book。\n- Book 下拉框用于切换不同 Book，旁边的加号用于新建 Book。\n- **+ Section** 新建顶层组织页面；**+ Child Page** 在当前所选项目下新建子页面。\n- **Settings**、**Export**、**Build**、**Publish** 和 **Delete** 针对当前选中的 Book 操作。\n- 下方树形目录就是 Book 的目录。点击标题开始编辑；点击 Section 前的三角形展开或折叠。\n- **Light / Dark** 只改变软件界面主题。\n- **Data Location** 用于查看或迁移软件数据目录。\n\n## 2. 页面顶部\n\n**All changes saved** 表示最新文字已经写入磁盘。**Edit / Preview** 在 Markdown 源文和阅读预览之间切换。**Page Properties** 打开导出路径和页面元数据设置。**Remove from Book** 会把页面移出当前 Book，但保留对应 Note。图钉和垃圾桶分别用于置顶与删除当前项目。\n\n## 3. 写作工具与编辑区\n\n第一行工具负责文件和引用：**Insert image**、**Image settings**、**Attach file**、**Resources** 与 **Citations**。也可以把文件拖入编辑器，或直接粘贴截图。\n\n第二行工具修改 Markdown/MyST 源文：撤销、重做、段落/标题、粗体、斜体、下划线、删除线、上标、下标、对齐、缩写、键盘按键、列表、引用、链接、代码、表格、数学公式、分隔线和 Directives。多数工具会作用于选中的文字，另一些会在光标位置插入模板。\n\n编辑区带有行号，保存的是纯 Markdown 文本。下方标签框用于添加可搜索的 Note 标签。最底部状态区显示字符数、行数和自动保存状态。\n\n## 4. 一个实用习惯\n\n完成较大修改后，先等待 **All changes saved** 出现，再关闭软件、修改 Data Location 或开始 Build。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s2",
+      "title": "2. Creating, Writing, and Exporting a Book",
+      "content": "\n\n# Creating, Writing, and Exporting a Book\n\nThis section creates the actual source of your first Book. You will build a table of contents, set metadata, learn the Markdown/MyST features exposed by the toolbars, manage resources, use Preview, and make an optional source export.\n\nThe authoritative Book is the copy saved inside LanCarbon. Export is useful for backup or external editing, but it is not required before Build or Publish.\n\n---\n\n\n\n# 创建、撰写与导出 Book\n\n本 Section 将创建第一本 Book 的实际内容。你会建立目录、填写元数据、学习工具栏对应的 Markdown/MyST 功能、管理资源、使用 Preview，并按需导出源文件副本。\n\nLanCarbon 内部保存的 Book 是软件工作流中的正式版本。Export 适合备份或在外部编辑，但 Build 和 Publish 前并不要求先 Export。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s2-create",
+      "title": "Creating Your First Book",
+      "content": "\n\n# Creating Your First Book\n\n## Create the Book\n\n1. Select **Jupyter Book** in the sidebar.\n2. Select the plus button beside the Book selector.\n3. Enter a clear title and confirm. LanCarbon creates the Book and its home page.\n4. Open **Settings** and complete the key metadata described on the next page.\n\n## Understand the hierarchy\n\n- **Book home page** is the opening page and always exports as `index.md`.\n- **Section** is a top-level page that groups related content. It can contain introductory text and Child Pages.\n- **Child Page** is a normal content page nested under a Section or another page.\n- **Table of contents** is the ordered tree in the sidebar and becomes the website navigation.\n\nA simple first Book might be:\n\n```text\nMy First Book\n├─ Getting Started\n│  ├─ Welcome\n│  └─ What You Need\n├─ Main Topic\n│  ├─ First Lesson\n│  └─ Second Lesson\n└─ Further Reading\n```\n\n## Add and arrange pages\n\nSelect the home page, then choose **+ Section**. Give the Section a meaningful title. Select that Section and choose **+ Child Page**. Repeat for other pages. Use the Book tree's supported drag-and-drop behavior to reorder pages or move them between Sections.\n\nUse one subject per page. Short pages are easier to navigate, review, and update. Give every page a unique export path and a visible first-level heading that matches its purpose.\n\n## Removing versus deleting\n\n**Remove from Book** disconnects the page from this Book and leaves it as an ordinary Note. The trash control deletes the Note itself. **Delete** in the Book controls deletes the entire Book and all pages after confirmation, so back up important work first.\n\n---\n\n\n\n# 从零创建第一本 Book\n\n## 创建 Book\n\n1. 在侧边栏选择 **Jupyter Book**。\n2. 点击 Book 下拉框旁边的加号。\n3. 输入清晰的书名并确认。LanCarbon 会创建 Book 及其首页。\n4. 打开 **Settings**，填写下一页说明的关键元数据。\n\n## 理解层级结构\n\n- **Book 首页** 是全书的起始页，并固定导出为 `index.md`。\n- **Section** 是组织相关内容的顶层页面。它既可以包含导语，也可以包含多个 Child Page。\n- **Child Page** 是位于 Section 或其他页面下面的普通内容页。\n- **Table of contents** 就是侧边栏中的有序树形目录，它会成为网站导航。\n\n一本简单的新手 Book 可以采用以下结构：\n\n```text\nMy First Book\n├─ Getting Started\n│  ├─ Welcome\n│  └─ What You Need\n├─ Main Topic\n│  ├─ First Lesson\n│  └─ Second Lesson\n└─ Further Reading\n```\n\n## 添加和整理页面\n\n先选中首页，再点击 **+ Section**，给 Section 一个明确标题。随后选中该 Section，点击 **+ Child Page**。其他页面依此添加。使用 Book 目录支持的拖放操作调整顺序，或把页面移动到其他 Section。\n\n建议每个页面只讲一个主题。较短的页面更容易导航、检查和更新。每页都应有唯一的 Export Path，并在正文开头写一个符合页面用途的一级标题。\n\n## 移出与删除的区别\n\n**Remove from Book** 只会把页面从当前 Book 中移出，对应内容仍作为普通 Note 保留。垃圾桶会删除 Note 本身。Book 操作区中的 **Delete** 会在确认后删除整本 Book 及其全部页面，重要内容请先备份。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s2-settings",
+      "title": "Understanding Book Settings",
+      "content": "\n\n# Understanding Book Settings\n\n![Book Settings window](assets/2ed04c61ae2d3f2479c2090e9d729a4b64608925a5b0612b2284f7533e6f08d7.png)\n\nOpen **Settings** while the intended Book is selected.\n\n| Field | Required? | What to enter |\n|---|---:|---|\n| Book title | Yes | The complete human-readable title. |\n| Subtitle | No | A short second line that explains scope. |\n| Description | No | One or two sentences for metadata and discovery. |\n| Authors | No | Author names. Separate multiple names as the interface instructs. |\n| GitHub repository URL | No at first | The public repository address once known. Publishing can establish the binding separately. |\n| License | No, recommended for sharing | A license identifier such as `CC-BY-4.0`, only if it matches your intended terms. |\n| Keywords | No | A small set of discoverable topics. |\n| Site title | No | Short browser/site branding; Book title is a sensible default. |\n| Logo Path | No | A managed image reference used as the site logo. Use Resources rather than typing an arbitrary local file path. |\n| Favicon Path | No | A managed icon reference for the browser tab. |\n\nOnly **Book title** is marked with `(*)` and must be present. Optional does not mean unimportant: author, description, license, and keywords make a public Book easier to understand and reuse.\n\nSelect **Save Settings** after editing. Wait for the save confirmation before Building. If a logo or favicon is missing during Build, reopen Resources and reinsert or reselect the managed file.\n\n---\n\n\n\n# 理解 Book Settings\n\n![Book Settings 窗口](assets/2ed04c61ae2d3f2479c2090e9d729a4b64608925a5b0612b2284f7533e6f08d7.png)\n\n先选中目标 Book，再打开 **Settings**。\n\n| 字段 | 是否必填 | 应填写的内容 |\n|---|---:|---|\n| Book title | 是 | 完整、便于阅读的书名。 |\n| Subtitle | 否 | 用一行短句说明范围。 |\n| Description | 否 | 用一两句话概括内容，便于元数据展示和检索。 |\n| Authors | 否 | 作者姓名；多人时按照界面提示分隔。 |\n| GitHub repository URL | 初期不必填 | 已经确定后可填写公开仓库地址；Publish 也会单独建立绑定。 |\n| License | 否，但公开分享时建议填写 | 例如 `CC-BY-4.0`，应与你希望采用的授权条件一致。 |\n| Keywords | 否 | 少量能够代表内容的关键词。 |\n| Site title | 否 | 网站或浏览器中的较短名称；通常可以沿用 Book title。 |\n| Logo Path | 否 | 网站 Logo 的受管理图片引用。应通过 Resources 管理，不要手工填写任意本地文件路径。 |\n| Favicon Path | 否 | 浏览器标签页图标的受管理引用。 |\n\n只有带 `(*)` 的 **Book title** 必须填写。可选不等于没有价值：作者、描述、许可证和关键词能让公开 Book 更容易被理解和复用。\n\n修改后点击 **Save Settings**，等待保存完成再 Build。如果 Build 提示 Logo 或 favicon 缺失，请重新打开 Resources，重新导入或选择受管理文件。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s2-properties",
+      "title": "Understanding Page Properties",
+      "content": "\n\n# Understanding Page Properties\n\n![Page Properties window](assets/4ae88bd1f7ad63f1b331b9800cb081de2926dbbe799019ebf411cc87edb28eaa.png)\n\nEach page has properties independent of the Book settings.\n\n| Field | Required? | Meaning |\n|---|---:|---|\n| Export Path | Yes | Relative filename used in the generated project, such as `lessons/first-step.md`. Use forward slashes, no drive letter, and a `.md` ending for Markdown pages. The home page remains `index.md`. |\n| Show in table of contents | No | When checked, the page appears in website navigation. Hidden pages may still be linked directly. |\n| Short title | No | A compact navigation title when the full title is long. |\n| Description | No | Page-specific summary. |\n| Authors | No | Overrides or supplements authorship at page level. |\n| Date | No | Publication or revision date for this page. |\n| Keywords | No | Topics specific to this page. |\n| Label | No | Stable MyST target used for cross-references. Use a unique, simple value such as `first-build`. |\n\nGood export paths are lowercase, readable, and stable. Changing a path after publication can change the page URL and break old links. Organize related pages in the same folder, for example `build/first-build.md` and `build/rebuild.md`.\n\nSelect **Save Properties** after changes. Duplicate paths, invalid paths, missing Notes, and duplicate labels are detected by the preflight check before Build.\n\n---\n\n\n\n# 理解 Page Properties\n\n![Page Properties 窗口](assets/4ae88bd1f7ad63f1b331b9800cb081de2926dbbe799019ebf411cc87edb28eaa.png)\n\n每个页面都有一组独立于 Book Settings 的属性。\n\n| 字段 | 是否必填 | 含义 |\n|---|---:|---|\n| Export Path | 是 | 生成项目时使用的相对文件名，例如 `lessons/first-step.md`。使用正斜杠，不写盘符，Markdown 页面以 `.md` 结尾。首页固定为 `index.md`。 |\n| Show in table of contents | 否 | 勾选后页面出现在网站导航中。隐藏页面仍可以通过直接链接访问。 |\n| Short title | 否 | 完整标题较长时，用于导航栏的短标题。 |\n| Description | 否 | 当前页面的摘要。 |\n| Authors | 否 | 页面级作者信息。 |\n| Date | 否 | 当前页面的发布日期或修订日期。 |\n| Keywords | 否 | 当前页面特有的主题关键词。 |\n| Label | 否 | 用于交叉引用的稳定 MyST 目标。请使用唯一且简单的值，例如 `first-build`。 |\n\n好的 Export Path 应使用小写、容易识别并尽量保持稳定。在线发布后再改路径，可能会改变页面网址并使旧链接失效。相关页面可以放在同一目录，例如 `build/first-build.md` 与 `build/rebuild.md`。\n\n修改后点击 **Save Properties**。重复路径、非法路径、缺失 Note 和重复 Label 会在 Build 前的 preflight 检查中被发现。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s2-markdown",
+      "title": "Markdown Essentials and the Formatting Toolbar",
+      "content": "\n\n# Markdown Essentials and the Formatting Toolbar\n\nMarkdown is plain text with small marks that describe structure. The toolbar writes these marks for you, but recognizing them makes editing easier.\n\n## Structure and history\n\n- **Undo / Redo** reverses or reapplies recent editor changes.\n- The **Paragraph** menu inserts headings. Use one `#` heading for the page title, `##` for major parts, and `###` for subsections. Do not choose heading levels only for visual size.\n\n```markdown\n# Page title\n## Major part\n### Smaller part\n```\n\n## Inline emphasis\n\n| Tool | Source example | Result or meaning |\n|---|---|---|\n| Bold | `**important**` | strong emphasis |\n| Italic | `*term*` | emphasis or a term |\n| Underline | MyST role inserted by LanCarbon | underlined presentation |\n| Strikethrough | `~~removed~~` | deleted or obsolete text |\n| Superscript | MyST role | raised text such as an ordinal |\n| Subscript | MyST role | lowered text such as a chemical index |\n| Abbr | abbreviation role | an abbreviation with an explanation |\n| Keyboard | keyboard role | a key such as Ctrl |\n\nSelect the intended words before clicking an inline tool. If nothing is selected, LanCarbon inserts an editable sample or marker.\n\n## Paragraph-level tools\n\n- **Align** changes paragraph alignment. Do not select text inside a special MyST block, code block, table, or math block; use that feature's own settings instead.\n- **Lists** creates unordered, ordered, or task lists. Keep a blank line before and after a list.\n- **Quote** starts a block quote with `>`.\n- **Link** inserts `[visible text](https://example.com)`.\n- **Code** inserts inline code or a fenced code block. Choose the language after the opening fence when syntax highlighting matters.\n- **Table** inserts a Markdown table; keep one header row and a separator row.\n- **Math** inserts inline or display mathematics.\n- The horizontal-line tool inserts `---` as a thematic break.\n\n```markdown\n- First item\n- Second item\n\n> A short quotation.\n\n[LanCarbon project](https://github.com/)\n\n| Item | Status |\n|---|---|\n| Draft | In progress |\n```\n\n## Selection safety\n\nIf LanCarbon says the selection contains code, math, a table, or special syntax, it is protecting a structured block from being partially wrapped. Select plain text only, use the relevant panel, or edit the Markdown source directly.\n\n---\n\n\n\n# Markdown 基础与格式工具栏\n\nMarkdown 是一种通过少量标记表达结构的纯文本格式。工具栏可以替你写入这些标记，但认识它们会让修改更轻松。\n\n## 结构与操作历史\n\n- **Undo / Redo** 撤销或恢复最近的编辑操作。\n- **Paragraph** 菜单插入标题。每页用一个 `#` 作为页面标题，`##` 表示主要部分，`###` 表示更小的分节。不要只因为字号大小而随意选择标题级别。\n\n```markdown\n# 页面标题\n## 主要部分\n### 更小的部分\n```\n\n## 行内格式\n\n| 工具 | 源文示例 | 结果或含义 |\n|---|---|---|\n| Bold | `**important**` | 强调重要内容 |\n| Italic | `*term*` | 一般强调或术语 |\n| Underline | LanCarbon 插入的 MyST role | 下划线显示 |\n| Strikethrough | `~~removed~~` | 删除或废弃内容 |\n| Superscript | MyST role | 上标文字 |\n| Subscript | MyST role | 下标文字，例如化学式序号 |\n| Abbr | 缩写 role | 带解释的缩写 |\n| Keyboard | 键盘 role | 表示 Ctrl 等按键 |\n\n点击行内格式工具前，先选中需要处理的文字。如果没有选中内容，LanCarbon 会插入可继续修改的示例或标记。\n\n## 段落级工具\n\n- **Align** 修改段落对齐。不要只选中特殊 MyST 块、代码块、表格或数学块中的一部分再应用；应使用对应功能的设置，或直接编辑源文。\n- **Lists** 创建无序、有序或任务列表。列表前后保留空行。\n- **Quote** 用 `>` 创建块引用。\n- **Link** 插入 `[显示文字](https://example.com)`。\n- **Code** 插入行内代码或围栏代码块。需要语法高亮时，在开头围栏后写语言名称。\n- **Table** 插入 Markdown 表格；应保留表头行和分隔行。\n- **Math** 插入行内或独立数学公式。\n- 横线工具插入 `---` 作为主题分隔线。\n\n```markdown\n- 第一项\n- 第二项\n\n> 一段简短引用。\n\n[LanCarbon project](https://github.com/)\n\n| 项目 | 状态 |\n|---|---|\n| 初稿 | 进行中 |\n```\n\n## 选择内容时的保护\n\n如果 LanCarbon 提示所选内容包含代码、数学、表格或特殊语法，说明软件正在避免把结构化块的一部分错误包裹。请只选择普通文本、使用该功能自己的面板，或直接修改 Markdown 源文。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s2-myst",
+      "title": "MyST Directives and Roles",
+      "content": "\n\n# MyST Directives and Roles\n\nMyST extends Markdown with scientific and technical publishing features. A **role** is usually inline; a **directive** is a block with a name, optional settings, and content.\n\n## Roles\n\nA role appears inside a sentence and has a compact form. LanCarbon's abbreviation, keyboard, underline, superscript, and subscript tools create supported role syntax. Preview the result immediately after insertion.\n\n## Directives\n\nOpen **Directives** and choose a template. Common uses include notes, warnings, figures, and other structured content. A directive uses an opening fence, a name in braces, optional lines beginning with `:`, body content, and a closing fence.\n\nThe following is shown as source text for learning:\n\n````markdown\n```{note}\nThis is useful background information.\n```\n\n```{warning}\nBack up your data before a major change.\n```\n````\n\nFor an imported image, the Image settings panel may create a figure block with options such as width, alignment, alternative text, and caption. Edit the entire figure block together. A caption belongs inside that block; aligning only the caption line can trigger the protected-selection message.\n\n## Good practice\n\n1. Insert a template from the toolbar.\n2. Replace every placeholder.\n3. Keep the opening and closing fences balanced.\n4. Switch to Preview.\n5. Run Build before publishing; the official Jupyter Book engine is the final compatibility check.\n\nUse plain Markdown when it is sufficient. Reserve directives for content that needs a semantic container or extra settings.\n\n---\n\n\n\n# MyST Directives 与 Roles\n\nMyST 在 Markdown 基础上增加了科学和技术出版功能。**Role** 通常用于一行文字内部；**Directive** 是带名称、可选设置和正文内容的结构化块。\n\n## Roles\n\nRole 出现在句子内部，形式较紧凑。LanCarbon 的缩写、键盘、下划线、上标和下标工具会生成受支持的 role 语法。插入后应立即切换 Preview 检查结果。\n\n## Directives\n\n打开 **Directives** 并选择模板。常见用途包括提示、警告、图片和其他结构化内容。Directive 包含开头围栏、花括号中的名称、以 `:` 开头的可选设置、正文和结尾围栏。\n\n下面以源代码形式展示学习示例：\n\n````markdown\n```{note}\nThis is useful background information.\n```\n\n```{warning}\nBack up your data before a major change.\n```\n````\n\n对于已经导入的图片，Image settings 面板可能生成 figure 块，其中包含宽度、对齐、替代文字和 caption 等选项。请把整个 figure 块作为整体修改。Caption 属于该结构的一部分，仅选中 caption 行再点对齐可能触发“受保护选择”提示。\n\n## 推荐做法\n\n1. 从工具栏插入模板。\n2. 替换所有占位内容。\n3. 确保开头和结尾围栏配对。\n4. 切换到 Preview。\n5. 发布前运行 Build；官方 Jupyter Book 引擎是最终兼容性检查。\n\n普通 Markdown 能满足需求时优先使用普通语法。只有内容需要语义容器或额外设置时，再使用 Directives。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s2-resources",
+      "title": "Images, Attachments, Citations, and Resources",
+      "content": "\n\n# Images, Attachments, Citations, and Resources\n\nLanCarbon copies imported files into its managed data folder. This protects the Book from breaking when the original file is moved or deleted.\n\n## First toolbar row\n\n- **Insert image** chooses a PNG, JPEG, GIF, or WebP file and inserts a managed Markdown image reference.\n- **Image settings** edits a selected managed image: width, left/center/right alignment, alternative description, and optional caption.\n- **Attach file** imports a non-image file and inserts a download link.\n- **Resources** lists every managed file and where it is used.\n- **Citations** imports and manages bibliography data and inserts citation keys supported by the Book.\n- Dropping a file or pasting a screenshot into the editor imports it through the same managed system.\n\nAlways write meaningful alternative text for informative images. Use a caption to explain why the figure matters; do not repeat all visible pixels.\n\n## Resources panel\n\n![Resources panel](assets/3b9a49d527c5cd4a12abac80bdc4f4d72053f0ef9c8eb3b877e8631c80fcc866.png)\n\n- **Find a resource** filters by filename.\n- **Show resources** limits the list to all items, Notes, Books, one Book, or another available scope.\n- **Select visible** selects the current filtered results for batch deletion.\n- **Insert** places a reference to the resource at the editor cursor.\n- **Save a copy** exports one managed file to a location you choose.\n- **Delete** removes the managed file and, after confirmation, its references. Review every listed usage first.\n- Expand the reference row to see all Notes and Book pages that use the item.\n\nRemoving Markdown text from one page does not delete the managed file. Deleting from Resources is global and can affect multiple Books.\n\n## Citations\n\nImport a valid bibliography file from **Citations**, then insert entries by citation key. Keep citation keys unique across all bibliography sources attached to one Book. Preview provides a writing check; Build uses the official Jupyter Book engine for final citations and bibliography output.\n\n## Backups\n\nA complete manual backup includes `notes.json`, `assets.json`, and the `assets` folder from Data Location. Copy them together while LanCarbon is closed.\n\n---\n\n\n\n# 图片、附件、引用与 Resources\n\nLanCarbon 会把导入的文件复制到受管理的数据目录中。因此即使原始文件被移动或删除，Book 中的受管理副本仍然可以使用。\n\n## 第一行工具栏\n\n- **Insert image** 选择 PNG、JPEG、GIF 或 WebP 文件，并插入受管理的 Markdown 图片引用。\n- **Image settings** 修改选中的受管理图片：宽度、左/中/右对齐、替代说明和可选 caption。\n- **Attach file** 导入非图片文件并插入下载链接。\n- **Resources** 列出所有受管理文件及其使用位置。\n- **Citations** 导入和管理参考文献数据，并插入当前 Book 支持的引用键。\n- 把文件拖入编辑器或粘贴截图，也会通过相同的受管理资源系统导入。\n\n信息型图片应填写有意义的替代文字。Caption 用来说明这张图为什么重要，不必逐像素重复画面内容。\n\n## Resources 面板\n\n![Resources 面板](assets/3b9a49d527c5cd4a12abac80bdc4f4d72053f0ef9c8eb3b877e8631c80fcc866.png)\n\n- **Find a resource** 按文件名筛选。\n- **Show resources** 把列表限制为全部、Notes、Books、某一本 Book 或其他可用范围。\n- **Select visible** 选择当前筛选结果，用于批量删除。\n- **Insert** 在编辑器光标处插入资源引用。\n- **Save a copy** 把一个受管理文件导出到你选择的位置。\n- **Delete** 删除受管理文件，并在确认后清除它的引用。操作前请检查列出的全部使用位置。\n- 展开 references 行，可以查看使用该资源的全部 Notes 和 Book 页面。\n\n只删除某一页中的 Markdown 引用，不会删除受管理文件。从 Resources 中删除则是全局操作，可能影响多本 Book。\n\n## Citations\n\n从 **Citations** 导入有效的参考文献文件，再按 citation key 插入条目。同一本 Book 关联的全部参考文献源中，引用键必须唯一。Preview 用于写作检查；Build 会使用官方 Jupyter Book 引擎生成最终引用和参考文献列表。\n\n## 备份\n\n完整手动备份应同时包含 Data Location 中的 `notes.json`、`assets.json` 和 `assets` 文件夹。请关闭 LanCarbon 后一起复制。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s2-preview",
+      "title": "Previewing and Checking Your Content",
+      "content": "\n\n# Previewing and Checking Your Content\n\nSelect **Preview** to render the current page without leaving LanCarbon. Use it frequently, especially after headings, lists, tables, math, directives, image settings, and citations.\n\nCheck the following:\n\n1. The heading hierarchy is logical.\n2. Lists and tables are not merged into nearby paragraphs.\n3. Links open the intended location.\n4. Images have the intended width, alignment, alternative text, and caption.\n5. Equations and special MyST content render as expected.\n6. There are no visible placeholders left from toolbar templates.\n\nPreview is page-focused and optimized for writing. It is not the complete Book website and does not replace Build. Navigation, theme assets, final cross-references, publication paths, and official MyST/Jupyter Book compatibility must be checked in the local built website.\n\nIf Preview differs from the built website, treat the successful official Build as the publication reference. First inspect the source around the affected block, then rebuild. Unsupported or unsafe embedded content may remain as source or show a notice instead of running inside the desktop application.\n\n---\n\n\n\n# 使用 Preview 检查内容\n\n点击 **Preview** 可以在不离开 LanCarbon 的情况下渲染当前页面。建议经常使用，尤其是在修改标题、列表、表格、数学公式、Directives、图片设置和引用之后。\n\n逐项检查：\n\n1. 标题层级是否合理。\n2. 列表和表格是否与相邻段落意外连在一起。\n3. 链接是否打开正确位置。\n4. 图片宽度、对齐、替代文字和 caption 是否正确。\n5. 公式和特殊 MyST 内容是否符合预期。\n6. 工具栏模板中是否还残留未替换的占位文字。\n\nPreview 以当前页面和写作效率为重点，它不是完整 Book 网站，也不能取代 Build。网站导航、主题资源、最终交叉引用、发布路径以及 MyST/Jupyter Book 官方兼容性，都需要在本地构建的网站中检查。\n\n如果 Preview 与构建后的网站不同，应把成功通过官方 Build 的结果作为发布依据。先检查受影响结构附近的源文，再重新 Build。软件内不支持或不安全的嵌入内容，可能保持为源文或显示提示，而不会在桌面程序内运行。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s2-export",
+      "title": "Exporting a Source Copy",
+      "content": "\n\n# Exporting a Source Copy\n\n**Export** creates a separate Jupyter Book source project for backup, inspection, or external editing. It is optional. Build reads the current Book directly from LanCarbon, so the normal update path does not require Export.\n\n## Export safely\n\n1. Wait for **All changes saved**.\n2. Select **Export**.\n3. Choose a new, empty folder.\n4. Wait for the success message, then inspect the folder.\n\nLanCarbon requires an empty destination because it must not overwrite files that you may have edited externally. If the folder is not empty, create another folder or move its existing contents yourself after checking them.\n\nThe exported project normally contains Markdown pages, a `myst.yml` configuration, required managed resources under `assets/`, and supporting theme files. Only Resources referenced by this Book are included. Nested page links are adjusted for their exported locations.\n\n## Keep the roles separate\n\n| Copy | Owner | Used by Build? | Safe expectation |\n|---|---|---:|---|\n| Book inside LanCarbon | LanCarbon | Yes | Continue editing here for the normal workflow. |\n| Exported source folder | You | No | A separate snapshot that LanCarbon will not silently overwrite. |\n| Build folder | LanCarbon workflow | Yes, as generated output | Choose once; rebuilds replace the managed website safely. |\n\nEditing only the exported files does not update the Book stored in LanCarbon. If external changes matter, copy them back into the corresponding LanCarbon pages manually.\n\n---\n\n\n\n# 导出源文件副本\n\n**Export** 会创建一份独立的 Jupyter Book 源项目，用于备份、检查或在外部编辑。它是可选操作。Build 会直接读取 LanCarbon 内当前 Book，因此正常更新流程不要求先 Export。\n\n## 安全导出\n\n1. 等待 **All changes saved**。\n2. 点击 **Export**。\n3. 选择一个新建的空文件夹。\n4. 等待成功提示，然后检查文件夹内容。\n\nLanCarbon 要求目标目录为空，是为了避免覆盖你可能已经在外部修改的文件。如果目录不为空，请新建另一个目录，或在自行检查后移动现有内容。\n\n导出的项目通常包含 Markdown 页面、`myst.yml` 配置、`assets/` 下当前 Book 所需的受管理资源，以及主题支持文件。只会导出这本 Book 实际引用的 Resources；嵌套页面的链接会根据导出位置自动调整。\n\n## 分清三种副本\n\n| 副本 | 管理者 | Build 是否使用 | 正确理解 |\n|---|---|---:|---|\n| LanCarbon 内的 Book | LanCarbon | 是 | 正常流程中继续在这里编辑。 |\n| 导出的源文件夹 | 用户 | 否 | 独立快照，LanCarbon 不会悄悄覆盖。 |\n| Build 文件夹 | LanCarbon 工作流 | 是，作为生成结果 | 第一次选择；后续 rebuild 会安全替换受管理网站。 |\n\n只修改导出文件不会更新 LanCarbon 中保存的 Book。如果外部修改需要保留，请手动复制回对应的 LanCarbon 页面。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s3",
+      "title": "3. Building the Book Locally",
+      "content": "\n\n# Building the Book Locally\n\nBuild turns the current Book stored in LanCarbon into the same class of website that will later be published. It runs preflight checks, calls the official Jupyter Book 2 command-line tool, preserves the last successful website if a new attempt fails, and serves the result at a local address while LanCarbon is running.\n\n---\n\n\n\n# 在本地 Build Book\n\nBuild 会把 LanCarbon 当前保存的 Book 转换成以后用于发布的网站。它先执行 preflight 检查，再调用官方 Jupyter Book 2 命令行工具；如果新一次构建失败，会保留上一次成功的网站；LanCarbon 运行期间，还会通过本地地址提供网站预览。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s3-meaning",
+      "title": "What Build Means and How It Differs from Export",
+      "content": "\n\n# What Build Means and How It Differs from Export\n\nBuild has three jobs:\n\n1. Check Book structure, paths, links, resources, and supported content.\n2. Generate a managed Jupyter Book project from the current in-app Book.\n3. Run the official engine and save a complete HTML website.\n\nBuild does **not** read your optional Export folder. After changing a page in LanCarbon, wait for it to save and select **Rebuild Website**. You do not need to delete old source files or Export again.\n\n| Feature | Preview | Export | Build |\n|---|---|---|---|\n| Main purpose | Fast page check | Independent source copy | Complete local website |\n| Source | Current page | Current Book | Current Book |\n| Requires Python/Jupyter Book | No | No | Yes |\n| Checks full navigation and official output | No | No | Yes |\n| Required before Publish | Helpful | No | Yes |\n\nThe first successful Build asks where to store the managed result. Later Builds reuse that location. **Change Build Location** moves future managed output to another parent folder; it does not change Data Location or an Export folder.\n\nPublish uses the latest successful Build only when it matches the current Book. If content has changed, the Publish workflow marks the build as outdated and asks for or performs a fresh rebuild.\n\n---\n\n\n\n# Build 的含义及其与 Export 的区别\n\nBuild 完成三项工作：\n\n1. 检查 Book 结构、路径、链接、资源和受支持内容。\n2. 从软件内当前 Book 生成一个受管理的 Jupyter Book 项目。\n3. 运行官方引擎并保存完整 HTML 网站。\n\nBuild **不会**读取可选的 Export 文件夹。在 LanCarbon 中修改页面后，等待保存，然后点击 **Rebuild Website** 即可。不需要删除旧源文件，也不需要重新 Export。\n\n| 功能 | Preview | Export | Build |\n|---|---|---|---|\n| 主要目的 | 快速检查单页 | 创建独立源文件副本 | 生成完整本地网站 |\n| 内容来源 | 当前页 | 当前 Book | 当前 Book |\n| 是否需要 Python/Jupyter Book | 否 | 否 | 是 |\n| 是否检查完整导航和官方输出 | 否 | 否 | 是 |\n| Publish 前是否需要 | 有帮助 | 否 | 是 |\n\n第一次成功 Build 会要求选择受管理结果的保存位置。后续 Build 会继续使用该位置。**Change Build Location** 只改变以后生成内容的上级目录，不会修改 Data Location，也不会修改 Export 目录。\n\nPublish 只会使用与当前 Book 一致的最新成功 Build。内容发生变化后，Publish 会把旧结果标为 outdated，并要求或执行新的 rebuild。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s3-prepare",
+      "title": "Preparing the Build Environment",
+      "content": "\n\n# Preparing the Build Environment\n\nOpen **Build**. The top cards check:\n\n- **Python**: a working Python 3 command and its version.\n- **Jupyter Book CLI**: a working Jupyter Book version 2 command and its version.\n\nBoth cards must pass. If Python is missing, install it from [python.org](https://www.python.org/downloads/). If Jupyter Book is missing or version 1 is found, follow the [Jupyter Book 2 installation guide](https://jupyterbook.org/stable/get-started/install/). Restart LanCarbon afterward.\n\nThe preflight summary reports errors and warnings. Errors block the Build because the output would be incomplete or ambiguous. Warnings deserve review but may allow the Build to continue. Select an issue to locate the page when the interface offers that action.\n\nCommon preflight problems include duplicate export paths or labels, missing pages, broken local links, missing or damaged managed Resources, malformed image/directive syntax, and invalid Book metadata.\n\nNetwork access is normally unnecessary for the bundled website theme and local content. Remote images, remote includes, third-party plugins, or package installation can still require internet access. Prefer managed local Resources when you want a reproducible offline Build.\n\n---\n\n\n\n# 准备 Build 环境\n\n打开 **Build**。顶部卡片会检查：\n\n- **Python**：可以运行的 Python 3 命令及版本。\n- **Jupyter Book CLI**：可以运行的 Jupyter Book 2 命令及版本。\n\n两项都必须通过。Python 缺失时，从 [python.org](https://www.python.org/downloads/)安装；Jupyter Book 缺失或检测到版本 1 时，按照 [Jupyter Book 2 安装说明](https://jupyterbook.org/stable/get-started/install/)处理。安装后重启 LanCarbon。\n\nPreflight 汇总会显示 errors 和 warnings。Error 会阻止 Build，因为结果可能不完整或存在歧义。Warning 需要检查，但可能仍允许继续。界面提供定位操作时，可以点击问题跳转到对应页面。\n\n常见 preflight 问题包括：Export Path 或 Label 重复、页面缺失、本地链接失效、受管理资源缺失或损坏、图片/Directive 语法不完整，以及 Book 元数据无效。\n\n使用软件内置网站主题和本地内容时，通常不需要网络。远程图片、远程 include、第三方插件或安装软件包仍可能要求联网。希望离线稳定 Build 时，优先使用受管理的本地 Resources。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s3-first",
+      "title": "Your First Local Build",
+      "content": "\n\n# Your First Local Build\n\n![Build window before the first build](assets/f7eed15a28d36a5313c9eff18be9bb2ad2d90cccd08c91d359d5e526ac4b3c2f.png)\n\n1. Save the current page and select **Build** in the sidebar.\n2. Confirm that Python and Jupyter Book CLI show check marks.\n3. Read every preflight error or warning. Correct errors and reopen Build if needed.\n4. Select **Choose Location and Build**.\n5. Choose a parent folder where LanCarbon may create and manage a Book-specific build folder. Do not choose Data Location.\n6. Wait for completion without closing LanCarbon.\n\nThe first window contains:\n\n- Environment cards for Python and Jupyter Book CLI.\n- Error/warning count and completion state of preflight.\n- A detailed issue area, or **Preflight passed** when no issue is found.\n- **Close**, which leaves without Building.\n- **Choose Location and Build**, enabled only when required checks pass.\n\nDuring Build, the application generates a temporary source, invokes the official CLI, and replaces the saved website only after success. A failed attempt leaves the previous successful website intact.\n\nWhen the Build finishes, open the local website and inspect the home page, table of contents, every new page, images, downloads, citations, equations, and links. This is the closest local representation of what will be published.\n\n---\n\n\n\n# 第一次本地 Build\n\n![第一次构建前的 Build 窗口](assets/f7eed15a28d36a5313c9eff18be9bb2ad2d90cccd08c91d359d5e526ac4b3c2f.png)\n\n1. 保存当前页面，然后点击侧边栏的 **Build**。\n2. 确认 Python 和 Jupyter Book CLI 均显示通过标记。\n3. 阅读所有 preflight error 或 warning。有错误时先修复，再重新打开 Build。\n4. 点击 **Choose Location and Build**。\n5. 选择一个允许 LanCarbon 创建并管理 Book 专属构建目录的上级文件夹。不要选择 Data Location。\n6. 等待完成，期间不要关闭 LanCarbon。\n\n首次窗口包含：\n\n- Python 与 Jupyter Book CLI 环境卡片。\n- Preflight 的 error/warning 数量和完成状态。\n- 详细问题区域；没有问题时显示 **Preflight passed**。\n- **Close**：直接关闭，不执行 Build。\n- **Choose Location and Build**：只有必要检查通过后才可使用。\n\nBuild 期间，软件会生成临时源项目、调用官方 CLI，并且只在成功后替换保存的网站。失败时，上一次成功网站仍会保留。\n\nBuild 完成后，打开本地网站，检查首页、目录、新增页面、图片、附件下载、引用、公式和链接。这是发布前最接近在线效果的本地版本。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s3-rebuild",
+      "title": "Rebuilding and Using the Local Website",
+      "content": "\n\n# Rebuilding and Using the Local Website\n\n![Build window after a successful build](assets/f2fe167ed5bd34119554be623300d5fcf7380f4706c1481fb1f94e7cfee7ee2c.png)\n\nAfter the first success, the Build window displays the content status, last successful time, local website address, and saved files location.\n\n- **Build is up to date** means the successful output matches the current Book.\n- **Build is out of date** means the Book changed after that success.\n- **Open Website** opens the locally served site in your browser.\n- **Stop Website** stops the local HTTP server. The saved HTML remains on disk.\n- **Open Build Folder** opens the generated files for inspection. Treat them as output; editing them does not update the Book.\n- **Change Build Location** selects a different parent directory for future Builds.\n- **Close** closes the window.\n- **Rebuild Website** generates a fresh website from the current Book.\n\nNormal update cycle:\n\n```text\nEdit in LanCarbon → wait for save → Build → Rebuild Website → inspect locally\n```\n\nThere is no need to Export or clear a folder. If a rebuild fails, expand **Jupyter Book output**, read the first relevant error, fix the named page, and rebuild. A deprecation warning from a dependency can be harmless, but any LanCarbon error or nonzero build result must be resolved before Publish.\n\nThe local address works only while LanCarbon's website server is running. Sharing `127.0.0.1` with someone else will not show them your site.\n\n---\n\n\n\n# Rebuild 与本地网站操作\n\n![成功构建后的 Build 窗口](assets/f2fe167ed5bd34119554be623300d5fcf7380f4706c1481fb1f94e7cfee7ee2c.png)\n\n第一次成功后，Build 窗口会显示内容状态、上次成功时间、本地网站地址和保存文件位置。\n\n- **Build is up to date** 表示成功结果与当前 Book 一致。\n- **Build is out of date** 表示成功后 Book 又发生了修改。\n- **Open Website** 在浏览器中打开本地网站。\n- **Stop Website** 停止本地 HTTP 服务；已经保存的 HTML 不会删除。\n- **Open Build Folder** 打开生成文件供检查。它们是输出结果，直接修改不会更新 Book。\n- **Change Build Location** 为以后的 Build 选择新的上级目录。\n- **Close** 关闭窗口。\n- **Rebuild Website** 从当前 Book 重新生成网站。\n\n正常更新流程为：\n\n```text\n在 LanCarbon 中编辑 → 等待保存 → 打开 Build → Rebuild Website → 本地检查\n```\n\n不需要 Export，也不需要手动清空目录。如果 rebuild 失败，展开 **Jupyter Book output**，阅读第一条有实际意义的错误，修复对应页面后再试。依赖库的 deprecation warning 有时不影响结果，但任何 LanCarbon error 或非零构建结果都必须在 Publish 前解决。\n\n本地地址只在 LanCarbon 的网站服务运行时可用。把 `127.0.0.1` 地址发给别人，无法让对方访问你的电脑。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s4",
+      "title": "4. Publishing the Book Online",
+      "content": "\n\n# Publishing the Book Online\n\nPublish copies the latest successful local website to a GitHub repository branch and configures GitHub Pages to serve that branch. The first publication establishes the connection; later publications update the same website while keeping Git commit history.\n\n---\n\n\n\n# 在线 Publish Book\n\nPublish 会把最新成功的本地网站复制到 GitHub 仓库的发布分支，并配置 GitHub Pages 使用该分支。第一次发布负责建立连接；后续发布会更新同一个网站，并保留 Git commit 历史。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s4-concepts",
+      "title": "What Publish Means and How It Differs from Build",
+      "content": "\n\n# What Publish Means and How It Differs from Build\n\nBuild creates and checks the website on your computer. Publish transfers that checked website to GitHub and makes a public URL available through GitHub Pages.\n\n| Build | Publish |\n|---|---|\n| Uses Python and Jupyter Book 2 | Uses Git, GitHub CLI, a GitHub account, and network access |\n| Produces a local HTML website | Updates a GitHub branch |\n| Can work offline for local content | Must reach GitHub services |\n| Should happen after meaningful edits | Happens after a current successful Build |\n\nImportant Git concepts for this workflow:\n\n- A **repository** is the online container for files and their history.\n- A **commit** is one recorded version. LanCarbon shows the short commit identifier after publishing.\n- A **branch** is one line of versions. LanCarbon normally publishes website files to `gh-pages`.\n- **GitHub Pages** serves the root of that branch as a website.\n\nYou do not need to type routine Git commands. LanCarbon creates, clones, updates, commits, pushes, and checks the publication branch through its workflow. Do not manually delete or rewrite `gh-pages` unless you understand the consequence.\n\nPublishing does not upload the private LanCarbon data directory. It sends generated website files required by the public site. Still, review your Book for private text, images, attachment contents, metadata, and hidden pages before publishing.\n\n---\n\n\n\n# Publish 的含义及其与 Build 的区别\n\nBuild 在你的电脑上生成并检查网站；Publish 把检查过的网站传到 GitHub，再由 GitHub Pages 提供公开网址。\n\n| Build | Publish |\n|---|---|\n| 使用 Python 和 Jupyter Book 2 | 使用 Git、GitHub CLI、GitHub 账号和网络连接 |\n| 生成本地 HTML 网站 | 更新 GitHub 仓库中的分支 |\n| 内容均为本地时可以离线完成 | 必须能够连接 GitHub 服务 |\n| 有重要修改后执行 | 当前成功 Build 之后执行 |\n\n本流程涉及的 Git 基本概念：\n\n- **Repository（仓库）** 是在线存放文件和历史记录的容器。\n- **Commit（提交）** 是一次被记录的版本。发布后 LanCarbon 会显示简短 commit 标识。\n- **Branch（分支）** 是一条版本线。LanCarbon 通常把网站文件发布到 `gh-pages`。\n- **GitHub Pages** 会把该分支根目录作为网站提供。\n\n日常流程不要求你手工输入 Git 命令。LanCarbon 会在工作流中创建、下载、更新、提交、推送并检查发布分支。如果不了解后果，不要手动删除或重写 `gh-pages`。\n\nPublish 不会上传整个 LanCarbon 私有数据目录，而是发送公开网站需要的生成文件。即便如此，发布前仍应检查 Book 中是否包含隐私文字、图片、附件内容、元数据或不希望公开的隐藏页面。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s4-prepare",
+      "title": "Preparing GitHub and Signing In",
+      "content": "\n\n# Preparing GitHub and Signing In\n\n## One-time preparation\n\n1. Create and verify a personal account at [GitHub](https://github.com/).\n2. Install [Git for Windows](https://git-scm.com/install/windows).\n3. Install [GitHub CLI](https://cli.github.com/).\n4. Restart LanCarbon so it can detect newly installed commands.\n5. Build the Book successfully.\n\nOpen **Publish**. Git and GitHub CLI should show check marks and versions. If the account card says you are signed out, select **Sign in with GitHub CLI**. LanCarbon opens a visible terminal.\n\nThe device sign-in flow normally asks whether Git should use your GitHub credentials, displays a one-time code, and opens `https://github.com/login/device`. Copy the code, sign in in the browser, approve the GitHub CLI request, return to the terminal, and wait for success. Then return to LanCarbon and select **Refresh Checks**.\n\nLanCarbon uses the account already authenticated by GitHub CLI. It does not ask you to put a GitHub password or token in the Book.\n\n## After restart\n\nAuthentication is normally stored securely by GitHub CLI and survives a computer or LanCarbon restart. You only need to sign in again if the credential is revoked, expires, is removed, you sign out, or you change accounts.\n\n## If the button seems inactive\n\nLook for a terminal window behind LanCarbon or in the taskbar. If GitHub CLI was installed while LanCarbon was open, close and restart LanCarbon. If no terminal appears after that, open a normal terminal and run `gh auth login`, complete the flow, then use **Refresh Checks**.\n\n---\n\n\n\n# 准备 GitHub 并登录账号\n\n## 一次性准备\n\n1. 在 [GitHub](https://github.com/)创建并验证个人账号。\n2. 安装 [Git for Windows](https://git-scm.com/install/windows)。\n3. 安装 [GitHub CLI](https://cli.github.com/)。\n4. 重启 LanCarbon，使软件能够检测到新安装的命令。\n5. 先成功 Build 当前 Book。\n\n打开 **Publish**。Git 与 GitHub CLI 应显示通过标记和版本。如果账号卡片提示未登录，点击 **Sign in with GitHub CLI**。LanCarbon 会打开一个可见终端。\n\n设备登录流程通常会先询问是否让 Git 使用 GitHub 凭据，然后显示一次性代码并打开 `https://github.com/login/device`。复制代码，在浏览器登录并批准 GitHub CLI 请求，回到终端等待成功。最后回到 LanCarbon，点击 **Refresh Checks**。\n\nLanCarbon 使用 GitHub CLI 已经认证的账号，不会要求你把 GitHub 密码或 token 写进 Book。\n\n## 重启以后\n\nGitHub CLI 的认证通常会安全保存，重启电脑或 LanCarbon 后依然有效。只有凭据被撤销、过期、删除、主动退出或切换账号时，才需要重新登录。\n\n## 按钮看起来没有反应时\n\n检查终端窗口是否被 LanCarbon 挡住，或是否出现在任务栏。如果安装 GitHub CLI 时 LanCarbon 仍在运行，请关闭并重启 LanCarbon。仍无终端时，可以在普通终端运行 `gh auth login`，完成后回到软件点击 **Refresh Checks**。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s4-network",
+      "title": "Network, Proxy, and TUN Mode",
+      "content": "\n\n# Network, Proxy, and TUN Mode\n\nPublish talks to GitHub through several programs: the browser, GitHub CLI, Git, and LanCarbon's GitHub API request. A proxy extension that affects only the browser may let github.com open while Git still fails on port 443.\n\nIf your network can reach GitHub directly, no proxy is needed. If GitHub is blocked, unstable, or repeatedly reset:\n\n1. Open your trusted proxy application.\n2. Enable **system proxy / global proxy** or **TUN mode**, according to that application's design.\n3. Confirm github.com opens in the browser.\n4. Return to Publish and select **Refresh Checks**.\n5. Confirm both **GitHub API** and **Git HTTPS connection** pass.\n6. Publish or update while that network mode remains active.\n\nLanCarbon does not configure or bypass network policy for you. Use only a network method permitted by your organization and location. Turn off the proxy mode afterward if that is your normal practice.\n\nTypical network messages contain `Failed to connect to github.com port 443`, `Connection was reset`, `Recv failure`, `timed out`, `ECONNRESET`, or a failed OAuth access-token request. These messages usually describe connectivity, not damaged Book content.\n\nDo not repeatedly click Publish while a connection is failing. Restore connectivity, select **Refresh Checks**, and retry once. GitHub may also have a service incident; check [GitHub Status](https://www.githubstatus.com/) if your connection otherwise works.\n\n---\n\n\n\n# 网络、代理与 TUN 模式\n\nPublish 会通过多个程序连接 GitHub：浏览器、GitHub CLI、Git，以及 LanCarbon 的 GitHub API 请求。只影响浏览器的代理扩展，可能让 github.com 能打开，但 Git 连接 443 端口仍然失败。\n\n如果当前网络可以直接稳定访问 GitHub，就不需要代理。如果 GitHub 无法访问、连接不稳定或反复被重置：\n\n1. 打开你信任的代理软件。\n2. 根据该软件的设计，开启 **系统代理/全局代理** 或 **TUN 模式**。\n3. 确认浏览器能够打开 github.com。\n4. 回到 Publish，点击 **Refresh Checks**。\n5. 确认 **GitHub API** 和 **Git HTTPS connection** 都通过。\n6. 在该网络模式保持开启时执行 Publish 或 Update。\n\nLanCarbon 不会替你配置代理，也不会绕过网络管理策略。请只使用所在组织和地区允许的网络方式。操作结束后是否关闭代理，可按你的日常习惯处理。\n\n典型网络错误包含 `Failed to connect to github.com port 443`、`Connection was reset`、`Recv failure`、`timed out`、`ECONNRESET`，或 OAuth access-token 请求失败。这些信息通常表示连接问题，不代表 Book 内容损坏。\n\n连接失败时不要连续多次点击 Publish。先恢复网络，点击 **Refresh Checks**，再重试一次。如果本地网络正常，也可以查看 [GitHub Status](https://www.githubstatus.com/)确认 GitHub 是否发生服务故障。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s4-window",
+      "title": "Understanding the Publish Window",
+      "content": "\n\n# Understanding the Publish Window\n\n![GitHub Publishing window](assets/3bee86d6c17f86702948159c8df238e0589d3b83474d37c7150e41c91ed84d70.png)\n\nThe status cards are a checklist:\n\n- **Git** and **GitHub CLI**: required programs and versions.\n- **GitHub account**: authenticated account name.\n- **GitHub API**: account services can be reached.\n- **Book website build**: the saved website exists and matches the current Book.\n- **Repository binding**: the connected `owner/repository` exists and is reachable.\n- **Git HTTPS connection**: Git can download the publication branch.\n- **GitHub Pages**: the public Pages configuration and URL.\n- **Published website**: last publication time and commit.\n\nBefore the first connection, choose **Existing repository** or **New repository**:\n\n- **Owner or organization** is the GitHub account or organization that owns the repository.\n- **Repository name** becomes part of the URL; use letters, numbers, hyphens, periods, or underscores.\n- **Publication branch** normally remains `gh-pages`.\n- **Visibility** controls repository visibility. GitHub plan and Pages rules may affect private repositories.\n- **Connect and Initialize Pages** checks or creates the repository, prepares the branch, configures Pages, and saves the binding.\n\nAfter connection, the prominent action area appears above repository setup:\n\n- **Update Website** publishes the latest current Build; when the Book changed, follow the rebuild prompt/workflow first.\n- **Open Pages** opens the public website.\n- **Open Repository** opens the GitHub file/history page.\n- **Change repository setup** is an advanced action for connecting a different repository. It is not part of every update.\n- **Refresh Checks** reruns environment and connection checks.\n- **Close** leaves the panel.\n\nRead the small proxy reminder before operations that contact GitHub. A red error card blocks or explains the affected action; fix that specific prerequisite rather than reconnecting an already valid repository.\n\n---\n\n\n\n# 理解 Publish 窗口\n\n![GitHub Publishing 窗口](assets/3bee86d6c17f86702948159c8df238e0589d3b83474d37c7150e41c91ed84d70.png)\n\n状态卡片是一份检查清单：\n\n- **Git** 与 **GitHub CLI**：必要程序及版本。\n- **GitHub account**：已经认证的账号名称。\n- **GitHub API**：能否连接账号服务。\n- **Book website build**：保存的网站是否存在并与当前 Book 一致。\n- **Repository binding**：绑定的 `owner/repository` 是否存在并可访问。\n- **Git HTTPS connection**：Git 是否能下载发布分支。\n- **GitHub Pages**：公开 Pages 配置和网址。\n- **Published website**：上次发布时间与 commit。\n\n第一次连接前，需要选择 **Existing repository** 或 **New repository**：\n\n- **Owner or organization** 是仓库所属的 GitHub 账号或组织。\n- **Repository name** 会成为网址的一部分，可使用字母、数字、连字符、句点或下划线。\n- **Publication branch** 通常保留为 `gh-pages`。\n- **Visibility** 控制仓库可见性。私有仓库能否使用 Pages 可能受 GitHub 套餐和规则影响。\n- **Connect and Initialize Pages** 检查或创建仓库、准备分支、配置 Pages 并保存绑定。\n\n连接完成后，主要操作区会出现在 repository setup 上方：\n\n- **Update Website** 发布最新且与 Book 一致的 Build；Book 修改后，先按照界面提示/流程重新构建。\n- **Open Pages** 打开公开网站。\n- **Open Repository** 打开 GitHub 文件和历史页面。\n- **Change repository setup** 是连接其他仓库的高级操作，不是每次更新都要做。\n- **Refresh Checks** 重新执行环境与连接检查。\n- **Close** 关闭面板。\n\n执行联网操作前，请阅读界面中的代理小字提示。红色错误卡片会阻止或解释受影响的操作；应修复对应前置条件，不要在仓库绑定已经正确时反复重新连接。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s4-first",
+      "title": "Publishing Your First Website",
+      "content": "\n\n# Publishing Your First Website\n\n## Final local check\n\n1. Wait for the latest edit to save.\n2. Build or Rebuild the website.\n3. Open the local website and inspect it.\n4. Remove private or unfinished material.\n\n## Connect the repository\n\nOpen Publish and make every required environment/account/network check pass. For a new user, the simplest route is often **New repository**: confirm your account as owner, enter a unique repository name, keep `gh-pages`, choose visibility, and select **Connect and Initialize Pages**. If you created an empty repository yourself on GitHub, choose **Existing repository** and enter its exact owner and name.\n\nRepository and folder are different concepts. Seeing a repository on github.com does not mean LanCarbon is connected; the binding card must show that exact `owner/name` as reachable.\n\n## Publish\n\nAfter the binding is ready, select the main publish/update action. LanCarbon downloads the publication branch, replaces the managed website files, creates a Git commit, pushes it, requests a Pages deployment, and verifies the published revision.\n\nWait for the success state. Deployment may remain pending briefly after the push. Select **Open Pages** only after the Pages URL is reported. The first visit may take several minutes. Refresh the browser after waiting rather than starting another publish immediately.\n\n## Acceptance check\n\nThe first publication is complete when:\n\n- Repository binding passes.\n- Git HTTPS connection passes.\n- GitHub Pages shows the expected URL.\n- Published website shows a time and commit.\n- Open Pages displays the full Book theme and current content.\n- Navigation, images, attachments, and internal links work from the public URL.\n\n---\n\n\n\n# 第一次发布网站\n\n## 最终本地检查\n\n1. 等待最新编辑保存。\n2. Build 或 Rebuild 网站。\n3. 打开本地网站并检查。\n4. 删除隐私内容和未完成内容。\n\n## 连接仓库\n\n打开 Publish，让所有必要的环境、账号和网络检查通过。新手最简单的方式通常是选择 **New repository**：确认 owner 为自己的账号，输入唯一仓库名，保留 `gh-pages`，选择可见性，再点击 **Connect and Initialize Pages**。如果你已经在 GitHub 手工创建了空仓库，则选择 **Existing repository**，准确填写 owner 与仓库名。\n\nRepository 与本地文件夹是不同概念。在 github.com 能看到仓库，不代表 LanCarbon 已经连接；Repository binding 卡片必须显示完全相同的 `owner/name` 且可访问。\n\n## 发布\n\n绑定完成后，点击主要发布/更新按钮。LanCarbon 会下载发布分支、替换受管理网站文件、创建 Git commit、推送到 GitHub、请求 Pages 部署，并检查在线版本。\n\n等待成功状态。推送结束后，部署可能短暂显示 pending。看到 Pages URL 后再点击 **Open Pages**。第一次访问可能需要等待几分钟；先等待并刷新浏览器，不要立刻重复发布。\n\n## 验收检查\n\n满足以下条件，第一次发布才算完成：\n\n- Repository binding 通过。\n- Git HTTPS connection 通过。\n- GitHub Pages 显示预期网址。\n- Published website 显示时间和 commit。\n- Open Pages 展示完整 Book 主题和当前内容。\n- 从公开网址访问时，导航、图片、附件和内部链接均正常。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s4-update",
+      "title": "Updating an Existing Published Book",
+      "content": "\n\n# Updating an Existing Published Book\n\nOnce a Book is connected, do not create another repository for each revision. Use the saved binding.\n\n```text\nEdit in LanCarbon\n→ wait for All changes saved\n→ Build / Rebuild Website\n→ inspect Open Website\n→ Publish\n→ Update Website\n→ wait for deployment\n→ Open Pages and verify\n```\n\nExport is not part of this routine unless you want a separate source backup. The Build location and repository binding are remembered per Book.\n\nThe Publish window compares the current Book with the latest successful Build. If the build is outdated, rebuild it. If a Git network check fails, the update button may be unavailable until connectivity is restored and checks are refreshed. A failed update does not erase the already published website; it remains on its previous successful commit.\n\nAfter success, compare the Published website commit/time with what you just sent. GitHub Pages can cache or deploy asynchronously, so wait briefly and perform a full browser refresh if old text remains. Open Repository can confirm the newest commit reached `gh-pages`.\n\nMake a meaningful publication only when the public result is ready. Small local edits can accumulate before the next Build and Update.\n\n---\n\n\n\n# 更新已经发布的 Book\n\nBook 建立连接后，不需要每次修改都创建新仓库，应继续使用已保存的绑定。\n\n```text\n在 LanCarbon 中编辑\n→ 等待 All changes saved\n→ Build / Rebuild Website\n→ 用 Open Website 本地检查\n→ 打开 Publish\n→ Update Website\n→ 等待部署\n→ Open Pages 并验证\n```\n\n除非需要额外保存源文件备份，否则日常更新不包含 Export。每本 Book 的 Build 位置和仓库绑定都会被记住。\n\nPublish 窗口会比较当前 Book 与最新成功 Build。如果 build outdated，就先重新构建。如果 Git 网络检查失败，更新按钮可能暂时不可用，直到恢复连接并刷新检查。更新失败不会删除已发布网站；线上仍保留上一次成功 commit。\n\n成功后，对照 Published website 显示的 commit/时间与本次操作。GitHub Pages 部署和缓存可能存在延迟；仍显示旧文字时，稍等后进行浏览器完整刷新。Open Repository 可以确认最新 commit 是否已经到达 `gh-pages`。\n\n只有公开结果准备好时才需要发布。多次很小的本地修改可以积累到一起，再执行一次 Build 和 Update。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s4-errors",
+      "title": "Troubleshooting Common Problems",
+      "content": "\n\n# Troubleshooting Common Problems\n\nUse the exact current message and the failed status card. Fix one cause, select **Refresh Checks**, and retry once.\n\n## GitHub CLI is installed but not detected\n\nRestart LanCarbon after installation. Confirm `gh --version` works in a new terminal. If the terminal finds it but LanCarbon does not, reinstall GitHub CLI in its standard Windows location and restart the computer. Use the current LanCarbon release, which also checks the standard Program Files location.\n\n## Sign in appears to do nothing\n\nCheck the taskbar for the visible terminal. Complete the prompts there. If necessary, run `gh auth login` manually and then Refresh Checks.\n\n## Device authorization or OAuth token request times out\n\nThe browser approval may succeed while GitHub CLI cannot exchange the code for a token. Enable system/global proxy or TUN mode, start a new sign-in, and use the new one-time code. One-time codes expire; do not reuse the old code.\n\n## `Failed to connect to github.com port 443`, `Connection was reset`, or `Recv failure`\n\nThis is the Git HTTPS path. Enable a network mode that covers desktop programs, not only the browser. Refresh until **Git HTTPS connection** passes, then update. Do not reconnect the repository.\n\n## Repository exists, but setup reports 404\n\nCheck owner and repository spelling and confirm the signed-in account has administration access. A newly created repository or Pages configuration may need a short delay. Refresh and retry initialization. Use **Existing repository** for a repository already visible on GitHub.\n\n## Open Pages shows only an initial README or an old page\n\nThe repository may be initialized before the website deployment has completed. Compare the shown published commit, wait several minutes, and refresh the page without cache. Open Repository and inspect `gh-pages`. If no current website commit exists, run Update once after all checks pass.\n\n## “Site not loading correctly” or incorrect `BASE_URL`\n\nThe website must be built for its repository path, such as `/My-Book/`. Rebuild and republish with the current LanCarbon release and the correct repository binding. Do not reuse HTML manually copied from a different repository. If the error returns for a newly named Book, report the Book title and repository name because base-path handling must apply to every Book.\n\n## Update failed and the button is disabled\n\nRead the card above it. An outdated Build requires Rebuild; missing authentication requires sign-in; a failed Git HTTPS check requires network recovery and Refresh Checks. The old public version remains available. The button should become available when real prerequisites pass.\n\n## Publication branch could not be downloaded\n\nThe detailed clone message usually reveals network failure, permission failure, or a missing branch/repository. Make the Git HTTPS check pass. Confirm the binding and account access. Retry; do not delete the local Book or published repository.\n\n## Build reports a deprecation warning\n\nA dependency warning such as Node's `url.parse()` deprecation may not be a Book error. Current LanCarbon filters known irrelevant warnings. Judge success by the error count, process result, and whether the website opens. Upgrade LanCarbon/Jupyter Book if a known warning persists.\n\n## Export says the target folder is not empty\n\nChoose a new empty folder. Export deliberately avoids overwriting externally managed files. Build does not need this export.\n\n## Python, Jupyter Book, Git, or GitHub CLI is missing\n\nInstall the tool from its official source, restart LanCarbon, and reopen the relevant window. Build checks Python/Jupyter Book; Publish checks Git/GitHub CLI/account/network.\n\n## A public update still shows yesterday's version\n\nConfirm Update reported a newer commit and time. Wait for Pages, perform a hard refresh or private-window check, and open the repository to compare the branch commit. If no newer commit exists, the update did not complete and should be retried only after all checks pass.\n\n## When asking for help\n\nRecord the LanCarbon version, Book title, repository name, failed card, full error text, and whether system proxy/TUN mode was active. Do not share passwords, access tokens, or active one-time login codes.\n\n---\n\n\n\n# 常见问题处理\n\n以当前实际错误文字和失败卡片为准。一次只修复一个原因，点击 **Refresh Checks**，然后重试一次。\n\n## 已安装 GitHub CLI，但软件检测不到\n\n安装后重启 LanCarbon。在新终端中确认 `gh --version` 可以运行。如果终端能找到但 LanCarbon 仍找不到，请把 GitHub CLI 重新安装到 Windows 标准位置，并重启电脑。使用当前版 LanCarbon，它也会检查标准 Program Files 位置。\n\n## 点击 Sign in 看起来没有反应\n\n检查任务栏中是否已经出现可见终端，并在其中完成提示。必要时手动运行 `gh auth login`，成功后回到软件 Refresh Checks。\n\n## 设备认证或 OAuth token 请求超时\n\n可能出现浏览器已经批准，但 GitHub CLI 无法用代码换取 token 的情况。开启系统/全局代理或 TUN 模式，重新开始一次登录，并使用新的一次性代码。旧代码会过期，不要重复使用。\n\n## `Failed to connect to github.com port 443`、`Connection was reset` 或 `Recv failure`\n\n这是 Git HTTPS 连接问题。开启能够覆盖桌面程序的网络模式，而不只是浏览器代理。刷新检查，直到 **Git HTTPS connection** 通过，再更新。无需重新绑定仓库。\n\n## GitHub 上已有仓库，但初始化报告 404\n\n核对 owner 与 repository 拼写，并确认当前登录账号具有管理权限。新仓库或 Pages 配置可能需要短暂等待。刷新后重试初始化。对已经在 GitHub 中可见的仓库，应选择 **Existing repository**。\n\n## Open Pages 只显示初始 README 或旧页面\n\n仓库可能已经初始化，但网站部署尚未完成。对照 Published website 的 commit，等待几分钟后进行无缓存刷新。用 Open Repository 检查 `gh-pages`。如果没有当前网站 commit，在全部检查通过后执行一次 Update。\n\n## 出现“Site not loading correctly”或 `BASE_URL` 错误\n\n网站必须针对仓库路径构建，例如 `/My-Book/`。使用当前 LanCarbon 版本和正确仓库绑定重新 Build、Publish。不要手工复制其他仓库生成的 HTML。如果新书名仍出现此问题，请同时记录 Book title 与 repository name，因为基础路径处理必须对每本 Book 生效。\n\n## Update 失败后按钮变灰\n\n阅读按钮上方的状态卡。Build outdated 时先 Rebuild；认证缺失时重新登录；Git HTTPS 检查失败时先恢复网络并 Refresh Checks。旧在线版本仍会保留。真实前置条件通过后，按钮应重新可用。\n\n## 无法下载 publication branch\n\n详细 clone 信息通常会指出网络失败、权限不足或分支/仓库不存在。先让 Git HTTPS 检查通过，再确认绑定与账号权限。然后重试；不要删除本地 Book 或线上仓库。\n\n## Build 显示 deprecation warning\n\n例如 Node `url.parse()` 的依赖提示可能不是 Book 错误。当前 LanCarbon 会过滤已知无关提示。请根据 error 数量、进程结果以及网站能否打开判断。已知 warning 持续出现时，更新 LanCarbon/Jupyter Book。\n\n## Export 提示目标目录不是空文件夹\n\n选择一个新的空文件夹。Export 为了保护外部文件而不会覆盖非空目录。Build 不需要这份 export。\n\n## 缺少 Python、Jupyter Book、Git 或 GitHub CLI\n\n从官方来源安装，重启 LanCarbon，再打开相关窗口。Build 检查 Python/Jupyter Book；Publish 检查 Git/GitHub CLI/账号/网络。\n\n## 在线仍显示昨天的版本\n\n确认 Update 是否显示了更新的 commit 与时间。等待 Pages，使用强制刷新或隐私窗口检查，并打开仓库比较分支 commit。如果没有新 commit，说明更新没有完成；应在全部检查通过后再试。\n\n## 寻求帮助时\n\n请记录 LanCarbon 版本、Book title、repository name、失败卡片、完整错误文本，以及系统代理/TUN 模式是否开启。不要分享密码、access token 或仍有效的一次性登录代码。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s4-checklist",
+      "title": "Complete First-Book Checklist",
+      "content": "\n\n# Complete First-Book Checklist\n\nUse this page as the final acceptance list.\n\n## Content\n\n- [ ] The Book has a clear home page, Sections, and Child Pages.\n- [ ] Every page has a unique, stable Export Path.\n- [ ] Headings, lists, tables, directives, math, and links work in Preview.\n- [ ] Every image has useful alternative text; captions and alignment are correct.\n- [ ] Resources shows no missing managed files.\n- [ ] No private information or unfinished placeholder will be public.\n\n## Build\n\n- [ ] Python 3 passes.\n- [ ] Jupyter Book CLI v2 passes.\n- [ ] Preflight has zero errors; warnings were reviewed.\n- [ ] Build is up to date.\n- [ ] Open Website shows correct navigation and complete content.\n\n## Publish\n\n- [ ] Git and GitHub CLI pass.\n- [ ] GitHub account is the intended owner.\n- [ ] GitHub API and Git HTTPS connection pass.\n- [ ] Repository binding is the intended `owner/name`.\n- [ ] GitHub Pages shows the expected URL.\n- [ ] Published website shows a new time and commit.\n- [ ] Open Pages displays the current Book, not a README, stale revision, or BASE_URL warning.\n- [ ] Public navigation, images, downloads, and links work.\n\nCongratulations: your first Book has moved from local writing to a verified online website. Keep editing the authoritative Book in LanCarbon; use Rebuild Website and Update Website for future releases.\n\n---\n\n\n\n# 第一本 Book 完整验收清单\n\n请把本页作为最终验收列表。\n\n## 内容\n\n- [ ] Book 有明确的首页、Sections 与 Child Pages。\n- [ ] 每页都有唯一且稳定的 Export Path。\n- [ ] 标题、列表、表格、Directives、数学公式和链接在 Preview 中正常。\n- [ ] 每张图片都有有效替代文字，caption 与对齐正确。\n- [ ] Resources 中没有缺失的受管理文件。\n- [ ] 不会把隐私内容或未完成占位文字公开。\n\n## Build\n\n- [ ] Python 3 检查通过。\n- [ ] Jupyter Book CLI v2 检查通过。\n- [ ] Preflight 为 0 error；所有 warning 均已检查。\n- [ ] Build is up to date。\n- [ ] Open Website 显示正确导航与完整内容。\n\n## Publish\n\n- [ ] Git 与 GitHub CLI 通过。\n- [ ] GitHub account 是预期 owner。\n- [ ] GitHub API 与 Git HTTPS connection 通过。\n- [ ] Repository binding 是预期的 `owner/name`。\n- [ ] GitHub Pages 显示预期网址。\n- [ ] Published website 显示新的时间与 commit。\n- [ ] Open Pages 显示当前 Book，而不是 README、旧版本或 BASE_URL 警告。\n- [ ] 公开网站中的导航、图片、下载和链接均正常。\n\n恭喜，你的第一本 Book 已经从本地写作变成经过验证的在线网站。以后继续在 LanCarbon 中编辑正式 Book，再通过 Rebuild Website 与 Update Website 发布新版本。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s5",
+      "title": "5. Your First Sample Book",
+      "content": "\n\n# 5. Your First Sample Book\n\nThis section turns the preceding explanations into one small project. You will create **My First Carbon Book**, give every page a stable location, practice most editor tools, check the result in Preview, build a local website, and optionally publish it.\n\nThe sample is intentionally small:\n\n- **Home** — introduces the Book.\n- **Getting Started** — contains two short learning pages.\n- **Practice and Resources** — contains a formatting playground, a resource page, and a final checklist.\n\n```text\nMy First Carbon Book\n├─ Getting Started\n│  ├─ Why Carbon Matters\n│  └─ My First Observation\n└─ Practice and Resources\n   ├─ Formatting Playground\n   ├─ Resources and Sources\n   └─ Final Checklist\n```\n\nWork through the child pages in order. Values marked **copy exactly** prevent path and label mistakes. Values marked **replace** should use your own name or GitHub account.\n\n:::{tip}\nKeep this tutorial open while creating the sample in another Book. LanCarbon saves each edit automatically, so wait for **All changes saved** before changing pages or closing the application.\n:::\n\n## What this sample exercises\n\n| Area | Practice |\n| :--- | :--- |\n| Structure | Home page, two Sections, six Child Pages |\n| Metadata | Book Settings and Page Properties |\n| Text toolbar | headings, emphasis, roles, lists, quote, link, code, table, math, separator, directives |\n| Resource toolbar | image, image settings, attachment, Resources, citation workflow |\n| Output | Preview, optional Export, Build, and Publish |\n\n---\n\n\n\n# 5. 你的第一本样例 Book\n\n本节把前面的说明变成一个可以实际完成的小项目。你将创建 **My First Carbon Book**，为每个页面设置稳定路径，练习编辑器中的大部分工具，在 Preview 中检查结果，构建本地网站，并可选择发布到网上。\n\n样例的结构特意保持简单：\n\n- **Home**：介绍这本 Book。\n- **Getting Started**：包含两篇简短学习页面。\n- **Practice and Resources**：包含格式练习、资源页面和最终清单。\n\n```text\nMy First Carbon Book\n├─ Getting Started\n│  ├─ Why Carbon Matters\n│  └─ My First Observation\n└─ Practice and Resources\n   ├─ Formatting Playground\n   ├─ Resources and Sources\n   └─ Final Checklist\n```\n\n请按子页面顺序操作。标记为 **copy exactly（原样填写）** 的内容可以避免路径和 label 错误；标记为 **replace（替换）** 的内容应改成你的姓名或 GitHub 账号。\n\n:::{tip}\n创建样例时，可以保持本教程页面打开，再切换到另一本文档操作。LanCarbon 会自动保存，但切换页面或关闭软件前应等待 **All changes saved**。\n:::\n\n## 样例覆盖的功能\n\n| 范围 | 练习内容 |\n| :--- | :--- |\n| 结构 | 首页、两个 Section、六个 Child Page |\n| 元数据 | Book Settings 与 Page Properties |\n| 正文工具栏 | 标题、强调、行内角色、列表、引用、链接、代码、表格、数学、分隔线、Directives |\n| 资源工具栏 | 图片、图片设置、附件、Resources、引用文献流程 |\n| 输出 | Preview、可选 Export、Build 与 Publish |\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual",
+        "sample-book"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T10:06:10.567646Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s5-plan",
+      "title": "Plan the Sample Book",
+      "content": "\n\n# Plan the Sample Book\n\n## Create the Book\n\n1. Switch the left sidebar to **Jupyter Book**.\n2. Select the **+** button beside the Book selector.\n3. Enter `My First Carbon Book` as the title and confirm.\n4. Select the new Book before adding pages.\n\nLanCarbon creates the Home page automatically. Do not create a second Home page.\n\n## Create the table of contents\n\nCreate the following items in this order:\n\n1. Select **+ Section** and name it `Getting Started`.\n2. Select that Section, choose **+ Child Page**, and create `Why Carbon Matters`.\n3. Keep the same Section selected and create `My First Observation`.\n4. Select **+ Section** and name it `Practice and Resources`.\n5. Under it, create `Formatting Playground`.\n6. Create `Resources and Sources`.\n7. Create `Final Checklist`.\n\nAfterward, compare the sidebar with this structure:\n\n```text\nMy First Carbon Book\n├─ Getting Started\n│  ├─ Why Carbon Matters\n│  └─ My First Observation\n└─ Practice and Resources\n   ├─ Formatting Playground\n   ├─ Resources and Sources\n   └─ Final Checklist\n```\n\n:::{important}\nSelect a Section before choosing **+ Child Page**. The selected Section becomes the parent. If a page appears in the wrong place, remove it from this Book and add it again under the intended Section; removing a page from a Book does not delete its underlying Note.\n:::\n\n## Why this structure works\n\nThe Home page answers “What is this Book?” The first Section contains subject content. The second Section contains practice and supporting material. Two levels are enough for a first project and produce predictable website navigation.\n\n---\n\n\n\n# 规划样例 Book\n\n## 创建 Book\n\n1. 把左侧栏切换到 **Jupyter Book**。\n2. 点击 Book 选择框旁边的 **+**。\n3. 标题填写 `My First Carbon Book` 并确认。\n4. 添加页面前，确认当前选择的是这本新 Book。\n\nLanCarbon 会自动创建 Home 页面，不要再创建第二个首页。\n\n## 创建目录结构\n\n请按以下顺序创建：\n\n1. 点击 **+ Section**，命名为 `Getting Started`。\n2. 选中该 Section，点击 **+ Child Page**，创建 `Why Carbon Matters`。\n3. 保持该 Section 被选中，再创建 `My First Observation`。\n4. 点击 **+ Section**，命名为 `Practice and Resources`。\n5. 在其下创建 `Formatting Playground`。\n6. 创建 `Resources and Sources`。\n7. 创建 `Final Checklist`。\n\n完成后，将左侧目录与下列结构比较：\n\n```text\nMy First Carbon Book\n├─ Getting Started\n│  ├─ Why Carbon Matters\n│  └─ My First Observation\n└─ Practice and Resources\n   ├─ Formatting Playground\n   ├─ Resources and Sources\n   └─ Final Checklist\n```\n\n:::{important}\n点击 **+ Child Page** 前先选中目标 Section。当前选中的 Section 就是父级。如果页面位置错误，可以先从 Book 中移除，再添加到正确 Section；从 Book 中移除页面不会删除底层 Note。\n:::\n\n## 为什么采用这个结构\n\nHome 页面回答“这本书是什么”；第一个 Section 放主题内容；第二个 Section 放练习与支持材料。两级结构足够新手使用，也能生成清楚、可预测的网站导航。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual",
+        "sample-book"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T10:06:10.567646Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s5-settings",
+      "title": "Enter the Book Settings",
+      "content": "\n\n# Enter the Book Settings\n\nSelect **Settings** while `My First Carbon Book` is active. Use the table below. The first version avoids optional branding so it can build immediately.\n\n| Field | Value for this sample | Required? | Meaning and rule |\n| :--- | :--- | :---: | :--- |\n| Book title | `My First Carbon Book` | Yes | Main identity of the Book. Keep it concise. |\n| Subtitle | `A Small Practice Book Built with LanCarbon` | No | One-line explanation shown with the Book metadata. |\n| Description | `A beginner project for practicing structured writing, local building, and online publishing with LanCarbon.` | No | Summary for readers and generated metadata. |\n| Authors | **Replace:** `Your Name` | Recommended | Use the name you want readers to see. Multiple authors can be entered as supported by the dialog. |\n| GitHub repository URL | Leave blank now | No for Build | Add `https://github.com/YOUR-ACCOUNT/my-first-carbon-book` after the repository exists. Do not copy another person's account. |\n| License | `CC-BY-4.0` | No | Use only if you want to permit reuse under that license. Leave blank if you have not chosen a license. |\n| Keywords | `carbon, climate, learning, LanCarbon` | No | Search and description terms. Use short, relevant phrases. |\n| Site title | `My First Carbon Book` | No | Browser and website title. Matching the Book title is simplest. |\n| Logo Path | Leave blank | No | Set later only when a suitable image is managed by the Book and the path is valid. |\n| Favicon Path | Leave blank | No | Set later only when a valid icon resource exists. |\n\nClick **Save Settings**, wait for the save indicator, reopen **Settings**, and confirm every value persisted.\n\n:::{warning} Do not copy account-specific values\nThe repository URL shown elsewhere in this guide belongs to the guide author. Your sample must use your own GitHub account and repository name.\n:::\n\n## What can be changed later?\n\nDescriptive fields can be edited later. Stable names and URLs reduce confusion once a Book has been published. Changing the visible title is normally safe; changing the repository name or publication address requires corresponding GitHub changes.\n\n---\n\n\n\n# 填写 Book Settings\n\n确保当前 Book 是 `My First Carbon Book`，然后点击 **Settings**。请按下表填写。第一版先不设置可选的品牌图片，以便立即构建。\n\n| 字段 | 本样例填写值 | 是否必填 | 含义与规则 |\n| :--- | :--- | :---: | :--- |\n| Book title | `My First Carbon Book` | 是 | Book 的主要名称，应简洁明确。 |\n| Subtitle | `A Small Practice Book Built with LanCarbon` | 否 | 对 Book 的一行说明。 |\n| Description | `A beginner project for practicing structured writing, local building, and online publishing with LanCarbon.` | 否 | 提供给读者和生成元数据的摘要。 |\n| Authors | **替换为：** `Your Name` | 建议填写 | 填写希望读者看到的姓名。对话框支持时可以填写多位作者。 |\n| GitHub repository URL | 暂时留空 | Build 不需要 | 仓库创建后填写 `https://github.com/你的账号/my-first-carbon-book`，不要照抄他人账号。 |\n| License | `CC-BY-4.0` | 否 | 仅在你确实希望按该许可授权复用时填写；尚未决定则留空。 |\n| Keywords | `carbon, climate, learning, LanCarbon` | 否 | 用于描述和检索的短关键词。 |\n| Site title | `My First Carbon Book` | 否 | 浏览器和网站标题。新手可与 Book title 保持一致。 |\n| Logo Path | 留空 | 否 | 只有在 Book 已管理合适图片且路径有效时再设置。 |\n| Favicon Path | 留空 | 否 | 只有在有效图标资源存在时再设置。 |\n\n点击 **Save Settings**，等待保存状态完成，再次打开 **Settings**，确认所有内容已经保存。\n\n:::{warning} 不要照抄他人的账号信息\n本教程其他截图中的仓库地址属于教程作者。你的样例必须使用自己的 GitHub 账号和仓库名。\n:::\n\n## 后续可以修改吗？\n\n描述类字段可以后续修改。Book 发布后，保持名称和网址稳定能减少混淆。修改可见标题通常没有问题；修改仓库名或发布地址则需要同步调整 GitHub 设置。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual",
+        "sample-book"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T10:06:10.567646Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s5-properties",
+      "title": "Create Pages and Set Page Properties",
+      "content": "\n\n# Create Pages and Set Page Properties\n\nOpen each page, select **Page Properties**, and enter the values below. Every page must have a unique **Export Path**. Use forward slashes `/`, lowercase file names, no spaces, and the `.md` extension.\n\n| Page | Export Path — copy exactly | Short title | Label — copy exactly |\n| :--- | :--- | :--- | :--- |\n| Home | `index.md` | `Home` | `sample-home` |\n| Getting Started | `01-getting-started/index.md` | `Getting Started` | `sample-getting-started` |\n| Why Carbon Matters | `01-getting-started/why-carbon-matters.md` | `Why Carbon Matters` | `sample-why-carbon` |\n| My First Observation | `01-getting-started/first-observation.md` | `First Observation` | `sample-observation` |\n| Practice and Resources | `02-practice/index.md` | `Practice` | `sample-practice` |\n| Formatting Playground | `02-practice/formatting-playground.md` | `Formatting Playground` | `sample-formatting` |\n| Resources and Sources | `02-practice/resources-and-sources.md` | `Resources and Sources` | `sample-resources` |\n| Final Checklist | `02-practice/final-checklist.md` | `Final Checklist` | `sample-checklist` |\n\nFor every page:\n\n- Keep **Show in table of contents** selected.\n- **Description:** write one sentence describing that page. Example: `An introduction to the purpose and structure of this practice Book.`\n- **Authors:** optional page-level override. Leave blank to rely on the Book author; enter your name only when the page needs its own credit.\n- **Date:** use the date the page was written or substantially revised.\n- **Keywords:** use two to four page-specific terms separated as the dialog expects, such as `carbon, beginner, observation`.\n- **Label:** must be unique within the Book. Labels support stable cross-references and should not contain spaces.\n\n:::{note}\nThe Section pages also need Export Paths. Giving each Section an `index.md` inside its own folder keeps the project readable and prevents it from colliding with the Book Home `index.md`.\n:::\n\n## Verification\n\nAfter saving all eight pages:\n\n1. Reopen two or three Page Properties dialogs and confirm the values persisted.\n2. Check that no two Export Paths are identical.\n3. Check that no two Labels are identical.\n4. Confirm all eight pages remain visible in the sidebar.\n\n---\n\n\n\n# 创建页面并设置 Page Properties\n\n逐页打开内容，点击 **Page Properties**，按下表填写。每页必须有唯一的 **Export Path**。路径统一使用正斜杠 `/`、小写文件名、不含空格，并以 `.md` 结尾。\n\n| 页面 | Export Path（原样填写） | Short title | Label（原样填写） |\n| :--- | :--- | :--- | :--- |\n| Home | `index.md` | `Home` | `sample-home` |\n| Getting Started | `01-getting-started/index.md` | `Getting Started` | `sample-getting-started` |\n| Why Carbon Matters | `01-getting-started/why-carbon-matters.md` | `Why Carbon Matters` | `sample-why-carbon` |\n| My First Observation | `01-getting-started/first-observation.md` | `First Observation` | `sample-observation` |\n| Practice and Resources | `02-practice/index.md` | `Practice` | `sample-practice` |\n| Formatting Playground | `02-practice/formatting-playground.md` | `Formatting Playground` | `sample-formatting` |\n| Resources and Sources | `02-practice/resources-and-sources.md` | `Resources and Sources` | `sample-resources` |\n| Final Checklist | `02-practice/final-checklist.md` | `Final Checklist` | `sample-checklist` |\n\n每个页面还应这样处理：\n\n- 保持勾选 **Show in table of contents**。\n- **Description：** 用一句话说明本页内容。例如：`An introduction to the purpose and structure of this practice Book.`\n- **Authors：** 可选的页面作者覆盖项。通常留空并使用 Book 作者；只有本页需要单独署名时才填写。\n- **Date：** 填写创建或重要修订日期。\n- **Keywords：** 填写两到四个本页关键词，例如 `carbon, beginner, observation`。\n- **Label：** 在当前 Book 内必须唯一，用于稳定的交叉引用，不要包含空格。\n\n:::{note}\nSection 页面同样需要 Export Path。每个 Section 使用自己文件夹内的 `index.md`，既便于阅读，也不会与 Book 首页的 `index.md` 冲突。\n:::\n\n## 检查\n\n保存八个页面后：\n\n1. 随机重新打开两三个 Page Properties，确认填写值已经保留。\n2. 确认没有两个 Export Path 相同。\n3. 确认没有两个 Label 相同。\n4. 确认八个页面都仍显示在侧边栏中。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual",
+        "sample-book"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T10:06:10.567646Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s5-templates",
+      "title": "Write the Home and Content Pages",
+      "content": "\n\n# Write the Home and Content Pages\n\nUse the following short drafts as a starting point. Type them with the toolbar where practical instead of pasting everything. This lets you learn how the visible controls change Markdown source.\n\n## Home page\n\n```markdown\n# My First Carbon Book\n\nWelcome to **My First Carbon Book**. This small project records what I learn about carbon and gives me a place to practice LanCarbon.\n\n## What you will find\n\n- a short explanation of carbon;\n- one personal observation;\n- a formatting and resource practice area.\n\n> Small, verified steps make a reliable Book.\n```\n\n## Getting Started Section page\n\n```markdown\n# Getting Started\n\nThis Section introduces the topic before the detailed pages.\n\n1. Read **Why Carbon Matters**.\n2. Continue to **My First Observation**.\n3. Use Preview after each edit.\n```\n\n## Why Carbon Matters\n\n```markdown\n# Why Carbon Matters\n\nCarbon is part of living organisms, the atmosphere, oceans, rocks, and soils. Human activities can move carbon between these stores.\n\n## A simple balance\n\nNet change can be described as emissions minus removals:\n\n$$\n\\Delta C = E - R\n$$\n\n:::{note}\nThis equation is a learning model. Real carbon accounting needs clearly defined boundaries, units, and data sources.\n:::\n```\n\n## My First Observation\n\n```markdown\n# My First Observation\n\n**Date:** replace with today's date.\n\nI observed one activity that uses energy: *replace this text with your observation*.\n\n| Item | Observation |\n| :--- | :--- |\n| Place | Home, school, or workplace |\n| Activity | Replace with the activity |\n| Possible improvement | Replace with one realistic idea |\n\nMy next step is to collect one number and record its source.\n```\n\n## Practice and Resources Section page\n\n```markdown\n# Practice and Resources\n\nThis Section contains formatting exercises, managed resources, sources, and the final acceptance checklist.\n\n---\n\nComplete each Child Page before building the website.\n```\n\nSwitch each completed page to **Preview**. Confirm headings form a hierarchy, lists have the right indentation, the quote is visually distinct, the table has a header, the equation renders, and the note appears as a panel.\n\n---\n\n\n\n# 撰写首页与内容页面\n\n以下短文可以作为起点。能够用工具栏完成的内容，建议逐项点击工具栏输入，而不是整段粘贴。这样可以观察可视按钮如何修改 Markdown 源码。\n\n## Home 页面\n\n```markdown\n# My First Carbon Book\n\nWelcome to **My First Carbon Book**. This small project records what I learn about carbon and gives me a place to practice LanCarbon.\n\n## What you will find\n\n- a short explanation of carbon;\n- one personal observation;\n- a formatting and resource practice area.\n\n> Small, verified steps make a reliable Book.\n```\n\n## Getting Started Section 页面\n\n```markdown\n# Getting Started\n\nThis Section introduces the topic before the detailed pages.\n\n1. Read **Why Carbon Matters**.\n2. Continue to **My First Observation**.\n3. Use Preview after each edit.\n```\n\n## Why Carbon Matters\n\n```markdown\n# Why Carbon Matters\n\nCarbon is part of living organisms, the atmosphere, oceans, rocks, and soils. Human activities can move carbon between these stores.\n\n## A simple balance\n\nNet change can be described as emissions minus removals:\n\n$$\n\\Delta C = E - R\n$$\n\n:::{note}\nThis equation is a learning model. Real carbon accounting needs clearly defined boundaries, units, and data sources.\n:::\n```\n\n## My First Observation\n\n```markdown\n# My First Observation\n\n**Date:** replace with today's date.\n\nI observed one activity that uses energy: *replace this text with your observation*.\n\n| Item | Observation |\n| :--- | :--- |\n| Place | Home, school, or workplace |\n| Activity | Replace with the activity |\n| Possible improvement | Replace with one realistic idea |\n\nMy next step is to collect one number and record its source.\n```\n\n## Practice and Resources Section 页面\n\n```markdown\n# Practice and Resources\n\nThis Section contains formatting exercises, managed resources, sources, and the final acceptance checklist.\n\n---\n\nComplete each Child Page before building the website.\n```\n\n每完成一页就切换到 **Preview**。确认标题层级清楚、列表缩进正确、引用文字样式明显、表格有表头、公式正常渲染，并且 note 显示为提示框。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual",
+        "sample-book"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T10:06:10.567646Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s5-formatting",
+      "title": "Complete the Formatting Playground",
+      "content": "\n\n# Complete the Formatting Playground\n\nOpen the sample Book's `Formatting Playground` page. Perform the exercises in **Edit**, then inspect them in **Preview**. Use the toolbar button named in bold whenever one is available.\n\n## Editing and headings\n\n1. Type `Formatting Playground` and apply **Heading 1**.\n2. Create smaller headings with **Heading 2** and **Heading 3**.\n3. Type a sentence, change it, choose **Undo**, then **Redo**.\n\n## Inline text tools\n\nCreate this line by selecting one phrase at a time:\n\nNormal text, **bold**, *italic*, {underline}`underlined`, {delete}`deleted`, CO{sub}`2`, m{sup}`2`, {abbr}`IPCC (Intergovernmental Panel on Climate Change)`, and {kbd}`Ctrl+F`.\n\nThen insert inline code: `carbon_total = 42`.\n\n## Alignment\n\nWrite three short standalone paragraphs and apply **Align left**, **Align center**, and **Align right**. Check the generated syntax in Edit and the visual positions in Preview. Alignment is best used sparingly for captions or short display text.\n\n## Lists and quotation\n\nUse **Lists** to create:\n\n- Atmosphere\n  - Measurement\n  - Interpretation\n- Land\n- Ocean\n\nThen create an ordered list:\n\n1. Observe.\n2. Record.\n3. Review.\n\nSelect one sentence and apply **Quote**:\n\n> A useful note states what was observed and how it was measured.\n\nUse **Separator** to insert the line below.\n\n---\n\n## Link and code\n\nUse **Link** to create [LanCarbon project practice](https://github.com/). On the desktop Preview, external navigation may be blocked intentionally; verify the destination after the Book is built.\n\nUse **Code** to create a fenced Python block:\n\n```python\nemissions = 100\nremovals = 40\nnet_change = emissions - removals\nprint(net_change)\n```\n\n## Table\n\nUse **Table** to create three columns and three data rows. Set the last column to right alignment.\n\n| Store | Example | Value |\n| :--- | :--- | ---: |\n| Atmosphere | Sample A | 100 |\n| Land | Sample B | 40 |\n| Ocean | Sample C | 60 |\n\nReopen the table tool from inside the table, change one value, apply it, then use Undo and Redo.\n\n## Mathematics\n\nUse **Math** once in inline mode and once in display mode:\n\nInline: $E-R=60$.\n\n$$\n\\Delta C = E - R = 100 - 40 = 60\n$$\n\nTry a fraction template and replace its placeholders before applying.\n\n## Directives\n\nUse **Directives** to insert at least a Note, Tip, Warning, and Dropdown:\n\n:::{note}\nThis is a neutral explanation.\n:::\n\n:::{tip}\nPreview after each unfamiliar format.\n:::\n\n:::{warning} Check the unit\nA number without a unit may be misleading.\n:::\n\n:::{dropdown} Show the answer\nThe net change in this example is **60**.\n:::\n\nIf you want an extra test, insert a nested block or an initially open dropdown. Keep the content short so it is easy to inspect.\n\n## Acceptance\n\n- [ ] Every toolbar action changed the source at the cursor or selection.\n- [ ] Undo and Redo restored the expected content.\n- [ ] Edit contains readable Markdown/MyST rather than corrupted text.\n- [ ] Preview renders every element without an unresolved warning.\n- [ ] The built website later shows the same meaning and hierarchy.\n\n---\n\n\n\n# 完成 Formatting Playground\n\n打开样例 Book 的 `Formatting Playground` 页面。在 **Edit** 中逐项练习，再到 **Preview** 检查。存在对应按钮时，请使用文中加粗的工具栏按钮。\n\n## 编辑与标题\n\n1. 输入 `Formatting Playground` 并应用 **Heading 1**。\n2. 使用 **Heading 2** 和 **Heading 3** 创建较低级标题。\n3. 输入一句话并修改，然后点击 **Undo**，再点击 **Redo**。\n\n## 行内文字工具\n\n每次选择一个短语，完成下列一行：\n\nNormal text, **bold**, *italic*, {underline}`underlined`, {delete}`deleted`, CO{sub}`2`, m{sup}`2`, {abbr}`IPCC (Intergovernmental Panel on Climate Change)`, and {kbd}`Ctrl+F`.\n\n再插入行内代码：`carbon_total = 42`。\n\n## 对齐\n\n写三个独立短段落，分别应用 **Align left**、**Align center** 和 **Align right**。在 Edit 中观察生成语法，在 Preview 中检查位置。对齐适合少量用于标题说明或短展示文字。\n\n## 列表与引用\n\n使用 **Lists** 创建：\n\n- Atmosphere\n  - Measurement\n  - Interpretation\n- Land\n- Ocean\n\n再创建编号列表：\n\n1. Observe.\n2. Record.\n3. Review.\n\n选择一句话并应用 **Quote**：\n\n> A useful note states what was observed and how it was measured.\n\n使用 **Separator** 插入下面的分隔线。\n\n---\n\n## 链接与代码\n\n使用 **Link** 创建 [LanCarbon project practice](https://github.com/)。桌面 Preview 可能有意阻止外部跳转，请在 Build 后的网站中验证目标地址。\n\n使用 **Code** 创建 Python 围栏代码块：\n\n```python\nemissions = 100\nremovals = 40\nnet_change = emissions - removals\nprint(net_change)\n```\n\n## 表格\n\n使用 **Table** 创建三列、三行数据，并将最后一列设为右对齐。\n\n| Store | Example | Value |\n| :--- | :--- | ---: |\n| Atmosphere | Sample A | 100 |\n| Land | Sample B | 40 |\n| Ocean | Sample C | 60 |\n\n把光标放回表格内重新打开表格工具，修改一个数值并应用，然后使用 Undo 和 Redo。\n\n## 数学公式\n\n使用 **Math** 分别插入一次行内公式和展示公式：\n\n行内：$E-R=60$。\n\n$$\n\\Delta C = E - R = 100 - 40 = 60\n$$\n\n再尝试 Fraction 模板，在应用前替换占位符。\n\n## Directives\n\n使用 **Directives** 至少插入 Note、Tip、Warning 和 Dropdown：\n\n:::{note}\nThis is a neutral explanation.\n:::\n\n:::{tip}\nPreview after each unfamiliar format.\n:::\n\n:::{warning} Check the unit\nA number without a unit may be misleading.\n:::\n\n:::{dropdown} Show the answer\nThe net change in this example is **60**.\n:::\n\n如果希望增加练习，还可以插入 Nested blocks 或 Initially open。内容保持简短，便于检查。\n\n## 验收\n\n- [ ] 每次工具栏操作都在光标或选区位置正确修改源码。\n- [ ] Undo 和 Redo 能恢复预期内容。\n- [ ] Edit 中是可读的 Markdown/MyST，没有损坏文字。\n- [ ] Preview 正常渲染所有元素，没有 unresolved 警告。\n- [ ] 后续 Build 的网站保持相同含义和层级。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual",
+        "sample-book"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T10:06:10.567646Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s5-resources",
+      "title": "Add Images, Attachments, and Citations",
+      "content": "\n\n# Add Images, Attachments, and Citations\n\nUse the sample Book's `Resources and Sources` page for this exercise. The first toolbar row manages files; imported files become managed copies inside LanCarbon.\n\n## Insert an image\n\n1. Choose a small `.png` or `.jpg` that you are allowed to use.\n2. Select **Insert image**, choose the file, and confirm that Markdown appears at the cursor.\n3. Select **Image settings** while the cursor is in the image syntax.\n4. Enter meaningful alternative text such as `A small plant beside a window`.\n5. Add a short caption, choose an alignment, and apply.\n6. Switch to Preview and confirm the image, caption, and alignment.\n\nYou can also drag an image into the editor or paste a screenshot. Test this only with a disposable image so duplicate resources are easy to identify and remove.\n\nThe image below demonstrates how a managed screenshot appears in this tutorial:\n\n![LanCarbon workspace used as a managed image example](assets/2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png)\n\n## Attach a file\n\n1. Create a small text file named `observation-data.txt` containing one or two sample lines.\n2. Select **Attach file** and choose it.\n3. Confirm that a download link is inserted.\n4. In Preview, select the link and save a copy when prompted.\n\nDo not attach passwords, private data, or large files to a Book that may be published.\n\n## Inspect Resources\n\nOpen **Resources** and verify:\n\n- the image is listed as an Image;\n- the text file is listed as an Attachment;\n- each item shows where it is referenced;\n- **Insert** adds another reference at the cursor;\n- **Save a copy** creates a user-selected copy without removing the managed resource;\n- deleting a Markdown link alone keeps the managed file;\n- **Delete** permanently removes the managed copy and its references, so use it only for a disposable test resource.\n\n## Add a citation\n\nCreate a plain-text file named `sample-references.bib` with this BibTeX record:\n\n```bibtex\n@article{example2026,\n  author = {Example Author},\n  title = {A Beginner Example for Source Practice},\n  journal = {Learning Notes},\n  year = {2026}\n}\n```\n\nOpen **Citations**, import the bibliography file, and insert the `example2026` entry using the panel. The inserted source should resemble narrative `@example2026` or parenthetical `[@example2026]` citation syntax. Do not type an unregistered key: Preview and preflight should report it as missing.\n\nAdd a bibliography block at the end if the citation panel or current workflow provides it, then verify the citation and bibliography in Preview and again on the built website.\n\n:::{caution}\nThis record is deliberately fictional and is only a software exercise. Replace it with real bibliographic data before publishing factual work.\n:::\n\n## First-row toolbar acceptance\n\n- [ ] Insert image works.\n- [ ] Drag or paste image works, if tested.\n- [ ] Image settings preserves the image and applies alt text/caption/alignment.\n- [ ] Attach file creates a working managed download.\n- [ ] Resources search, filtering, references, Insert, and Save a copy work.\n- [ ] Citations imports the `.bib` record and inserts a registered key.\n- [ ] Preview and Build report no missing managed resources or citation keys.\n\n---\n\n\n\n# 添加图片、附件与引用文献\n\n请在样例 Book 的 `Resources and Sources` 页面完成本练习。第一行工具栏负责文件管理；导入后的文件会成为 LanCarbon 内部的受管理副本。\n\n## 插入图片\n\n1. 选择一张你有权使用的小型 `.png` 或 `.jpg` 图片。\n2. 点击 **Insert image**，选择文件，确认 Markdown 已插入光标位置。\n3. 把光标放在图片语法内，点击 **Image settings**。\n4. 填写有意义的替代文字，例如 `A small plant beside a window`。\n5. 添加短 caption，选择对齐方式并应用。\n6. 切换到 Preview，检查图片、caption 与对齐。\n\n也可以把图片拖入编辑器或粘贴截图。建议只用临时图片测试，这样容易识别并删除重复资源。\n\n下图演示本教程中受管理截图的显示效果：\n\n![作为受管理图片示例的 LanCarbon 工作区](assets/2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png)\n\n## 添加附件\n\n1. 创建一个小型文本文件 `observation-data.txt`，写入一两行样例内容。\n2. 点击 **Attach file** 并选择它。\n3. 确认正文中插入了下载链接。\n4. 在 Preview 中点击该链接，并按提示保存副本。\n\n准备公开发布的 Book 不应附带密码、隐私数据或过大的文件。\n\n## 检查 Resources\n\n打开 **Resources** 并确认：\n\n- 图片被列为 Image；\n- 文本文件被列为 Attachment；\n- 每项资源能显示其引用位置；\n- **Insert** 可在光标处再插入一次引用；\n- **Save a copy** 可另存用户副本，不会删除受管理资源；\n- 只删除正文 Markdown 链接不会删除受管理文件；\n- **Delete** 会永久删除受管理副本及其引用，只能用于可丢弃的测试资源。\n\n## 添加引用文献\n\n创建纯文本文件 `sample-references.bib`，内容如下：\n\n```bibtex\n@article{example2026,\n  author = {Example Author},\n  title = {A Beginner Example for Source Practice},\n  journal = {Learning Notes},\n  year = {2026}\n}\n```\n\n打开 **Citations**，导入该文献库，并通过面板插入 `example2026`。插入后的源码应类似叙述式 `@example2026` 或括号式 `[@example2026]`。不要手动输入尚未注册的 key，否则 Preview 与 preflight 应提示引用缺失。\n\n如果 Citations 面板或当前流程提供 bibliography block，请在页面结尾添加，然后在 Preview 和 Build 后的网站中再次检查引用及文献表。\n\n:::{caution}\n这条文献记录是专门用于软件练习的虚构内容。发布事实性作品前，请替换成真实书目信息。\n:::\n\n## 第一行工具栏验收\n\n- [ ] Insert image 正常。\n- [ ] 如有测试，拖入或粘贴图片正常。\n- [ ] Image settings 保留图片，并正确应用 alt text、caption 与对齐。\n- [ ] Attach file 生成可用的受管理下载链接。\n- [ ] Resources 的搜索、筛选、引用位置、Insert 与 Save a copy 正常。\n- [ ] Citations 能导入 `.bib` 并插入已注册 key。\n- [ ] Preview 与 Build 不报告缺失资源或缺失引用 key。\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual",
+        "sample-book"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T10:06:10.567646Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s5-workflow",
+      "title": "Preview, Build, Publish, and Accept the Sample",
+      "content": "\n\n# Preview, Build, Publish, and Accept the Sample\n\n## Complete the Final Checklist page\n\nEnter this short checklist into the sample Book's `Final Checklist` page:\n\n```markdown\n# Final Checklist\n\n- [ ] The table of contents has two Sections and six Child Pages.\n- [ ] Every page has a unique Export Path and Label.\n- [ ] Book Settings are saved.\n- [ ] Preview renders the formatting exercises.\n- [ ] Images have alternative text.\n- [ ] Attachments and citations have been checked.\n- [ ] Build reports zero errors.\n- [ ] The local website has correct navigation.\n- [ ] The published website has been checked, if publishing was chosen.\n```\n\n## Preview the complete Book\n\nVisit all eight pages in order. On each page:\n\n1. wait for **All changes saved**;\n2. switch from Edit to **Preview**;\n3. read from top to bottom;\n4. test internal links and expandable directives;\n5. return to Edit and correct any warning or visual problem.\n\n## Optional source copy\n\nUse **Export** only if you want a separate source copy for backup or external editing. Choose an empty destination folder. Build does not read this exported folder; it reads the current Book stored in LanCarbon.\n\n## Build the local website\n\n1. Select **Build**.\n2. Confirm Python 3 and Jupyter Book CLI v2 pass their checks.\n3. Resolve every preflight error and review warnings.\n4. On the first build, select **Choose Location and Build** and choose a stable parent folder.\n5. Wait for completion, then select **Open Website**.\n6. Visit Home, both Sections, and all Child Pages. Check navigation, formatting, image, attachment, citation, and math.\n\nAfter editing any page, wait for save and select **Rebuild Website**. The Build panel should change from “Book changed — rebuild required” to “Build is up to date.”\n\n## Optional online publication\n\nPublishing requires Git, GitHub CLI, a signed-in GitHub account, and working access to GitHub. If your network uses a proxy, enable its system proxy or TUN mode before opening Publish.\n\n1. Select **Publish**.\n2. Read every environment check; correct any failed item.\n3. Create or connect a repository such as `my-first-carbon-book` under **your** account.\n4. Initialize GitHub Pages when prompted.\n5. After success, select **Open Pages** and inspect the public website.\n6. Confirm **Published website** reports the current time and a new commit.\n\n## Final acceptance\n\n| Check | Pass condition |\n| :--- | :--- |\n| Structure | The sidebar and website show the intended two-level hierarchy. |\n| Settings | All Book Settings and Page Properties persist after reopening. |\n| Toolbar | Each practiced control produces valid, readable content. |\n| Resources | Images, attachments, and registered citations resolve. |\n| Preview | No unresolved item remains. |\n| Build | Preflight and Jupyter Book finish successfully. |\n| Website | Navigation and content work in the local site. |\n| Publish, if chosen | Open Pages shows the current built revision. |\n\n:::{important}\nThe authoritative Book remains inside LanCarbon. The normal update workflow is: edit in LanCarbon → wait for save → Rebuild Website → inspect locally → Update Website. Export is optional.\n:::\n\n---\n\n\n\n# Preview、Build、Publish 与样例验收\n\n## 完成 Final Checklist 页面\n\n把下面的简短清单写入样例 Book 的 `Final Checklist` 页面：\n\n```markdown\n# Final Checklist\n\n- [ ] The table of contents has two Sections and six Child Pages.\n- [ ] Every page has a unique Export Path and Label.\n- [ ] Book Settings are saved.\n- [ ] Preview renders the formatting exercises.\n- [ ] Images have alternative text.\n- [ ] Attachments and citations have been checked.\n- [ ] Build reports zero errors.\n- [ ] The local website has correct navigation.\n- [ ] The published website has been checked, if publishing was chosen.\n```\n\n## Preview 完整 Book\n\n按顺序访问八个页面。每一页都执行：\n\n1. 等待 **All changes saved**；\n2. 从 Edit 切换到 **Preview**；\n3. 从上到下阅读；\n4. 测试内部链接与可展开 directives；\n5. 回到 Edit，修正 warning 或视觉问题。\n\n## 可选的源文件副本\n\n只有需要单独备份或外部编辑时才使用 **Export**，并选择空目标文件夹。Build 不读取该导出文件夹，而是读取保存在 LanCarbon 内的当前 Book。\n\n## 构建本地网站\n\n1. 点击 **Build**。\n2. 确认 Python 3 与 Jupyter Book CLI v2 检查通过。\n3. 解决所有 preflight error，并检查 warning。\n4. 第一次 Build 点击 **Choose Location and Build**，选择稳定的父文件夹。\n5. 等待完成后点击 **Open Website**。\n6. 访问 Home、两个 Section 以及全部 Child Page，检查导航、格式、图片、附件、引用和公式。\n\n修改任意页面后，等待保存，再点击 **Rebuild Website**。Build 面板应从“Book changed — rebuild required”恢复为“Build is up to date”。\n\n## 可选的在线发布\n\nPublish 需要 Git、GitHub CLI、已登录的 GitHub 账号，以及可用的 GitHub 网络连接。如果网络使用代理，打开 Publish 前先启用系统代理或 TUN 模式。\n\n1. 点击 **Publish**。\n2. 阅读每一项环境检查，处理所有失败项。\n3. 在**自己的**账号下创建或连接名为 `my-first-carbon-book` 的仓库。\n4. 按提示初始化 GitHub Pages。\n5. 成功后点击 **Open Pages**，检查公开网站。\n6. 确认 **Published website** 显示当前时间和新的 commit。\n\n## 最终验收\n\n| 检查项 | 通过标准 |\n| :--- | :--- |\n| 结构 | 侧边栏和网站显示预期的两级层次。 |\n| 设置 | 重新打开后，所有 Book Settings 与 Page Properties 仍保留。 |\n| 工具栏 | 每个练习过的控件都生成有效、可读的内容。 |\n| 资源 | 图片、附件与已注册引用均能解析。 |\n| Preview | 没有 unresolved 项。 |\n| Build | Preflight 与 Jupyter Book 都成功完成。 |\n| 网站 | 本地网站导航和内容正常。 |\n| Publish（如选择） | Open Pages 显示当前构建版本。 |\n\n:::{important}\n正式 Book 始终保存在 LanCarbon 内。正常更新流程是：在 LanCarbon 编辑 → 等待保存 → Rebuild Website → 本地检查 → Update Website。Export 是可选步骤。\n:::\n",
+      "tags": [
+        "LanCarbon",
+        "tutorial",
+        "bilingual",
+        "sample-book"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T10:06:10.567646Z",
+      "updatedAt": "2026-09-07T10:33:47.213Z"
+    },
+    {
+      "id": "tutorial-note-s1-storage",
+      "title": "Installation Location and Managed Folders",
+      "content": "# Choosing the Installation Location and Understanding LanCarbon Folders\n\nLanCarbon keeps the files it manages under one **LanCarbon root folder**. This makes the application easier to move, back up, inspect, and remove without scattering large caches and Book builds across the system drive.\n\n## The default location\n\nOn a Windows computer with a D drive, the installer proposes:\n\n```text\nD:\\LanCarbon\n```\n\nChoose this **LanCarbon root**, not its future `Application` child. The installer creates the child folders and installs the program at `D:\\LanCarbon\\Application` automatically.\n\nIf Windows has no D drive, the installer proposes a LanCarbon folder inside your current Windows user area. The directory page always shows the actual choice before installation.\n\n## Choosing a different drive or parent folder\n\nYou may place the root elsewhere, for example:\n\n```text\nE:\\Writing\\Research\\LanCarbon\n```\n\nFor a first installation, two rules apply:\n\n1. The final folder name must be exactly `LanCarbon`.\n2. The selected `LanCarbon` folder must be empty.\n\nYou may create the empty folder before running the installer or type a new path on the installer directory page. Do not select `Application`, `Data`, or a general folder containing unrelated files.\n\nAn existing LanCarbon root containing `Data\\notes.json` is recognized for an upgrade or a deliberate migration. The installer keeps the sibling data folders and updates the program inside `Application`.\n\n## Folder map\n\nAfter installation, the selected root has this structure:\n\n```text\nLanCarbon\\\n├─ Application\\\n├─ Data\\\n├─ Config\\\n├─ Cache\\\n├─ Temp\\\n├─ Builds\\\n└─ Exports\\\n```\n\n| Folder | Purpose | Backup priority |\n|---|---|---|\n| `Application` | LanCarbon program files and bundled resources. | Reinstallable; normally omit from a content-only backup. |\n| `Data` | Notes, Books, page text, imported images, attachments, and bibliography files. | Essential. This is your primary content. |\n| `Config` | Window preferences, the selected Data Location, and remembered Build and Export locations. | Recommended if you want the same setup after restoration. |\n| `Cache` | Reusable runtime material, including the bundled Jupyter Book theme cache. | Optional; LanCarbon can recreate it. |\n| `Temp` | Temporary Book preparation and GitHub publishing checkouts. | Do not back up. Completed operations remove their temporary working folders. |\n| `Builds` | The default parent for local websites produced by Build. | Optional but useful when you want to keep built HTML. Source content remains in Data. |\n| `Exports` | The default starting place for independent source copies made with Export. | Back up any export you intentionally keep. Each export still requires an empty destination folder. |\n\n## What uses the C drive\n\nChoosing a D- or E-drive root directs LanCarbon's managed data, configuration, cache, temporary work, builds, and Export starting location to that drive. Windows itself may still use the system drive briefly for installer bookkeeping, shortcuts, registry information, crash handling, or operating-system temporary activity. LanCarbon cannot redirect those Windows services, but it no longer chooses a C-drive application-data folder for its own persistent cache.\n\nPython, Jupyter Book, Git, and GitHub CLI are separate tools. Their installers decide their locations; changing the LanCarbon root does not move them. See **Tools Required from Writing to Publishing** for their installation and verification.\n\n## Backup and migration\n\nThe safest complete backup is a copy of the entire LanCarbon root while the application is closed. For a smaller content backup, keep at least `Data`; include `Config` if you also want remembered locations and window preferences.\n\nBefore moving the root manually:\n\n1. Close LanCarbon and wait for the window to disappear.\n2. Copy the whole `LanCarbon` folder to the new drive.\n3. Install LanCarbon into that existing root, or reinstall and select the copied root.\n4. Open the application and verify several Notes, the Book table of contents, Resources, and Data Location before deleting the old copy.\n\nAvoid moving individual files while LanCarbon is running. A Book can reference managed resources, and its Build and Publish records are stored with the workspace and configuration.\n\n## Uninstalling\n\nThe program is installed in `Application`; your writing is stored beside it in `Data`. Before uninstalling, make a backup of the root. After uninstalling, inspect the root before deleting anything that remains. Retained `Data`, `Builds`, or `Exports` may still contain work you want.\n\n---\n\n# 选择安装位置并了解 LanCarbon 文件夹\n\nLanCarbon 会把由软件管理的文件集中放在一个 **LanCarbon 根目录** 下。这样可以减少系统盘占用，也便于迁移、备份、检查和清理。\n\n## 默认位置\n\nWindows 电脑存在 D 盘时，安装器默认建议：\n\n```text\nD:\\LanCarbon\n```\n\n安装时请选择这个 **LanCarbon 根目录**，不要选择未来的 `Application` 子文件夹。安装器会自动创建全部子目录，并把程序安装到 `D:\\LanCarbon\\Application`。\n\n如果电脑没有 D 盘，安装器会在当前 Windows 用户目录中建议一个名为 LanCarbon 的文件夹。正式安装前，目录页面会显示实际选择的位置。\n\n## 自定义其他位置\n\n可以选择其他磁盘或更深的父目录，例如：\n\n```text\nE:\\Writing\\Research\\LanCarbon\n```\n\n首次安装需要同时满足两项规则：\n\n1. 最后一级文件夹必须准确命名为 `LanCarbon`。\n2. 所选的 `LanCarbon` 文件夹必须为空。\n\n可以提前创建这个空文件夹，也可以直接在安装器的目录页面输入新路径。不要选择 `Application`、`Data`，也不要选择存有其他无关文件的通用文件夹。\n\n如果根目录中已经存在 `Data\\notes.json`，安装器会把它识别为升级或主动迁移的 LanCarbon 数据。此时同级数据目录会保留，程序只在 `Application` 中安装或更新。\n\n## 目录结构\n\n安装完成后，所选根目录的结构如下：\n\n```text\nLanCarbon\\\n├─ Application\\\n├─ Data\\\n├─ Config\\\n├─ Cache\\\n├─ Temp\\\n├─ Builds\\\n└─ Exports\\\n```\n\n| 文件夹 | 用途 | 备份建议 |\n|---|---|---|\n| `Application` | LanCarbon 程序文件和随软件提供的资源。 | 可以重新安装；只备份内容时通常不需要。 |\n| `Data` | Notes、Books、页面正文、导入的图片、附件和参考文献文件。 | 必须备份，这是最主要的内容。 |\n| `Config` | 窗口偏好、Data Location，以及每本 Book 记住的 Build 和 Export 位置。 | 希望恢复原有使用状态时建议备份。 |\n| `Cache` | 可重复生成的运行缓存，包括随安装包提供的 Jupyter Book 主题缓存。 | 可选，LanCarbon 可以重新生成。 |\n| `Temp` | Build 准备过程和 GitHub Publish 的临时工作目录。 | 不需要备份；正常完成或失败后会清理对应临时目录。 |\n| `Builds` | Build 生成本地网站时的默认父目录。 | 可选；需要保留已构建 HTML 时可以备份，源内容仍在 Data 中。 |\n| `Exports` | Export 独立源文件副本时的默认起始位置。 | 有意保留的导出副本可以备份；每次 Export 仍需要选择空目标文件夹。 |\n\n## C 盘还会发生什么\n\n选择 D 盘或 E 盘根目录后，LanCarbon 自己管理的数据、配置、缓存、临时发布文件、Build 结果和 Export 起始位置都会优先位于所选磁盘。Windows 仍可能为了安装记录、快捷方式、注册信息、崩溃处理或系统临时操作而短暂使用系统盘，这些属于操作系统行为，LanCarbon 无法全部重定向。不过，LanCarbon 不再主动把自己的长期缓存放到 C 盘的应用数据目录中。\n\nPython、Jupyter Book、Git 和 GitHub CLI 是独立工具，它们由各自的安装器决定位置。更改 LanCarbon 根目录不会移动这些工具。安装与检查方法请阅读 **Tools Required from Writing to Publishing**。\n\n## 备份与迁移\n\n最稳妥的完整备份方式是在关闭软件后复制整个 LanCarbon 根目录。如果只备份写作内容，至少保留 `Data`；希望同时恢复记住的路径和窗口偏好时，再保留 `Config`。\n\n手动迁移前建议按以下顺序操作：\n\n1. 关闭 LanCarbon，确认窗口已经完全消失。\n2. 把整个 `LanCarbon` 文件夹复制到新磁盘。\n3. 把软件安装到这个已有根目录，或重新安装并选择复制后的根目录。\n4. 打开软件，检查几篇 Notes、Book 目录、Resources 和 Data Location；确认无误后再处理旧副本。\n\n不要在 LanCarbon 运行时移动其中的单个文件。Book 可能引用受管理资源，Build 和 Publish 记录也会与工作区及配置共同保存。\n\n## 卸载\n\n程序位于 `Application`，写作数据位于同级的 `Data`。卸载前请先备份根目录。卸载完成后，在删除残留目录前先检查其中内容；保留下来的 `Data`、`Builds` 或 `Exports` 仍可能包含需要的作品。\n",
+      "tags": [
+        "LanCarbon",
+        "installation",
+        "storage",
+        "backup",
+        "bilingual"
+      ],
+      "pinned": false,
+      "createdAt": "2026-09-07T12:00:00.000Z",
+      "updatedAt": "2026-09-07T14:30:00.000Z"
+    }
+  ],
+  "books": [
+    {
+      "id": "lancarbon-from-zero-to-one",
+      "settings": {
+        "title": "LanCarbon: From 0 to 1",
+        "subtitle": "A Bilingual Beginner's Guide from Installation to Online Publishing",
+        "description": "A detailed English and Chinese guide to writing, building, and publishing a first Jupyter Book with LanCarbon.",
+        "authors": [
+          {
+            "name": "Haojie Dai"
+          }
+        ],
+        "github": "https://github.com/Hao-jieDai/LanCarbon-From-0-to-1",
+        "license": "CC-BY-4.0",
+        "keywords": [
+          "LanCarbon",
+          "Jupyter Book",
+          "MyST",
+          "Markdown",
+          "GitHub Pages",
+          "beginner"
+        ],
+        "siteTitle": "LanCarbon: From 0 to 1",
+        "bibliography": []
+      },
+      "pages": {
+        "tutorial-page-home": {
+          "id": "tutorial-page-home",
+          "noteId": "tutorial-note-home",
+          "sourceType": "markdown",
+          "exportPath": "index.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "LanCarbon: From 0 to 1",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-home"
+          },
+          "children": []
+        },
+        "tutorial-page-s1": {
+          "id": "tutorial-page-s1",
+          "noteId": "tutorial-note-s1",
+          "sourceType": "markdown",
+          "exportPath": "01-getting-started/index.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "1. Installation, Requirements, and Basic Concepts",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s1"
+          },
+          "children": [
+            "tutorial-page-s1-install",
+            "tutorial-page-s1-storage",
+            "tutorial-page-s1-tools",
+            "tutorial-page-s1-interface"
+          ]
+        },
+        "tutorial-page-s1-install": {
+          "id": "tutorial-page-s1-install",
+          "noteId": "tutorial-note-s1-install",
+          "sourceType": "markdown",
+          "exportPath": "01-getting-started/installing-lancarbon.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Installing and Starting LanCarbon",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s1-install"
+          },
+          "children": []
+        },
+        "tutorial-page-s1-tools": {
+          "id": "tutorial-page-s1-tools",
+          "noteId": "tutorial-note-s1-tools",
+          "sourceType": "markdown",
+          "exportPath": "01-getting-started/required-tools.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Tools Required from Writing to Publishing",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s1-tools"
+          },
+          "children": []
+        },
+        "tutorial-page-s1-interface": {
+          "id": "tutorial-page-s1-interface",
+          "noteId": "tutorial-note-s1-interface",
+          "sourceType": "markdown",
+          "exportPath": "01-getting-started/interface-tour.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Touring the LanCarbon Interface",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s1-interface"
+          },
+          "children": []
+        },
+        "tutorial-page-s2": {
+          "id": "tutorial-page-s2",
+          "noteId": "tutorial-note-s2",
+          "sourceType": "markdown",
+          "exportPath": "02-authoring/index.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "2. Creating, Writing, and Exporting a Book",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s2"
+          },
+          "children": [
+            "tutorial-page-s2-create",
+            "tutorial-page-s2-settings",
+            "tutorial-page-s2-properties",
+            "tutorial-page-s2-markdown",
+            "tutorial-page-s2-myst",
+            "tutorial-page-s2-resources",
+            "tutorial-page-s2-preview",
+            "tutorial-page-s2-export"
+          ]
+        },
+        "tutorial-page-s2-create": {
+          "id": "tutorial-page-s2-create",
+          "noteId": "tutorial-note-s2-create",
+          "sourceType": "markdown",
+          "exportPath": "02-authoring/create-first-book.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Creating Your First Book",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s2-create"
+          },
+          "children": []
+        },
+        "tutorial-page-s2-settings": {
+          "id": "tutorial-page-s2-settings",
+          "noteId": "tutorial-note-s2-settings",
+          "sourceType": "markdown",
+          "exportPath": "02-authoring/book-settings.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Understanding Book Settings",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s2-settings"
+          },
+          "children": []
+        },
+        "tutorial-page-s2-properties": {
+          "id": "tutorial-page-s2-properties",
+          "noteId": "tutorial-note-s2-properties",
+          "sourceType": "markdown",
+          "exportPath": "02-authoring/page-properties.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Understanding Page Properties",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s2-properties"
+          },
+          "children": []
+        },
+        "tutorial-page-s2-markdown": {
+          "id": "tutorial-page-s2-markdown",
+          "noteId": "tutorial-note-s2-markdown",
+          "sourceType": "markdown",
+          "exportPath": "02-authoring/markdown-toolbar.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Markdown Essentials and the Formatting Toolbar",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s2-markdown"
+          },
+          "children": []
+        },
+        "tutorial-page-s2-myst": {
+          "id": "tutorial-page-s2-myst",
+          "noteId": "tutorial-note-s2-myst",
+          "sourceType": "markdown",
+          "exportPath": "02-authoring/myst-directives.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "MyST Directives and Roles",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s2-myst"
+          },
+          "children": []
+        },
+        "tutorial-page-s2-resources": {
+          "id": "tutorial-page-s2-resources",
+          "noteId": "tutorial-note-s2-resources",
+          "sourceType": "markdown",
+          "exportPath": "02-authoring/resources.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Images, Attachments, Citations, and Resources",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s2-resources"
+          },
+          "children": []
+        },
+        "tutorial-page-s2-preview": {
+          "id": "tutorial-page-s2-preview",
+          "noteId": "tutorial-note-s2-preview",
+          "sourceType": "markdown",
+          "exportPath": "02-authoring/preview.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Previewing and Checking Your Content",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s2-preview"
+          },
+          "children": []
+        },
+        "tutorial-page-s2-export": {
+          "id": "tutorial-page-s2-export",
+          "noteId": "tutorial-note-s2-export",
+          "sourceType": "markdown",
+          "exportPath": "02-authoring/export.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Exporting a Source Copy",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s2-export"
+          },
+          "children": []
+        },
+        "tutorial-page-s3": {
+          "id": "tutorial-page-s3",
+          "noteId": "tutorial-note-s3",
+          "sourceType": "markdown",
+          "exportPath": "03-build/index.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "3. Building the Book Locally",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s3"
+          },
+          "children": [
+            "tutorial-page-s3-meaning",
+            "tutorial-page-s3-prepare",
+            "tutorial-page-s3-first",
+            "tutorial-page-s3-rebuild"
+          ]
+        },
+        "tutorial-page-s3-meaning": {
+          "id": "tutorial-page-s3-meaning",
+          "noteId": "tutorial-note-s3-meaning",
+          "sourceType": "markdown",
+          "exportPath": "03-build/build-concepts.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "What Build Means and How It Differs from Export",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s3-meaning"
+          },
+          "children": []
+        },
+        "tutorial-page-s3-prepare": {
+          "id": "tutorial-page-s3-prepare",
+          "noteId": "tutorial-note-s3-prepare",
+          "sourceType": "markdown",
+          "exportPath": "03-build/build-requirements.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Preparing the Build Environment",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s3-prepare"
+          },
+          "children": []
+        },
+        "tutorial-page-s3-first": {
+          "id": "tutorial-page-s3-first",
+          "noteId": "tutorial-note-s3-first",
+          "sourceType": "markdown",
+          "exportPath": "03-build/first-build.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Your First Local Build",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s3-first"
+          },
+          "children": []
+        },
+        "tutorial-page-s3-rebuild": {
+          "id": "tutorial-page-s3-rebuild",
+          "noteId": "tutorial-note-s3-rebuild",
+          "sourceType": "markdown",
+          "exportPath": "03-build/rebuild.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Rebuilding and Using the Local Website",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s3-rebuild"
+          },
+          "children": []
+        },
+        "tutorial-page-s4": {
+          "id": "tutorial-page-s4",
+          "noteId": "tutorial-note-s4",
+          "sourceType": "markdown",
+          "exportPath": "04-publish/index.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "4. Publishing the Book Online",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s4"
+          },
+          "children": [
+            "tutorial-page-s4-concepts",
+            "tutorial-page-s4-prepare",
+            "tutorial-page-s4-network",
+            "tutorial-page-s4-window",
+            "tutorial-page-s4-first",
+            "tutorial-page-s4-update",
+            "tutorial-page-s4-errors",
+            "tutorial-page-s4-checklist"
+          ]
+        },
+        "tutorial-page-s4-concepts": {
+          "id": "tutorial-page-s4-concepts",
+          "noteId": "tutorial-note-s4-concepts",
+          "sourceType": "markdown",
+          "exportPath": "04-publish/publish-concepts.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "What Publish Means and How It Differs from Build",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s4-concepts"
+          },
+          "children": []
+        },
+        "tutorial-page-s4-prepare": {
+          "id": "tutorial-page-s4-prepare",
+          "noteId": "tutorial-note-s4-prepare",
+          "sourceType": "markdown",
+          "exportPath": "04-publish/github-setup.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Preparing GitHub and Signing In",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s4-prepare"
+          },
+          "children": []
+        },
+        "tutorial-page-s4-network": {
+          "id": "tutorial-page-s4-network",
+          "noteId": "tutorial-note-s4-network",
+          "sourceType": "markdown",
+          "exportPath": "04-publish/network.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Network, Proxy, and TUN Mode",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s4-network"
+          },
+          "children": []
+        },
+        "tutorial-page-s4-window": {
+          "id": "tutorial-page-s4-window",
+          "noteId": "tutorial-note-s4-window",
+          "sourceType": "markdown",
+          "exportPath": "04-publish/publish-window.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Understanding the Publish Window",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s4-window"
+          },
+          "children": []
+        },
+        "tutorial-page-s4-first": {
+          "id": "tutorial-page-s4-first",
+          "noteId": "tutorial-note-s4-first",
+          "sourceType": "markdown",
+          "exportPath": "04-publish/first-publish.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Publishing Your First Website",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s4-first"
+          },
+          "children": []
+        },
+        "tutorial-page-s4-update": {
+          "id": "tutorial-page-s4-update",
+          "noteId": "tutorial-note-s4-update",
+          "sourceType": "markdown",
+          "exportPath": "04-publish/update.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Updating an Existing Published Book",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s4-update"
+          },
+          "children": []
+        },
+        "tutorial-page-s4-errors": {
+          "id": "tutorial-page-s4-errors",
+          "noteId": "tutorial-note-s4-errors",
+          "sourceType": "markdown",
+          "exportPath": "04-publish/troubleshooting.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Troubleshooting Common Problems",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s4-errors"
+          },
+          "children": []
+        },
+        "tutorial-page-s4-checklist": {
+          "id": "tutorial-page-s4-checklist",
+          "noteId": "tutorial-note-s4-checklist",
+          "sourceType": "markdown",
+          "exportPath": "04-publish/checklist.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Complete First-Book Checklist",
+            "description": "Bilingual LanCarbon beginner tutorial.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Jupyter Book",
+              "MyST"
+            ],
+            "label": "lc-s4-checklist"
+          },
+          "children": []
+        },
+        "tutorial-page-s5": {
+          "id": "tutorial-page-s5",
+          "noteId": "tutorial-note-s5",
+          "sourceType": "markdown",
+          "exportPath": "05-sample-book/index.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "5. Your First Sample Book",
+            "description": "A guided beginner project for creating, formatting, building, and publishing a small first Book.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "sample Book",
+              "beginner",
+              "tutorial"
+            ],
+            "label": "lc-s5"
+          },
+          "children": [
+            "tutorial-page-s5-plan",
+            "tutorial-page-s5-settings",
+            "tutorial-page-s5-properties",
+            "tutorial-page-s5-templates",
+            "tutorial-page-s5-formatting",
+            "tutorial-page-s5-resources",
+            "tutorial-page-s5-workflow"
+          ]
+        },
+        "tutorial-page-s5-plan": {
+          "id": "tutorial-page-s5-plan",
+          "noteId": "tutorial-note-s5-plan",
+          "sourceType": "markdown",
+          "exportPath": "05-sample-book/project-plan.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Plan the Sample Book",
+            "description": "Create the sample Book and its clear two-section table of contents.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "sample Book",
+              "beginner",
+              "tutorial"
+            ],
+            "label": "lc-s5-plan"
+          },
+          "children": []
+        },
+        "tutorial-page-s5-settings": {
+          "id": "tutorial-page-s5-settings",
+          "noteId": "tutorial-note-s5-settings",
+          "sourceType": "markdown",
+          "exportPath": "05-sample-book/book-settings.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Enter the Book Settings",
+            "description": "Exact Book Settings values and explanations for the sample project.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "sample Book",
+              "beginner",
+              "tutorial"
+            ],
+            "label": "lc-s5-settings"
+          },
+          "children": []
+        },
+        "tutorial-page-s5-properties": {
+          "id": "tutorial-page-s5-properties",
+          "noteId": "tutorial-note-s5-properties",
+          "sourceType": "markdown",
+          "exportPath": "05-sample-book/page-properties.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Set Page Properties",
+            "description": "Exact export paths, labels, and metadata for every sample page.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "sample Book",
+              "beginner",
+              "tutorial"
+            ],
+            "label": "lc-s5-properties"
+          },
+          "children": []
+        },
+        "tutorial-page-s5-templates": {
+          "id": "tutorial-page-s5-templates",
+          "noteId": "tutorial-note-s5-templates",
+          "sourceType": "markdown",
+          "exportPath": "05-sample-book/page-templates.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Write the Sample Pages",
+            "description": "Copyable beginner content for the Home, Section, and subject pages.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "sample Book",
+              "beginner",
+              "tutorial"
+            ],
+            "label": "lc-s5-templates"
+          },
+          "children": []
+        },
+        "tutorial-page-s5-formatting": {
+          "id": "tutorial-page-s5-formatting",
+          "noteId": "tutorial-note-s5-formatting",
+          "sourceType": "markdown",
+          "exportPath": "05-sample-book/formatting-playground.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Formatting Playground",
+            "description": "A toolbar-driven exercise covering rich Markdown and MyST formatting.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "sample Book",
+              "beginner",
+              "tutorial"
+            ],
+            "label": "lc-s5-formatting"
+          },
+          "children": []
+        },
+        "tutorial-page-s5-resources": {
+          "id": "tutorial-page-s5-resources",
+          "noteId": "tutorial-note-s5-resources",
+          "sourceType": "markdown",
+          "exportPath": "05-sample-book/resources-and-citations.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Resources and Citations",
+            "description": "Hands-on practice with the resource toolbar and citation workflow.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "sample Book",
+              "beginner",
+              "tutorial"
+            ],
+            "label": "lc-s5-resources"
+          },
+          "children": []
+        },
+        "tutorial-page-s5-workflow": {
+          "id": "tutorial-page-s5-workflow",
+          "noteId": "tutorial-note-s5-workflow",
+          "sourceType": "markdown",
+          "exportPath": "05-sample-book/build-publish-checklist.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Build and Accept the Sample",
+            "description": "Final workflow and acceptance checklist for the beginner sample Book.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "sample Book",
+              "beginner",
+              "tutorial"
+            ],
+            "label": "lc-s5-workflow"
+          },
+          "children": []
+        },
+        "tutorial-page-s1-storage": {
+          "id": "tutorial-page-s1-storage",
+          "noteId": "tutorial-note-s1-storage",
+          "sourceType": "markdown",
+          "exportPath": "01-getting-started/installation-location.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Installation Location and Managed Folders",
+            "description": "Choose the LanCarbon root and understand its Application, Data, Config, Cache, Temp, Builds, and Exports folders.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "installation",
+              "storage",
+              "backup"
+            ],
+            "label": "lc-s1-storage"
+          },
+          "children": []
+        }
+      },
+      "rootPageIds": [
+        "tutorial-page-home",
+        "tutorial-page-s1",
+        "tutorial-page-s2",
+        "tutorial-page-s3",
+        "tutorial-page-s4",
+        "tutorial-page-s5"
+      ],
+      "homePageId": "tutorial-page-home",
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T12:00:00.000Z"
+    }
+  ]
+}

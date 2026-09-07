@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "assets": [
+    {
+      "id": "2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png",
+      "file": "2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png",
+      "name": "LanCarbon main workspace.png",
+      "size": 335305,
+      "mime": "image/png",
+      "createdAt": "2026-09-07T07:42:55.570539Z"
+    },
+    {
+      "id": "2ed04c61ae2d3f2479c2090e9d729a4b64608925a5b0612b2284f7533e6f08d7.png",
+      "file": "2f7dfdcff90f64f5b72dfbe9ae985b7b2b75a1ce1d89d6d3e21f814a748dd62f.png",
+      "name": "LanCarbon Book Settings.png",
+      "size": 90956,
+      "mime": "image/png",
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T09:40:05.810Z"
+    },
+    {
+      "id": "4ae88bd1f7ad63f1b331b9800cb081de2926dbbe799019ebf411cc87edb28eaa.png",
+      "file": "f86529edea2d2438b840c14b94e2d2cd851f7cd0a16b981541093dbcafa3e29e.png",
+      "name": "LanCarbon Page Properties.png",
+      "size": 80169,
+      "mime": "image/png",
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T09:40:05.829Z"
+    },
+    {
+      "id": "3b9a49d527c5cd4a12abac80bdc4f4d72053f0ef9c8eb3b877e8631c80fcc866.png",
+      "file": "d0ef3a597aac5dc8f24f1d02164ae55940cb2072f84638a943e4e7df4710a1de.png",
+      "name": "LanCarbon Resources panel.png",
+      "size": 278457,
+      "mime": "image/png",
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T09:40:05.839Z"
+    },
+    {
+      "id": "f7eed15a28d36a5313c9eff18be9bb2ad2d90cccd08c91d359d5e526ac4b3c2f.png",
+      "file": "5336ef00d4cbce2d133dc2c6c4647421dbe2f134bb1bea18cac1bbd8d2175ad9.png",
+      "name": "LanCarbon first Build window.png",
+      "size": 93897,
+      "mime": "image/png",
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T09:40:05.849Z"
+    },
+    {
+      "id": "f2fe167ed5bd34119554be623300d5fcf7380f4706c1481fb1f94e7cfee7ee2c.png",
+      "file": "61d29059489aec0c019ea97d82b76e39b58749a669079d1f961e01e9bdc93125.png",
+      "name": "LanCarbon completed Build window.png",
+      "size": 140526,
+      "mime": "image/png",
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T08:51:09.690Z"
+    },
+    {
+      "id": "3bee86d6c17f86702948159c8df238e0589d3b83474d37c7150e41c91ed84d70.png",
+      "file": "5a344e2fb738c25755c6619b507194329a677f9acfb1d955c309a4a5a54d30ed.png",
+      "name": "LanCarbon Publish window.png",
+      "size": 225026,
+      "mime": "image/png",
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-07T09:40:05.859Z"
+    },
+    {
+      "id": "8405f88769f513467cc1aa25973fa97e6ad60427ff943279ab2d299a3d70ca75.png",
+      "file": "0e388aec015fc2881becd8ffd19c671a5195d7aa9b0265fed4deb58b4915c442.png",
+      "name": "LanCarbon Manta Orchid Logo.png",
+      "size": 1378267,
+      "mime": "image/png",
+      "createdAt": "2026-09-05T14:55:57.784Z",
+      "updatedAt": "2026-09-05T15:06:01.505Z"
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+import { _electron as electron, expect, test } from "@playwright/test";
+import { promises as fs } from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { AssetStore } from "../../electron/assets";
+import { createBook } from "../../src/shared/books";
+
+test("preflights and builds a persistent managed Book inside the app", async ({}, testInfo) => {
+  test.setTimeout(360_000);
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-build-e2e-"));
+  const parent = path.join(root, "published"); await fs.mkdir(parent);
+  const image = await new AssetStore(root).importBytes("figure.png", await fs.readFile(path.resolve("build/icon.png")), true);
+  const { book, homeNote } = createBook("Phase Four"); book.settings.authors = [{ name: "LanCarbon" }]; homeNote.content = `# Built in LanCarbon\n\n:::{div}\n:class: lc-align-center\n\nCentered in the built website\n:::\n\n\`\`\`{figure} assets/${image.id}\n:width: 50%\n:align: center\n:alt: Figure alignment test\n\nCentered figure caption\n\`\`\``;
+  await fs.writeFile(path.join(root, "notes.json"), JSON.stringify({ version: 2, books: [book], notes: [homeNote] }));
+  const launch = () => electron.launch({ ...(process.env.E2E_EXECUTABLE ? { executablePath: process.env.E2E_EXECUTABLE } : {}), args: ["--in-process-gpu", "--disable-gpu", "--no-sandbox", ...(process.env.E2E_EXECUTABLE ? [] : [path.resolve(__dirname, "../..")])], env: { ...process.env, E2E_USER_DATA_DIR: root, E2E_BUILD_PARENT: parent, E2E_BUILD_TEMPLATES: "" } });
+  let app = await launch();
+  try {
+    const page = await app.firstWindow(); await page.getByRole("button", { name: "Jupyter Book", exact: true }).click(); await page.getByRole("button", { name: "Build", exact: true }).click();
+    await expect(page.getByRole("heading", { name: "Check and Build" })).toBeVisible(); await expect(page.getByText("PHASE 4A + 4B", { exact: true })).toHaveCount(0); await expect(page.getByText("Preflight passed", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Choose Location and Build", exact: true }).click();
+    await expect(page.getByText(/Completed in|Jupyter Book build failed/)).toBeVisible({ timeout: 330_000 });
+    if (await page.getByText("Jupyter Book build failed", { exact: true }).isVisible()) throw new Error(await page.locator(".build-panel").innerText());
+    await expect(page.getByText(/Completed in/)).toBeVisible(); await expect(page.getByText(/_build\\html/)).toBeVisible();
+    await expect(page.locator(".build-primary")).toHaveCSS("border-radius", "10px");
+    const footerButtons = await page.locator(".build-panel > footer > button").evaluateAll(buttons => buttons.map(button => Math.round(button.getBoundingClientRect().top)));
+    expect(new Set(footerButtons).size).toBe(1);
+    await page.screenshot({ path: testInfo.outputPath("build-panel-dark.png"), animations: "disabled" });
+    await page.getByRole("button", { name: "Close", exact: true }).click(); await page.getByRole("button", { name: "☀ Light", exact: true }).click(); await page.getByRole("button", { name: "Build", exact: true }).click();
+    await expect(page.locator(".build-primary")).toHaveCSS("border-radius", "10px");
+    await page.screenshot({ path: testInfo.outputPath("build-panel-light.png"), animations: "disabled" });
+    const websiteUrl = await page.getByRole("button", { name: /^http:\/\/127\.0\.0\.1:\d+\/$/ }).innerText();
+    await expect.poll(async () => (await fetch(websiteUrl)).status).toBe(200);
+    await expect(page.locator(".build-issue", { hasText: "DEP0169" })).toHaveCount(0);
+    await page.getByRole("button", { name: "Stop Website", exact: true }).click();
+    await expect(page.getByText("Stopped — start it to get a local address", { exact: true })).toBeVisible();
+    await expect.poll(async () => fetch(websiteUrl).then(() => true).catch(() => false)).toBe(false);
+    await page.getByRole("button", { name: "Start Website", exact: true }).click();
+    const restartedUrl = await page.getByRole("button", { name: /^http:\/\/127\.0\.0\.1:\d+\/$/ }).innerText();
+    await expect.poll(async () => (await fetch(restartedUrl)).status).toBe(200);
+    const folders = (await fs.readdir(parent)).filter(name => !name.startsWith(".")); expect(folders).toEqual(["Phase Four-Built"]);
+    const destination = path.join(parent, folders[0]); const builtHtml = await fs.readFile(path.join(destination, "_build", "html", "index.html"), "utf8");
+    expect(builtHtml).toContain("Built in LanCarbon"); expect(builtHtml).toContain("lc-align-center");
+    await expect(fs.readFile(path.join(destination, ".lancarbon-build.json"), "utf8")).resolves.toContain(book.id);
+    await app.close(); app = await launch();
+    const reopened = await app.firstWindow(); await reopened.getByRole("button", { name: "Jupyter Book", exact: true }).click(); await reopened.getByRole("button", { name: "Build", exact: true }).click();
+    await expect(reopened.getByText("Stopped — start it to get a local address", { exact: true })).toBeVisible();
+    await expect(reopened.getByText("Build is up to date", { exact: true })).toBeVisible();
+    await expect(reopened.getByRole("button", { name: "Rebuild Website", exact: true })).toBeVisible();
+    await reopened.getByRole("button", { name: "Start Website", exact: true }).click();
+    const restoredUrl = await reopened.getByRole("button", { name: /^http:\/\/127\.0\.0\.1:\d+\/$/ }).innerText();
+    await expect.poll(async () => (await fetch(restoredUrl)).status).toBe(200);
+    await reopened.goto(restoredUrl);
+    await expect(reopened.locator("figure figcaption")).toHaveCSS("text-align", "center");
+    await reopened.screenshot({ path: testInfo.outputPath("built-figure-caption-centered.png"), animations: "disabled" });
+  } finally { await app.close().catch(() => undefined); await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 500 }); }
+});

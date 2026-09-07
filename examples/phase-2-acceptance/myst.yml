@@ -1,0 +1,11 @@
+version: 1
+project:
+  title: LanCarbon Syntax Acceptance
+  authors:
+    - name: Example Author
+  toc:
+    - file: index.md
+    - file: syntax-lab.md
+    - file: reference-lab.md
+site:
+  template: book-theme
