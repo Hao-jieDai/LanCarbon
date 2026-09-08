@@ -2,6 +2,21 @@
 
 All notable changes to official LanCarbon releases are recorded here.
 
+## 1.1.1 — 2026-09-08
+
+### Fixed
+
+- Compatible system tools are now shown as **Using existing** and never offer an Install button; the main process also blocks redundant install requests.
+- Python managed installation now uses the official portable archive under `LanCarbon\\Tools` and cannot upgrade or modify a registered system Python installation.
+- Downloads expose byte and percentage progress, followed by explicit verification, installation and post-install check phases.
+- Cancel now aborts network reads, terminates the complete child-process tree, removes partial files and leaves the previous managed copy intact.
+- Detection checks every supported command, so an obsolete command cannot hide a later compatible installation.
+
+### Validation
+
+- Added isolated tests for fully installed, missing, incompatible, offline and mid-download cancellation scenarios.
+- Version 1.1.0 was withdrawn before distribution because its Python action could update an existing registered installation.
+
 ## 1.1.0 — 2026-09-08
 
 ### Added

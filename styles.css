@@ -103,6 +103,12 @@
 .setup-actions { display: grid; grid-template-columns: auto auto; gap: 6px; align-items: center; }
 .setup-actions .build-action { min-height: 34px; padding: 0 11px; }
 .setup-actions small { grid-column: 1 / -1; text-align: right; }
+.environment-existing { align-self: center; padding: 7px 10px; color: var(--accent); border: 1px solid var(--line); border-radius: 999px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+.environment-install-progress { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.environment-install-progress > div { display: grid; gap: 5px; min-width: 0; }
+.environment-install-progress strong { overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; }
+.environment-install-progress progress { width: 100%; accent-color: var(--accent); }
+.environment-install-progress small { color: var(--muted); }
 .environment-network-note { margin: 0; padding: 9px 11px; color: var(--muted); border-left: 3px solid var(--accent); background: var(--surface); font-size: 11px; line-height: 1.55; }
 .build-panel > header { flex: none; }
 .build-panel > footer { flex-wrap: nowrap; gap: 6px; }

@@ -25,6 +25,7 @@ beforeEach(() => {
     cancelEnvironmentInstall: vi.fn().mockResolvedValue({ ok: true }),
     openEnvironmentInstructions: vi.fn().mockResolvedValue({ ok: true }),
     openEnvironmentLog: vi.fn().mockResolvedValue({ ok: true }),
+    onEnvironmentProgress: vi.fn().mockReturnValue(() => undefined),
     buildBook: vi.fn().mockResolvedValue({ ok: true, destination: "D:\\build", htmlPath: "D:\\build\\_build\\html", url: "http://127.0.0.1:32100/", issues: [], log: "", durationMs: 1000 }),
     openBuildFolder: vi.fn().mockResolvedValue({ ok: true }),
     openBookWebsite: vi.fn().mockResolvedValue({ ok: true }),

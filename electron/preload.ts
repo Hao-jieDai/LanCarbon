@@ -21,6 +21,7 @@ const api: NotesDesktopApi = {
   cancelEnvironmentInstall: () => ipcRenderer.invoke("environment:cancel"),
   openEnvironmentInstructions: id => ipcRenderer.invoke("environment:instructions", id),
   openEnvironmentLog: () => ipcRenderer.invoke("environment:open-log"),
+  onEnvironmentProgress: callback => { const listener = (_event: Electron.IpcRendererEvent, progress: Parameters<typeof callback>[0]) => callback(progress); ipcRenderer.on("environment:progress", listener); return () => ipcRenderer.removeListener("environment:progress", listener); },
   buildBook: (bookId, options) => ipcRenderer.invoke("book:build", bookId, options),
   openBuildFolder: bookId => ipcRenderer.invoke("book:open-build", bookId),
   openBookWebsite: bookId => ipcRenderer.invoke("book:open-website", bookId),

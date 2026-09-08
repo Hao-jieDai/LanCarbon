@@ -10,11 +10,13 @@ const installers = names.flatMap(name => {
 const current = require("../package.json").version;
 if (!installers.some(item=>item.version.join(".")===current)) throw new Error("Current installer is missing; keep rollback installers.");
 const currentParts = current.split(".").map(Number);
+// 1.1.0 was an internal, withdrawn build and is intentionally not a rollback candidate.
+const releasableInstallers = installers.filter(item => item.version.join(".") !== "1.1.0");
 const retained = current === "1.0.0"
-  ? installers.filter(item => ["1.0.0", "2.5.0"].includes(item.version.join(".")))
+  ? releasableInstallers.filter(item => ["1.0.0", "2.5.0"].includes(item.version.join(".")))
   : currentParts[0] === 1
-    ? installers.filter(item => item.version[0] === 1).slice(0,3)
-    : installers.slice(0,3);
+    ? releasableInstallers.filter(item => item.version[0] === 1).slice(0,3)
+    : releasableInstallers.slice(0,3);
 const retainedNames = new Set(retained.map(item => item.name));
 for (const item of installers.filter(item => !retainedNames.has(item.name))) {
   for (const name of [item.name,item.name+".blockmap"]) {

@@ -7,13 +7,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "1.1.0";
+export const RELEASE_VERSION = "1.1.1";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 1.1.0 adds Environment Setup for optional Build and Publish tools. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
+Version 1.1.1 adds a safer, transparent Environment Setup for optional Build and Publish tools. Compatible system tools are used as-is; only missing or incompatible tools offer private managed installation under LanCarbon Tools. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
 
 ### What you can do
 
@@ -41,7 +41,7 @@ Basic writing, Preview and source-copy Export work inside LanCarbon. This first-
 - **Build** requires Python 3 and Jupyter Book 2.
 - **Publish** requires Git, GitHub CLI, a GitHub account and network access to GitHub.
 
-Each tool is installed independently from its official source, verified, and checked again. Existing compatible system installations remain usable. Failed downloads do not affect local editing or tools already installed successfully. Some networks may require a system proxy or TUN mode to reach GitHub.
+Each tool is installed independently from its official source, verified, and checked again. Existing compatible system installations are marked **Using existing** and have no Install button. Managed Python is portable and does not alter a registered system Python. Live download, verification, deployment and post-install progress is shown; Cancel stops the operation and removes partial files. Failed downloads do not affect local editing or tools already installed successfully. Some networks may require a system proxy or TUN mode to reach GitHub.
 
 ### A simple workflow
 
@@ -59,7 +59,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-1.1.0 新增 Environment Setup，用于准备可选的 Build 和 Publish 工具。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
+1.1.1 新增更安全、过程透明的 Environment Setup，用于准备可选的 Build 和 Publish 工具。系统中已有的兼容工具直接使用，只有缺失或不兼容的工具才提供 LanCarbon Tools 私有安装。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
 
 ### 主要功能
 
@@ -87,7 +87,7 @@ LanCarbon 首次安装后会提供两项起始内容：
 - **Build** 需要 Python 3 和 Jupyter Book 2。
 - **Publish** 需要 Git、GitHub CLI、GitHub 账号以及能够访问 GitHub 的网络。
 
-各项工具独立安装，从官方来源下载并在安装后重新检查。系统中已有的兼容工具仍可继续使用；下载失败不会影响本地编辑或此前成功安装的工具。部分网络环境可能需要开启系统代理或 TUN 模式才能访问 GitHub。
+各项工具独立安装，从官方来源下载并在安装后重新检查。系统中已有的兼容工具显示 **Using existing**，不提供 Install 按钮；受管理 Python 为便携版，不会修改已注册的系统 Python。界面会显示下载、校验、部署和复检进度，Cancel 会停止任务并清理未完成文件。下载失败不会影响本地编辑或此前成功安装的工具。部分网络环境可能需要开启系统代理或 TUN 模式才能访问 GitHub。
 
 ### 推荐工作流程
 

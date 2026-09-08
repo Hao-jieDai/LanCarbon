@@ -123,6 +123,13 @@ export interface EnvironmentSetupItem {
 }
 export type EnvironmentSetupResult = { ok: true; root: string; toolsPath: string; logPath: string; items: EnvironmentSetupItem[] } | { ok: false; error: string };
 export type EnvironmentInstallResult = { ok: true; item: EnvironmentSetupItem } | { ok: false; canceled?: boolean; error: string };
+export interface EnvironmentInstallProgress {
+  tool: EnvironmentToolId;
+  phase: "preparing" | "downloading" | "verifying" | "installing" | "checking" | "canceling";
+  message: string;
+  receivedBytes?: number;
+  totalBytes?: number;
+}
 export type BuildBookResult =
   | { ok: true; destination: string; htmlPath: string; url: string; issues: BookCheckIssue[]; log: string; durationMs: number; sourceStatus?: "current" }
   | { ok: false; canceled?: boolean; error: string; issues?: BookCheckIssue[]; log?: string };
@@ -180,6 +187,7 @@ export interface NotesDesktopApi {
   cancelEnvironmentInstall(): Promise<OperationResult>;
   openEnvironmentInstructions(id: EnvironmentToolId): Promise<OperationResult>;
   openEnvironmentLog(): Promise<OperationResult>;
+  onEnvironmentProgress(callback: (progress: EnvironmentInstallProgress) => void): () => void;
   buildBook(bookId: string, options?: { chooseLocation?: boolean }): Promise<BuildBookResult>;
   openBuildFolder(bookId: string): Promise<OperationResult>;
   openBookWebsite(bookId: string): Promise<OperationResult>;

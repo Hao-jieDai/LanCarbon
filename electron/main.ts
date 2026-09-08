@@ -109,7 +109,7 @@ async function createWindow(): Promise<void> {
 
 app.whenReady().then(async () => {
   const configurationDirectory = app.getPath("userData");
-  environmentManager = new EnvironmentManager(directories.tools, directories.temp, path.join(configurationDirectory, "Logs", "environment-setup.log"), net.fetch as unknown as typeof fetch);
+  environmentManager = new EnvironmentManager(directories.tools, directories.temp, path.join(configurationDirectory, "Logs", "environment-setup.log"), net.fetch as unknown as typeof fetch, progress => mainWindow?.webContents.send("environment:progress", progress));
   const managedEnvironment = environmentManager.environment(); process.env.Path = managedEnvironment.Path; process.env.PATH = managedEnvironment.PATH;
   preferencesStore = new NotesStore(configurationDirectory);
   const exportLocation = new ExportLocation(configurationDirectory, directories.exports);
