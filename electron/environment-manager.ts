@@ -192,14 +192,14 @@ export class EnvironmentManager {
       await this.download(id, PYTHON_URL, archive, PYTHON_SHA256, signal);
       this.progress(id, "installing", "Extracting portable Python into LanCarbon\\Tools…");
       await fs.mkdir(staging, { recursive: true });
-      await this.run("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", "Expand-Archive -LiteralPath $args[0] -DestinationPath $args[1] -Force", archive, staging], signal, 5 * 60_000);
+      await this.run("tar.exe", ["-xf", archive, "-C", staging], signal, 5 * 60_000);
       const pth = await findFile(staging, "python313._pth", 1);
       if (!pth) throw new Error("The Python archive did not contain its path configuration.");
       const original = await fs.readFile(pth, "utf8");
       const configured = original.replace(/^#import site$/m, "import site") + "\n../JupyterBook/Lib/site-packages\n";
       await fs.writeFile(pth, configured, "utf8");
       await this.run(path.join(staging, "python.exe"), ["--version"], signal, 30_000);
-      await this.replaceDirectory(target, staging);
+      await this.replaceDirectory(target, staging, () => this.run(path.join(target, "python.exe"), ["--version"], signal, 30_000));
     } finally {
       await fs.rm(staging, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 }).catch(() => undefined);
       await fs.rm(archive, { force: true }).catch(() => undefined);
@@ -223,10 +223,8 @@ export class EnvironmentManager {
       this.progress(id, "installing", "Installing Jupyter Book into an isolated LanCarbon directory…");
       await fs.mkdir(staging, { recursive: true });
       const launcher = "import runpy,sys; w=sys.argv[1]; sys.argv=['pip',*sys.argv[2:]]; sys.path.insert(0,w); runpy.run_module('pip',run_name='__main__')";
-      await this.run(pythonItem.path, ["-c", launcher, wheelPath, "install", "--disable-pip-version-check", "--no-cache-dir", "--prefix", staging, "jupyter-book>=2,<3"], signal, 15 * 60_000);
-      const executable = path.join(staging, "Scripts", "jupyter.exe");
-      await this.run(executable, ["book", "--version"], signal, 60_000, { ...this.environment(), PYTHONPATH: path.join(staging, "Lib", "site-packages") });
-      await this.replaceDirectory(target, staging);
+      await this.run(pythonItem.path, ["-c", launcher, wheelPath, "install", "--disable-pip-version-check", "--no-cache-dir", "--prefix", staging, "jupyter-book>=2,<3"], signal, 15 * 60_000, this.environment(), output => this.progress(id, "installing", `Installing Jupyter Book: ${output}`));
+      await this.replaceDirectory(target, staging, () => this.run(path.join(target, "Scripts", "jupyter.exe"), ["book", "--version"], signal, 60_000));
     } finally {
       await fs.rm(staging, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 }).catch(() => undefined);
       await fs.rm(wheelPath, { force: true }).catch(() => undefined);
@@ -252,12 +250,13 @@ export class EnvironmentManager {
       await this.download(id, asset.browser_download_url, archive, digest, signal, asset.size);
       this.progress(id, "installing", `Extracting ${id === "git" ? "Git" : "GitHub CLI"} into LanCarbon\\Tools…`);
       await fs.mkdir(staging, { recursive: true });
-      await this.run("powershell.exe", ["-NoProfile", "-NonInteractive", "-Command", "Expand-Archive -LiteralPath $args[0] -DestinationPath $args[1] -Force", archive, staging], signal, 5 * 60_000);
+      await this.run("tar.exe", ["-xf", archive, "-C", staging], signal, 5 * 60_000);
       const executable = await findFile(staging, id === "git" ? "git.exe" : "gh.exe");
       if (!executable) throw new Error("The downloaded archive did not contain the expected executable.");
       const executableDirectory = path.dirname(executable);
       const sourceRoot = id === "github-cli" && path.basename(executableDirectory).toLocaleLowerCase("en-US") === "bin" ? path.dirname(executableDirectory) : staging;
-      await this.replaceDirectory(target, sourceRoot);
+      const executableRelativePath = path.relative(sourceRoot, executable);
+      await this.replaceDirectory(target, sourceRoot, () => this.run(path.join(target, executableRelativePath), ["--version"], signal, 30_000));
     } finally {
       await fs.rm(staging, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 }).catch(() => undefined);
       await fs.rm(archive, { force: true }).catch(() => undefined);
@@ -265,15 +264,17 @@ export class EnvironmentManager {
     }
   }
 
-  private async replaceDirectory(target: string, staging: string): Promise<void> {
+  private async replaceDirectory(target: string, staging: string, verify: () => Promise<unknown>): Promise<void> {
     const backup = `${target}.backup-${Date.now()}`;
     const hasTarget = Boolean(await fs.stat(target).catch(() => null));
     try {
       if (hasTarget) await fs.rename(target, backup);
       await fs.rename(staging, target);
+      await verify();
       await fs.rm(backup, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 }).catch(() => undefined);
     } catch (error) {
-      if (hasTarget && !(await fs.stat(target).catch(() => null)) && await fs.stat(backup).catch(() => null)) await fs.rename(backup, target).catch(() => undefined);
+      if (await fs.stat(target).catch(() => null)) await fs.rm(target, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 }).catch(() => undefined);
+      if (hasTarget && await fs.stat(backup).catch(() => null)) await fs.rename(backup, target).catch(() => undefined);
       throw error;
     }
   }
@@ -305,15 +306,20 @@ export class EnvironmentManager {
     await this.log(`Verified ${path.basename(destination)} (${received} bytes, SHA-256 ${actual})`);
   }
 
-  private run(file: string, args: string[], signal: AbortSignal, timeout: number, env = this.environment()): Promise<CommandResult> {
+  private run(file: string, args: string[], signal: AbortSignal, timeout: number, env = this.environment(), onOutput?: (message: string) => void): Promise<CommandResult> {
     return new Promise((resolve, reject) => {
       if (signal.aborted) { reject(new Error("Installation canceled")); return; }
       const child = spawn(file, args, { windowsHide: true, env, stdio: ["ignore", "pipe", "pipe"] });
       if (this.active) this.active.child = child;
       let stdout = "", stderr = "", settled = false;
       const finish = (error?: Error, result?: CommandResult) => { if (settled) return; settled = true; clearTimeout(timer); signal.removeEventListener("abort", abort); if (this.active?.child === child) this.active.child = undefined; error ? reject(error) : resolve(result!); };
-      child.stdout?.on("data", chunk => { stdout = (stdout + String(chunk)).slice(-100_000); });
-      child.stderr?.on("data", chunk => { stderr = (stderr + String(chunk)).slice(-100_000); });
+      let lastOutput = 0;
+      const capture = (stream: "stdout" | "stderr", chunk: unknown) => {
+        const value = String(chunk); if (stream === "stdout") stdout = (stdout + value).slice(-100_000); else stderr = (stderr + value).slice(-100_000);
+        const message = clean(value).slice(0, 180); if (onOutput && message && Date.now() - lastOutput > 250) { onOutput(message); lastOutput = Date.now(); }
+      };
+      child.stdout?.on("data", chunk => capture("stdout", chunk));
+      child.stderr?.on("data", chunk => capture("stderr", chunk));
       const stopTree = () => { if (child.pid && process.platform === "win32") spawn("taskkill.exe", ["/pid", String(child.pid), "/T", "/F"], { windowsHide: true, stdio: "ignore" }); else child.kill("SIGTERM"); };
       const timer = setTimeout(() => { stopTree(); finish(new Error(`${path.basename(file)} timed out.`)); }, timeout);
       const abort = () => { stopTree(); finish(new Error("Installation canceled")); };

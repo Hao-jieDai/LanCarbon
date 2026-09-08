@@ -11,6 +11,8 @@ All notable changes to official LanCarbon releases are recorded here.
 - Downloads expose byte and percentage progress, followed by explicit verification, installation and post-install check phases.
 - Cancel now aborts network reads, terminates the complete child-process tree, removes partial files and leaves the previous managed copy intact.
 - Detection checks every supported command, so an obsolete command cannot hide a later compatible installation.
+- Portable archives are extracted with the Windows inbox `tar.exe`, avoiding a dependency on the optional PowerShell Archive module.
+- Managed directories are verified after their atomic switch and automatically roll back if final-path verification fails; Jupyter dependency activity is surfaced during its longer install phase.
 
 ### Validation
 
