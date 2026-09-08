@@ -43,6 +43,26 @@ Function LanCarbonDirectoryIsEmpty
 FunctionEnd
 
 Function LanCarbonRootPage
+  StrCpy $2 ""
+  StrCpy $3 ""
+  ReadRegStr $2 HKCU "Software\${APP_GUID}" InstallLocation
+  ReadRegStr $3 HKLM "Software\${APP_GUID}" InstallLocation
+  StrCmp "$INSTDIR" "$2" root_path_ready
+  StrCmp "$INSTDIR" "$3" root_path_ready
+
+  StrCmp "$INSTDIR" "$LOCALAPPDATA\Programs\${APP_FILENAME}" use_lancarbon_default
+  StrCmp "$INSTDIR" "$PROGRAMFILES\${APP_FILENAME}" use_lancarbon_default
+  StrCmp "$INSTDIR" "$PROGRAMFILES64\${APP_FILENAME}" use_lancarbon_default
+  Goto root_path_ready
+
+  use_lancarbon_default:
+    IfFileExists "D:\*.*" 0 no_d_drive_for_page
+      StrCpy $INSTDIR "D:\LanCarbon"
+      Goto root_path_ready
+    no_d_drive_for_page:
+      StrCpy $INSTDIR "$LOCALAPPDATA\LanCarbon"
+
+  root_path_ready:
   ${GetFileName} "$INSTDIR" $0
   ${If} $0 == "Application"
     ${GetParent} "$INSTDIR" $INSTDIR
