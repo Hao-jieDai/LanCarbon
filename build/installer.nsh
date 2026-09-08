@@ -5,6 +5,17 @@
 !ifndef BUILD_UNINSTALLER
 
 Var LanCarbonRootLabel
+Var LanCarbonRootInput
+Var LanCarbonRootBrowseButton
+
+Function LanCarbonChooseRoot
+  ${NSD_GetText} $LanCarbonRootInput $0
+  nsDialogs::SelectFolderDialog "Choose the LanCarbon folder" "$0"
+  Pop $0
+  ${If} $0 != error
+    ${NSD_SetText} $LanCarbonRootInput "$0"
+  ${EndIf}
+FunctionEnd
 
 Function LanCarbonDirectoryIsEmpty
   Exch $0
@@ -34,21 +45,28 @@ FunctionEnd
 Function LanCarbonRootPage
   ${GetFileName} "$INSTDIR" $0
   ${If} $0 == "Application"
-    Abort
+    ${GetParent} "$INSTDIR" $INSTDIR
   ${EndIf}
+
   nsDialogs::Create 1018
   Pop $0
   ${If} $0 == error
     Abort
   ${EndIf}
-  ${NSD_CreateLabel} 0 0 100% 58u "LanCarbon will use the selected folder as its home. The folder name must be LanCarbon and it must be empty for a first installation. Application, Data, Config, Cache, Temp, Builds and Exports will be created inside it. Existing LanCarbon Data is accepted for migration."
+  ${NSD_CreateLabel} 0 0 100% 42u "Choose LanCarbon's home folder. Its final name must be LanCarbon and it must be empty for a first installation."
   Pop $LanCarbonRootLabel
-  ${NSD_CreateLabel} 0 68u 100% 32u "Program location:$\r$\n$INSTDIR\Application"
+  ${NSD_CreateText} 0 52u 78% 14u "$INSTDIR"
+  Pop $LanCarbonRootInput
+  ${NSD_CreateBrowseButton} 80% 51u 20% 16u "Browse..."
+  Pop $LanCarbonRootBrowseButton
+  ${NSD_OnClick} $LanCarbonRootBrowseButton LanCarbonChooseRoot
+  ${NSD_CreateLabel} 0 78u 100% 52u "LanCarbon creates Application, Data, Config, Cache, Temp, Builds and Exports inside this folder. Existing LanCarbon Data is accepted for migration."
   Pop $LanCarbonRootLabel
   nsDialogs::Show
 FunctionEnd
 
 Function LanCarbonRootLeave
+  ${NSD_GetText} $LanCarbonRootInput $INSTDIR
   ${GetFileName} "$INSTDIR" $0
   ${If} $0 != "LanCarbon"
     MessageBox MB_OK|MB_ICONEXCLAMATION "Choose a folder whose final name is LanCarbon."
@@ -68,14 +86,19 @@ Function LanCarbonRootLeave
 FunctionEnd
 
 !macro customInit
-  ${GetFileName} "$INSTDIR" $0
-  ${If} $0 != "Application"
-    IfFileExists "D:\*.*" 0 no_d_drive
-      StrCpy $INSTDIR "D:\LanCarbon"
-      Goto root_selected
-    no_d_drive:
-      StrCpy $INSTDIR "$LOCALAPPDATA\LanCarbon"
-    root_selected:
+  !insertmacro GetDParameter $1
+  ${If} $1 != ""
+    StrCpy $INSTDIR "$1"
+  ${Else}
+    ${GetFileName} "$INSTDIR" $0
+    ${If} $0 != "Application"
+      IfFileExists "D:\*.*" 0 no_d_drive
+        StrCpy $INSTDIR "D:\LanCarbon"
+        Goto root_selected
+      no_d_drive:
+        StrCpy $INSTDIR "$LOCALAPPDATA\LanCarbon"
+      root_selected:
+    ${EndIf}
   ${EndIf}
   ${If} ${Silent}
     ${GetFileName} "$INSTDIR" $0
