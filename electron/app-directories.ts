@@ -10,6 +10,7 @@ export interface LanCarbonDirectories {
   temp: string;
   builds: string;
   exports: string;
+  tools: string;
 }
 
 function fromRoot(root: string): LanCarbonDirectories {
@@ -22,7 +23,8 @@ function fromRoot(root: string): LanCarbonDirectories {
     cache: path.join(resolved, "Cache"),
     temp: path.join(resolved, "Temp"),
     builds: path.join(resolved, "Builds"),
-    exports: path.join(resolved, "Exports")
+    exports: path.join(resolved, "Exports"),
+    tools: path.join(resolved, "Tools")
   };
 }
 
@@ -52,5 +54,5 @@ export function resolveLanCarbonDirectories(options: {
 }
 
 export function directoryList(directories: LanCarbonDirectories): string[] {
-  return [directories.root, directories.application, directories.data, directories.config, directories.cache, directories.temp, directories.builds, directories.exports];
+  return [directories.root, directories.application, directories.data, directories.config, directories.cache, directories.temp, directories.builds, directories.exports, directories.tools];
 }

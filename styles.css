@@ -86,6 +86,24 @@
 .bibliography-panel { width: min(760px, calc(100vw - 40px)); }
 .settings-modal.build-panel { width: min(820px, calc(100vw - 40px)); max-height: calc(100vh - 40px); display: flex; flex-direction: column; }
 .settings-modal.github-panel { width: min(760px, calc(100vw - 40px)); max-height: calc(100vh - 40px); display: flex; flex-direction: column; }
+.settings-modal.environment-panel { width: min(900px, calc(100vw - 40px)); max-height: calc(100vh - 40px); display: flex; flex-direction: column; }
+.environment-panel header > div > p { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
+.environment-location { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); font-size: 11px; }
+.environment-location span { color: var(--muted); }
+.environment-location strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.setup-list { display: grid; gap: 8px; overflow-y: auto; }
+.setup-item { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: start; gap: 10px; padding: 11px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.setup-mark { display: grid; width: 24px; height: 24px; place-items: center; color: var(--button-ink); border-radius: 50%; background: var(--danger); font-weight: 700; }
+.setup-item.pass .setup-mark { background: var(--accent); }
+.setup-item.warning .setup-mark { background: #a66b16; }
+.setup-description > div { display: flex; align-items: baseline; gap: 8px; }
+.setup-description > div span, .setup-description p, .setup-description code, .setup-actions small { color: var(--muted); font-size: 11px; }
+.setup-description p { margin: 4px 0; line-height: 1.4; }
+.setup-description code { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.setup-actions { display: grid; grid-template-columns: auto auto; gap: 6px; align-items: center; }
+.setup-actions .build-action { min-height: 34px; padding: 0 11px; }
+.setup-actions small { grid-column: 1 / -1; text-align: right; }
+.environment-network-note { margin: 0; padding: 9px 11px; color: var(--muted); border-left: 3px solid var(--accent); background: var(--surface); font-size: 11px; line-height: 1.55; }
 .build-panel > header { flex: none; }
 .build-panel > footer { flex-wrap: nowrap; gap: 6px; }
 .github-panel > footer { flex-wrap: wrap; }
@@ -294,7 +312,7 @@ button:disabled { cursor: default; opacity: .45; }
 .book-secondary-actions { display: flex; gap: 5px; margin: 7px 0 10px; }
 .book-secondary-actions button { height: 28px; flex: 1; border: 0; }
 .book-secondary-actions .danger-text { color: var(--danger); }
-@media (max-width: 680px) { .build-environment, .github-fields { grid-template-columns: 1fr; } .build-panel > footer { flex-wrap: wrap; } }
+@media (max-width: 680px) { .build-environment, .github-fields { grid-template-columns: 1fr; } .build-panel > footer { flex-wrap: wrap; } .setup-item { grid-template-columns: 26px minmax(0, 1fr); } .setup-actions { grid-column: 2; justify-self: start; } }
 .book-tree, .book-tree ul { margin: 0; padding: 0; list-style: none; }
 .book-tree-item { margin: 1px 0; }
 .book-page-row { display: flex; width: 100%; height: 36px; align-items: center; gap: 7px; overflow: hidden; color: var(--card-copy); border: 0; border-radius: 7px; background: transparent; text-align: left; }

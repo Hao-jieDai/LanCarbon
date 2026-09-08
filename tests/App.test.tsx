@@ -20,6 +20,11 @@ beforeEach(() => {
       { id: "python", label: "Python", status: "pass", detail: "Python 3.13.0" },
       { id: "jupyter-book", label: "Jupyter Book CLI", status: "pass", detail: "Jupyter Book 2.1.6" }
     ] }),
+    inspectEnvironment: vi.fn().mockResolvedValue({ ok: true, root: "D:\\LanCarbon", toolsPath: "D:\\LanCarbon\\Tools", logPath: "D:\\LanCarbon\\Config\\Logs\\environment-setup.log", items: [] }),
+    installEnvironmentTool: vi.fn().mockResolvedValue({ ok: false, error: "Not installed in tests" }),
+    cancelEnvironmentInstall: vi.fn().mockResolvedValue({ ok: true }),
+    openEnvironmentInstructions: vi.fn().mockResolvedValue({ ok: true }),
+    openEnvironmentLog: vi.fn().mockResolvedValue({ ok: true }),
     buildBook: vi.fn().mockResolvedValue({ ok: true, destination: "D:\\build", htmlPath: "D:\\build\\_build\\html", url: "http://127.0.0.1:32100/", issues: [], log: "", durationMs: 1000 }),
     openBuildFolder: vi.fn().mockResolvedValue({ ok: true }),
     openBookWebsite: vi.fn().mockResolvedValue({ ok: true }),
@@ -50,6 +55,13 @@ beforeEach(() => {
 });
 
 describe("App", () => {
+  it("从侧栏打开统一的 Environment Setup", async () => {
+    const user = userEvent.setup(); render(<App />); await screen.findByDisplayValue("第一篇");
+    await user.click(screen.getByRole("button", { name: "Environment Setup" }));
+    expect(await screen.findByRole("region", { name: "Environment Setup" })).toBeInTheDocument();
+    expect(api.inspectEnvironment).toHaveBeenCalled();
+  });
+
   it("首次运行只显示 ReadMe 并立即保存 v2 工作区", async () => {
     vi.mocked(api.loadWorkspace).mockResolvedValue({ ok: true, workspace: createEmptyWorkspace(), isFirstRun: true, migrated: false });
     render(<App />);

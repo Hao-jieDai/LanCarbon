@@ -16,7 +16,7 @@ describe("release metadata", () => {
     expect(packageJson.build.productName).toBe("LanCarbon");
     expect(packageJson.build.nsis.include).toBe("build/installer.nsh");
     const installer = readFileSync(path.join(process.cwd(), "build", "installer.nsh"), "utf8");
-    for (const folder of ["Application", "Data", "Config", "Cache", "Temp", "Builds", "Exports"]) expect(installer).toContain(folder);
+    for (const folder of ["Application", "Data", "Config", "Cache", "Temp", "Builds", "Exports", "Tools"]) expect(installer).toContain(folder);
     expect(installer).toContain('StrCpy $INSTDIR "D:\\LanCarbon"');
   });
 

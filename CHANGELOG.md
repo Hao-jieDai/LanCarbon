@@ -2,6 +2,21 @@
 
 All notable changes to official LanCarbon releases are recorded here.
 
+## 1.1.0 — 2026-09-08
+
+### Added
+
+- A unified Environment Setup page available on first launch and from the sidebar, Build and Publish.
+- Detection of versions, locations and compatibility for Python, Jupyter Book 2, Git and GitHub CLI.
+- GitHub authentication and connectivity checks with proxy and TUN guidance.
+- Independent managed installation and repair under `LanCarbon\\Tools`, with official downloads, SHA-256 verification, retry, cancellation and logs.
+- Continued support for compatible tools already installed elsewhere on the system.
+
+### Changed
+
+- Build and Publish automatically use LanCarbon-managed tools without modifying the system PATH.
+- The installer now creates the `Tools` folder beside Application, Data, Config, Cache, Temp, Builds and Exports.
+
 ## 1.0.0 — 2026-09-07
 
 First official release.

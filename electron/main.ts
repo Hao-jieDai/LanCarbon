@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, screen, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, net, screen, shell } from "electron";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { mkdirSync } from "node:fs";
@@ -6,7 +6,7 @@ import { AssetStore, type ResolveConflict } from "./assets";
 import { MAX_ASSET_BYTES, resourceUsages } from "../src/shared/assets";
 import { withoutResources } from "../src/shared/removeResourceReferences";
 import { exportBookToDirectory } from "./book-exporter";
-import { bookSourceHash, buildBookForPublication, buildBookInParent, inspectBuildEnvironment, preflightBook } from "./book-builder";
+import { bookSourceHash, buildBookForPublication, buildBookInParent, preflightBook } from "./book-builder";
 import { BuildLocation } from "./build-location";
 import { prepareOfflineBookTheme } from "./offline-theme";
 import { DataLocationManager } from "./data-location";
@@ -18,6 +18,8 @@ import { startGitHubSignIn } from "./github-sign-in";
 import type { WindowPreferences, WorkspaceFile } from "../src/shared/types";
 import { MAX_BIB_BYTES, parseBibTeX } from "../src/shared/bibliography";
 import { directoryList, resolveLanCarbonDirectories } from "./app-directories";
+import { EnvironmentManager } from "./environment-manager";
+import type { EnvironmentToolId } from "../src/shared/types";
 
 let mainWindow: BrowserWindow | null = null;
 const websiteServers = new WebsiteServerManager();
@@ -26,6 +28,7 @@ let preferencesStore: NotesStore;
 let dataLocationManager: DataLocationManager;
 let dataDirectory: string;
 let saveWindowTimer: NodeJS.Timeout | undefined;
+let environmentManager: EnvironmentManager;
 
 const directories = resolveLanCarbonDirectories({
   executable: process.execPath,
@@ -106,6 +109,8 @@ async function createWindow(): Promise<void> {
 
 app.whenReady().then(async () => {
   const configurationDirectory = app.getPath("userData");
+  environmentManager = new EnvironmentManager(directories.tools, directories.temp, path.join(configurationDirectory, "Logs", "environment-setup.log"), net.fetch as unknown as typeof fetch);
+  const managedEnvironment = environmentManager.environment(); process.env.Path = managedEnvironment.Path; process.env.PATH = managedEnvironment.PATH;
   preferencesStore = new NotesStore(configurationDirectory);
   const exportLocation = new ExportLocation(configurationDirectory, directories.exports);
   const buildLocation = new BuildLocation(configurationDirectory, directories.builds);
@@ -301,8 +306,32 @@ app.whenReady().then(async () => {
     }
   });
   ipcMain.handle("book:build-environment", async () => {
-    try { return { ok: true, checks: await inspectBuildEnvironment() }; }
+    try {
+      const items = await environmentManager.inspect("build");
+      return { ok: true, checks: items.filter(item => item.id === "python" || item.id === "jupyter-book").map(item => ({ id: item.id, label: item.label, status: item.status === "pass" ? "pass" as const : "error" as const, detail: item.detail })) };
+    }
     catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Failed to inspect the build environment" }; }
+  });
+  ipcMain.handle("environment:inspect", async () => {
+    try { return { ok: true, root: directories.root, toolsPath: directories.tools, logPath: path.join(configurationDirectory, "Logs", "environment-setup.log"), items: await environmentManager.inspect() }; }
+    catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Failed to inspect the environment" }; }
+  });
+  ipcMain.handle("environment:install", async (_event, id: EnvironmentToolId) => {
+    if (!["python", "jupyter-book", "git", "github-cli"].includes(id)) return { ok: false, error: "Unsupported environment tool." };
+    return environmentManager.install(id);
+  });
+  ipcMain.handle("environment:cancel", () => { environmentManager.cancel(); return { ok: true }; });
+  ipcMain.handle("environment:instructions", async (_event, id: EnvironmentToolId) => {
+    try {
+      if (!["python", "jupyter-book", "git", "github-cli"].includes(id)) throw new Error("Unsupported environment tool.");
+      await shell.openExternal(environmentManager.manualUrl(id)); return { ok: true };
+    } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Failed to open installation instructions" }; }
+  });
+  ipcMain.handle("environment:open-log", async () => {
+    try {
+      const log = path.join(configurationDirectory, "Logs", "environment-setup.log"); await fs.mkdir(path.dirname(log), { recursive: true }); await fs.appendFile(log, "", "utf8");
+      const error = await shell.openPath(log); if (error) throw new Error(error); return { ok: true };
+    } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Failed to open the environment log" }; }
   });
   ipcMain.handle("book:validate", async (_event, bookId: string) => {
     try {
@@ -412,5 +441,5 @@ app.whenReady().then(async () => {
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) void createWindow(); });
 });
 
-app.on("before-quit", () => websiteServers.closeAll());
+app.on("before-quit", () => { environmentManager?.cancel(); websiteServers.closeAll(); });
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });

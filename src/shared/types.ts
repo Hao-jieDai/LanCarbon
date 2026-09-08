@@ -107,6 +107,22 @@ export interface BuildEnvironmentCheck {
   detail: string;
 }
 export type BuildEnvironmentResult = { ok: true; checks: BuildEnvironmentCheck[] } | { ok: false; error: string };
+export type EnvironmentToolId = "python" | "jupyter-book" | "git" | "github-cli";
+export type EnvironmentItemId = EnvironmentToolId | "github-auth" | "github-network";
+export interface EnvironmentSetupItem {
+  id: EnvironmentItemId;
+  label: string;
+  status: "pass" | "warning" | "error";
+  detail: string;
+  version?: string;
+  path?: string;
+  source?: "managed" | "system";
+  requirement: string;
+  downloadSize?: string;
+  installable: boolean;
+}
+export type EnvironmentSetupResult = { ok: true; root: string; toolsPath: string; logPath: string; items: EnvironmentSetupItem[] } | { ok: false; error: string };
+export type EnvironmentInstallResult = { ok: true; item: EnvironmentSetupItem } | { ok: false; canceled?: boolean; error: string };
 export type BuildBookResult =
   | { ok: true; destination: string; htmlPath: string; url: string; issues: BookCheckIssue[]; log: string; durationMs: number; sourceStatus?: "current" }
   | { ok: false; canceled?: boolean; error: string; issues?: BookCheckIssue[]; log?: string };
@@ -159,6 +175,11 @@ export interface NotesDesktopApi {
   exportBook(bookId: string): Promise<ExportBookResult>;
   validateBook(bookId: string): Promise<ValidateBookResult>;
   inspectBuildEnvironment(): Promise<BuildEnvironmentResult>;
+  inspectEnvironment(): Promise<EnvironmentSetupResult>;
+  installEnvironmentTool(id: EnvironmentToolId): Promise<EnvironmentInstallResult>;
+  cancelEnvironmentInstall(): Promise<OperationResult>;
+  openEnvironmentInstructions(id: EnvironmentToolId): Promise<OperationResult>;
+  openEnvironmentLog(): Promise<OperationResult>;
   buildBook(bookId: string, options?: { chooseLocation?: boolean }): Promise<BuildBookResult>;
   openBuildFolder(bookId: string): Promise<OperationResult>;
   openBookWebsite(bookId: string): Promise<OperationResult>;

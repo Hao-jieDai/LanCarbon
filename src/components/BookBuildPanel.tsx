@@ -9,7 +9,7 @@ function IssueList({ issues, onNavigate }: { issues: BookCheckIssue[]; onNavigat
   </button>)}</div>;
 }
 
-export function BookBuildPanel(props: { book: Book; onClose(): void; onNavigate(issue: BookCheckIssue): void; onNotice(message: string): void }) {
+export function BookBuildPanel(props: { book: Book; onClose(): void; onNavigate(issue: BookCheckIssue): void; onNotice(message: string): void; onEnvironmentSetup?(): void }) {
   const [issues, setIssues] = useState<BookCheckIssue[]>([]);
   const [state, setState] = useState<"checking" | "ready" | "building" | "success" | "failed">("checking");
   const [result, setResult] = useState<BuildBookResult | null>(null);
@@ -35,7 +35,7 @@ export function BookBuildPanel(props: { book: Book; onClose(): void; onNavigate(
     <header><h2>Check and Build</h2><button type="button" className="icon-button" aria-label="Close Book build" onClick={props.onClose} disabled={state === "building"}>×</button></header>
     <p className="modal-help">LanCarbon checks the whole Book first, then runs <code>jupyter book build --html --strict --ci</code> in a managed folder. A failed build keeps the previous successful website intact.</p>
     {state === "checking" && <div className="build-progress"><span className="status-dot" />Checking pages, references and resources…</div>}
-    {state !== "checking" && <><div className="build-environment" aria-label="Build environment checks">{environment.map(check => <div className={`environment-check ${check.status}`} key={check.id}><span aria-hidden="true">{check.status === "pass" ? "✓" : "×"}</span><div><strong>{check.label}</strong><small>{check.detail}</small></div></div>)}</div>{environmentError && <p className="insert-error">{environmentError}</p>}<p className="build-requirement-hint">Build requires Python 3 and Jupyter Book 2. After installing or updating them, restart LanCarbon and reopen this panel.</p></>}
+    {state !== "checking" && <><div className="build-environment" aria-label="Build environment checks">{environment.map(check => <div className={`environment-check ${check.status}`} key={check.id}><span aria-hidden="true">{check.status === "pass" ? "✓" : "×"}</span><div><strong>{check.label}</strong><small>{check.detail}</small></div></div>)}</div>{environmentError && <p className="insert-error">{environmentError}</p>}<p className="build-requirement-hint">Build requires Python 3 and Jupyter Book 2. Use Environment Setup to install or repair them, then refresh this panel.</p>{props.onEnvironmentSetup && <button type="button" className="build-action github-inline-action" onClick={props.onEnvironmentSetup}>Open Environment Setup</button>}</>}
     {state !== "checking" && <div className="build-summary"><strong>{errors} errors · {warnings} warnings</strong><span>{state === "building" ? "Building with Jupyter Book…" : state === "success" ? `Completed in ${((result?.ok ? result.durationMs : 0) / 1000).toFixed(1)} seconds` : state === "failed" && result ? "Jupyter Book build failed" : "Preflight result"}</span></div>}
     {state !== "checking" && <IssueList issues={issues} onNavigate={props.onNavigate} />}
     {result && !result.ok && !result.canceled && !issues.length && <p className="insert-error">{result.error}</p>}

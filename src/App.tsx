@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BookSettingsDialog, ChooseBookDialog, CreateBookDialog, DataLocationDialog, PagePropertiesDialog } from "./components/BookDialogs";
 import { BookBuildPanel } from "./components/BookBuildPanel";
 import { GitHubPublishingPanel } from "./components/GitHubPublishingPanel";
+import { EnvironmentSetupPanel } from "./components/EnvironmentSetupPanel";
 import { Editor } from "./components/Editor";
 import { Sidebar } from "./components/Sidebar";
 import { addNoteToBook, createBook, createEmptyWorkspace, getBookForNote, isValidExportPath, movePage, removeBookLanguageHeadings, removePageFromBook, updatePageMetadata } from "./shared/books";
@@ -40,6 +41,7 @@ export function App() {
   const [showDataLocation, setShowDataLocation] = useState(false);
   const [showBookBuild, setShowBookBuild] = useState(false);
   const [showGitHubPublishing, setShowGitHubPublishing] = useState(false);
+  const [showEnvironmentSetup, setShowEnvironmentSetup] = useState(false);
   const [dataLocation, setDataLocation] = useState("");
   const workspaceRef = useRef(workspace);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -129,7 +131,7 @@ export function App() {
       const mod = event.ctrlKey || event.metaKey;
       if (mod && event.key.toLowerCase() === "k") { event.preventDefault(); if (mode === "notes") searchRef.current?.focus(); }
       if (mod && event.key.toLowerCase() === "n") { event.preventDefault(); mode === "book" ? addBookPage(false) : addOrdinaryNote(); }
-      if (event.key === "Escape") { document.body.classList.remove("sidebar-open"); searchRef.current?.blur(); setShowBookSettings(false); setShowPageProperties(false); setShowCreateBook(false); setShowBookChooser(false); setShowDataLocation(false); setShowBookBuild(false); setShowGitHubPublishing(false); }
+      if (event.key === "Escape") { document.body.classList.remove("sidebar-open"); searchRef.current?.blur(); setShowBookSettings(false); setShowPageProperties(false); setShowCreateBook(false); setShowBookChooser(false); setShowDataLocation(false); setShowBookBuild(false); setShowGitHubPublishing(false); setShowEnvironmentSetup(false); }
     };
     document.addEventListener("keydown", shortcut); return () => document.removeEventListener("keydown", shortcut);
   }, [addBookPage, addOrdinaryNote, mode]);
@@ -250,7 +252,7 @@ export function App() {
   if (!loaded) return <div className="loading-screen" role="status">Loading notes…</div>;
   return <>
     <main className="app-shell" aria-label="LanCarbon application">
-      <Sidebar notes={workspace.notes} books={workspace.books} mode={mode} activeBookId={activeBookId} activePageId={activePageId} activeId={activeId} query={query} filter={filter} theme={theme} searchRef={searchRef} onModeChange={switchMode} onBookChange={switchBook} onQueryChange={setQuery} onFilterChange={setFilter} onSelectNote={id => { setActiveId(id); document.body.classList.remove("sidebar-open"); }} onSelectPage={id => { setActivePageId(id); document.body.classList.remove("sidebar-open"); }} onNewNote={addOrdinaryNote} onNewBook={() => setShowCreateBook(true)} onNewPage={addBookPage} onMovePage={(pageId, targetId, placement) => { if (!activeBook) return; const updated = movePage(activeBook, pageId, targetId, placement); persist({ ...workspaceRef.current, books: workspaceRef.current.books.map(book => book.id === activeBook.id ? updated : book) }); }} onBookSettings={() => setShowBookSettings(true)} onExportBook={() => void exportBook()} onBuildBook={() => void checkAndBuildBook()} onPublishBook={() => void openPublishBook()} onDeleteBook={deleteBook} onClear={clearLoose} onDataLocation={() => setShowDataLocation(true)} onThemeChange={value => { setTheme(value); showToast(value === "light" ? "Switched to light theme" : "Switched to dark theme"); }} onClose={() => document.body.classList.remove("sidebar-open")} />
+      <Sidebar notes={workspace.notes} books={workspace.books} mode={mode} activeBookId={activeBookId} activePageId={activePageId} activeId={activeId} query={query} filter={filter} theme={theme} searchRef={searchRef} onModeChange={switchMode} onBookChange={switchBook} onQueryChange={setQuery} onFilterChange={setFilter} onSelectNote={id => { setActiveId(id); document.body.classList.remove("sidebar-open"); }} onSelectPage={id => { setActivePageId(id); document.body.classList.remove("sidebar-open"); }} onNewNote={addOrdinaryNote} onNewBook={() => setShowCreateBook(true)} onNewPage={addBookPage} onMovePage={(pageId, targetId, placement) => { if (!activeBook) return; const updated = movePage(activeBook, pageId, targetId, placement); persist({ ...workspaceRef.current, books: workspaceRef.current.books.map(book => book.id === activeBook.id ? updated : book) }); }} onBookSettings={() => setShowBookSettings(true)} onExportBook={() => void exportBook()} onBuildBook={() => void checkAndBuildBook()} onPublishBook={() => void openPublishBook()} onDeleteBook={deleteBook} onClear={clearLoose} onEnvironmentSetup={() => setShowEnvironmentSetup(true)} onDataLocation={() => setShowDataLocation(true)} onThemeChange={value => { setTheme(value); showToast(value === "light" ? "Switched to light theme" : "Switched to dark theme"); }} onClose={() => document.body.classList.remove("sidebar-open")} />
       <Editor bibliographyBook={mode === "book" ? activeBook ?? undefined : undefined} onBibliographyBookChange={updated => persist({...workspaceRef.current,books:workspaceRef.current.books.map(book=>book.id===updated.id?updated:book)})} onResourcesChanged={next => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); }} resourceBooks={workspace.books} beforeResourceChange={async () => { const result = await saveNow(); if (!result.ok) throw new Error(result.error); }} resourceNotes={workspace.notes} key={`${mode}:${activeNoteId ?? "empty"}`} previewDocuments={previewDocuments} previewNavigation={previewNavigation} onPreviewNavigate={navigatePreview} onPreviewNavigated={() => setPreviewNavigation(null)} note={activeNote} saveState={saveState} theme={theme} viewMode={viewMode} onViewModeChange={setViewMode} bookContext={activePage ? { isHome: activePage.id === activeBook?.homePageId } : undefined} booksAvailable={workspace.books.length > 0} onChange={updateActive} onNew={mode === "book" ? () => addBookPage(false) : addOrdinaryNote} onPin={togglePin} onDelete={deleteActive} onAddToBook={mode === "notes" ? addActiveToBook : undefined} onRemoveFromBook={mode === "book" && activePage ? removeActiveFromBook : undefined} onPageProperties={mode === "book" && activePage ? () => setShowPageProperties(true) : undefined} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />
     </main>
     <button className="sidebar-backdrop" aria-label="Close notes list" onClick={() => document.body.classList.remove("sidebar-open")} />
@@ -260,10 +262,11 @@ export function App() {
     {showBookSettings && activeBook && <BookSettingsDialog book={activeBook} onClose={() => setShowBookSettings(false)} onSave={settings => { const updated: Book = { ...activeBook, settings, updatedAt: new Date().toISOString() }; persist({ ...workspaceRef.current, books: workspaceRef.current.books.map(book => book.id === activeBook.id ? updated : book) }); setShowBookSettings(false); showToast("Book settings saved"); }} />}
     {showPageProperties && activePage && <PagePropertiesDialog exportPath={activePage.exportPath} showInToc={activePage.showInToc} metadata={activePage.metadata} onClose={() => setShowPageProperties(false)} onSave={savePageProperties} />}
     {showDataLocation && <DataLocationDialog path={dataLocation} onClose={() => setShowDataLocation(false)} onChange={() => void changeDataLocation()} onOpen={() => void openDataLocation()} />}
-    {showBookBuild && activeBook && <BookBuildPanel book={activeBook} onClose={() => setShowBookBuild(false)} onNavigate={navigateBuildIssue} onNotice={showToast} />}
-    {showGitHubPublishing && activeBook && <GitHubPublishingPanel book={activeBook} onClose={() => setShowGitHubPublishing(false)} onNotice={showToast} onBinding={binding => {
+    {showBookBuild && activeBook && <BookBuildPanel book={activeBook} onClose={() => setShowBookBuild(false)} onNavigate={navigateBuildIssue} onNotice={showToast} onEnvironmentSetup={() => setShowEnvironmentSetup(true)} />}
+    {showGitHubPublishing && activeBook && <GitHubPublishingPanel book={activeBook} onClose={() => setShowGitHubPublishing(false)} onNotice={showToast} onEnvironmentSetup={() => setShowEnvironmentSetup(true)} onBinding={binding => {
       const updated: Book = { ...activeBook, settings: { ...activeBook.settings, github: binding.repositoryUrl, publishing: binding }, updatedAt: new Date().toISOString() };
       persist({ ...workspaceRef.current, books: workspaceRef.current.books.map(book => book.id === activeBook.id ? updated : book) });
     }} />}
+    {showEnvironmentSetup && <EnvironmentSetupPanel onClose={() => setShowEnvironmentSetup(false)} onNotice={showToast} />}
   </>;
 }
