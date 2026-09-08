@@ -127,8 +127,8 @@ LanCarbon/
 
 普通写作、Preview 和源文件副本 Export 可以直接在 LanCarbon 中完成。只有相应流程需要以下工具：
 
-- **Build：**Python 3 和 Jupyter Book 2。
-- **Publish：**Git、GitHub CLI、GitHub 账号，以及能够访问 GitHub 的网络。
+- **Build：** Python 3 和 Jupyter Book 2。
+- **Publish：** Git、GitHub CLI、GitHub 账号，以及能够访问 GitHub 的网络。
 
 LanCarbon 会在 Build 和 Publish 面板中检查这些条件。内置的 *LanCarbon: From 0 to 1* 教程详细讲解安装、写作、本地 Build、GitHub 登录、首次发布、后续更新和常见错误。
 
