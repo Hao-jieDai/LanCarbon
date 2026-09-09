@@ -30,6 +30,8 @@ describe("笔记核心逻辑", () => {
     expect(notes[0]).toMatchObject({ id: RELEASE_README_ID, title: "ReadMe", pinned: true });
     expect(notes[0].content).toBe(RELEASE_README_CONTENT);
     expect(notes[0].content).toContain(`LanCarbon ${RELEASE_VERSION}`);
+    expect(notes[0].content).toContain("LanCarbon now uses the new Logo consistently");
+    expect(notes[0].content).toContain("统一使用新版 Logo");
   });
 
   it("升级时补充或更新 ReadMe 且不删除用户笔记", () => {
