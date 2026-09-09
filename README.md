@@ -3,7 +3,7 @@
 <p align="center">An offline desktop application for writing Notes, creating structured Books, building Jupyter Book websites, and publishing them to GitHub Pages.</p>
 <p align="center"><a href="https://github.com/Hao-jieDai/LanCarbon/releases/latest"><strong>Download the latest release</strong></a> · <a href="#english">English</a> · <a href="#中文">中文</a></p>
 
-![The LanCarbon writing workspace](resources/starter-content/assets/2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png)
+![The LanCarbon writing workspace](resources/starter-content/assets/32a3e216430183b9d8a8b7f239b26b4b0fb164fff5b42f399d119d880c23eb77.png)
 
 <a id="english"></a>
 

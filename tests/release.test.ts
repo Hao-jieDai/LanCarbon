@@ -37,10 +37,15 @@ describe("release metadata", () => {
     for (const asset of assets.assets) {
       const file = asset.file ?? asset.id;
       const bytes = readFileSync(path.join(process.cwd(), "resources", "starter-content", "assets", file));
+      expect(bytes.length).toBe(asset.size);
       expect(createHash("sha256").update(bytes).digest("hex")).toBe(path.parse(file).name);
     }
     const logo = assets.assets.find((asset: { id: string }) => asset.id === "8405f88769f513467cc1aa25973fa97e6ad60427ff943279ab2d299a3d70ca75.png");
-    expect(logo.file).toBe("987943b2e8afddac7d5858734990c28ebfe512df3eee963990b9bdf25dee86e5.png");
+    expect(logo.file).toBe("467222c73878df59bdeebc7e74c0aebc63d96432aff2264fa24635a625ee0231.png");
+    const mainWorkspace = assets.assets.find((asset: { id: string }) => asset.id === "2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png");
+    const readme = readFileSync(path.join(process.cwd(), "README.md"), "utf8");
+    expect(readme).toContain('<img src="build/icon.png" alt="LanCarbon"');
+    expect(readme).toContain(`resources/starter-content/assets/${mainWorkspace.file}`);
     expect(readFileSync(path.join(process.cwd(), "public", "icon.png"))).toEqual(readFileSync(path.join(process.cwd(), "build", "icon.png")));
     const ico = readFileSync(path.join(process.cwd(), "build", "icon.ico"));
     expect(ico.readUInt16LE(4)).toBe(7);
