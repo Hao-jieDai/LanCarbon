@@ -1,11 +1,14 @@
 // @vitest-environment node
 import { promises as fs } from "node:fs";
+import { createHash } from "node:crypto";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NotesStore } from "../electron/storage";
 import { createBook, createEmptyWorkspace } from "../src/shared/books";
 import { createNote } from "../src/shared/notes";
+import { MANAGED_TUTORIAL_BOOK_ID } from "../src/shared/managedTutorial";
+import type { WorkspaceFile } from "../src/shared/types";
 
 describe("NotesStore 工作区存储", () => {
   let directory: string;
@@ -25,7 +28,28 @@ describe("NotesStore 工作区存储", () => {
     await fs.writeFile(path.join(starter, "assets.json"), JSON.stringify({ version: 1, assets: [] }));
     const result = await new NotesStore(data, starter).loadWorkspace();
     expect(result).toMatchObject({ isFirstRun: true, migrated: false, workspace: { books: [{ settings: { title: "LanCarbon: From 0 to 1" } }] } });
-    await expect(fs.readFile(path.join(data, "assets.json"), "utf8")).resolves.toContain('"version":1');
+    expect(JSON.parse(await fs.readFile(path.join(data, "assets.json"), "utf8"))).toEqual({ version: 1, assets: [] });
+  });
+
+  it("从旧版本升级时覆盖系统教程并保留用户内容和资源", async () => {
+    const starter = path.join(process.cwd(), "resources", "starter-content");
+    const bundled = JSON.parse(await fs.readFile(path.join(starter, "notes.json"), "utf8")) as WorkspaceFile;
+    const officialBook = bundled.books.find(book => book.id === MANAGED_TUTORIAL_BOOK_ID)!;
+    const officialIds = new Set(Object.values(officialBook.pages).map(page => page.noteId));
+    const user = createBook("User Book"); const loose = createNote({ id: "user-loose", content: "User text" });
+    const editedNotes = bundled.notes.filter(note => officialIds.has(note.id)).map(note => note.id === "tutorial-note-home" ? { ...note, content: "Edited old tutorial" } : note);
+    const editedBook = { ...structuredClone(officialBook), settings: { ...officialBook.settings, title: "Edited tutorial" } };
+    const workspace: WorkspaceFile = { version: 2, notes: [loose, user.homeNote, ...editedNotes], books: [user.book, editedBook] };
+    const data = path.join(directory, "upgrade-data"); await new NotesStore(data).saveWorkspace(workspace);
+    const userBytes = Buffer.from("user asset"); const userFile = `${createHash("sha256").update(userBytes).digest("hex")}.txt`;
+    await fs.mkdir(path.join(data, "assets"), { recursive: true }); await fs.writeFile(path.join(data, "assets", userFile), userBytes);
+    await fs.writeFile(path.join(data, "assets.json"), JSON.stringify({ version: 1, assets: [{ id: userFile, file: userFile, name: "user.txt", size: userBytes.length, mime: "text/plain", createdAt: "2026-09-08T00:00:00.000Z" }] }, null, 2));
+    const result = await new NotesStore(data, starter).loadWorkspace();
+    expect(result.workspace.books.find(book => book.id === MANAGED_TUTORIAL_BOOK_ID)).toEqual(officialBook);
+    expect(result.workspace.notes.find(note => note.id === "tutorial-note-home")?.content).toContain("System-managed tutorial — do not edit");
+    expect(result.workspace.notes.find(note => note.id === loose.id)).toEqual(loose); expect(result.workspace.books.find(book => book.id === user.book.id)).toMatchObject({ id: user.book.id, settings: { title: "User Book" }, homePageId: user.book.homePageId });
+    const assets = JSON.parse(await fs.readFile(path.join(data, "assets.json"), "utf8")); expect(assets.assets).toHaveLength(9); expect(assets.assets.some((asset: { id: string }) => asset.id === userFile)).toBe(true);
+    const persisted = JSON.parse(await fs.readFile(path.join(data, "notes.json"), "utf8")); expect(persisted.books.find((book: { id: string }) => book.id === MANAGED_TUTORIAL_BOOK_ID).settings.title).toBe("LanCarbon: From 0 to 1");
   });
 
   it("无损迁移 v1 笔记文件", async () => {
@@ -77,6 +101,17 @@ describe("NotesStore 工作区存储", () => {
     await fs.writeFile(path.join(directory, "notes.json"), "not-json");
     await expect(new NotesStore(directory).loadWorkspace()).resolves.toMatchObject({ workspace: { notes: [], books: [] }, isFirstRun: false });
     expect((await fs.readdir(directory)).some(name => name.startsWith("notes.json.corrupt-"))).toBe(true);
+  });
+
+  it("系统教程同步失败时不把用户工作区当作损坏文件移动", async () => {
+    const data = path.join(directory, "safe-data"); const starter = path.join(directory, "broken-starter");
+    const note = createNote({ id: "safe-note", content: "Must remain" }); await new NotesStore(data).saveWorkspace(createEmptyWorkspace([note]));
+    const tutorial = createBook("LanCarbon: From 0 to 1"); tutorial.book.id = MANAGED_TUTORIAL_BOOK_ID;
+    await fs.mkdir(starter, { recursive: true }); await fs.writeFile(path.join(starter, "notes.json"), JSON.stringify({ version: 2, notes: [tutorial.homeNote], books: [tutorial.book] }));
+    await fs.writeFile(path.join(starter, "assets.json"), "not-json");
+    await expect(new NotesStore(data, starter).loadWorkspace()).rejects.toThrow();
+    expect(JSON.parse(await fs.readFile(path.join(data, "notes.json"), "utf8")).notes[0].content).toBe("Must remain");
+    expect((await fs.readdir(data)).some(name => name.startsWith("notes.json.corrupt-"))).toBe(false);
   });
 
   it("拒绝非法数据并传递写入错误", async () => {

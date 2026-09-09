@@ -1,9 +1,14 @@
 import { promises as fs } from "node:fs";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { createEmptyWorkspace, MAX_BOOK_PAGES, MAX_BOOKS, normalizeBooks, validateWorkspace } from "../src/shared/books";
 import { normalizeNotes } from "../src/shared/notes";
 import type { Note, WindowPreferences, WorkspaceFile } from "../src/shared/types";
 import { validateBibliographies } from "../src/shared/bibliography";
+import { syncManagedTutorial } from "../src/shared/managedTutorial";
+import { ASSET_ID, type Asset } from "../src/shared/assets";
+
+class ManagedStarterSyncError extends Error {}
 
 export class NotesStore {
   private readonly notesPath: string;
@@ -22,16 +27,24 @@ export class NotesStore {
       if (parsed?.version === 2 && Array.isArray(parsed.notes) && Array.isArray(parsed.books)) {
         const notes = normalizeNotes(parsed.notes);
         const workspace: WorkspaceFile = { version: 2, notes, books: normalizeBooks(parsed.books, notes) };
-        return { workspace, isFirstRun: false, migrated: false };
+        const managed = await this.syncManagedStarter(workspace);
+        if (managed.changed) {
+          try { await this.writeWorkspaceFile(managed.workspace); }
+          catch (error) { throw new ManagedStarterSyncError(error instanceof Error ? error.message : "Failed to save the system tutorial update"); }
+        }
+        return { workspace: managed.workspace, isFirstRun: false, migrated: false };
       }
       if (Array.isArray(parsed?.notes)) {
-        return { workspace: createEmptyWorkspace(normalizeNotes(parsed.notes)), isFirstRun: false, migrated: true };
+        const managed = await this.syncManagedStarter(createEmptyWorkspace(normalizeNotes(parsed.notes)));
+        return { workspace: managed.workspace, isFirstRun: false, migrated: true };
       }
       if (Array.isArray(parsed)) {
-        return { workspace: createEmptyWorkspace(normalizeNotes(parsed)), isFirstRun: false, migrated: true };
+        const managed = await this.syncManagedStarter(createEmptyWorkspace(normalizeNotes(parsed)));
+        return { workspace: managed.workspace, isFirstRun: false, migrated: true };
       }
       throw new Error("Unrecognized workspace file version");
     } catch (error) {
+      if (error instanceof ManagedStarterSyncError) throw error;
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         const starter = await this.loadStarterContent();
         return { workspace: starter ?? createEmptyWorkspace(), isFirstRun: true, migrated: false };
@@ -43,6 +56,14 @@ export class NotesStore {
 
   private async loadStarterContent(): Promise<WorkspaceFile | undefined> {
     if (!this.starterContentDirectory) return undefined;
+    const workspace = await this.readStarterWorkspace();
+    if (!workspace) return undefined;
+    await this.syncStarterAssets();
+    return workspace;
+  }
+
+  private async readStarterWorkspace(): Promise<WorkspaceFile | undefined> {
+    if (!this.starterContentDirectory) return undefined;
     const starterWorkspace = path.join(this.starterContentDirectory, "notes.json");
     if (!(await fs.stat(starterWorkspace).catch(() => null))?.isFile()) return undefined;
     const parsed = JSON.parse(await fs.readFile(starterWorkspace, "utf8")) as Partial<WorkspaceFile>;
@@ -50,14 +71,54 @@ export class NotesStore {
     const notes = normalizeNotes(parsed.notes);
     const workspace: WorkspaceFile = { version: 2, notes, books: normalizeBooks(parsed.books, notes) };
     if (validateWorkspace(workspace).length) throw new Error("Invalid starter workspace structure");
-    const sourceManifest = path.join(this.starterContentDirectory, "assets.json");
-    const sourceAssets = path.join(this.starterContentDirectory, "assets");
-    if ((await fs.stat(sourceManifest).catch(() => null))?.isFile()) {
-      await fs.mkdir(this.dataDirectory, { recursive: true });
-      await fs.cp(sourceAssets, path.join(this.dataDirectory, "assets"), { recursive: true, force: false, errorOnExist: false });
-      await fs.copyFile(sourceManifest, path.join(this.dataDirectory, "assets.json"));
-    }
     return workspace;
+  }
+
+  private async syncManagedStarter(workspace: WorkspaceFile): Promise<{ workspace: WorkspaceFile; changed: boolean }> {
+    try {
+      const starter = await this.readStarterWorkspace();
+      if (!starter) return { workspace, changed: false };
+      const result = syncManagedTutorial(workspace, starter);
+      await this.syncStarterAssets();
+      return result;
+    } catch (error) { throw new ManagedStarterSyncError(error instanceof Error ? error.message : "Failed to synchronize the system tutorial"); }
+  }
+
+  private async syncStarterAssets(): Promise<void> {
+    if (!this.starterContentDirectory) return;
+    const sourceManifest = path.join(this.starterContentDirectory, "assets.json");
+    if (!(await fs.stat(sourceManifest).catch(() => null))?.isFile()) return;
+    const parsed = JSON.parse(await fs.readFile(sourceManifest, "utf8")) as { version?: number; assets?: Asset[] };
+    if (parsed.version !== 1 || !Array.isArray(parsed.assets) || !parsed.assets.every(asset => ASSET_ID.test(asset.id) && ASSET_ID.test(asset.file ?? asset.id))) throw new Error("Invalid starter asset catalog");
+    let existing: Asset[] = [];
+    try {
+      const catalog = JSON.parse(await fs.readFile(path.join(this.dataDirectory, "assets.json"), "utf8")) as { version?: number; assets?: Asset[] };
+      if (catalog.version !== 1 || !Array.isArray(catalog.assets) || !catalog.assets.every(asset => ASSET_ID.test(asset.id) && ASSET_ID.test(asset.file ?? asset.id))) throw new Error("Invalid asset catalog");
+      existing = catalog.assets;
+    } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+    const officialIds = new Set(parsed.assets.map(asset => asset.id));
+    const merged = [...existing.filter(asset => !officialIds.has(asset.id)), ...parsed.assets];
+    const destinationAssets = path.join(this.dataDirectory, "assets");
+    await fs.mkdir(destinationAssets, { recursive: true });
+    for (const asset of parsed.assets) {
+      const file = asset.file ?? asset.id;
+      const source = path.join(this.starterContentDirectory, "assets", file);
+      const destination = path.join(destinationAssets, file);
+      const expectedHash = path.parse(file).name;
+      const current = await fs.readFile(destination).catch(() => undefined);
+      if (!current || createHash("sha256").update(current).digest("hex") !== expectedHash) {
+        await fs.copyFile(source, `${destination}.starter.tmp`);
+        await fs.rm(destination, { force: true });
+        await fs.rename(`${destination}.starter.tmp`, destination);
+      }
+    }
+    const manifest = path.join(this.dataDirectory, "assets.json");
+    const serialized = JSON.stringify({ version: 1, assets: merged }, null, 2);
+    const currentManifest = await fs.readFile(manifest, "utf8").catch(() => undefined);
+    if (currentManifest !== serialized) {
+      await fs.writeFile(`${manifest}.starter.tmp`, serialized, "utf8");
+      await fs.rename(`${manifest}.starter.tmp`, manifest);
+    }
   }
 
   async saveWorkspace(input: unknown): Promise<void> {

@@ -8,8 +8,11 @@ import { createNote } from "../../src/shared/notes";
 import { assetMarkdown } from "../../src/shared/assets";
 
 test("image settings, duplicate choices and cross-Book deletion filters",async({},info)=>{
+  const officialCatalog=JSON.parse(await fs.readFile(path.resolve("resources/starter-content/assets.json"),"utf8"));
+  const officialIds=new Set<string>(officialCatalog.assets.map((asset:{id:string})=>asset.id));
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),"lancarbon-resource-management-"));
   const store=new AssetStore(dir),image=await store.importBytes("image.png",await fs.readFile("build/icon.png"),true);
+  const userAssets=async()=>(await store.list()).filter(asset=>!officialIds.has(asset.id));
   const shared=await store.importBytes("shared.txt",Buffer.from("original"),false);
   await store.importBytes("unused.txt",Buffer.from("unused"),false);
   const first=createBook("Book A"),second=createBook("Book B"),loose=createNote({title:"Ordinary note",content:assetMarkdown(shared)});
@@ -39,7 +42,7 @@ test("image settings, duplicate choices and cross-Book deletion filters",async({
     },{response,input});
     const details=()=>app.evaluate(()=>(globalThis as unknown as {lastDialog?:{detail:string}}).lastDialog?.detail);
     await mock(2);await page.getByRole("button",{name:"Attach file",exact:true}).click();await expect(page.getByRole("button",{name:"Attach file",exact:true})).toBeEnabled();
-    expect(await store.list()).toHaveLength(3);
+    expect(await userAssets()).toHaveLength(3);
     await expect.poll(details).toContain("Book B");
     await mock(1);await page.getByRole("button",{name:"Attach file",exact:true}).click();await expect(page.getByLabel("Note content")).toContainText("shared (2).txt");
     await fs.writeFile(input,"replacement");await mock(0);await page.getByRole("button",{name:"Attach file",exact:true}).click();
@@ -48,7 +51,7 @@ test("image settings, duplicate choices and cross-Book deletion filters",async({
     await page.getByLabel("Resource scope").selectOption(`book:${second.book.id}`);
     await expect(page.locator(".asset-row")).toHaveCount(1);
     await mock(1);await page.locator(".asset-row").getByRole("button",{name:"Delete",exact:true}).click();
-    await expect.poll(details).toContain("Ordinary note");expect(await store.list()).toHaveLength(4);
+    await expect.poll(details).toContain("Ordinary note");expect(await userAssets()).toHaveLength(4);
     await page.getByLabel("Resource scope").selectOption("unused");
     await expect(page.locator(".asset-row")).toHaveCount(1);await expect(page.locator(".asset-row")).toContainText("unused.txt");
     await page.getByLabel("Select all visible resources").check();await mock(0);
@@ -70,6 +73,6 @@ test("image settings, duplicate choices and cross-Book deletion filters",async({
     await expect(page.locator(".preview-diagnostics")).not.toBeVisible();
     const restarted=JSON.parse(await fs.readFile(path.join(dir,"notes.json"),"utf8"));
     expect(restarted.notes.every((n:{content:string})=>!n.content.includes(shared.id))).toBe(true);
-    expect((await store.list()).map(a=>a.name).sort()).toEqual(["image.png","shared (2).txt"]);
+    expect((await userAssets()).map(a=>a.name).sort()).toEqual(["image.png","shared (2).txt"]);
   } finally {await app.close().catch(()=>undefined);await fs.rm(dir,{recursive:true,force:true,maxRetries:5,retryDelay:500});}
 });

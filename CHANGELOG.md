@@ -14,6 +14,11 @@ All notable changes to official LanCarbon releases are recorded here.
 - Portable archives are extracted with the Windows inbox `tar.exe`, avoiding a dependency on the optional PowerShell Archive module.
 - Managed directories are verified after their atomic switch and automatically roll back if final-path verification fails; Jupyter dependency activity is surfaced during its longer install phase.
 
+### Changed
+
+- The system-managed *LanCarbon: From 0 to 1* tutorial is synchronized from the installed release on every upgrade by stable Book, Page and Note IDs. User-created Notes and Books remain untouched.
+- The tutorial now begins with a bilingual do-not-edit and overwrite notice, and release-version references have been removed so its guidance remains evergreen.
+
 ### Validation
 
 - Added isolated tests for fully installed, missing, incompatible, offline and mid-download cancellation scenarios.

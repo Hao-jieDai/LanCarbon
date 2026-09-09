@@ -6,6 +6,8 @@ import { createBook, addNoteToBook } from "../../src/shared/books";
 import { createNote } from "../../src/shared/notes";
 
 test("images, screenshot paste, file drop, reuse, restart and portable export", async ({}, info) => {
+  const officialCatalog = JSON.parse(await fs.readFile(path.resolve("resources/starter-content/assets.json"), "utf8"));
+  const officialIds = new Set<string>(officialCatalog.assets.map((asset: { id: string }) => asset.id));
   const directory = await fs.mkdtemp(path.join(os.tmpdir(),"lancarbon-asset-e2e-"));
   const output = path.join(directory,"output"); await fs.mkdir(output);
   const png = await fs.readFile(path.resolve("build/icon.png"));
@@ -73,7 +75,7 @@ test("images, screenshot paste, file drop, reuse, restart and portable export", 
     await page.getByRole("button",{name:"Export",exact:true}).click();
     await expect(page.locator(".toast")).toContainText("Exported to");
     const catalog=JSON.parse(await fs.readFile(path.join(directory,"assets.json"),"utf8"));
-    expect(catalog.assets).toHaveLength(3);
+    expect(catalog.assets.filter((asset: { id: string }) => !officialIds.has(asset.id))).toHaveLength(3);
     const md=await fs.readFile(path.join(output,"chapters/nested/sample.md"),"utf8");
     expect(md).toContain("../../assets/");
     // Keep an exported fixture for official CLI validation, outside the test data.
