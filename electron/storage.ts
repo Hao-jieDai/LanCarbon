@@ -90,17 +90,21 @@ export class NotesStore {
     if (!(await fs.stat(sourceManifest).catch(() => null))?.isFile()) return;
     const parsed = JSON.parse(await fs.readFile(sourceManifest, "utf8")) as { version?: number; assets?: Asset[] };
     if (parsed.version !== 1 || !Array.isArray(parsed.assets) || !parsed.assets.every(asset => ASSET_ID.test(asset.id) && ASSET_ID.test(asset.file ?? asset.id))) throw new Error("Invalid starter asset catalog");
+    const officialAssets = parsed.assets;
     let existing: Asset[] = [];
     try {
       const catalog = JSON.parse(await fs.readFile(path.join(this.dataDirectory, "assets.json"), "utf8")) as { version?: number; assets?: Asset[] };
       if (catalog.version !== 1 || !Array.isArray(catalog.assets) || !catalog.assets.every(asset => ASSET_ID.test(asset.id) && ASSET_ID.test(asset.file ?? asset.id))) throw new Error("Invalid asset catalog");
       existing = catalog.assets;
     } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
-    const officialIds = new Set(parsed.assets.map(asset => asset.id));
-    const merged = [...existing.filter(asset => !officialIds.has(asset.id)), ...parsed.assets];
+    const officialIds = new Set(officialAssets.map(asset => asset.id));
+    const supersededOfficialFiles = existing
+      .filter(asset => officialIds.has(asset.id) && !officialAssets.some(official => official.id === asset.id && (official.file ?? official.id) === (asset.file ?? asset.id)))
+      .map(asset => asset.file ?? asset.id);
+    const merged = [...existing.filter(asset => !officialIds.has(asset.id)), ...officialAssets];
     const destinationAssets = path.join(this.dataDirectory, "assets");
     await fs.mkdir(destinationAssets, { recursive: true });
-    for (const asset of parsed.assets) {
+    for (const asset of officialAssets) {
       const file = asset.file ?? asset.id;
       const source = path.join(this.starterContentDirectory, "assets", file);
       const destination = path.join(destinationAssets, file);
@@ -119,6 +123,10 @@ export class NotesStore {
       await fs.writeFile(`${manifest}.starter.tmp`, serialized, "utf8");
       await fs.rename(`${manifest}.starter.tmp`, manifest);
     }
+    const retainedFiles = new Set(merged.map(asset => asset.file ?? asset.id));
+    await Promise.all(supersededOfficialFiles
+      .filter(file => !retainedFiles.has(file))
+      .map(file => fs.rm(path.join(destinationAssets, file), { force: true }).catch(() => undefined)));
   }
 
   async saveWorkspace(input: unknown): Promise<void> {

@@ -15,6 +15,8 @@ Welcome to **LanCarbon**, an offline-first desktop application for writing Notes
 
 Version 1.1.1 adds a safer, transparent Environment Setup for optional Build and Publish tools. Compatible system tools are used as-is; only missing or incompatible tools offer private managed installation under LanCarbon Tools. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
 
+LanCarbon's refreshed manta-orchid artwork is used consistently in the application, installer, repository ReadMe, built-in tutorial and the default favicon of generated Book websites.
+
 ### What you can do
 
 - Write and organize ordinary Markdown Notes.
@@ -62,6 +64,8 @@ Export is optional in this workflow. It creates a separate source copy and is no
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
 1.1.1 新增更安全、过程透明的 Environment Setup，用于准备可选的 Build 和 Publish 工具。系统中已有的兼容工具直接使用，只有缺失或不兼容的工具才提供 LanCarbon Tools 私有安装。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
+
+LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程以及生成 Book 网站的默认 favicon 中统一使用新版蝠鲼兰花品牌图。
 
 ### 主要功能
 

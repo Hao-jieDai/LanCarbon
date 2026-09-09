@@ -42,13 +42,17 @@ describe("NotesStore 工作区存储", () => {
     const workspace: WorkspaceFile = { version: 2, notes: [loose, user.homeNote, ...editedNotes], books: [user.book, editedBook] };
     const data = path.join(directory, "upgrade-data"); await new NotesStore(data).saveWorkspace(workspace);
     const userBytes = Buffer.from("user asset"); const userFile = `${createHash("sha256").update(userBytes).digest("hex")}.txt`;
-    await fs.mkdir(path.join(data, "assets"), { recursive: true }); await fs.writeFile(path.join(data, "assets", userFile), userBytes);
-    await fs.writeFile(path.join(data, "assets.json"), JSON.stringify({ version: 1, assets: [{ id: userFile, file: userFile, name: "user.txt", size: userBytes.length, mime: "text/plain", createdAt: "2026-09-08T00:00:00.000Z" }] }, null, 2));
+    const bundledAssets = JSON.parse(await fs.readFile(path.join(starter, "assets.json"), "utf8")) as { assets: Array<{ id: string; file: string; name: string; size: number; mime: string; createdAt: string }> };
+    const logo = bundledAssets.assets.find(asset => asset.name === "LanCarbon Manta Orchid Logo.png")!;
+    const oldLogoBytes = Buffer.from("superseded official logo"); const oldLogoFile = `${createHash("sha256").update(oldLogoBytes).digest("hex")}.png`;
+    await fs.mkdir(path.join(data, "assets"), { recursive: true }); await fs.writeFile(path.join(data, "assets", userFile), userBytes); await fs.writeFile(path.join(data, "assets", oldLogoFile), oldLogoBytes);
+    await fs.writeFile(path.join(data, "assets.json"), JSON.stringify({ version: 1, assets: [{ id: userFile, file: userFile, name: "user.txt", size: userBytes.length, mime: "text/plain", createdAt: "2026-09-08T00:00:00.000Z" }, { ...logo, file: oldLogoFile, size: oldLogoBytes.length }] }, null, 2));
     const result = await new NotesStore(data, starter).loadWorkspace();
     expect(result.workspace.books.find(book => book.id === MANAGED_TUTORIAL_BOOK_ID)).toEqual(officialBook);
     expect(result.workspace.notes.find(note => note.id === "tutorial-note-home")?.content).toContain("System-managed tutorial — do not edit");
     expect(result.workspace.notes.find(note => note.id === loose.id)).toEqual(loose); expect(result.workspace.books.find(book => book.id === user.book.id)).toMatchObject({ id: user.book.id, settings: { title: "User Book" }, homePageId: user.book.homePageId });
     const assets = JSON.parse(await fs.readFile(path.join(data, "assets.json"), "utf8")); expect(assets.assets).toHaveLength(9); expect(assets.assets.some((asset: { id: string }) => asset.id === userFile)).toBe(true);
+    expect(assets.assets.find((asset: { id: string }) => asset.id === logo.id).file).toBe(logo.file); expect(await fs.stat(path.join(data, "assets", oldLogoFile)).catch(() => null)).toBeNull();
     const persisted = JSON.parse(await fs.readFile(path.join(data, "notes.json"), "utf8")); expect(persisted.books.find((book: { id: string }) => book.id === MANAGED_TUTORIAL_BOOK_ID).settings.title).toBe("LanCarbon: From 0 to 1");
   });
 

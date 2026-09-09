@@ -3,11 +3,12 @@
   "assets": [
     {
       "id": "2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png",
-      "file": "2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png",
+      "file": "74cb3e3220d88a94668ce91580466560ad56c39190ab8968cf8c70edfda381df.png",
       "name": "LanCarbon main workspace.png",
-      "size": 335305,
+      "size": 260034,
       "mime": "image/png",
-      "createdAt": "2026-09-07T07:42:55.570539Z"
+      "createdAt": "2026-09-07T07:42:55.570539Z",
+      "updatedAt": "2026-09-09T01:06:00.000Z"
     },
     {
       "id": "2ed04c61ae2d3f2479c2090e9d729a4b64608925a5b0612b2284f7533e6f08d7.png",
@@ -29,12 +30,12 @@
     },
     {
       "id": "3b9a49d527c5cd4a12abac80bdc4f4d72053f0ef9c8eb3b877e8631c80fcc866.png",
-      "file": "d0ef3a597aac5dc8f24f1d02164ae55940cb2072f84638a943e4e7df4710a1de.png",
+      "file": "50782dbbcb4a078810c6f45a4bad5081e97222e58a8b2e11a70d42524b7a610a.png",
       "name": "LanCarbon Resources panel.png",
-      "size": 278457,
+      "size": 71710,
       "mime": "image/png",
       "createdAt": "2026-09-07T07:42:55.570539Z",
-      "updatedAt": "2026-09-07T09:40:05.839Z"
+      "updatedAt": "2026-09-09T01:06:00.000Z"
     },
     {
       "id": "f7eed15a28d36a5313c9eff18be9bb2ad2d90cccd08c91d359d5e526ac4b3c2f.png",
@@ -65,12 +66,12 @@
     },
     {
       "id": "8405f88769f513467cc1aa25973fa97e6ad60427ff943279ab2d299a3d70ca75.png",
-      "file": "0e388aec015fc2881becd8ffd19c671a5195d7aa9b0265fed4deb58b4915c442.png",
+      "file": "987943b2e8afddac7d5858734990c28ebfe512df3eee963990b9bdf25dee86e5.png",
       "name": "LanCarbon Manta Orchid Logo.png",
-      "size": 1378267,
+      "size": 1161052,
       "mime": "image/png",
       "createdAt": "2026-09-05T14:55:57.784Z",
-      "updatedAt": "2026-09-05T15:06:01.505Z"
+      "updatedAt": "2026-09-09T00:55:00.000Z"
     }
   ]
 }

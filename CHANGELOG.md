@@ -18,6 +18,7 @@ All notable changes to official LanCarbon releases are recorded here.
 
 - The system-managed *LanCarbon: From 0 to 1* tutorial is synchronized from the installed release on every upgrade by stable Book, Page and Note IDs. User-created Notes and Books remain untouched.
 - The tutorial now begins with a bilingual do-not-edit and overwrite notice, and release-version references have been removed so its guidance remains evergreen.
+- Refreshed the LanCarbon brand artwork across the application, Windows executable and shortcuts, installer, GitHub ReadMe, built-in tutorial, tutorial screenshots and generated Book favicon.
 
 ### Validation
 

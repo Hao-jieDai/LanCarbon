@@ -1,5 +1,6 @@
 // @vitest-environment node
 import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { RELEASE_VERSION } from "../src/shared/notes";
@@ -33,5 +34,16 @@ describe("release metadata", () => {
     expect(home.content).toContain(":width: 50%\n:align: center");
     const assets = JSON.parse(readFileSync(path.join(process.cwd(), "resources", "starter-content", "assets.json"), "utf8"));
     expect(assets.assets).toHaveLength(8);
+    for (const asset of assets.assets) {
+      const file = asset.file ?? asset.id;
+      const bytes = readFileSync(path.join(process.cwd(), "resources", "starter-content", "assets", file));
+      expect(createHash("sha256").update(bytes).digest("hex")).toBe(path.parse(file).name);
+    }
+    const logo = assets.assets.find((asset: { id: string }) => asset.id === "8405f88769f513467cc1aa25973fa97e6ad60427ff943279ab2d299a3d70ca75.png");
+    expect(logo.file).toBe("987943b2e8afddac7d5858734990c28ebfe512df3eee963990b9bdf25dee86e5.png");
+    expect(readFileSync(path.join(process.cwd(), "public", "icon.png"))).toEqual(readFileSync(path.join(process.cwd(), "build", "icon.png")));
+    const ico = readFileSync(path.join(process.cwd(), "build", "icon.ico"));
+    expect(ico.readUInt16LE(4)).toBe(7);
+    expect(Array.from({ length: 7 }, (_, index) => ico[6 + index * 16] || 256)).toEqual([16, 24, 32, 48, 64, 128, 256]);
   });
 });
