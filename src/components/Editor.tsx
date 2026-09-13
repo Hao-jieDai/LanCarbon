@@ -48,7 +48,7 @@ export function Editor(props: EditorProps) {
   const stats = getStats(props.note?.content ?? "");
   const [tagsDraft, setTagsDraft] = useState("");
   const { viewMode, onViewModeChange: setViewMode } = props;
-  const viewShortcut = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "Cmd+Shift+E" : "Ctrl+Shift+E";
+  const viewShortcut = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "Cmd+E" : "Ctrl+E";
 
   useEffect(() => {
     setTagsDraft(props.note?.tags.join(", ") ?? "");

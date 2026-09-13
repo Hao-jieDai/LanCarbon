@@ -131,7 +131,7 @@ export function App() {
       const mod = event.ctrlKey || event.metaKey;
       if (mod && event.key.toLowerCase() === "k") { event.preventDefault(); if (mode === "notes") searchRef.current?.focus(); }
       if (mod && event.key.toLowerCase() === "n") { event.preventDefault(); mode === "book" ? addBookPage(false) : addOrdinaryNote(); }
-      if (mod && event.shiftKey && event.key.toLowerCase() === "e" && activeNoteId && !document.querySelector("dialog[open]")) {
+      if (mod && !event.shiftKey && !event.altKey && event.key.toLowerCase() === "e" && activeNoteId && !document.querySelector("dialog[open]")) {
         event.preventDefault();
         const next = viewMode === "edit" ? "preview" : "edit";
         setViewMode(next);

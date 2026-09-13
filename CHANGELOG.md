@@ -7,7 +7,7 @@ All notable changes to official LanCarbon releases are recorded here.
 ### Added
 
 - The Math panel now groups a broader selection of Greek letters, variants, operators, relations, set symbols and arrows.
-- **Ctrl+Shift+E** switches quickly between Edit and Preview, with the shortcut shown beside the view controls.
+- **Ctrl+E** switches quickly between Edit and Preview, with the shortcut shown beside the view controls.
 
 ### Validation
 

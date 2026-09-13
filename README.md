@@ -13,13 +13,13 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon uploads content only when you explicitly use Publish.
 
-Version 1.1.2 expands the Math panel with grouped Greek letters and common mathematical symbols, and adds **Ctrl+Shift+E** for quickly switching between Edit and Preview. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
+Version 1.1.2 expands the Math panel with grouped Greek letters and common mathematical symbols, and adds **Ctrl+E** for quickly switching between Edit and Preview. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
 
 ### Main features
 
 - Offline Markdown Notes with search, tags, pinning and autosave.
 - Structured Books with Sections, Child Pages, page properties and Book settings.
-- CodeMirror editing, an expanded Math symbol panel, MyST-aware formatting tools and an offline Preview with **Ctrl+Shift+E** view switching.
+- CodeMirror editing, an expanded Math symbol panel, MyST-aware formatting tools and an offline Preview with **Ctrl+E** view switching.
 - Images, attachments, reusable Resources, BibTeX libraries and citations.
 - Optional export of a separate Jupyter Book source copy.
 - Managed local website builds with preflight checks and restart recovery.
@@ -95,13 +95,13 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-1.1.2 扩充了 Math 面板，加入分组显示的希腊字母和常用数学符号，并新增 **Ctrl+Shift+E**，用于快速切换 Edit 与 Preview。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
+1.1.2 扩充了 Math 面板，加入分组显示的希腊字母和常用数学符号，并新增 **Ctrl+E**，用于快速切换 Edit 与 Preview。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
 
 ### 主要功能
 
 - 支持搜索、标签、置顶和自动保存的离线 Markdown Notes。
 - 使用 Sections、Child Pages、Page Properties 和 Book Settings 组织 Books。
-- CodeMirror 编辑器、扩充后的 Math 符号面板、MyST 格式工具，以及支持 **Ctrl+Shift+E** 切换的离线 Preview。
+- CodeMirror 编辑器、扩充后的 Math 符号面板、MyST 格式工具，以及支持 **Ctrl+E** 切换的离线 Preview。
 - 图片、附件、可重复使用的 Resources、BibTeX 文献库和 Citations。
 - 按需导出独立的 Jupyter Book 源文件副本。
 - 带预检和重启恢复的本地网站 Build。

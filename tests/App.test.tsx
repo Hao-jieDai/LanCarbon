@@ -84,16 +84,16 @@ describe("App", () => {
   it("在 Edit 与 MyST Preview 间切换并保留同一编辑器", async () => {
     const user = userEvent.setup(); render(<App />); await screen.findByDisplayValue("第一篇");
     const editor = screen.getByLabelText("Note content");
-    expect(screen.getByText("Ctrl+Shift+E")).toBeInTheDocument();
+    expect(screen.getByText("Ctrl+E")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Preview" }));
     expect(screen.getByLabelText("Rendered preview").querySelector("p")).toHaveTextContent("已有正文");
     expect(editor).not.toBeVisible();
     await user.click(screen.getByRole("button", { name: "Edit" }));
     expect(screen.getByLabelText("Note content")).toBe(editor);
     expect(editor).toBeVisible();
-    fireEvent.keyDown(document, { key: "E", ctrlKey: true, shiftKey: true });
+    fireEvent.keyDown(editor, { key: "E", ctrlKey: true });
     expect(screen.getByRole("button", { name: "Preview" })).toHaveAttribute("aria-pressed", "true");
-    fireEvent.keyDown(document, { key: "e", ctrlKey: true, shiftKey: true });
+    fireEvent.keyDown(document, { key: "e", ctrlKey: true });
     expect(screen.getByRole("button", { name: "Edit" })).toHaveAttribute("aria-pressed", "true");
     await waitFor(() => expect(editor).toHaveFocus());
   });
