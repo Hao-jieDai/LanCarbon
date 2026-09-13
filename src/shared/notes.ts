@@ -13,7 +13,7 @@ export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 1.1.2 expands the Math panel with grouped Greek letters and common mathematical symbols, and adds **Ctrl+E** for quickly switching between Edit and Preview. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
+Version 1.1.2 expands the Math panel with grouped Greek letters and common mathematical symbols, adds **Ctrl+E** for quickly switching between Edit and Preview, and adds Node.js detection and managed installation to Environment Setup. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
 
 LanCarbon now uses the new Logo consistently across the application, installer, repository ReadMe, built-in tutorial, and the default favicon for generated Book websites.
 
@@ -42,10 +42,10 @@ Open **Jupyter Book** in the left sidebar and select *LanCarbon: From 0 to 1* fo
 
 Basic writing, Preview and source-copy Export work inside LanCarbon. This first-run ReadMe introduces **Environment Setup**; open it from the sidebar, Build or Publish to inspect every requirement and optionally install managed copies under the LanCarbon \`Tools\` folder:
 
-- **Build** requires Python 3 and Jupyter Book 2.
+- **Build** requires Python 3, Node.js and Jupyter Book 2.
 - **Publish** requires Git, GitHub CLI, a GitHub account and network access to GitHub.
 
-Each tool is installed independently from its official source, verified, and checked again. Existing compatible system installations are marked **Using existing** and have no Install button. Managed Python is portable and does not alter a registered system Python. Live download, verification, deployment and post-install progress is shown; Cancel stops the operation and removes partial files. Failed downloads do not affect local editing or tools already installed successfully. Some networks may require a system proxy or TUN mode to reach GitHub.
+Each tool is installed from its official source, verified, and checked again. Installing Jupyter Book also prepares missing managed Python and Node.js dependencies. Existing compatible system installations are marked **Using existing** and have no Install button. Managed Python is portable and does not alter a registered system Python. Live download, verification, deployment and post-install progress is shown; Cancel stops the operation and removes partial files. LanCarbon retries temporary Windows file locks and offers **Repair folder permissions** when \`Tools\` is not writable. Failed downloads or repairs do not affect local editing or tools already installed successfully. Some networks may require a system proxy or TUN mode to reach GitHub.
 
 ### A simple workflow
 
@@ -63,7 +63,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-1.1.2 扩充了 Math 面板，加入分组显示的希腊字母和常用数学符号，并新增 **Ctrl+E**，用于快速切换 Edit 与 Preview。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
+1.1.2 扩充了 Math 面板，加入分组显示的希腊字母和常用数学符号，新增 **Ctrl+E** 用于快速切换 Edit 与 Preview，并在 Environment Setup 中加入 Node.js 检测和受管理安装。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
 
 LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程以及生成 Book 网站的默认 favicon 中统一使用新版 Logo。
 
@@ -92,10 +92,10 @@ LanCarbon 首次安装后会提供两项起始内容：
 
 普通写作、Preview 和源文件副本 Export 可以直接在 LanCarbon 中完成。这篇首次启动 ReadMe 会介绍 **Environment Setup**；可以从侧边栏、Build 或 Publish 打开它，集中检查全部要求，并按需把受管理版本安装到 LanCarbon 的 \`Tools\` 文件夹：
 
-- **Build** 需要 Python 3 和 Jupyter Book 2。
+- **Build** 需要 Python 3、Node.js 和 Jupyter Book 2。
 - **Publish** 需要 Git、GitHub CLI、GitHub 账号以及能够访问 GitHub 的网络。
 
-各项工具独立安装，从官方来源下载并在安装后重新检查。系统中已有的兼容工具显示 **Using existing**，不提供 Install 按钮；受管理 Python 为便携版，不会修改已注册的系统 Python。界面会显示下载、校验、部署和复检进度，Cancel 会停止任务并清理未完成文件。下载失败不会影响本地编辑或此前成功安装的工具。部分网络环境可能需要开启系统代理或 TUN 模式才能访问 GitHub。
+各项工具都会从官方来源安装、校验并复检；安装 Jupyter Book 时也会自动准备缺失的受管理 Python 和 Node.js。系统中已有的兼容工具显示 **Using existing**，不提供 Install 按钮；受管理 Python 为便携版，不会修改已注册的系统 Python。界面会显示下载、校验、部署和复检进度，Cancel 会停止任务并清理未完成文件。LanCarbon 会自动重试临时的 Windows 文件占用，并在 \`Tools\` 不可写时提供 **Repair folder permissions**。下载或修复失败不会影响本地编辑或此前成功安装的工具。部分网络环境可能需要开启系统代理或 TUN 模式才能访问 GitHub。
 
 ### 推荐工作流程
 

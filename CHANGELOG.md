@@ -8,10 +8,17 @@ All notable changes to official LanCarbon releases are recorded here.
 
 - The Math panel now groups a broader selection of Greek letters, variants, operators, relations, set symbols and arrows.
 - **Ctrl+E** switches quickly between Edit and Preview, with the shortcut shown beside the view controls.
+- Environment Setup now detects Node.js as a Build requirement and can install a verified portable copy under `LanCarbon\\Tools`.
+- Installing Jupyter Book 2 automatically prepares missing managed Python and Node.js dependencies.
+
+### Fixed
+
+- Managed installation retries transient Windows file-lock errors with increasing waits instead of failing immediately during folder creation or replacement.
+- Environment Setup tests write access to the managed `Tools` folder and can repair its Windows access rules, requesting elevation only when required.
 
 ### Validation
 
-- Added automated coverage for grouped mathematical-symbol insertion and keyboard view switching with editor-focus restoration.
+- Added automated coverage for grouped mathematical-symbol insertion, keyboard view switching, Node.js Build checks, transient file-lock retries and folder-permission recovery.
 
 ## 1.1.1 — 2026-09-08
 

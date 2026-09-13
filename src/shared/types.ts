@@ -101,14 +101,14 @@ export interface BookCheckIssue {
 }
 export type ValidateBookResult = { ok: true; issues: BookCheckIssue[] } | { ok: false; error: string };
 export interface BuildEnvironmentCheck {
-  id: "python" | "jupyter-book";
+  id: "python" | "node" | "jupyter-book";
   label: string;
   status: "pass" | "error";
   detail: string;
 }
 export type BuildEnvironmentResult = { ok: true; checks: BuildEnvironmentCheck[] } | { ok: false; error: string };
-export type EnvironmentToolId = "python" | "jupyter-book" | "git" | "github-cli";
-export type EnvironmentItemId = EnvironmentToolId | "github-auth" | "github-network";
+export type EnvironmentToolId = "python" | "node" | "jupyter-book" | "git" | "github-cli";
+export type EnvironmentItemId = EnvironmentToolId | "tools-permission" | "github-auth" | "github-network";
 export interface EnvironmentSetupItem {
   id: EnvironmentItemId;
   label: string;
@@ -120,6 +120,7 @@ export interface EnvironmentSetupItem {
   requirement: string;
   downloadSize?: string;
   installable: boolean;
+  repairable?: boolean;
 }
 export type EnvironmentSetupResult = { ok: true; root: string; toolsPath: string; logPath: string; items: EnvironmentSetupItem[] } | { ok: false; error: string };
 export type EnvironmentInstallResult = { ok: true; item: EnvironmentSetupItem } | { ok: false; canceled?: boolean; error: string };
@@ -184,6 +185,7 @@ export interface NotesDesktopApi {
   inspectBuildEnvironment(): Promise<BuildEnvironmentResult>;
   inspectEnvironment(): Promise<EnvironmentSetupResult>;
   installEnvironmentTool(id: EnvironmentToolId): Promise<EnvironmentInstallResult>;
+  repairEnvironmentPermissions(): Promise<OperationResult>;
   cancelEnvironmentInstall(): Promise<OperationResult>;
   openEnvironmentInstructions(id: EnvironmentToolId): Promise<OperationResult>;
   openEnvironmentLog(): Promise<OperationResult>;

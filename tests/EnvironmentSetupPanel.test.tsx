@@ -36,4 +36,23 @@ describe("EnvironmentSetupPanel", () => {
     await act(async () => { finish({ ok: false, canceled: true, error: "Installation canceled" }); });
     expect(screen.getByText(/local editing/i)).toBeInTheDocument();
   });
+
+  it("repairs a blocked managed Tools folder from the failed card", async () => {
+    const inspect = vi.fn()
+      .mockResolvedValueOnce({ ok: true, root: "D:\\LanCarbon", toolsPath: "D:\\LanCarbon\\Tools", logPath: "log", items: [
+        { id: "tools-permission", label: "Managed tools folder", status: "error", detail: "Access is denied.", requirement: "Writable LanCarbon\\Tools folder", installable: false, repairable: true }
+      ] })
+      .mockResolvedValue({ ok: true, root: "D:\\LanCarbon", toolsPath: "D:\\LanCarbon\\Tools", logPath: "log", items: [
+        { id: "tools-permission", label: "Managed tools folder", status: "pass", detail: "D:\\LanCarbon\\Tools is writable.", requirement: "Writable LanCarbon\\Tools folder", installable: false }
+      ] });
+    const repair = vi.fn().mockResolvedValue({ ok: true });
+    window.notesDesktop = { inspectEnvironment: inspect, installEnvironmentTool: vi.fn(), repairEnvironmentPermissions: repair, cancelEnvironmentInstall: vi.fn().mockResolvedValue({ ok: true }), openEnvironmentInstructions: vi.fn(), openEnvironmentLog: vi.fn(), onEnvironmentProgress: vi.fn().mockReturnValue(() => undefined) } as unknown as NotesDesktopApi;
+    const notice = vi.fn();
+    const user = userEvent.setup();
+    render(<EnvironmentSetupPanel onClose={() => undefined} onNotice={notice} />);
+    await user.click(await screen.findByRole("button", { name: "Repair folder permissions" }));
+    expect(repair).toHaveBeenCalledOnce();
+    await waitFor(() => expect(screen.getByText("D:\\LanCarbon\\Tools is writable.")).toBeInTheDocument());
+    expect(notice).toHaveBeenCalledWith("Managed tools folder permissions repaired");
+  });
 });

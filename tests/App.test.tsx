@@ -18,11 +18,13 @@ beforeEach(() => {
     validateBook: vi.fn().mockResolvedValue({ ok: true, issues: [] }),
     inspectBuildEnvironment: vi.fn().mockResolvedValue({ ok: true, checks: [
       { id: "python", label: "Python", status: "pass", detail: "Python 3.13.0" },
+      { id: "node", label: "Node.js", status: "pass", detail: "Node.js 24.21.0" },
       { id: "jupyter-book", label: "Jupyter Book CLI", status: "pass", detail: "Jupyter Book 2.1.6" }
     ] }),
     inspectEnvironment: vi.fn().mockResolvedValue({ ok: true, root: "D:\\LanCarbon", toolsPath: "D:\\LanCarbon\\Tools", logPath: "D:\\LanCarbon\\Config\\Logs\\environment-setup.log", items: [] }),
     installEnvironmentTool: vi.fn().mockResolvedValue({ ok: false, error: "Not installed in tests" }),
     cancelEnvironmentInstall: vi.fn().mockResolvedValue({ ok: true }),
+    repairEnvironmentPermissions: vi.fn().mockResolvedValue({ ok: true }),
     openEnvironmentInstructions: vi.fn().mockResolvedValue({ ok: true }),
     openEnvironmentLog: vi.fn().mockResolvedValue({ ok: true }),
     onEnvironmentProgress: vi.fn().mockReturnValue(() => undefined),

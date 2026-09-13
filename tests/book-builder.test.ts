@@ -19,18 +19,21 @@ describe("managed Book builder", () => {
     return { stdout: "build complete" };
   };
 
-  it("checks Python and requires Jupyter Book 2 before building", async () => {
+  it("checks Python, Node.js and requires Jupyter Book 2 before building", async () => {
     const checks = await inspectBuildEnvironment(async (file, args) => {
       if (file === "python" && args[0] === "--version") return { stdout: "Python 3.13.7" };
+      if (file === "node") return { stdout: "v24.21.0" };
       if (file === "jupyter") return { stdout: "Jupyter Book 2.1.6" };
       throw new Error("missing");
     });
     expect(checks).toEqual([
       expect.objectContaining({ id: "python", status: "pass", detail: expect.stringContaining("3.13.7") }),
+      expect.objectContaining({ id: "node", status: "pass", detail: expect.stringContaining("24.21.0") }),
       expect.objectContaining({ id: "jupyter-book", status: "pass", detail: expect.stringContaining("2.1.6") }),
     ]);
-    const old = await inspectBuildEnvironment(async file => file === "python" ? { stdout: "Python 3.11.0" } : { stdout: "Jupyter Book 1.0.4" });
-    expect(old[1]).toMatchObject({ id: "jupyter-book", status: "error" });
+    const old = await inspectBuildEnvironment(async file => file === "python" ? { stdout: "Python 3.11.0" } : file === "node" ? { stdout: "v16.20.2" } : { stdout: "Jupyter Book 1.0.4" });
+    expect(old[1]).toMatchObject({ id: "node", status: "error" });
+    expect(old[2]).toMatchObject({ id: "jupyter-book", status: "error" });
   });
 
   it("publishes a completed staging build and preserves it when a rebuild fails", async () => {

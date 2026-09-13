@@ -33,11 +33,16 @@ async function environmentVersion(command: EnvironmentCommand, candidates: Array
 
 export async function inspectBuildEnvironment(command: EnvironmentCommand = runEnvironmentCommand): Promise<BuildEnvironmentCheck[]> {
   const python = await environmentVersion(command, [{ file: "python", args: ["--version"] }, { file: "py", args: ["--version"] }, { file: "python3", args: ["--version"] }]);
+  const node = await environmentVersion(command, [{ file: "node", args: ["--version"] }]);
   const jupyterBook = await environmentVersion(command, [{ file: "jupyter", args: ["book", "--version"] }]);
   const version = jupyterBook.ok ? /(?:^|\s)v?(\d+)\.(\d+)(?:\.\d+)?/i.exec(jupyterBook.output) : null;
   const compatible = Boolean(jupyterBook.ok && version && Number(version[1]) >= 2);
+  const nodeVersion = node.ok ? /v?(\d+)\.(\d+)/i.exec(node.output) : null;
+  const nodeMajor = nodeVersion ? Number(nodeVersion[1]) : 0;
+  const nodeCompatible = node.ok && nodeMajor >= 18;
   return [
     { id: "python", label: "Python", status: python.ok ? "pass" : "error", detail: python.ok ? `${python.output} (${python.file})` : "Python was not found. Install Python 3 and restart LanCarbon." },
+    { id: "node", label: "Node.js", status: nodeCompatible ? "pass" : "error", detail: nodeCompatible ? `${node.output} (${node.file})` : node.ok ? `${node.output || "Node.js detected"}. LanCarbon requires Node.js 18 or newer.` : "Node.js was not found. Install it from Environment Setup before building." },
     { id: "jupyter-book", label: "Jupyter Book CLI", status: compatible ? "pass" : "error", detail: compatible && jupyterBook.ok ? jupyterBook.output : jupyterBook.ok ? `${jupyterBook.output || "Jupyter Book detected"}. LanCarbon requires Jupyter Book 2.` : "Jupyter Book CLI was not found. Install Jupyter Book 2 and make the jupyter command available in PATH." },
   ];
 }

@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon uploads content only when you explicitly use Publish.
 
-Version 1.1.2 expands the Math panel with grouped Greek letters and common mathematical symbols, and adds **Ctrl+E** for quickly switching between Edit and Preview. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
+Version 1.1.2 expands the Math panel with grouped Greek letters and common mathematical symbols, adds **Ctrl+E** for quickly switching between Edit and Preview, and extends Environment Setup with Node.js detection and managed installation. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
 
 ### Main features
 
@@ -24,7 +24,7 @@ Version 1.1.2 expands the Math panel with grouped Greek letters and common mathe
 - Optional export of a separate Jupyter Book source copy.
 - Managed local website builds with preflight checks and restart recovery.
 - GitHub repository connection, GitHub Pages publishing and later website updates.
-- Environment Setup with managed, independently repairable tools under the LanCarbon root.
+- Environment Setup with managed, independently repairable tools and folder-permission recovery under the LanCarbon root.
 - Light and Dark themes with the LanCarbon visual style.
 
 ### Download and install
@@ -51,10 +51,10 @@ If the computer has no D drive, the installer uses a `LanCarbon` folder in the c
 
 Basic writing, Preview and source-copy Export work inside LanCarbon. Additional tools are required only for the corresponding workflow:
 
-- **Build:** Python 3 and Jupyter Book 2.
+- **Build:** Python 3, Node.js and Jupyter Book 2.
 - **Publish:** Git, GitHub CLI, a GitHub account and network access to GitHub.
 
-LanCarbon checks these requirements in **Environment Setup**, introduced by the first-run ReadMe and available from the sidebar and from the Build and Publish panels. Compatible system installations are marked **Using existing** and do not show an install action. Missing or incompatible tools can be installed as private managed copies under `LanCarbon/Tools`; the Python action uses a portable archive and never changes a registered system Python. Downloads show live byte and percentage progress, are verified before deployment, and can be canceled with partial files removed. Failed downloads do not affect Notes, Books or tools already installed successfully.
+LanCarbon checks these requirements in **Environment Setup**, introduced by the first-run ReadMe and available from the sidebar and from the Build and Publish panels. Compatible system installations are marked **Using existing** and do not show an install action. Missing or incompatible tools can be installed as private managed copies under `LanCarbon/Tools`; installing Jupyter Book also prepares missing managed Python and Node.js dependencies. The Python action uses a portable archive and never changes a registered system Python. Downloads show live byte and percentage progress, are verified before deployment, and can be canceled with partial files removed. Windows file-lock failures are retried with increasing waits. Environment Setup checks whether `Tools` is writable and offers **Repair folder permissions**—with a Windows approval prompt when elevation is required—if its access rules block managed installation. Failed downloads or repairs do not affect Notes, Books or tools already installed successfully.
 
 If GitHub cannot be reached, enable the proxy application's system proxy or TUN mode and retry. The bundled *LanCarbon: From 0 to 1* Book explains managed and manual installation, writing, Build, GitHub sign-in, publication and common errors.
 
@@ -95,7 +95,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-1.1.2 扩充了 Math 面板，加入分组显示的希腊字母和常用数学符号，并新增 **Ctrl+E**，用于快速切换 Edit 与 Preview。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
+1.1.2 扩充了 Math 面板，加入分组显示的希腊字母和常用数学符号，新增 **Ctrl+E** 用于快速切换 Edit 与 Preview，并在 Environment Setup 中加入 Node.js 检测和受管理安装。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
 
 ### 主要功能
 
@@ -106,7 +106,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 - 按需导出独立的 Jupyter Book 源文件副本。
 - 带预检和重启恢复的本地网站 Build。
 - 连接 GitHub 仓库、发布到 GitHub Pages，并在以后更新网站。
-- Environment Setup 可在 LanCarbon 根目录中独立安装和修复所需工具。
+- Environment Setup 可在 LanCarbon 根目录中独立安装和修复所需工具，并恢复 Tools 文件夹权限。
 - 具有 LanCarbon 视觉风格的 Light 和 Dark 主题。
 
 ### 下载与安装
@@ -133,10 +133,10 @@ LanCarbon/
 
 普通写作、Preview 和源文件副本 Export 可以直接在 LanCarbon 中完成。只有相应流程需要以下工具：
 
-- **Build：** Python 3 和 Jupyter Book 2。
+- **Build：** Python 3、Node.js 和 Jupyter Book 2。
 - **Publish：** Git、GitHub CLI、GitHub 账号，以及能够访问 GitHub 的网络。
 
-LanCarbon 会在统一的 **Environment Setup** 中检查这些条件；首次启动的 ReadMe 会介绍该页面，可以从侧边栏、Build 和 Publish 面板进入。系统中已有的兼容工具只显示 **Using existing**，不再提供安装操作；缺失或不兼容的工具可作为私有副本安装到 `LanCarbon/Tools`。Python 使用便携压缩包，不会修改已注册的系统 Python。下载过程显示实时字节数和百分比，校验、部署与复检阶段均清楚可见，取消后会清理未完成文件。下载失败不会影响 Notes、Books 或此前成功安装的工具。
+LanCarbon 会在统一的 **Environment Setup** 中检查这些条件；首次启动的 ReadMe 会介绍该页面，可以从侧边栏、Build 和 Publish 面板进入。系统中已有的兼容工具只显示 **Using existing**，不再提供安装操作；缺失或不兼容的工具可作为私有副本安装到 `LanCarbon/Tools`，安装 Jupyter Book 时也会自动准备缺失的受管理 Python 和 Node.js。Python 使用便携压缩包，不会修改已注册的系统 Python。下载过程显示实时字节数和百分比，校验、部署与复检阶段均清楚可见，取消后会清理未完成文件。Windows 文件占用错误会按逐渐增长的等待时间自动重试；Environment Setup 还会检查 `Tools` 是否可写，并在权限阻止安装时提供 **Repair folder permissions**，需要管理员权限时显示 Windows 确认窗口。下载或修复失败不会影响 Notes、Books 或此前成功安装的工具。
 
 如果无法访问 GitHub，请先开启代理软件的系统代理或 TUN 模式再重试。内置的 *LanCarbon: From 0 to 1* 教程详细讲解受管理安装、手动安装、写作、本地 Build、GitHub 登录、发布和常见错误。
 

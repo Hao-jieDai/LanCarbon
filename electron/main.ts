@@ -308,7 +308,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("book:build-environment", async () => {
     try {
       const items = await environmentManager.inspect("build");
-      return { ok: true, checks: items.filter(item => item.id === "python" || item.id === "jupyter-book").map(item => ({ id: item.id, label: item.label, status: item.status === "pass" ? "pass" as const : "error" as const, detail: item.detail })) };
+      return { ok: true, checks: items.filter(item => item.id === "python" || item.id === "node" || item.id === "jupyter-book").map(item => ({ id: item.id, label: item.label, status: item.status === "pass" ? "pass" as const : "error" as const, detail: item.detail })) };
     }
     catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Failed to inspect the build environment" }; }
   });
@@ -317,13 +317,14 @@ app.whenReady().then(async () => {
     catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Failed to inspect the environment" }; }
   });
   ipcMain.handle("environment:install", async (_event, id: EnvironmentToolId) => {
-    if (!["python", "jupyter-book", "git", "github-cli"].includes(id)) return { ok: false, error: "Unsupported environment tool." };
+    if (!["python", "node", "jupyter-book", "git", "github-cli"].includes(id)) return { ok: false, error: "Unsupported environment tool." };
     return environmentManager.install(id);
   });
+  ipcMain.handle("environment:repair-permissions", () => environmentManager.repairPermissions());
   ipcMain.handle("environment:cancel", () => { environmentManager.cancel(); return { ok: true }; });
   ipcMain.handle("environment:instructions", async (_event, id: EnvironmentToolId) => {
     try {
-      if (!["python", "jupyter-book", "git", "github-cli"].includes(id)) throw new Error("Unsupported environment tool.");
+      if (!["python", "node", "jupyter-book", "git", "github-cli"].includes(id)) throw new Error("Unsupported environment tool.");
       await shell.openExternal(environmentManager.manualUrl(id)); return { ok: true };
     } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Failed to open installation instructions" }; }
   });

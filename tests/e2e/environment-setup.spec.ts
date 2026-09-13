@@ -16,8 +16,8 @@ test("opens Environment Setup without blocking local writing", async () => {
     const panel = page.getByRole("region", { name: "Environment Setup" });
     await expect(panel).toBeVisible();
     await expect(panel.getByText(path.join(root, "Tools"), { exact: true })).toBeVisible({ timeout: 20_000 });
-    for (const label of ["Python", "Jupyter Book 2", "Git", "GitHub CLI", "GitHub account", "GitHub connection"]) await expect(panel.getByText(label, { exact: true })).toBeVisible();
-    await expect(panel.getByText("Using existing")).toHaveCount(4);
+    for (const label of ["Managed tools folder", "Python", "Node.js", "Jupyter Book 2", "Git", "GitHub CLI", "GitHub account", "GitHub connection"]) await expect(panel.getByText(label, { exact: true })).toBeVisible();
+    await expect(panel.getByText("Using existing")).toHaveCount(5);
     await expect(panel.getByRole("button", { name: /Install managed copy/ })).toHaveCount(0);
     await panel.getByRole("button", { name: "Close Environment Setup" }).click();
     await page.getByRole("button", { name: /New Note/ }).first().click();

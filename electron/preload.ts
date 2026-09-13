@@ -18,6 +18,7 @@ const api: NotesDesktopApi = {
   inspectBuildEnvironment: () => ipcRenderer.invoke("book:build-environment"),
   inspectEnvironment: () => ipcRenderer.invoke("environment:inspect"),
   installEnvironmentTool: id => ipcRenderer.invoke("environment:install", id),
+  repairEnvironmentPermissions: () => ipcRenderer.invoke("environment:repair-permissions"),
   cancelEnvironmentInstall: () => ipcRenderer.invoke("environment:cancel"),
   openEnvironmentInstructions: id => ipcRenderer.invoke("environment:instructions", id),
   openEnvironmentLog: () => ipcRenderer.invoke("environment:open-log"),
