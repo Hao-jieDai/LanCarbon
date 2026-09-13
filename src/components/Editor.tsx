@@ -48,6 +48,7 @@ export function Editor(props: EditorProps) {
   const stats = getStats(props.note?.content ?? "");
   const [tagsDraft, setTagsDraft] = useState("");
   const { viewMode, onViewModeChange: setViewMode } = props;
+  const viewShortcut = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "Cmd+Shift+E" : "Ctrl+Shift+E";
 
   useEffect(() => {
     setTagsDraft(props.note?.tags.join(", ") ?? "");
@@ -59,9 +60,12 @@ export function Editor(props: EditorProps) {
         <button className="icon-button mobile-menu" aria-label="Open notes list" onClick={props.onOpenSidebar}>☰</button>
         <div className="editor-toolbar-left">
           <div className={`save-status ${props.saveState === "error" ? "error" : ""}`} role="status"><i className="status-dot" />{statusCopy[props.saveState]}</div>
-          {props.note && <div className="view-mode-switch" aria-label="Editor view">
-            <button aria-pressed={viewMode === "edit"} onClick={() => setViewMode("edit")}>Edit</button>
-            <button aria-pressed={viewMode === "preview"} onClick={() => setViewMode("preview")}>Preview</button>
+          {props.note && <div className="view-mode-control">
+            <div className="view-mode-switch" aria-label="Editor view" title={`Switch Edit / Preview · ${viewShortcut}`}>
+              <button aria-pressed={viewMode === "edit"} onClick={() => setViewMode("edit")}>Edit</button>
+              <button aria-pressed={viewMode === "preview"} onClick={() => setViewMode("preview")}>Preview</button>
+            </div>
+            <kbd className="view-mode-shortcut" title="Switch Edit / Preview">{viewShortcut}</kbd>
           </div>}
         </div>
         <div className="toolbar-actions">

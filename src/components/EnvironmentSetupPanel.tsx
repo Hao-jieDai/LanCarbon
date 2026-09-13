@@ -26,7 +26,7 @@ export function EnvironmentSetupPanel(props: { onClose(): void; onNotice(message
   const close = async () => { if (busy) await window.notesDesktop.cancelEnvironmentInstall(); props.onClose(); };
   const items = result?.ok ? result.items : [];
   return <div className="modal-backdrop" role="presentation"><section className="settings-modal environment-panel" aria-label="Environment Setup">
-    <header><div><h2>Environment Setup</h2><p>LanCarbon 1.1.1</p></div><button type="button" className="icon-button" aria-label="Close Environment Setup" onClick={() => void close()}>×</button></header>
+    <header><div><h2>Environment Setup</h2><p>LanCarbon 1.1.2</p></div><button type="button" className="icon-button" aria-label="Close Environment Setup" onClick={() => void close()}>×</button></header>
     <p className="modal-help">Notes, Books, Preview and source Export work without these optional tools. Install only what you need for Build and Publish.</p>
     {result?.ok && <div className="environment-location"><span>LanCarbon home</span><strong>{result.root}</strong><span>Managed tools</span><strong>{result.toolsPath}</strong></div>}
     {!result ? <div className="build-progress"><span className="status-dot" />Checking installed tools and GitHub access…</div> : <div className="setup-list">{items.map(item => <article className={`setup-item ${item.status}`} key={item.id}>

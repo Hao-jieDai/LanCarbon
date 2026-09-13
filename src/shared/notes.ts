@@ -7,13 +7,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "1.1.1";
+export const RELEASE_VERSION = "1.1.2";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 1.1.1 adds a safer, transparent Environment Setup for optional Build and Publish tools. Compatible system tools are used as-is; only missing or incompatible tools offer private managed installation under LanCarbon Tools. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
+Version 1.1.2 expands the Math panel with grouped Greek letters and common mathematical symbols, and adds **Ctrl+Shift+E** for quickly switching between Edit and Preview. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
 
 LanCarbon now uses the new Logo consistently across the application, installer, repository ReadMe, built-in tutorial, and the default favicon for generated Book websites.
 
@@ -21,7 +21,7 @@ LanCarbon now uses the new Logo consistently across the application, installer, 
 
 - Write and organize ordinary Markdown Notes.
 - Create Books with Sections and Child Pages.
-- Edit Markdown and MyST content with the formatting toolbar, then check the result in Preview.
+- Edit Markdown and MyST content with the formatting toolbar, use the expanded Math symbol panel, then switch between Edit and Preview with **Ctrl+Shift+E**.
 - Insert and manage images, attachments, citations and other reusable Resources.
 - Export a separate Jupyter Book source copy for backup or external editing.
 - Build the current Book as a local website and reopen or rebuild the saved result later.
@@ -63,7 +63,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-1.1.1 新增更安全、过程透明的 Environment Setup，用于准备可选的 Build 和 Publish 工具。系统中已有的兼容工具直接使用，只有缺失或不兼容的工具才提供 LanCarbon Tools 私有安装。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
+1.1.2 扩充了 Math 面板，加入分组显示的希腊字母和常用数学符号，并新增 **Ctrl+Shift+E**，用于快速切换 Edit 与 Preview。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
 
 LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程以及生成 Book 网站的默认 favicon 中统一使用新版 Logo。
 
@@ -71,7 +71,7 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 
 - 撰写和管理普通 Markdown Notes。
 - 创建包含 Sections 和 Child Pages 的 Books。
-- 使用格式工具栏编辑 Markdown 和 MyST 内容，并通过 Preview 检查效果。
+- 使用格式工具栏和扩充后的 Math 符号面板编辑 Markdown 与 MyST 内容，并通过 **Ctrl+Shift+E** 快速切换 Edit 和 Preview。
 - 插入和管理图片、附件、文献及其他可重复使用的 Resources。
 - 导出独立的 Jupyter Book 源文件副本，用于备份或外部编辑。
 - 把当前 Book 构建为本地网站，并在以后重新打开或重建保存的网站。

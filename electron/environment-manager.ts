@@ -10,7 +10,7 @@ const PYTHON_VERSION = "3.13.14";
 const PYTHON_ARCHIVE = `python-${PYTHON_VERSION}-embed-amd64.zip`;
 const PYTHON_URL = `https://www.python.org/ftp/python/${PYTHON_VERSION}/${PYTHON_ARCHIVE}`;
 const PYTHON_SHA256 = "90b4e5b9898b72d744650524bff92377c367f44bd5fbd09e3148656c080ad907";
-const USER_AGENT = "LanCarbon/1.1.1";
+const USER_AGENT = "LanCarbon/1.1.2";
 const MANUAL_URLS: Record<EnvironmentToolId, string> = {
   python: "https://www.python.org/downloads/windows/",
   "jupyter-book": "https://jupyterbook.org/stable/get-started/install/",

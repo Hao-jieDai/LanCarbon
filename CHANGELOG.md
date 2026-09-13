@@ -2,6 +2,17 @@
 
 All notable changes to official LanCarbon releases are recorded here.
 
+## 1.1.2 — 2026-09-14
+
+### Added
+
+- The Math panel now groups a broader selection of Greek letters, variants, operators, relations, set symbols and arrows.
+- **Ctrl+Shift+E** switches quickly between Edit and Preview, with the shortcut shown beside the view controls.
+
+### Validation
+
+- Added automated coverage for grouped mathematical-symbol insertion and keyboard view switching with editor-focus restoration.
+
 ## 1.1.1 — 2026-09-08
 
 ### Fixed

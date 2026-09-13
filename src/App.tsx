@@ -131,10 +131,16 @@ export function App() {
       const mod = event.ctrlKey || event.metaKey;
       if (mod && event.key.toLowerCase() === "k") { event.preventDefault(); if (mode === "notes") searchRef.current?.focus(); }
       if (mod && event.key.toLowerCase() === "n") { event.preventDefault(); mode === "book" ? addBookPage(false) : addOrdinaryNote(); }
+      if (mod && event.shiftKey && event.key.toLowerCase() === "e" && activeNoteId && !document.querySelector("dialog[open]")) {
+        event.preventDefault();
+        const next = viewMode === "edit" ? "preview" : "edit";
+        setViewMode(next);
+        if (next === "edit") requestAnimationFrame(() => document.querySelector<HTMLElement>(".markdown-workspace:not([hidden]) .cm-content")?.focus());
+      }
       if (event.key === "Escape") { document.body.classList.remove("sidebar-open"); searchRef.current?.blur(); setShowBookSettings(false); setShowPageProperties(false); setShowCreateBook(false); setShowBookChooser(false); setShowDataLocation(false); setShowBookBuild(false); setShowGitHubPublishing(false); setShowEnvironmentSetup(false); }
     };
     document.addEventListener("keydown", shortcut); return () => document.removeEventListener("keydown", shortcut);
-  }, [addBookPage, addOrdinaryNote, mode]);
+  }, [activeNoteId, addBookPage, addOrdinaryNote, mode, viewMode]);
 
   const createNewBook = (title: string) => {
     const { book, homeNote } = createBook(title); const current = workspaceRef.current;

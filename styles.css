@@ -348,9 +348,11 @@ body.book-dragging, body.book-dragging * { cursor: grabbing !important; }
 .editor-toolbar { height: 76px; padding: 0 38px; justify-content: space-between; border-bottom: 1px solid var(--line); }
 .save-status { color: var(--muted); font-size: 11px; }
 .editor-toolbar-left { min-width: 0; gap: 18px; }
+.view-mode-control { display: flex; align-items: center; gap: 7px; }
 .view-mode-switch { display: flex; padding: 2px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); }
 .view-mode-switch button { height: 25px; padding: 0 10px; color: var(--muted); border: 0; border-radius: 5px; background: transparent; font-size: 10px; }
 .view-mode-switch button[aria-pressed="true"] { color: var(--filter-active-ink); background: var(--paper); box-shadow: 0 1px 5px var(--card-shadow); font-weight: 600; }
+.view-mode-shortcut { padding: 2px 5px; color: var(--muted); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; background: var(--surface); font: 9px/1.3 var(--sans); white-space: nowrap; }
 .save-status.error { color: var(--danger); }
 .save-status.error .status-dot { background: var(--danger); }
 .toolbar-actions { gap: 5px; margin-left: auto; }
@@ -403,7 +405,7 @@ body.book-dragging, body.book-dragging * { cursor: grabbing !important; }
 .format-notice { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 11px; margin-bottom: 8px; border-radius: 6px; color: var(--ink); background: var(--accent-soft); font-size: 12px; line-height: 1.5; }
 .format-notice button { color: inherit; border: 0; background: transparent; }
 .format-toolbar :focus-visible, .insert-dialog :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.insert-dialog { width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); margin: auto; padding: 0; color: var(--ink); border: 1px solid var(--line); border-radius: 14px; background: var(--paper); box-shadow: 0 20px 70px var(--shadow); font-family: var(--sans); }
+.insert-dialog { width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); margin: auto; padding: 0; overflow-y: auto; color: var(--ink); border: 1px solid var(--line); border-radius: 14px; background: var(--paper); box-shadow: 0 20px 70px var(--shadow); font-family: var(--sans); }
 .insert-dialog-wide { width: min(800px, calc(100vw - 32px)); }
 .insert-dialog::backdrop { background: rgba(15, 10, 12, .56); }
 .insert-form { display: grid; gap: 16px; padding: 24px; }
@@ -426,6 +428,9 @@ body.book-dragging, body.book-dragging * { cursor: grabbing !important; }
 .nested-block-fields { display: grid; gap: 14px; min-width: 0; margin: 0; padding: 14px; border: 1px solid var(--line); border-radius: 8px; }
 .nested-block-fields legend { padding: 0 6px; color: var(--muted); font-size: 12px; }
 .insert-actions, .formula-templates { display: flex; flex-wrap: wrap; gap: 6px; }
+.formula-template-groups { display: grid; gap: 10px; }
+.formula-template-group { display: grid; grid-template-columns: 108px minmax(0, 1fr); gap: 10px; align-items: start; }
+.formula-template-group > span { padding-top: 7px; color: var(--muted); font-size: 11px; }
 .insert-error { margin: 0; color: var(--danger); font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .table-draft-scroll { overflow: auto; max-height: 340px; border: 1px solid var(--line); border-radius: 8px; }
 .table-draft { width: 100%; border-collapse: collapse; }
@@ -539,6 +544,12 @@ body.book-dragging, body.book-dragging * { cursor: grabbing !important; }
   .content-input { font-size: 15px; }
   .editor-footer { padding: 0 20px; }
   .github-fields { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .view-mode-shortcut { display: none; }
+  .formula-template-group { grid-template-columns: 1fr; gap: 4px; }
+  .formula-template-group > span { padding-top: 0; }
 }
 
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }

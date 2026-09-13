@@ -110,6 +110,18 @@ describe("MarkdownEditor", () => {
     expect(screen.getByLabelText("Math preview").querySelector(".katex")).toBeInTheDocument();
   });
 
+  it("offers grouped Greek letters and common mathematical symbols", async () => {
+    const user = userEvent.setup(); render(<ControlledEditor />);
+    await user.click(screen.getByRole("button", { name: "Math" }));
+    expect(screen.getByRole("region", { name: "Greek lowercase" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Greek uppercase" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Operators" })).toBeInTheDocument();
+    await user.click(within(screen.getByRole("region", { name: "Greek uppercase" })).getByRole("button", { name: "Ω" }));
+    await user.click(within(screen.getByRole("region", { name: "Relations" })).getByRole("button", { name: "≈" }));
+    expect(screen.getByLabelText("Formula")).toHaveValue("\\Omega \\approx ");
+    expect(screen.getByLabelText("Math preview").querySelector(".katex")).toBeInTheDocument();
+  });
+
   it("opens links with Ctrl+K and closes dialogs when switching note or preview", async () => {
     const user = userEvent.setup(); const changed = vi.fn();
     const { rerender } = render(<MarkdownEditor key="one" value="链接文字" theme="light" onChange={changed} />);

@@ -6,12 +6,40 @@ import { ThemedSelect } from "./ThemedSelect";
 
 interface Props { initial: PanelDraft; onApply(draft: PanelDraft, removeLink?: boolean): string | null; onClose(): void }
 const names = { link: "Link", code: "Code block", table: "Table", math: "Math", abbr: "Abbreviation", keyboard: "Keyboard", ...Object.fromEntries(directiveOptions.map(option => [option.value, option.label])) } as Record<PanelKind, string>;
-const templates: [string, string, string][] = [
-  ["Fraction", "\\frac{a}{b}", "a"], ["Root", "\\sqrt{x}", "x"], ["Superscript", "x^{2}", "2"], ["Subscript", "x_{i}", "i"], ["Scripts", "x_{i}^{2}", "i"],
-  ["Sum", "\\sum_{i=1}^{n} x_i", "n"], ["Integral", "\\int_{a}^{b} f(x)\\,dx", "a"], ["Brackets", "\\left( x \\right)", "x"],
-  ["Aligned equations", "\\begin{aligned}\na &= b \\\\\nc &= d\n\\end{aligned}", "a"],
-  ["α", "\\alpha ", ""], ["β", "\\beta ", ""], ["γ", "\\gamma ", ""], ["Δ", "\\Delta ", ""], ["θ", "\\theta ", ""], ["π", "\\pi ", ""],
-  ["≤", "\\leq ", ""], ["≥", "\\geq ", ""], ["≠", "\\neq ", ""], ["×", "\\times ", ""], ["∞", "\\infty ", ""]
+type FormulaTemplate = [label: string, source: string, placeholder: string];
+const templateGroups: Array<{ label: string; items: FormulaTemplate[] }> = [
+  { label: "Templates", items: [
+    ["Fraction", "\\frac{a}{b}", "a"], ["Root", "\\sqrt{x}", "x"], ["Superscript", "x^{2}", "2"], ["Subscript", "x_{i}", "i"], ["Scripts", "x_{i}^{2}", "i"],
+    ["Sum", "\\sum_{i=1}^{n} x_i", "n"], ["Integral", "\\int_{a}^{b} f(x)\\,dx", "a"], ["Brackets", "\\left( x \\right)", "x"],
+    ["Aligned equations", "\\begin{aligned}\na &= b \\\\\nc &= d\n\\end{aligned}", "a"]
+  ] },
+  { label: "Greek lowercase", items: [
+    ["α", "\\alpha ", ""], ["β", "\\beta ", ""], ["γ", "\\gamma ", ""], ["δ", "\\delta ", ""], ["ε", "\\epsilon ", ""], ["ζ", "\\zeta ", ""],
+    ["η", "\\eta ", ""], ["θ", "\\theta ", ""], ["ι", "\\iota ", ""], ["κ", "\\kappa ", ""], ["λ", "\\lambda ", ""], ["μ", "\\mu ", ""],
+    ["ν", "\\nu ", ""], ["ξ", "\\xi ", ""], ["π", "\\pi ", ""], ["ρ", "\\rho ", ""], ["σ", "\\sigma ", ""], ["τ", "\\tau ", ""],
+    ["υ", "\\upsilon ", ""], ["φ", "\\phi ", ""], ["χ", "\\chi ", ""], ["ψ", "\\psi ", ""], ["ω", "\\omega ", ""]
+  ] },
+  { label: "Greek uppercase", items: [
+    ["Γ", "\\Gamma ", ""], ["Δ", "\\Delta ", ""], ["Θ", "\\Theta ", ""], ["Λ", "\\Lambda ", ""], ["Ξ", "\\Xi ", ""], ["Π", "\\Pi ", ""],
+    ["Σ", "\\Sigma ", ""], ["Υ", "\\Upsilon ", ""], ["Φ", "\\Phi ", ""], ["Ψ", "\\Psi ", ""], ["Ω", "\\Omega ", ""]
+  ] },
+  { label: "Greek variants", items: [
+    ["ϵ", "\\varepsilon ", ""], ["ϑ", "\\vartheta ", ""], ["ϰ", "\\varkappa ", ""], ["ϖ", "\\varpi ", ""], ["ϱ", "\\varrho ", ""], ["ς", "\\varsigma ", ""], ["ϕ", "\\varphi ", ""]
+  ] },
+  { label: "Operators", items: [
+    ["±", "\\pm ", ""], ["∓", "\\mp ", ""], ["×", "\\times ", ""], ["÷", "\\div ", ""], ["⋅", "\\cdot ", ""], ["∑", "\\sum ", ""],
+    ["∏", "\\prod ", ""], ["∫", "\\int ", ""], ["∂", "\\partial ", ""], ["∇", "\\nabla ", ""], ["∞", "\\infty ", ""]
+  ] },
+  { label: "Relations", items: [
+    ["≤", "\\leq ", ""], ["≥", "\\geq ", ""], ["≠", "\\neq ", ""], ["≈", "\\approx ", ""], ["≡", "\\equiv ", ""], ["∝", "\\propto ", ""]
+  ] },
+  { label: "Sets", items: [
+    ["∈", "\\in ", ""], ["∉", "\\notin ", ""], ["⊂", "\\subset ", ""], ["⊆", "\\subseteq ", ""], ["⊃", "\\supset ", ""],
+    ["⊇", "\\supseteq ", ""], ["∪", "\\cup ", ""], ["∩", "\\cap ", ""], ["∅", "\\emptyset ", ""]
+  ] },
+  { label: "Arrows", items: [
+    ["←", "\\leftarrow ", ""], ["→", "\\rightarrow ", ""], ["↔", "\\leftrightarrow ", ""], ["⇐", "\\Leftarrow ", ""], ["⇒", "\\Rightarrow ", ""], ["⇔", "\\Leftrightarrow ", ""]
+  ] }
 ];
 
 function TableEditor({ value, onChange }: { value: TableData; onChange(value: TableData): void }) {
@@ -107,7 +135,7 @@ export function MarkdownInsertDialog({ initial, onApply, onClose }: Props) {
       </>}
       {draft.kind === "math" && <>
         <label>Display mode<ThemedSelect label="Math display" value={draft.display ? "block" : "inline"} options={[{ value: "inline", label: "Inline" }, { value: "block", label: "Display" }]} onChange={value => patch({ display: value === "block" })} /></label>
-        <div className="formula-templates" aria-label="Math templates">{templates.map(([name, value, placeholder]) => <button type="button" key={name} title={`Insert ${name}`} onClick={() => insertTemplate(value, placeholder)}>{name}</button>)}</div>
+        <div className="formula-template-groups">{templateGroups.map(group => <section className="formula-template-group" aria-label={group.label} key={group.label}><span>{group.label}</span><div className="formula-templates">{group.items.map(([name, value, placeholder]) => <button type="button" key={`${name}:${value}`} aria-label={name} title={`Insert ${name} · ${value.trim()}`} onClick={() => insertTemplate(value, placeholder)}>{name}</button>)}</div></section>)}</div>
         <div className="matrix-tools"><span>Matrix</span><label>Rows<input spellCheck={false} autoCorrect="off" autoCapitalize="off" aria-label="Matrix rows" type="number" min="1" max="10" value={matrix.rows} onChange={event => setMatrix({ ...matrix, rows: Math.max(1, Math.min(10, Number(event.target.value) || 1)) })} /></label><label>Columns<input spellCheck={false} autoCorrect="off" autoCapitalize="off" aria-label="Matrix columns" type="number" min="1" max="10" value={matrix.columns} onChange={event => setMatrix({ ...matrix, columns: Math.max(1, Math.min(10, Number(event.target.value) || 1)) })} /></label><button type="button" onClick={() => insertTemplate(`\\begin{bmatrix}\n${Array.from({ length: matrix.rows }, () => Array(matrix.columns).fill("0").join(" & ")).join(" \\\\\n")}\n\\end{bmatrix}`, "0")}>Insert matrix</button></div>
         <label>Formula<textarea spellCheck={false} autoCorrect="off" autoCapitalize="off" ref={formula} aria-label="Formula" className="source-field" rows={4} placeholder="For example, E=mc^2, or choose a template above" value={draft.text} onSelect={event => { selection.current = { from: event.currentTarget.selectionStart, to: event.currentTarget.selectionEnd }; }} onChange={event => patch({ text: event.target.value })} /></label>
         <p className="modal-help">Enter the formula without surrounding dollar signs. Templates select the part to replace.</p>
