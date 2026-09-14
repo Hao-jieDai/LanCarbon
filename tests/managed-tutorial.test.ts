@@ -46,4 +46,15 @@ describe("system-managed LanCarbon tutorial", () => {
     expect(content).not.toMatch(/\b1\.1\.1\b/);
     expect(content).not.toMatch(/Version\s+\d+\.\d+\.\d+/i);
   });
+
+  it("links the early required-tools page to the later troubleshooting page", () => {
+    const toolsPage = officialBook.pages["tutorial-page-s1-tools"];
+    const troubleshootingPage = officialBook.pages["tutorial-page-s4-errors"];
+    const toolsNote = bundled.notes.find(note => note.id === toolsPage.noteId)!;
+    const link = "../04-publish/troubleshooting.md";
+    expect(toolsNote.content).toContain(`[Troubleshooting Common Problems](${link})`);
+    expect(toolsNote.content).toContain(`[常见问题处理（Troubleshooting Common Problems）](${link})`);
+    expect(toolsNote.content.match(/\[Troubleshooting Common Problems\]\(\.\.\/04-publish\/troubleshooting\.md\)/g)).toHaveLength(1);
+    expect(path.posix.normalize(path.posix.join(path.posix.dirname(toolsPage.exportPath), link))).toBe(troubleshootingPage.exportPath);
+  });
 });
