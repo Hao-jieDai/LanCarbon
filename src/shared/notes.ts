@@ -15,6 +15,8 @@ Welcome to **LanCarbon**, an offline-first desktop application for writing Notes
 
 Version 1.1.2 expands the Math panel with grouped Greek letters and common mathematical symbols, adds **Ctrl+E** for quickly switching between Edit and Preview, and adds Node.js detection and managed installation to Environment Setup. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
 
+**Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
+
 LanCarbon now uses the new Logo consistently across the application, installer, repository ReadMe, built-in tutorial, and the default favicon for generated Book websites.
 
 ### What you can do
@@ -64,6 +66,8 @@ Export is optional in this workflow. It creates a separate source copy and is no
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
 1.1.2 扩充了 Math 面板，加入分组显示的希腊字母和常用数学符号，新增 **Ctrl+E** 用于快速切换 Edit 与 Preview，并在 Environment Setup 中加入 Node.js 检测和受管理安装。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
+
+**重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
 LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程以及生成 Book 网站的默认 favicon 中统一使用新版 Logo。
 

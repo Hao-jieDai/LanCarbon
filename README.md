@@ -15,6 +15,8 @@ LanCarbon is a Windows desktop application for writing ordinary Markdown Notes a
 
 Version 1.1.2 expands the Math panel with grouped Greek letters and common mathematical symbols, adds **Ctrl+E** for quickly switching between Edit and Preview, and extends Environment Setup with Node.js detection and managed installation. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
 
+**Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
+
 ### Main features
 
 - Offline Markdown Notes with search, tags, pinning and autosave.
@@ -96,6 +98,8 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
 1.1.2 扩充了 Math 面板，加入分组显示的希腊字母和常用数学符号，新增 **Ctrl+E** 用于快速切换 Edit 与 Preview，并在 Environment Setup 中加入 Node.js 检测和受管理安装。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
+
+**重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
 ### 主要功能
 
