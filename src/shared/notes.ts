@@ -45,7 +45,7 @@ Basic writing, Preview and source-copy Export work inside LanCarbon. This first-
 - **Build** requires Python 3, Node.js and Jupyter Book 2.
 - **Publish** requires Git, GitHub CLI, a GitHub account and network access to GitHub.
 
-Each tool is installed from its official source, verified, and checked again. Installing Jupyter Book also prepares missing managed Python and Node.js dependencies. Existing compatible system installations are marked **Using existing** and have no Install button. Managed Python is portable and does not alter a registered system Python. Live download, verification, deployment and post-install progress is shown; Cancel stops the operation and removes partial files. LanCarbon retries temporary Windows file locks and offers **Repair folder permissions** when \`Tools\` is not writable. Failed downloads or repairs do not affect local editing or tools already installed successfully. Some networks may require a system proxy or TUN mode to reach GitHub.
+Each tool is installed from its official source, verified, and checked again. Installing Jupyter Book also prepares missing managed Python and Node.js dependencies. Existing compatible system installations are marked **Using existing** and have no Install button. Managed Python is portable and does not alter a registered system Python. Live download, verification, deployment and post-install progress is shown; Cancel stops the operation and removes partial files. LanCarbon retries temporary Windows file locks and offers **Repair folder permissions** when \`Tools\` is not writable. Failed downloads or repairs do not affect local editing or tools already installed successfully. The system-managed tutorial retains its GitHub publishing connection when official tutorial content is refreshed. Some networks may require a system proxy or TUN mode to reach GitHub.
 
 ### A simple workflow
 
@@ -95,7 +95,7 @@ LanCarbon 首次安装后会提供两项起始内容：
 - **Build** 需要 Python 3、Node.js 和 Jupyter Book 2。
 - **Publish** 需要 Git、GitHub CLI、GitHub 账号以及能够访问 GitHub 的网络。
 
-各项工具都会从官方来源安装、校验并复检；安装 Jupyter Book 时也会自动准备缺失的受管理 Python 和 Node.js。系统中已有的兼容工具显示 **Using existing**，不提供 Install 按钮；受管理 Python 为便携版，不会修改已注册的系统 Python。界面会显示下载、校验、部署和复检进度，Cancel 会停止任务并清理未完成文件。LanCarbon 会自动重试临时的 Windows 文件占用，并在 \`Tools\` 不可写时提供 **Repair folder permissions**。下载或修复失败不会影响本地编辑或此前成功安装的工具。部分网络环境可能需要开启系统代理或 TUN 模式才能访问 GitHub。
+各项工具都会从官方来源安装、校验并复检；安装 Jupyter Book 时也会自动准备缺失的受管理 Python 和 Node.js。系统中已有的兼容工具显示 **Using existing**，不提供 Install 按钮；受管理 Python 为便携版，不会修改已注册的系统 Python。界面会显示下载、校验、部署和复检进度，Cancel 会停止任务并清理未完成文件。LanCarbon 会自动重试临时的 Windows 文件占用，并在 \`Tools\` 不可写时提供 **Repair folder permissions**。下载或修复失败不会影响本地编辑或此前成功安装的工具。系统管理教程在刷新官方内容时会保留 GitHub 发布连接。部分网络环境可能需要开启系统代理或 TUN 模式才能访问 GitHub。
 
 ### 推荐工作流程
 

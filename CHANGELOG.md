@@ -15,6 +15,7 @@ All notable changes to official LanCarbon releases are recorded here.
 
 - Managed installation retries transient Windows file-lock errors with increasing waits instead of failing immediately during folder creation or replacement.
 - Environment Setup tests write access to the managed `Tools` folder and can repair its Windows access rules, requesting elevation only when required.
+- System tutorial synchronization now preserves its GitHub publishing binding, preventing a connected repository from being reported as unconnected when publishing.
 
 ### Validation
 

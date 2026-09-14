@@ -38,6 +38,39 @@ describe("system-managed LanCarbon tutorial", () => {
     expect(result.workspace.books.find(book => book.id === MANAGED_TUTORIAL_BOOK_ID)).toEqual(officialBook);
   });
 
+  it("preserves the publishing binding while restoring official tutorial settings and structure", () => {
+    const existingBook = structuredClone(officialBook);
+    const publishing = {
+      repository: "Hao-jieDai/LanCarbon-From-0-to-1",
+      repositoryUrl: "https://github.com/Hao-jieDai/LanCarbon-From-0-to-1",
+      pagesUrl: "https://hao-jiedai.github.io/LanCarbon-From-0-to-1/",
+      branch: "gh-pages",
+      visibility: "PUBLIC" as const,
+      initializedAt: "2026-09-14T00:00:00.000Z",
+      lastPublishedAt: "2026-09-14T01:00:00.000Z",
+      lastCommit: "abc123"
+    };
+    existingBook.settings.title = "Edited system tutorial";
+    existingBook.settings.github = "https://github.com/wrong/repository";
+    existingBook.settings.publishing = publishing;
+    existingBook.rootPageIds = [existingBook.homePageId];
+    const workspace: WorkspaceFile = {
+      version: 2,
+      notes: structuredClone(bundled.notes),
+      books: [existingBook]
+    };
+
+    const result = syncManagedTutorial(workspace, bundled);
+    const synchronized = result.workspace.books.find(book => book.id === MANAGED_TUTORIAL_BOOK_ID)!;
+    expect(result.changed).toBe(true);
+    expect(synchronized.settings.title).toBe(officialBook.settings.title);
+    expect(synchronized.settings.github).toBe(publishing.repositoryUrl);
+    expect(synchronized.settings.publishing).toEqual(publishing);
+    expect(synchronized.rootPageIds).toEqual(officialBook.rootPageIds);
+    expect(synchronized.pages).toEqual(officialBook.pages);
+    expect(syncManagedTutorial(result.workspace, bundled)).toEqual({ workspace: result.workspace, changed: false });
+  });
+
   it("starts with the bilingual overwrite warning and contains no LanCarbon release number", () => {
     const home = bundled.notes.find(note => note.id === officialBook.pages[officialBook.homePageId].noteId)!;
     expect(home.content.indexOf("System-managed tutorial — do not edit")).toBeLessThan(100);

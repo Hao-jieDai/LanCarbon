@@ -12,14 +12,19 @@ export function syncManagedTutorial(workspace: WorkspaceFile, bundled: Workspace
   if (officialNotes.length !== officialNoteIds.size) throw new Error("The bundled system tutorial references missing Notes");
 
   const existingBook = workspace.books.find(book => book.id === MANAGED_TUTORIAL_BOOK_ID);
+  const synchronizedBook = clone<Book>(officialBook);
+  if (existingBook?.settings.publishing) {
+    synchronizedBook.settings.github = existingBook.settings.publishing.repositoryUrl;
+    synchronizedBook.settings.publishing = clone(existingBook.settings.publishing);
+  }
   const existingNoteIds = new Set(existingBook ? Object.values(existingBook.pages).map(page => page.noteId) : []);
   const notes = [
     ...workspace.notes.filter(note => !existingNoteIds.has(note.id) && !officialNoteIds.has(note.id)),
     ...clone<Note[]>(officialNotes)
   ];
   const books = existingBook
-    ? workspace.books.map(book => book.id === MANAGED_TUTORIAL_BOOK_ID ? clone<Book>(officialBook) : book)
-    : [...workspace.books, clone<Book>(officialBook)];
+    ? workspace.books.map(book => book.id === MANAGED_TUTORIAL_BOOK_ID ? synchronizedBook : book)
+    : [...workspace.books, synchronizedBook];
   const next: WorkspaceFile = { ...workspace, notes, books };
   return JSON.stringify(next) === JSON.stringify(workspace) ? { workspace, changed: false } : { workspace: next, changed: true };
 }
