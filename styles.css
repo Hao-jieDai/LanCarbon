@@ -261,9 +261,13 @@ button:disabled { cursor: default; opacity: .45; }
 .new-note kbd { margin-left: auto; color: var(--button-kbd); background: transparent; font-size: 11px; }
 .new-note.compact { width: auto; padding: 0 20px; }
 
-.workspace-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin: -10px 0 16px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.workspace-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin: -10px 0 3px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
 .workspace-tabs button { height: 31px; color: var(--muted); border: 0; border-radius: 6px; background: transparent; font-size: 11px; }
 .workspace-tabs button.active { color: var(--filter-active-ink); background: var(--paper); box-shadow: 0 1px 5px var(--card-shadow); font-weight: 600; }
+.workspace-shortcut { margin-bottom: 10px; color: var(--muted); text-align: right; font-size: 10px; }
+.workspace-shortcut kbd { font-family: var(--sans); }
+.workspace-sort { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; color: var(--muted); font-size: 11px; }
+.workspace-sort select { min-width: 0; flex: 1; height: 29px; padding: 0 7px; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font: inherit; }
 
 .search-box {
   display: flex;
@@ -321,15 +325,19 @@ button:disabled { cursor: default; opacity: .45; }
 @media (max-width: 680px) { .build-environment, .github-fields { grid-template-columns: 1fr; } .build-panel > footer { flex-wrap: wrap; } .setup-item { grid-template-columns: 26px minmax(0, 1fr); } .setup-actions { grid-column: 2; justify-self: start; } }
 .book-tree, .book-tree ul { margin: 0; padding: 0; list-style: none; }
 .book-tree-item { margin: 1px 0; }
-.book-page-row { display: flex; width: 100%; height: 36px; align-items: center; gap: 7px; overflow: hidden; color: var(--card-copy); border: 0; border-radius: 7px; background: transparent; text-align: left; }
-.book-page-row > span:nth-child(2) { overflow: hidden; flex: 1; text-overflow: ellipsis; white-space: nowrap; }
+.book-tree-row { display: flex; align-items: center; color: var(--card-copy); border-radius: 7px; }
+.book-fold-toggle, .book-leaf-mark { display: inline-flex; width: 20px; height: 30px; flex: 0 0 20px; align-items: center; justify-content: center; padding: 0; color: inherit; border: 0; border-radius: 5px; background: transparent; }
+.book-fold-toggle:hover { background: var(--paper); }
+.book-fold-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.book-page-row { display: flex; min-width: 0; flex: 1; height: 36px; align-items: center; gap: 7px; padding: 0 4px; overflow: hidden; color: inherit; border: 0; border-radius: 7px; background: transparent; text-align: left; }
+.book-page-row > span { overflow: hidden; flex: 1; text-overflow: ellipsis; white-space: nowrap; }
 .book-page-row small { margin-right: 8px; color: var(--muted); font-size: 8px; }
-.book-page-row:hover, .book-page-row.active { color: var(--ink); background: var(--surface); }
+.book-tree-row:hover, .book-tree-row.active { color: var(--ink); background: var(--surface); }
 .book-page-row { touch-action: none; user-select: none; }
-.book-tree-item.dragging > .book-page-row { opacity: .4; }
+.book-tree-item.dragging > .book-tree-row { opacity: .4; }
 .tree-drop-indicator { width: 100%; height: 5px; border-radius: 4px; pointer-events: none; }
 .tree-drop-indicator.active { background: var(--accent); }
-.book-page-row.drop-inside { color: var(--ink); box-shadow: inset 0 0 0 2px var(--accent); background: var(--surface); }
+.book-tree-row.drop-inside { color: var(--ink); box-shadow: inset 0 0 0 2px var(--accent); background: var(--surface); }
 body.book-dragging, body.book-dragging * { cursor: grabbing !important; }
 
 .sidebar-footer { display: block; padding: 12px 4px 0; color: var(--muted); border-top: 1px solid var(--line); font-size: 10px; }

@@ -142,7 +142,7 @@ test("formatting toolbar: keyboard, dialogs, preview, responsive layout and pers
     const language = page.getByRole("combobox", { name: "Code language" });
     await language.fill("py");
     await expectNoSpellcheck();
-    await expect(page.getByRole("option")).toHaveCount(1);
+    await expect(page.getByRole("listbox").getByRole("option")).toHaveCount(1);
     await language.press("ArrowDown"); await language.press("Enter");
     await expect(language).toHaveValue("python");
     await language.click(); await expectThemePopup();

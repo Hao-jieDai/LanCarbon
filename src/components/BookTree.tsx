@@ -14,6 +14,18 @@ type Placement = "before" | "inside" | "after";
 interface PointerDrag { pageId: string; pointerId: number; startX: number; startY: number; started: boolean; }
 
 export function BookTree({ book, notes, activePageId, onSelect, onMove }: BookTreeProps) {
+  // A different Book gets its own persisted view, including when a caller reuses this component.
+  return <BookContents key={book.id} book={book} notes={notes} activePageId={activePageId} onSelect={onSelect} onMove={onMove} />;
+}
+
+function BookContents({ book, notes, activePageId, onSelect, onMove }: BookTreeProps) {
+  const foldKey = `lancarbon-book-folds-v1:${book.id}`;
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem(foldKey) ?? "[]");
+      return new Set(Array.isArray(saved) ? saved.filter((id): id is string => typeof id === "string" && Boolean(book.pages[id]?.children.length)) : []);
+    } catch { return new Set(); }
+  });
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dropHint, setDropHint] = useState<{ pageId: string; placement: Placement } | null>(null);
   const pointerDrag = useRef<PointerDrag | null>(null);
@@ -21,6 +33,29 @@ export function BookTree({ book, notes, activePageId, onSelect, onMove }: BookTr
   const suppressClick = useRef(false);
   const treeRef = useRef<HTMLUListElement>(null);
   const noteById = new Map(notes.map(note => [note.id, note]));
+
+  useEffect(() => {
+    const parents = new Map(Object.values(book.pages).flatMap(page => page.children.map(child => [child, page.id] as const)));
+    const ancestors = new Set<string>();
+    let parent = activePageId ? parents.get(activePageId) : undefined;
+    while (parent && !ancestors.has(parent)) { ancestors.add(parent); parent = parents.get(parent); }
+    setCollapsed(previous => {
+      const next = new Set([...previous].filter(id => book.pages[id]?.children.length && !ancestors.has(id)));
+      return next.size === previous.size ? previous : next;
+    });
+  }, [activePageId, book.pages]);
+
+  useEffect(() => {
+    try { localStorage.setItem(foldKey, JSON.stringify([...collapsed])); } catch { /* optional view preference */ }
+  }, [foldKey, collapsed]);
+
+  const toggleBranch = (pageId: string) => {
+    setCollapsed(previous => {
+      const next = new Set(previous);
+      if (next.has(pageId)) next.delete(pageId); else next.add(pageId);
+      return next;
+    });
+  };
 
   useEffect(() => {
     const clearDrag = () => {
@@ -94,14 +129,19 @@ export function BookTree({ book, notes, activePageId, onSelect, onMove }: BookTr
     const page = book.pages[pageId];
     if (!page) return null;
     const note = noteById.get(page.noteId);
+    const title = note?.title.trim() || "Untitled Page";
+    const expanded = !collapsed.has(pageId);
     const placement = dropHint?.pageId === pageId ? dropHint.placement : null;
     return <li key={pageId} className={`book-tree-item ${draggedId === pageId ? "dragging" : ""}`} data-book-page-id={pageId}>
       <div className={`tree-drop-indicator ${placement === "before" ? "active" : ""}`} data-drop-position="before" />
-      <button className={`book-page-row ${activePageId === pageId ? "active" : ""} ${placement === "inside" ? "drop-inside" : ""}`} style={{ paddingLeft: `${12 + depth * 16}px` }} onPointerDown={event => startDrag(event, pageId)} onClick={() => selectPage(pageId)}>
-        <span aria-hidden="true">{page.children.length ? "▾" : "·"}</span><span>{note?.title.trim() || "Untitled Page"}</span>{!page.showInToc && <small title="Hidden from the table of contents">Hidden</small>}
-      </button>
+      <div className={`book-tree-row ${activePageId === pageId ? "active" : ""} ${placement === "inside" ? "drop-inside" : ""}`} style={{ paddingLeft: `${8 + depth * 16}px` }}>
+        {page.children.length ? <button className="book-fold-toggle" aria-label={`${expanded ? "Collapse" : "Expand"} ${title}`} aria-expanded={expanded} onClick={() => toggleBranch(pageId)}>{expanded ? "▾" : "▸"}</button> : <span className="book-leaf-mark" aria-hidden="true">·</span>}
+        <button className="book-page-row" onPointerDown={event => startDrag(event, pageId)} onClick={() => selectPage(pageId)} aria-current={activePageId === pageId ? "page" : undefined}>
+          <span>{title}</span>{!page.showInToc && <small title="Hidden from the table of contents">Hidden</small>}
+        </button>
+      </div>
       <div className={`tree-drop-indicator ${placement === "after" ? "active" : ""}`} data-drop-position="after" />
-      {page.children.length > 0 && <ul>{page.children.map(child => renderPage(child, depth + 1))}</ul>}
+      {page.children.length > 0 && expanded && <ul>{page.children.map(child => renderPage(child, depth + 1))}</ul>}
     </li>;
   };
   return <ul ref={treeRef} className="book-tree" aria-label="Book contents tree">{book.rootPageIds.map(id => renderPage(id, 0))}</ul>;

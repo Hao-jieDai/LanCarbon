@@ -107,7 +107,7 @@ describe("App", () => {
     expect(screen.getByLabelText("Rendered preview")).toBeVisible();
     await user.click(screen.getByRole("button", { name: "Delete note" }));
     expect(screen.getByRole("button", { name: "Preview" })).toHaveAttribute("aria-pressed", "true");
-    await user.click(screen.getByRole("button", { name: /^Jupyter Book$/ }));
+    await user.click(screen.getByRole("button", { name: /^Books$/ }));
     await user.click(screen.getByRole("button", { name: "New Book" }));
     await user.type(screen.getByLabelText("Book Name"), "Mode Book");
     await user.click(screen.getByRole("button", { name: "Create Book" }));
@@ -155,7 +155,7 @@ describe("App", () => {
     book = addNoteToBook(book, childNote, { parentPageId: sectionPage.id });
     vi.mocked(api.loadWorkspace).mockResolvedValue({ ok: true, workspace: { version: 2, notes: [savedNote, created.homeNote, sectionNote, childNote], books: [book] }, isFirstRun: false, migrated: false });
     const user = userEvent.setup(); render(<App />); await screen.findByDisplayValue("第一篇");
-    await user.click(screen.getByRole("button", { name: /^Jupyter Book$/ })); await user.click(screen.getByRole("button", { name: "Delete" }));
+    await user.click(screen.getByRole("button", { name: /^Books$/ })); await user.click(screen.getByRole("button", { name: "Delete" }));
     expect(window.confirm).not.toHaveBeenCalled();
     expect(await screen.findByRole("button", { name: /第一篇/ })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /第一篇/ }));
@@ -166,7 +166,7 @@ describe("App", () => {
       expect(saved?.books).toEqual([]);
       expect(saved?.notes.some(note => [created.homeNote.id, sectionNote.id, childNote.id].includes(note.id))).toBe(false);
     });
-    await user.click(screen.getByRole("button", { name: /^Jupyter Book$/ })); await user.click(screen.getByRole("button", { name: "New Book" }));
+    await user.click(screen.getByRole("button", { name: /^Books$/ })); await user.click(screen.getByRole("button", { name: "New Book" }));
     await user.type(screen.getByLabelText("Book Name"), "Fresh Book"); await user.click(screen.getByRole("button", { name: "Create Book" }));
     await user.clear(screen.getByLabelText("Note title")); await user.type(screen.getByLabelText("Note title"), "Editable Home");
     expect(screen.getByLabelText("Note title")).toHaveValue("Editable Home");
@@ -180,8 +180,8 @@ describe("App", () => {
     const childNote = createNote({ id: "child", title: "Child" });
     book = addNoteToBook(book, childNote, { parentPageId: sectionPage.id });
     vi.mocked(api.loadWorkspace).mockResolvedValue({ ok: true, workspace: { version: 2, notes: [created.homeNote, sectionNote, childNote], books: [book] }, isFirstRun: false, migrated: false });
-    const user = userEvent.setup(); render(<App />); await screen.findByRole("button", { name: /^Jupyter Book$/ });
-    await user.click(screen.getByRole("button", { name: /^Jupyter Book$/ })); await user.click(screen.getByRole("button", { name: /^Section$/ }));
+    const user = userEvent.setup(); render(<App />); await screen.findByRole("button", { name: /^Books$/ });
+    await user.click(screen.getByRole("button", { name: /^Books$/ })); await user.click(screen.getByRole("button", { name: /^Section$/ }));
     await user.click(screen.getByRole("button", { name: "Delete note" }));
     expect(window.confirm).not.toHaveBeenCalled();
     expect(screen.getByLabelText("Note title")).toHaveValue("Research Book");
@@ -195,7 +195,7 @@ describe("App", () => {
 
   it("创建 Book、章节和子页面并保存设置和页面属性", async () => {
     const user = userEvent.setup(); render(<App />); await screen.findByDisplayValue("第一篇");
-    await user.click(screen.getByRole("button", { name: /^Jupyter Book$/ })); await user.click(screen.getByRole("button", { name: "New Book" }));
+    await user.click(screen.getByRole("button", { name: /^Books$/ })); await user.click(screen.getByRole("button", { name: "New Book" }));
     await user.type(screen.getByLabelText("Book Name"), "测试 Book"); await user.click(screen.getByRole("button", { name: "Create Book" }));
     expect(await screen.findByLabelText("Note title")).toHaveValue("测试 Book");
     await user.click(screen.getByRole("button", { name: "＋ Section" })); expect(screen.getByDisplayValue("New Section")).toBeInTheDocument();
@@ -218,8 +218,8 @@ describe("App", () => {
   it("Authors 输入允许空格与多个逗号分隔姓名，并在保存时解析", async () => {
     const created = createBook("Authors Book");
     vi.mocked(api.loadWorkspace).mockResolvedValue({ ok: true, workspace: { version: 2, notes: [created.homeNote], books: [created.book] }, isFirstRun: false, migrated: false });
-    const user = userEvent.setup(); render(<App />); await screen.findByRole("button", { name: /^Jupyter Book$/ });
-    await user.click(screen.getByRole("button", { name: /^Jupyter Book$/ }));
+    const user = userEvent.setup(); render(<App />); await screen.findByRole("button", { name: /^Books$/ });
+    await user.click(screen.getByRole("button", { name: /^Books$/ }));
     await user.click(screen.getByRole("button", { name: "Settings" }));
     await user.type(screen.getByLabelText("Book Authors"), "Haojie Dai, Jane Smith");
     expect(screen.getByLabelText("Book Authors")).toHaveValue("Haojie Dai, Jane Smith");

@@ -14,7 +14,7 @@ const NODE_VERSION = "24.21.0";
 const NODE_ARCHIVE = `node-v${NODE_VERSION}-win-x64.zip`;
 const NODE_URL = `https://nodejs.org/dist/v${NODE_VERSION}/${NODE_ARCHIVE}`;
 const NODE_SHA256 = "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541";
-const USER_AGENT = "LanCarbon/1.1.2";
+const USER_AGENT = "LanCarbon/1.1.3";
 const MANUAL_URLS: Record<EnvironmentToolId, string> = {
   python: "https://www.python.org/downloads/windows/",
   node: "https://nodejs.org/en/download/",

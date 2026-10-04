@@ -93,7 +93,7 @@ test("Edit layout, keyboard, composition, mode navigation and restart recovery",
     await page.getByRole("button", { name: /Existing source/ }).click();
     await expect(page.getByLabel("Rendered preview")).toBeVisible();
     await expect(editor).toBeHidden();
-    await page.getByRole("button", { name: "Jupyter Book", exact: true }).click();
+    await page.getByRole("button", { name: "Books", exact: true }).click();
     await page.getByLabel("New Book").click();
     await page.getByLabel("Book Name").fill("Editor test book");
     await page.getByRole("button", { name: "Create Book" }).click();
@@ -107,7 +107,7 @@ test("Edit layout, keyboard, composition, mode navigation and restart recovery",
     await expect(page.locator(".cm-line")).toHaveText(["Book text", "章节正文"]);
     await page.getByRole("button", { name: "＋ Child Page" }).click();
     await expectEditorLayout(page);
-    await page.getByRole("button", { name: /Editable section/ }).click();
+    await page.getByRole("button", { name: "Editable section", exact: true }).click();
     await expect(page.locator(".cm-line")).toHaveText(["Book text", "章节正文"]);
     await page.getByRole("button", { name: /Dark/, exact: false }).click();
     await expectEditorLayout(page);
@@ -121,8 +121,8 @@ test("Edit layout, keyboard, composition, mode navigation and restart recovery",
     await page.getByRole("button", { name: /Keyboard regression/ }).click();
     await expectEditorLayout(page);
     await expect(page.locator(".cm-line")).toHaveText(["First line", "Second line", "", "中文输入"]);
-    await page.getByRole("button", { name: "Jupyter Book", exact: true }).click();
-    await page.getByRole("button", { name: /Editable section/ }).click();
+    await page.getByRole("button", { name: "Books", exact: true }).click();
+    await page.getByRole("button", { name: "Editable section", exact: true }).click();
     await expectEditorLayout(page);
     await expect(page.locator(".cm-line")).toHaveText(["Book text", "章节正文"]);
   } finally {

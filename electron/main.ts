@@ -77,6 +77,10 @@ async function createWindow(): Promise<void> {
   });
 
   mainWindow.webContents.session.setSpellCheckerEnabled(false);
+  mainWindow.webContents.on("before-input-event", (_event, input) => {
+    // Keep Ctrl+Q in the renderer instead of Electron's native Quit accelerator.
+    mainWindow?.webContents.setIgnoreMenuShortcuts(input.control && !input.meta && !input.alt && !input.shift && input.key.toLowerCase() === "q");
+  });
   if (safePreferences?.maximized) mainWindow.maximize();
   mainWindow.once("ready-to-show", () => mainWindow?.show());
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: "deny" }));

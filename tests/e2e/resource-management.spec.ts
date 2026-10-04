@@ -23,7 +23,7 @@ test("image settings, duplicate choices and cross-Book deletion filters",async({
   let app=await launch();
   try {
     let page=await app.firstWindow();
-    await page.getByRole("button",{name:"Jupyter Book",exact:true}).click();
+    await page.getByRole("button",{name:"Books",exact:true}).click();
     await page.getByRole("button",{name:"Image settings",exact:true}).click();
     await page.getByLabel("Image width").fill("300px");await page.getByLabel("Image alignment").selectOption("left");await page.getByLabel("Image caption").fill("A caption");
     await page.getByRole("button",{name:"Apply",exact:true}).click();
@@ -68,7 +68,7 @@ test("image settings, duplicate choices and cross-Book deletion filters",async({
     await page.getByRole("button",{name:"Image settings",exact:true}).click();
     await page.screenshot({path:info.outputPath("image-settings-light.png")});
     await page.getByRole("button",{name:"Cancel",exact:true}).click();
-    await app.close();app=await launch();page=await app.firstWindow();await page.getByRole("button",{name:"Jupyter Book",exact:true}).click();
+    await app.close();app=await launch();page=await app.firstWindow();await page.getByRole("button",{name:"Books",exact:true}).click();
     await page.getByRole("button",{name:"Preview",exact:true}).click();await expect(page.locator(".markdown-preview img")).toHaveCSS("width","300px");
     await expect(page.locator(".preview-diagnostics")).not.toBeVisible();
     const restarted=JSON.parse(await fs.readFile(path.join(dir,"notes.json"),"utf8"));

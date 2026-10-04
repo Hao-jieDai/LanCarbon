@@ -25,7 +25,7 @@ test("images, screenshot paste, file drop, reuse, restart and portable export", 
   let app=await launch();
   try {
     let page=await app.firstWindow();
-    await page.getByRole("button",{name:"Jupyter Book",exact:true}).click();
+    await page.getByRole("button",{name:"Books",exact:true}).click();
     await page.getByRole("button",{name:"Asset sample",exact:true}).click();
     await page.getByLabel("Note content").click(); await page.getByLabel("Note content").press("Control+End");
     await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=(async()=>({canceled:false,filePaths:[file]})) as typeof dialog.showOpenDialog;},imageFile);
@@ -68,7 +68,7 @@ test("images, screenshot paste, file drop, reuse, restart and portable export", 
     await expect(page.getByText("All changes saved",{exact:true})).toBeVisible();
     await fs.rename(imageFile,path.join(directory,"moved.png")); await fs.unlink(documentFile);
     await app.close(); app=await launch(); page=await app.firstWindow();
-    await page.getByRole("button",{name:"Jupyter Book",exact:true}).click();
+    await page.getByRole("button",{name:"Books",exact:true}).click();
     await page.getByRole("button",{name:"Asset sample",exact:true}).click();
     await page.getByRole("button",{name:"Preview",exact:true}).click();
     await expect(page.locator(".markdown-preview img")).toHaveCount(3);

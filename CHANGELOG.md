@@ -2,6 +2,23 @@
 
 All notable changes to official LanCarbon releases are recorded here.
 
+## 1.1.3 — 2026-10-04
+
+### Added
+
+- Automatic Notes and Books sorting by last-modified time, creation time or name, with independently saved preferences and pinned Notes kept first. Book modification time includes page edits without changing stored content or the table of contents.
+- Independent expand/collapse controls for Book branches, remembered per Book across restarts, with ancestor expansion when navigating to a page or adding a child.
+- **Ctrl+Q** switches Notes and Books while preserving selections, with a visible shortcut hint and safeguards for dialogs, composition and key repeat.
+
+### Changed
+
+- Renamed the workspace tab and related creation dialogs from Jupyter Book to Books/Book; the Jupyter Book 2 tool name is unchanged.
+- Updated the bilingual ReadMe and the corresponding interface and Book-creation tutorial instructions.
+
+### Validation
+
+- Added regression tests for all sorting modes, pinned Notes, unmodified source order, per-Book folding, ancestor expansion, restart persistence and real Ctrl+Q handling with a native menu accelerator.
+
 ## 1.1.2 — 2026-09-14
 
 ### Added

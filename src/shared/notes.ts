@@ -1,4 +1,5 @@
-import type { Note } from "./types";
+import type { Note, WorkspaceSortOrder } from "./types";
+import { compareWorkspaceItems } from "./workspaceSorting";
 
 export const MAX_NOTES = 10_000;
 export const MAX_TITLE_LENGTH = 120;
@@ -7,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "1.1.2";
+export const RELEASE_VERSION = "1.1.3";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 1.1.2 expands the Math panel with grouped Greek letters and common mathematical symbols, adds **Ctrl+E** for quickly switching between Edit and Preview, and adds Node.js detection and managed installation to Environment Setup. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
+Version 1.1.3 adds automatic sorting by last modified time, creation time or name for Notes and Books, working expand/collapse controls in the Book tree, and **Ctrl+Q** to switch between the renamed **Notes / Books** workspaces. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -21,8 +22,9 @@ LanCarbon now uses the new Logo consistently across the application, installer, 
 
 ### What you can do
 
-- Write and organize ordinary Markdown Notes.
-- Create Books with Sections and Child Pages.
+- Write and organize ordinary Markdown Notes; choose **Sort by** to order Notes or Books by **Last modified**, **Date created** (newest first) or **Name (A–Z)**. Pinned Notes stay first, and each workspace remembers its own choice.
+- Create Books with Sections and Child Pages. Use a page's triangle to expand or collapse its children; each Book remembers its folded branches. Navigating to a page or creating a child reveals its ancestors. Sorting the Book selector does not change the Book's table of contents or export order.
+- Press **Ctrl+Q** to switch between **Notes** and **Books**, keeping the selected Note or Book page. The shortcut is shown below the workspace tabs and is inactive while a dialog is open.
 - Edit Markdown and MyST content with the formatting toolbar, use the expanded Math symbol panel, then switch between Edit and Preview with **Ctrl+E**.
 - Insert and manage images, attachments, citations and other reusable Resources.
 - Export a separate Jupyter Book source copy for backup or external editing.
@@ -36,7 +38,7 @@ LanCarbon includes two starting resources:
 1. **ReadMe** — this pinned Note introduces the current release and its main capabilities. It is refreshed when LanCarbon is updated.
 2. **LanCarbon: From 0 to 1** — a complete bilingual Book that guides a beginner from installation through writing, local Build and GitHub Pages publication.
 
-Open **Jupyter Book** in the left sidebar and select *LanCarbon: From 0 to 1* for the detailed tutorial. You may keep it as a reference while creating your own Book.
+Open **Books** in the left sidebar and select *LanCarbon: From 0 to 1* for the detailed tutorial. You may keep it as a reference while creating your own Book.
 
 *LanCarbon: From 0 to 1* is a system-managed tutorial. Do not edit it: each software update synchronizes it to the bundled edition and overwrites changes without creating a backup. LanCarbon is not responsible for content lost because this system tutorial was edited. Your own Notes and Books are never part of this replacement.
 
@@ -65,7 +67,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-1.1.2 扩充了 Math 面板，加入分组显示的希腊字母和常用数学符号，新增 **Ctrl+E** 用于快速切换 Edit 与 Preview，并在 Environment Setup 中加入 Node.js 检测和受管理安装。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
+1.1.3 为 Notes 和 Books 增加按修改时间、创建时间或名称自动排序的功能，让 Book 目录支持通过三角形展开和折叠，并新增 **Ctrl+Q** 快速切换统一命名后的 **Notes / Books** 工作区。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
@@ -73,8 +75,9 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 
 ### 主要功能
 
-- 撰写和管理普通 Markdown Notes。
-- 创建包含 Sections 和 Child Pages 的 Books。
+- 撰写和管理普通 Markdown Notes；通过 **Sort by** 将 Notes 或 Books 按 **Last modified**（修改时间）、**Date created**（创建时间，时间均为最新在前）或 **Name (A–Z)**（名称）排序。置顶 Notes 始终优先，两个工作区分别记住排序选择。
+- 创建包含 Sections 和 Child Pages 的 Books。点击页面前的三角形展开或折叠子页面，每本 Book 分别记住折叠状态；跳转到页面或新建子页面时会自动展开上级目录。Book 下拉框的排序不会改变 Book 内部目录和导出顺序。
+- 按 **Ctrl+Q** 在 **Notes** 和 **Books** 之间切换，并保留原来选中的 Note 或 Book 页面。快捷键显示在工作区切换按钮下方，打开对话框时不触发切换。
 - 使用格式工具栏和扩充后的 Math 符号面板编辑 Markdown 与 MyST 内容，并通过 **Ctrl+E** 快速切换 Edit 和 Preview。
 - 插入和管理图片、附件、文献及其他可重复使用的 Resources。
 - 导出独立的 Jupyter Book 源文件副本，用于备份或外部编辑。
@@ -88,7 +91,7 @@ LanCarbon 首次安装后会提供两项起始内容：
 1. **ReadMe**——当前这篇置顶 Note，用于介绍正式版本和主要功能；升级 LanCarbon 时会同步更新。
 2. **LanCarbon: From 0 to 1**——一本完整的中英文双语教程 Book，面向新手讲解安装、写作、本地 Build 和 GitHub Pages 在线发布的全过程。
 
-在左侧切换到 **Jupyter Book**，选择 *LanCarbon: From 0 to 1*，即可阅读详细教程。你可以保留这本书作为参考，同时创建自己的第一本 Book。
+在左侧切换到 **Books**，选择 *LanCarbon: From 0 to 1*，即可阅读详细教程。你可以保留这本书作为参考，同时创建自己的第一本 Book。
 
 *LanCarbon: From 0 to 1* 是系统管理教程，请勿编辑。每次软件更新都会把它同步为安装包内的最新版，覆盖其中的修改且不会创建备份；因自行编辑这本系统教程而造成的内容丢失，LanCarbon 不承担责任。用户自己创建的 Notes 和 Books 不会参与此次替换。
 
@@ -157,13 +160,13 @@ export function normalizeNotes(value: unknown): Note[] {
   return value.slice(0, MAX_NOTES).map(normalizeNote).filter((note): note is Note => note !== null);
 }
 
-export function sortNotes(notes: Note[]): Note[] {
-  return [...notes].sort((a, b) => Number(b.pinned) - Number(a.pinned) || Date.parse(b.updatedAt) - Date.parse(a.updatedAt));
+export function sortNotes(notes: Note[], order: WorkspaceSortOrder = "updated"): Note[] {
+  return [...notes].sort((a, b) => Number(b.pinned) - Number(a.pinned) || compareWorkspaceItems(a, b, order));
 }
 
-export function filterNotes(notes: Note[], query = "", filter: "all" | "pinned" = "all"): Note[] {
+export function filterNotes(notes: Note[], query = "", filter: "all" | "pinned" = "all", order: WorkspaceSortOrder = "updated"): Note[] {
   const needle = query.trim().toLocaleLowerCase("zh-CN");
-  return sortNotes(notes).filter(note => {
+  return sortNotes(notes, order).filter(note => {
     if (filter === "pinned" && !note.pinned) return false;
     if (!needle) return true;
     return [note.title, note.content, ...note.tags].join(" ").toLocaleLowerCase("zh-CN").includes(needle);

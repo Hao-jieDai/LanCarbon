@@ -15,7 +15,7 @@ test("preflights and builds a persistent managed Book inside the app", async ({}
   const launch = () => electron.launch({ ...(process.env.E2E_EXECUTABLE ? { executablePath: process.env.E2E_EXECUTABLE } : {}), args: ["--in-process-gpu", "--disable-gpu", "--no-sandbox", ...(process.env.E2E_EXECUTABLE ? [] : [path.resolve(__dirname, "../..")])], env: { ...process.env, E2E_USER_DATA_DIR: root, E2E_BUILD_PARENT: parent, E2E_BUILD_TEMPLATES: "" } });
   let app = await launch();
   try {
-    const page = await app.firstWindow(); await page.getByRole("button", { name: "Jupyter Book", exact: true }).click(); await page.getByRole("button", { name: "Build", exact: true }).click();
+    const page = await app.firstWindow(); await page.getByRole("button", { name: "Books", exact: true }).click(); await page.getByRole("button", { name: "Build", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Check and Build" })).toBeVisible(); await expect(page.getByText("PHASE 4A + 4B", { exact: true })).toHaveCount(0); await expect(page.getByText("Preflight passed", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Choose Location and Build", exact: true }).click();
     await expect(page.getByText(/Completed in|Jupyter Book build failed/)).toBeVisible({ timeout: 330_000 });
@@ -42,7 +42,7 @@ test("preflights and builds a persistent managed Book inside the app", async ({}
     expect(builtHtml).toContain("Built in LanCarbon"); expect(builtHtml).toContain("lc-align-center");
     await expect(fs.readFile(path.join(destination, ".lancarbon-build.json"), "utf8")).resolves.toContain(book.id);
     await app.close(); app = await launch();
-    const reopened = await app.firstWindow(); await reopened.getByRole("button", { name: "Jupyter Book", exact: true }).click(); await reopened.getByRole("button", { name: "Build", exact: true }).click();
+    const reopened = await app.firstWindow(); await reopened.getByRole("button", { name: "Books", exact: true }).click(); await reopened.getByRole("button", { name: "Build", exact: true }).click();
     await expect(reopened.getByText("Stopped — start it to get a local address", { exact: true })).toBeVisible();
     await expect(reopened.getByText("Build is up to date", { exact: true })).toBeVisible();
     await expect(reopened.getByRole("button", { name: "Rebuild Website", exact: true })).toBeVisible();

@@ -1,6 +1,6 @@
 {
   "name": "lancarbon",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "description": "A focused offline notes and Jupyter Book desktop app",
   "main": "dist-electron/electron/main.js",
   "author": "LanCarbon",

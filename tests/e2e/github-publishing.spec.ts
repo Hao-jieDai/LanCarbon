@@ -10,7 +10,7 @@ test("shows per-Book Phase 5A checks and Phase 5B repository setup", async ({}, 
   await fs.writeFile(path.join(root, "notes.json"), JSON.stringify({ version: 2, books: [book], notes: [homeNote] }));
   const app = await electron.launch({ ...(process.env.E2E_EXECUTABLE ? { executablePath: process.env.E2E_EXECUTABLE } : {}), args: ["--in-process-gpu", "--disable-gpu", "--no-sandbox", ...(process.env.E2E_EXECUTABLE ? [] : [path.resolve(__dirname, "../..")])], env: { ...process.env, E2E_USER_DATA_DIR: root } });
   try {
-    const page = await app.firstWindow(); await page.getByRole("button", { name: "Jupyter Book", exact: true }).click(); await page.getByRole("button", { name: "Publish", exact: true }).click();
+    const page = await app.firstWindow(); await page.getByRole("button", { name: "Books", exact: true }).click(); await page.getByRole("button", { name: "Publish", exact: true }).click();
     await expect(page.getByRole("heading", { name: "GitHub Publishing" })).toBeVisible();
     for (const label of ["Git", "GitHub CLI", "GitHub account", "Book website build", "Repository binding", "GitHub Pages"]) await expect(page.getByText(label, { exact: true })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "GitHub repository", exact: true })).toHaveValue("Online-Guide");

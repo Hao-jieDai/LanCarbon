@@ -19,7 +19,7 @@ test("Phase 2C offline mathematics, directives, references, source safety and re
     const errors: string[] = []; const remoteRequests: string[] = [];
     page.on("pageerror", error => errors.push(error.message));
     await page.context().route(/^https?:/, route => { remoteRequests.push(route.request().url()); return route.abort(); });
-    await page.getByRole("button", { name: "Jupyter Book", exact: true }).click();
+    await page.getByRole("button", { name: "Books", exact: true }).click();
     for (const title of ["Editing and Formatting", "Tables and Mathematics", "Directives and Roles"]) {
       await page.getByRole("button", { name: title, exact: true }).click();
       await expect(page.getByLabel("Note title")).toHaveValue(title);
@@ -78,7 +78,7 @@ test("Phase 2C offline mathematics, directives, references, source safety and re
     for (const note of before.notes) expect(after.notes.find((item: { id: string }) => item.id === note.id)?.content).toBe(note.content);
     expect(after.notes.find((note: { title: string }) => note.title === "Preview errors sample")?.content).toBe(source);
     await app.close(); app = await launch(); page = await app.firstWindow();
-    await page.getByRole("button", { name: "Jupyter Book", exact: true }).click();
+    await page.getByRole("button", { name: "Books", exact: true }).click();
     await page.getByRole("button", { name: /Preview errors sample/ }).click();
     await expect(page.locator(".cm-scroller")).toHaveCSS("display", "flex");
     await expect(page.getByLabel("Note content")).toContainText("Preserve my content");

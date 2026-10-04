@@ -49,3 +49,53 @@ describe("BookTree pointer drag and drop", () => {
     expect(onMove).not.toHaveBeenCalled();
   });
 });
+
+describe("BookTree folding", () => {
+  it("uses separate fold controls without selecting, moving or modifying pages, and remembers each Book", () => {
+    const { book, notes } = fixture(); const onMove = vi.fn(); const onSelect = vi.fn();
+    const before = JSON.stringify(book);
+    const view = render(<BookTree book={book} notes={notes} activePageId={book.homePageId} onSelect={onSelect} onMove={onMove} />);
+    fireEvent.click(screen.getByRole("button", { name: "Collapse Climate Basics" }));
+    expect(screen.getByRole("button", { name: "Expand Climate Basics" })).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("button", { name: "Carbon Cycle" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Renewable Energy" })).toBeVisible();
+    expect(onSelect).not.toHaveBeenCalled(); expect(onMove).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Climate Basics" }));
+    expect(onSelect).toHaveBeenCalledOnce();
+    expect(screen.queryByRole("button", { name: "Carbon Cycle" })).not.toBeInTheDocument();
+    view.rerender(<BookTree book={{ ...book, id: "other-book" }} notes={notes} activePageId={null} onSelect={onSelect} onMove={onMove} />);
+    expect(screen.getByRole("button", { name: "Carbon Cycle" })).toBeVisible();
+    view.rerender(<BookTree book={book} notes={notes} activePageId={book.homePageId} onSelect={onSelect} onMove={onMove} />);
+    expect(screen.queryByRole("button", { name: "Carbon Cycle" })).not.toBeInTheDocument();
+    expect(JSON.stringify(book)).toBe(before);
+  });
+
+  it("reveals only ancestors of a navigated or newly added page", () => {
+    const { book, notes } = fixture();
+    const section = Object.values(book.pages).find(page => page.noteId === "basics")!;
+    const child = Object.values(book.pages).find(page => page.noteId === "cycle")!;
+    const props = { book, notes, activePageId: book.homePageId, onSelect: vi.fn(), onMove: vi.fn() };
+    const view = render(<BookTree {...props} />);
+    fireEvent.click(screen.getByRole("button", { name: "Collapse Climate Basics" }));
+    fireEvent.click(screen.getByRole("button", { name: "Collapse Climate Solutions" }));
+    view.rerender(<BookTree {...props} activePageId={child.id} />);
+    expect(screen.getByRole("button", { name: "Carbon Cycle" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Expand Climate Solutions" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Collapse Climate Basics" }));
+    const newNote = createNote({ title: "New descendant" });
+    const updated = addNoteToBook(book, newNote, { parentPageId: section.id });
+    const newPage = Object.values(updated.pages).find(page => page.noteId === newNote.id)!;
+    view.rerender(<BookTree {...props} book={updated} notes={[...notes, newNote]} activePageId={newPage.id} />);
+    expect(screen.getByRole("button", { name: "New descendant" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Expand Climate Solutions" })).toBeVisible();
+  });
+
+  it("ignores invalid saved folds and still allows dragging into a folded Section", () => {
+    const { book, notes } = fixture(); const onMove = vi.fn();
+    localStorage.setItem(`lancarbon-book-folds-v1:${book.id}`, "invalid JSON");
+    render(<BookTree book={book} notes={notes} activePageId={null} onSelect={vi.fn()} onMove={onMove} />);
+    fireEvent.click(screen.getByRole("button", { name: "Collapse Climate Basics" }));
+    drag("Renewable Energy", "Climate Basics", 118);
+    expect(onMove).toHaveBeenCalledWith(expect.any(String), expect.any(String), "inside");
+  });
+});

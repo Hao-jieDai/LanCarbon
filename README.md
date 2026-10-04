@@ -13,14 +13,15 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon uploads content only when you explicitly use Publish.
 
-Version 1.1.2 expands the Math panel with grouped Greek letters and common mathematical symbols, adds **Ctrl+E** for quickly switching between Edit and Preview, and extends Environment Setup with Node.js detection and managed installation. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
+Version 1.1.3 adds automatic sorting for Notes and Books, working expand/collapse controls in the Book tree, and **Ctrl+Q** for switching between the renamed **Notes / Books** workspaces. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
 ### Main features
 
-- Offline Markdown Notes with search, tags, pinning and autosave.
-- Structured Books with Sections, Child Pages, page properties and Book settings.
+- Offline Markdown Notes with search, tags, pinning and autosave. **Sort by** orders Notes and the Book selector by **Last modified**, **Date created** (newest first) or **Name (A–Z)**; pinned Notes stay first and the two workspaces remember their choices independently. A Book's last-modified time includes edits to its pages.
+- Structured Books with Sections, Child Pages, page properties and Book settings. Click a page's triangle to expand or collapse its children; folds are saved separately for each Book. Navigating to a page or creating a child reveals its ancestors. Sorting the Book selector never reorders the Book's contents or exports.
+- **Notes / Books** workspace tabs with a visible **Ctrl+Q** shortcut, preserving your selected Note or Book page when switching. The shortcut is inactive while a dialog is open; Jupyter Book 2 remains the Build tool's name.
 - CodeMirror editing, an expanded Math symbol panel, MyST-aware formatting tools and an offline Preview with **Ctrl+E** view switching.
 - Images, attachments, reusable Resources, BibTeX libraries and citations.
 - Optional export of a separate Jupyter Book source copy.
@@ -31,7 +32,7 @@ Version 1.1.2 expands the Math panel with grouped Greek letters and common mathe
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-1.1.2-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-1.1.3-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -97,14 +98,15 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-1.1.2 扩充了 Math 面板，加入分组显示的希腊字母和常用数学符号，新增 **Ctrl+E** 用于快速切换 Edit 与 Preview，并在 Environment Setup 中加入 Node.js 检测和受管理安装。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
+1.1.3 为 Notes 和 Books 增加自动排序，完善 Book 目录的展开与折叠，并新增 **Ctrl+Q** 用于切换统一命名后的 **Notes / Books** 工作区。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
 ### 主要功能
 
-- 支持搜索、标签、置顶和自动保存的离线 Markdown Notes。
-- 使用 Sections、Child Pages、Page Properties 和 Book Settings 组织 Books。
+- 支持搜索、标签、置顶和自动保存的离线 Markdown Notes。通过 **Sort by** 将 Notes 列表或 Book 下拉框按 **Last modified**（修改时间）、**Date created**（创建时间，时间均为最新在前）或 **Name (A–Z)**（名称）排序；置顶 Notes 始终优先，两个工作区分别记住排序选择。Book 修改时间也会计入其页面正文的修改。
+- 使用 Sections、Child Pages、Page Properties 和 Book Settings 组织 Books。点击页面前的三角形展开或折叠子页面，每本 Book 分别保存折叠状态；跳转到页面或新建子页面时会自动展开上级目录。Book 下拉框的排序不会改变 Book 内部目录和导出顺序。
+- 工作区统一显示为 **Notes / Books**，旁边显示 **Ctrl+Q** 快捷键；切换时保留原来选中的 Note 或 Book 页面，对话框打开时不触发快捷键。Build 工具名称仍为 Jupyter Book 2。
 - CodeMirror 编辑器、扩充后的 Math 符号面板、MyST 格式工具，以及支持 **Ctrl+E** 切换的离线 Preview。
 - 图片、附件、可重复使用的 Resources、BibTeX 文献库和 Citations。
 - 按需导出独立的 Jupyter Book 源文件副本。
@@ -115,7 +117,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-1.1.2-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-1.1.3-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 

@@ -1,5 +1,6 @@
 export type Theme = "light" | "dark";
 export type NoteFilter = "all" | "pinned";
+export type WorkspaceSortOrder = "updated" | "created" | "title";
 export type SaveState = "saved" | "saving" | "error";
 
 export interface Note {

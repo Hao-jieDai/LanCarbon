@@ -27,7 +27,7 @@ test("upgrades the system tutorial while preserving user Notes and Books", async
   });
   try {
     const page = await application.firstWindow();
-    await page.getByRole("button", { name: "Jupyter Book", exact: true }).click();
+    await page.getByRole("button", { name: "Books", exact: true }).click();
     await page.getByLabel("Select Book").selectOption("lancarbon-from-zero-to-one");
     await expect(page.getByLabel("Note title")).toHaveValue("LanCarbon: From 0 to 1");
     await expect(page.getByLabel("Note content")).toContainText("System-managed tutorial — do not edit");

@@ -26,7 +26,7 @@ test("Book and confirmed export folder survive restart; cancel preserves the fol
   let app = await launch();
   try {
     let page = await app.firstWindow();
-    await page.getByRole("button", { name: "Jupyter Book", exact: true }).click();
+    await page.getByRole("button", { name: "Books", exact: true }).click();
     await expect(page.getByLabel("Select Book")).toHaveValue(first.book.id);
     await page.getByLabel("Select Book").selectOption(second.book.id);
     await mockDialog(app, false);
@@ -35,7 +35,7 @@ test("Book and confirmed export folder survive restart; cancel preserves the fol
     if (process.platform === "win32") expect(await defaultPath(app)).toBe(path.join(directory, "Exports"));
     await app.close();
     app = await launch(); page = await app.firstWindow();
-    await page.getByRole("button", { name: "Jupyter Book", exact: true }).click();
+    await page.getByRole("button", { name: "Books", exact: true }).click();
     await expect(page.getByLabel("Select Book")).toHaveValue(second.book.id);
     await expect(page.getByLabel("Note title")).toHaveValue("Current Book");
     const before = await fs.readFile(path.join(directory, "export-location.json"), "utf8");
@@ -50,7 +50,7 @@ test("Book and confirmed export folder survive restart; cancel preserves the fol
     await fs.writeFile(path.join(directory, "notes.json"), JSON.stringify(saved));
     await fs.rename(destination, path.join(directory, "moved-export"));
     app = await launch(); page = await app.firstWindow();
-    await page.getByRole("button", { name: "Jupyter Book", exact: true }).click();
+    await page.getByRole("button", { name: "Books", exact: true }).click();
     await expect(page.getByLabel("Select Book")).toHaveValue(first.book.id);
     await mockDialog(app, true);
     await page.getByRole("button", { name: "Export", exact: true }).click();

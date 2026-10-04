@@ -58,7 +58,7 @@ test("从 v1 启动并完成 Book 组织、导出、严格构建和重启恢复"
     await expect(editor).toBeVisible();
     await expect(session.page.getByText("All changes saved", { exact: true })).toBeVisible();
 
-    await session.page.getByRole("button", { name: "Jupyter Book", exact: true }).click();
+    await session.page.getByRole("button", { name: "Books", exact: true }).click();
     await session.page.getByLabel("New Book").click();
     await session.page.getByLabel("Book Name").fill("LanCarbon Guide");
     await session.page.getByRole("button", { name: "Create Book" }).click();
@@ -69,7 +69,7 @@ test("从 v1 启动并完成 Book 组织、导出、严格构建和重启恢复"
     await expect(session.page.getByText("All changes saved", { exact: true })).toBeVisible();
     await session.page.getByRole("button", { name: "＋ Child Page" }).click();
     await session.page.getByLabel("Note title").fill("Renewable Energy");
-    await session.page.getByRole("button", { name: /E2E Section/ }).click();
+    await session.page.getByRole("button", { name: "E2E Section", exact: true }).click();
     await session.page.getByRole("button", { name: "＋ Child Page" }).click();
     await session.page.getByLabel("Note title").fill("Carbon Removal");
     await expect(session.page.getByText("All changes saved", { exact: true })).toBeVisible();
@@ -82,7 +82,7 @@ test("从 v1 启动并完成 Book 组织、导出、严格构建和重启恢复"
     await session.page.mouse.down();
     await session.page.mouse.move(removalBox.x + removalBox.width / 2, removalBox.y + removalBox.height * .88, { steps: 8 });
     await session.page.mouse.up();
-    await expect.poll(async () => session.page.locator(".book-page-row").allTextContents()).toEqual(["·LanCarbon Guide", "▾E2E Section", "·Carbon Removal", "·Renewable Energy"]);
+    await expect.poll(async () => session.page.locator(".book-page-row").allTextContents()).toEqual(["LanCarbon Guide", "E2E Section", "Carbon Removal", "Renewable Energy"]);
 
     await session.page.getByRole("button", { name: "Export", exact: true }).click();
     await expect(session.page.locator(".toast")).toContainText("Exported to");
@@ -90,15 +90,15 @@ test("从 v1 启动并完成 Book 组织、导出、严格构建和重启恢复"
     await session.application.close();
 
     session = await launch(dataDirectory, guideExportDirectory);
-    await session.page.getByRole("button", { name: "Jupyter Book", exact: true }).click();
-    await expect(session.page.getByRole("button", { name: /Phase 2 Reference/ })).toBeVisible();
+    await session.page.getByRole("button", { name: "Books", exact: true }).click();
+    await expect(session.page.getByRole("button", { name: "Phase 2 Reference", exact: true })).toBeVisible();
     for (const title of ["Editing and Formatting", "Tables and Mathematics", "Directives and Roles", "Cross References", "Syntax Lab"]) {
       await expect(session.page.getByRole("button", { name: new RegExp(title) })).toBeVisible();
     }
     await expect(session.page.getByRole("button", { name: /Phase 2 Acceptance/ })).toBeVisible();
     await session.page.getByRole("button", { name: "Export", exact: true }).click();
     await expect(session.page.locator(".toast")).toContainText("Exported to");
-    await expect(session.page.getByRole("button", { name: /E2E Section/ })).toBeVisible();
+    await expect(session.page.getByRole("button", { name: "E2E Section", exact: true })).toBeVisible();
     await expect(session.page.getByRole("button", { name: /Carbon Removal/ })).toBeVisible();
     await session.page.getByRole("button", { name: "Delete", exact: true }).click();
     await expect(session.page.getByRole("option", { name: "LanCarbon Guide" })).toHaveCount(0);

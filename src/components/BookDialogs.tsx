@@ -4,7 +4,7 @@ import type { Book, BookSettings, PageMetadata } from "../shared/types";
 export function CreateBookDialog({ onCreate, onClose }: { onCreate(title: string): void; onClose(): void }) {
   const [title, setTitle] = useState("");
   return <div className="modal-backdrop" role="presentation"><form className="settings-modal compact-modal" aria-label="New Book" spellCheck={false} onSubmit={event => { event.preventDefault(); onCreate(title.trim() || "Untitled Book"); }}>
-    <header><h2>New Jupyter Book</h2><button type="button" className="icon-button" aria-label="Close New Book" onClick={onClose}>×</button></header>
+    <header><h2>New Book</h2><button type="button" className="icon-button" aria-label="Close New Book" onClick={onClose}>×</button></header>
     <label><span className="field-label">Book Name <span className="recommended-mark">(*)</span></span><input spellCheck={false} autoCorrect="off" autoCapitalize="off" aria-label="Book Name" autoFocus maxLength={200} placeholder="e.g. Energy Systems Research" value={title} onChange={event => setTitle(event.target.value)} /></label>
     <p className="modal-help">A fixed home page is created now. The myst.yml file is generated when you export to a folder.</p>
     <footer><button type="button" className="text-button modal-button" onClick={onClose}>Cancel</button><button className="new-note compact" type="submit">Create Book</button></footer>
@@ -14,7 +14,7 @@ export function CreateBookDialog({ onCreate, onClose }: { onCreate(title: string
 export function ChooseBookDialog({ books, onChoose, onClose }: { books: Book[]; onChoose(bookId: string): void; onClose(): void }) {
   const [bookId, setBookId] = useState(books[0]?.id ?? "");
   return <div className="modal-backdrop" role="presentation"><form className="settings-modal compact-modal" aria-label="Choose a Book" spellCheck={false} onSubmit={event => { event.preventDefault(); if (bookId) onChoose(bookId); }}>
-    <header><h2>Add to Jupyter Book</h2><button type="button" className="icon-button" aria-label="Close Book chooser" onClick={onClose}>×</button></header>
+    <header><h2>Add to Book</h2><button type="button" className="icon-button" aria-label="Close Book chooser" onClick={onClose}>×</button></header>
     <label>Destination Book<select autoFocus aria-label="Destination Book" value={bookId} onChange={event => setBookId(event.target.value)}>{books.map(book => <option key={book.id} value={book.id}>{book.settings.title}</option>)}</select></label>
     <p className="modal-help">The note content will not change. Each note can belong to one Book.</p>
     <footer><button type="button" className="text-button modal-button" onClick={onClose}>Cancel</button><button className="new-note compact" type="submit">Add to Book</button></footer>

@@ -6,6 +6,20 @@ import { describe, expect, it } from "vitest";
 import { RELEASE_VERSION } from "../src/shared/notes";
 
 describe("release metadata", () => {
+  it("documents sorting, folding and Ctrl+Q bilingually without version history in the tutorial", () => {
+    const starter = JSON.parse(readFileSync(path.join(process.cwd(), "resources", "starter-content", "notes.json"), "utf8"));
+    const tour = starter.notes.find((note: { id: string }) => note.id === "tutorial-note-s1-interface").content;
+    for (const phrase of ["**Notes / Books**", "**Ctrl+Q**", "**Last modified**", "**Date created**", "**Name (A–Z)**"]) {
+      expect(tour.split(phrase)).toHaveLength(3);
+      expect(readFileSync(path.join(process.cwd(), "README.md"), "utf8")).toContain(phrase);
+    }
+    expect(tour).toContain("Each Book remembers its folded branches across restarts");
+    expect(tour).toContain("每本 Book 分别记住折叠状态");
+    const content = starter.notes.map((note: { content: string }) => note.content).join("\n");
+    expect(content).not.toMatch(/\*\*(?:Notes \/ )?Jupyter Book\*\*/u);
+    expect(content).not.toContain(`LanCarbon ${RELEASE_VERSION}`);
+  });
+
   it("keeps the package and built-in ReadMe versions aligned", () => {
     const packageJson = JSON.parse(readFileSync(path.join(process.cwd(), "package.json"), "utf8")) as { name: string; version: string; build: { appId: string; productName: string; nsis: { include: string } } };
     expect(packageJson.version).toBe(RELEASE_VERSION);
