@@ -2,6 +2,18 @@
 
 All notable changes to official LanCarbon releases are recorded here.
 
+## 1.1.4 — 2026-10-05
+
+### Added
+
+- Offline A4 PDF export for the current Note or Markdown Book home page, Section or Child Page, with saved edits, selectable text, math, managed images, tables and page numbers. Descendants and other pages are not included.
+- Save-location selection, overwrite confirmation, export notices and atomic output that preserves an existing PDF if export fails.
+- Bilingual PDF instructions in the ReadMe and the corresponding interface, Preview and export tutorial pages.
+
+### Fixed
+
+- Duplicate-resource warnings now use an in-app modal with explicit Replace, Keep both and Cancel actions and focus restoration, avoiding the native Windows message-box path implicated in the disappearing-mouse report.
+
 ## 1.1.3 — 2026-10-04
 
 ### Added

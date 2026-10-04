@@ -90,6 +90,7 @@ export type LoadWorkspaceResult =
 
 export type OperationResult = { ok: true } | { ok: false; error: string };
 export type ExportBookResult = { ok: true; destination: string } | { ok: false; canceled?: boolean; error: string };
+export type ExportPdfResult = { ok: true; destination: string; warnings: string[] } | { ok: false; canceled?: boolean; error: string };
 export interface BookCheckIssue {
   severity: "error" | "warning";
   source: "preflight" | "jupyter-book";
@@ -182,6 +183,9 @@ export interface NotesDesktopApi {
   loadWorkspace(): Promise<LoadWorkspaceResult>;
   saveWorkspace(workspace: WorkspaceFile): Promise<OperationResult>;
   exportBook(bookId: string): Promise<ExportBookResult>;
+  exportPdf(noteId: string): Promise<ExportPdfResult>;
+  onAssetConflict(callback: (request: import("./assets").AssetConflictRequest) => void): () => void;
+  resolveAssetConflict(id: string, choice: import("./assets").AssetConflictChoice): Promise<OperationResult>;
   validateBook(bookId: string): Promise<ValidateBookResult>;
   inspectBuildEnvironment(): Promise<BuildEnvironmentResult>;
   inspectEnvironment(): Promise<EnvironmentSetupResult>;

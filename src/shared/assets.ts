@@ -9,6 +9,13 @@ export interface Asset {
   missing?: boolean;
 }
 export interface ResourceUsage { id: string; noteId?: string; bookId?: string; title: string; location: string; line: number }
+export type AssetConflictChoice = "replace" | "keep" | "cancel";
+export interface AssetConflictRequest {
+  id: string;
+  existing: Asset;
+  incoming: { name: string; size: number; mime: string };
+  uses: ResourceUsage[];
+}
 export function resourceUsages(notes: import("./types").Note[], books: import("./types").Book[]): ResourceUsage[] {
   const result: ResourceUsage[] = [];
   for (const note of notes) {

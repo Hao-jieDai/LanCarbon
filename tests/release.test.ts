@@ -6,6 +6,19 @@ import { describe, expect, it } from "vitest";
 import { RELEASE_VERSION } from "../src/shared/notes";
 
 describe("release metadata", () => {
+  it("documents single-page PDF export bilingually and keeps resource fixes out of the tutorial", () => {
+    const starter = JSON.parse(readFileSync(path.join(process.cwd(), "resources", "starter-content", "notes.json"), "utf8"));
+    for (const id of ["tutorial-note-s1-interface", "tutorial-note-s2-preview", "tutorial-note-s2-export"]) {
+      const page = starter.notes.find((note: { id: string }) => note.id === id);
+      expect(page.content.split("**Export PDF**").length).toBeGreaterThanOrEqual(3);
+      expect(page.content).not.toContain("disappearing mouse"); expect(page.content).not.toContain(RELEASE_VERSION);
+    }
+    const guide = starter.notes.find((note: { id: string }) => note.id === "tutorial-note-s2-export").content;
+    expect(guide).toContain("does not include descendants"); expect(guide).toContain("不包含其子页面");
+    const readme = readFileSync(path.join(process.cwd(), "README.md"), "utf8");
+    expect(readme).toContain("### Export a page as PDF"); expect(readme).toContain("### 导出页面为 PDF");
+    expect(readme).toContain("Resource-dialog fix"); expect(readme).toContain("资源提示修复");
+  });
   it("documents sorting, folding and Ctrl+Q bilingually without version history in the tutorial", () => {
     const starter = JSON.parse(readFileSync(path.join(process.cwd(), "resources", "starter-content", "notes.json"), "utf8"));
     const tour = starter.notes.find((note: { id: string }) => note.id === "tutorial-note-s1-interface").content;

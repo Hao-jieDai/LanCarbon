@@ -15,6 +15,9 @@ beforeEach(() => {
     loadWorkspace: vi.fn().mockResolvedValue({ ok: true, workspace: createEmptyWorkspace([savedNote]), isFirstRun: false, migrated: false }),
     saveWorkspace: vi.fn().mockResolvedValue({ ok: true }),
     exportBook: vi.fn().mockResolvedValue({ ok: true, destination: "D:\\export" }),
+    exportPdf: vi.fn().mockResolvedValue({ ok: true, destination: "D:\\export.pdf", warnings: [] }),
+    onAssetConflict: vi.fn().mockReturnValue(() => undefined),
+    resolveAssetConflict: vi.fn().mockResolvedValue({ ok: true }),
     validateBook: vi.fn().mockResolvedValue({ ok: true, issues: [] }),
     inspectBuildEnvironment: vi.fn().mockResolvedValue({ ok: true, checks: [
       { id: "python", label: "Python", status: "pass", detail: "Python 3.13.0" },
@@ -261,6 +264,25 @@ describe("App", () => {
       expect(Object.values(target?.pages ?? {}).some(page => page.noteId === savedNote.id)).toBe(true);
     });
     expect(screen.queryByRole("form", { name: "Choose a Book" })).not.toBeInTheDocument();
+  });
+
+  it("PDF 导出先保存最新编辑，并显示持久的结果提示", async () => {
+    render(<App />); await screen.findByDisplayValue("第一篇");
+    fireEvent.change(screen.getByLabelText("Note title"), { target: { value: "Latest PDF title" } });
+    fireEvent.click(screen.getByRole("button", { name: "Export PDF" }));
+    await waitFor(() => expect(api.exportPdf).toHaveBeenCalledWith(savedNote.id));
+    const calls = vi.mocked(api.saveWorkspace).mock.calls;
+    expect(calls.at(-1)?.[0].notes.find(note => note.id === savedNote.id)?.title).toBe("Latest PDF title");
+    expect(vi.mocked(api.saveWorkspace).mock.invocationCallOrder.at(-1)).toBeLessThan(vi.mocked(api.exportPdf).mock.invocationCallOrder[0]);
+    expect(await screen.findByText(/PDF exported to/)).toBeInTheDocument();
+  });
+
+  it("保存失败时不启动 PDF 导出，并允许重试", async () => {
+    render(<App />); await screen.findByDisplayValue("第一篇");
+    vi.mocked(api.saveWorkspace).mockResolvedValue({ ok: false, error: "Disk is not writable" });
+    fireEvent.click(screen.getByRole("button", { name: "Export PDF" }));
+    expect(await screen.findByText("Disk is not writable")).toBeInTheDocument();
+    expect(api.exportPdf).not.toHaveBeenCalled(); expect(screen.getByRole("button", { name: "Export PDF" })).toBeEnabled();
   });
 
   it("支持主题和快捷键，并显示保存错误", async () => {

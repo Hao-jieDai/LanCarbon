@@ -2,8 +2,10 @@ import { app, BrowserWindow, dialog, ipcMain, net, screen, shell } from "electro
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { mkdirSync } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { AssetStore, type ResolveConflict } from "./assets";
-import { MAX_ASSET_BYTES, resourceUsages } from "../src/shared/assets";
+import { MAX_ASSET_BYTES, resourceUsages, type AssetConflictChoice } from "../src/shared/assets";
+import { exportPagePdf, pdfFileName } from "./pdf-exporter";
 import { withoutResources } from "../src/shared/removeResourceReferences";
 import { exportBookToDirectory } from "./book-exporter";
 import { bookSourceHash, buildBookForPublication, buildBookInParent, preflightBook } from "./book-builder";
@@ -173,12 +175,28 @@ app.whenReady().then(async () => {
   };
   const resolveConflict: ResolveConflict = async (existing,incoming) => {
     if (!mainWindow) return "cancel";
+    const parent = mainWindow;
     const refs = await describeUses([existing.id]);
-    const choice = await dialog.showMessageBox(mainWindow, {type:"question",title:"A resource with this name already exists",message:incoming.name,
-      detail:`Existing: ${(existing.size/1024).toFixed(1)} KB · ${existing.updatedAt ?? existing.createdAt}\nIncoming: ${(incoming.size/1024).toFixed(1)} KB\n\nReplace updates this shared resource in ALL ${refs.length} references. Keep both gives the new resource a numbered name.\n${refs.map(ref=>`${ref.location} / ${ref.title}${ref.line ? ` — line ${ref.line}` : ""}`).join("\n")}`,
-      buttons:["Replace existing","Keep both","Cancel"],defaultId:2,cancelId:2,noLink:true});
-    return (["replace","keep","cancel"] as const)[choice.response] ?? "cancel";
+    const id = randomUUID();
+    let cancel = () => {};
+    try {
+      return await new Promise<AssetConflictChoice>(resolve => {
+        cancel = () => resolve("cancel");
+        pendingConflicts.set(id, { sender: parent.webContents.id, resolve });
+        parent.once("closed", cancel); parent.webContents.once("render-process-gone", cancel);
+        parent.webContents.send("assets:conflict", { id, existing, incoming, uses: refs });
+      });
+    } finally {
+      pendingConflicts.delete(id); parent.removeListener("closed", cancel);
+      if (!parent.isDestroyed()) parent.webContents.removeListener("render-process-gone", cancel);
+    }
   };
+  const pendingConflicts = new Map<string, { sender: number; resolve(choice: AssetConflictChoice): void }>();
+  ipcMain.handle("assets:resolve-conflict", (event, id: string, choice: AssetConflictChoice) => {
+    const pending = pendingConflicts.get(id);
+    if (!pending || pending.sender !== event.sender.id || !["replace", "keep", "cancel"].includes(choice)) return { ok: false, error: "This resource conflict is no longer active" };
+    pendingConflicts.delete(id); pending.resolve(choice); return { ok: true };
+  });
   ipcMain.handle("assets:remove", async (_event, ids: string[]) => {
     try {
       let workspace: WorkspaceFile | undefined;
@@ -323,6 +341,25 @@ app.whenReady().then(async () => {
   ipcMain.handle("environment:install", async (_event, id: EnvironmentToolId) => {
     if (!["python", "node", "jupyter-book", "git", "github-cli"].includes(id)) return { ok: false, error: "Unsupported environment tool." };
     return environmentManager.install(id);
+  });
+  let pdfExporting = false;
+  ipcMain.handle("page:export-pdf", async (event, noteId: string) => {
+    if (!mainWindow || event.sender.id !== mainWindow.webContents.id) return { ok: false, error: "The main window is unavailable" };
+    if (pdfExporting) return { ok: false, error: "A PDF export is already in progress" };
+    pdfExporting = true;
+    try {
+      if (typeof noteId !== "string") throw new Error("Invalid page selection");
+      const { workspace } = await store.loadWorkspace();
+      const note = workspace.notes.find(item => item.id === noteId);
+      if (!note) throw new Error("The selected page no longer exists");
+      const selection = await dialog.showSaveDialog(mainWindow, { title: "Export current page as PDF", defaultPath: path.join(directories.exports, pdfFileName(note.title)), filters: [{ name: "PDF document", extensions: ["pdf"] }], properties: ["showOverwriteConfirmation", "createDirectory"] });
+      if (selection.canceled || !selection.filePath) return { ok: false, canceled: true, error: "PDF export canceled" };
+      const destination = /\.pdf$/i.test(selection.filePath) ? selection.filePath : `${selection.filePath}.pdf`;
+      const warnings = await exportPagePdf(workspace, noteId, destination, assetStore());
+      return { ok: true, destination, warnings };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : "Failed to export PDF" };
+    } finally { pdfExporting = false; }
   });
   ipcMain.handle("environment:repair-permissions", () => environmentManager.repairPermissions());
   ipcMain.handle("environment:cancel", () => { environmentManager.cancel(); return { ok: true }; });

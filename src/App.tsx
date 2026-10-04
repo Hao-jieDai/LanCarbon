@@ -5,6 +5,8 @@ import { GitHubPublishingPanel } from "./components/GitHubPublishingPanel";
 import { EnvironmentSetupPanel } from "./components/EnvironmentSetupPanel";
 import { Editor } from "./components/Editor";
 import { Sidebar } from "./components/Sidebar";
+import { AssetConflictDialog } from "./components/AssetConflictDialog";
+import type { AssetConflictRequest } from "./shared/assets";
 import { addNoteToBook, createBook, createEmptyWorkspace, getBookForNote, isValidExportPath, movePage, removeBookLanguageHeadings, removePageFromBook, updatePageMetadata } from "./shared/books";
 import { createInitialNotes, createNote, ensureReleaseReadme, parseTags, sortNotes } from "./shared/notes";
 import { ensurePhase2Guide } from "./shared/releaseGuide";
@@ -47,6 +49,10 @@ export function App() {
   const [showBookBuild, setShowBookBuild] = useState(false);
   const [showGitHubPublishing, setShowGitHubPublishing] = useState(false);
   const [showEnvironmentSetup, setShowEnvironmentSetup] = useState(false);
+  const [assetConflict, setAssetConflict] = useState<AssetConflictRequest | null>(null);
+  const [pdfExporting, setPdfExporting] = useState(false);
+  const [pdfNotice, setPdfNotice] = useState("");
+  const pdfBusy = useRef(false);
   const [dataLocation, setDataLocation] = useState("");
   const workspaceRef = useRef(workspace);
   const saveTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -92,6 +98,7 @@ export function App() {
   }, [persist, showToast]);
 
   useEffect(() => { document.documentElement.dataset.theme = theme; try { localStorage.setItem(THEME_KEY, theme); } catch { /* optional */ } }, [theme]);
+  useEffect(() => window.notesDesktop.onAssetConflict?.(setAssetConflict), []);
   useEffect(() => { try { localStorage.setItem(NOTES_SORT_KEY, notesSort); localStorage.setItem(BOOKS_SORT_KEY, booksSort); } catch { /* optional preferences */ } }, [notesSort, booksSort]);
   useEffect(() => {
     if (!loaded || !activeBookId) return;
@@ -231,6 +238,19 @@ export function App() {
     const result = await window.notesDesktop.exportBook(activeBook.id); if (result.ok) showToast(`Exported to ${result.destination}`); else if (!result.canceled) showToast(result.error);
   };
 
+  const exportPdf = async () => {
+    if (!activeNote || pdfBusy.current) return;
+    const noteId = activeNote.id;
+    pdfBusy.current = true; setPdfExporting(true); setPdfNotice("");
+    try {
+      const saved = await saveNow(); if (!saved.ok) throw new Error(saved.error);
+      const result = await window.notesDesktop.exportPdf(noteId);
+      if (result.ok) { setPdfNotice(`PDF exported to ${result.destination}${result.warnings.length ? ` · ${result.warnings.length} notice(s): ${result.warnings.slice(0, 3).join(" · ")}${result.warnings.length > 3 ? " · See Preview for further notices." : ""}` : ""}`); }
+      else if (!result.canceled) setPdfNotice(result.error);
+    } catch (error) { setPdfNotice(error instanceof Error ? error.message : "Failed to export PDF"); }
+    finally { pdfBusy.current = false; setPdfExporting(false); }
+  };
+
   const checkAndBuildBook = async () => {
     if (!activeBook) return; const saved = await saveNow(); if (!saved.ok) { showToast(saved.error); return; }
     setShowBookBuild(true);
@@ -272,11 +292,16 @@ export function App() {
   return <>
     <main className="app-shell" aria-label="LanCarbon application">
       <Sidebar notesSort={notesSort} booksSort={booksSort} onNotesSortChange={setNotesSort} onBooksSortChange={setBooksSort} notes={workspace.notes} books={workspace.books} mode={mode} activeBookId={activeBookId} activePageId={activePageId} activeId={activeId} query={query} filter={filter} theme={theme} searchRef={searchRef} onModeChange={switchMode} onBookChange={switchBook} onQueryChange={setQuery} onFilterChange={setFilter} onSelectNote={id => { setActiveId(id); document.body.classList.remove("sidebar-open"); }} onSelectPage={id => { setActivePageId(id); document.body.classList.remove("sidebar-open"); }} onNewNote={addOrdinaryNote} onNewBook={() => setShowCreateBook(true)} onNewPage={addBookPage} onMovePage={(pageId, targetId, placement) => { if (!activeBook) return; const updated = movePage(activeBook, pageId, targetId, placement); persist({ ...workspaceRef.current, books: workspaceRef.current.books.map(book => book.id === activeBook.id ? updated : book) }); }} onBookSettings={() => setShowBookSettings(true)} onExportBook={() => void exportBook()} onBuildBook={() => void checkAndBuildBook()} onPublishBook={() => void openPublishBook()} onDeleteBook={deleteBook} onClear={clearLoose} onEnvironmentSetup={() => setShowEnvironmentSetup(true)} onDataLocation={() => setShowDataLocation(true)} onThemeChange={value => { setTheme(value); showToast(value === "light" ? "Switched to light theme" : "Switched to dark theme"); }} onClose={() => document.body.classList.remove("sidebar-open")} />
-      <Editor bibliographyBook={mode === "book" ? activeBook ?? undefined : undefined} onBibliographyBookChange={updated => persist({...workspaceRef.current,books:workspaceRef.current.books.map(book=>book.id===updated.id?updated:book)})} onResourcesChanged={next => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); }} resourceBooks={workspace.books} beforeResourceChange={async () => { const result = await saveNow(); if (!result.ok) throw new Error(result.error); }} resourceNotes={workspace.notes} key={`${mode}:${activeNoteId ?? "empty"}`} previewDocuments={previewDocuments} previewNavigation={previewNavigation} onPreviewNavigate={navigatePreview} onPreviewNavigated={() => setPreviewNavigation(null)} note={activeNote} saveState={saveState} theme={theme} viewMode={viewMode} onViewModeChange={setViewMode} bookContext={activePage ? { isHome: activePage.id === activeBook?.homePageId } : undefined} booksAvailable={workspace.books.length > 0} onChange={updateActive} onNew={mode === "book" ? () => addBookPage(false) : addOrdinaryNote} onPin={togglePin} onDelete={deleteActive} onAddToBook={mode === "notes" ? addActiveToBook : undefined} onRemoveFromBook={mode === "book" && activePage ? removeActiveFromBook : undefined} onPageProperties={mode === "book" && activePage ? () => setShowPageProperties(true) : undefined} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />
+      <Editor onExportPdf={() => void exportPdf()} pdfExporting={pdfExporting} pdfNotice={pdfNotice} onDismissPdfNotice={() => setPdfNotice("")} bibliographyBook={mode === "book" ? activeBook ?? undefined : undefined} onBibliographyBookChange={updated => persist({...workspaceRef.current,books:workspaceRef.current.books.map(book=>book.id===updated.id?updated:book)})} onResourcesChanged={next => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); }} resourceBooks={workspace.books} beforeResourceChange={async () => { const result = await saveNow(); if (!result.ok) throw new Error(result.error); }} resourceNotes={workspace.notes} key={`${mode}:${activeNoteId ?? "empty"}`} previewDocuments={previewDocuments} previewNavigation={previewNavigation} onPreviewNavigate={navigatePreview} onPreviewNavigated={() => setPreviewNavigation(null)} note={activeNote} saveState={saveState} theme={theme} viewMode={viewMode} onViewModeChange={setViewMode} bookContext={activePage ? { isHome: activePage.id === activeBook?.homePageId } : undefined} booksAvailable={workspace.books.length > 0} onChange={updateActive} onNew={mode === "book" ? () => addBookPage(false) : addOrdinaryNote} onPin={togglePin} onDelete={deleteActive} onAddToBook={mode === "notes" ? addActiveToBook : undefined} onRemoveFromBook={mode === "book" && activePage ? removeActiveFromBook : undefined} onPageProperties={mode === "book" && activePage ? () => setShowPageProperties(true) : undefined} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />
     </main>
     <button className="sidebar-backdrop" aria-label="Close notes list" onClick={() => document.body.classList.remove("sidebar-open")} />
     <div className={`toast ${toast ? "show" : ""}`} role="status" aria-live="polite">{toast}</div>
     {showCreateBook && <CreateBookDialog onClose={() => setShowCreateBook(false)} onCreate={createNewBook} />}
+    {assetConflict && <AssetConflictDialog key={assetConflict.id} request={assetConflict} onChoice={async choice => {
+      const result = await window.notesDesktop.resolveAssetConflict(assetConflict.id, choice);
+      if (!result.ok) throw new Error(result.error);
+      setAssetConflict(null);
+    }} />}
     {showBookChooser && <ChooseBookDialog books={workspace.books} onClose={() => setShowBookChooser(false)} onChoose={joinActiveNoteToBook} />}
     {showBookSettings && activeBook && <BookSettingsDialog book={activeBook} onClose={() => setShowBookSettings(false)} onSave={settings => { const updated: Book = { ...activeBook, settings, updatedAt: new Date().toISOString() }; persist({ ...workspaceRef.current, books: workspaceRef.current.books.map(book => book.id === activeBook.id ? updated : book) }); setShowBookSettings(false); showToast("Book settings saved"); }} />}
     {showPageProperties && activePage && <PagePropertiesDialog exportPath={activePage.exportPath} showInToc={activePage.showInToc} metadata={activePage.metadata} onClose={() => setShowPageProperties(false)} onSave={savePageProperties} />}

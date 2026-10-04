@@ -32,6 +32,10 @@ interface EditorProps {
   onRemoveFromBook?(): void;
   onPageProperties?(): void;
   onOpenSidebar(): void;
+  onExportPdf?(): void;
+  pdfExporting?: boolean;
+  pdfNotice?: string;
+  onDismissPdfNotice?(): void;
 }
 
 function longDate(iso: string): string {
@@ -69,6 +73,7 @@ export function Editor(props: EditorProps) {
           </div>}
         </div>
         <div className="toolbar-actions">
+          {props.onExportPdf && <button className="toolbar-text-button" disabled={!props.note || props.pdfExporting} title="Export only the current Note or Book page as an A4 PDF" onClick={props.onExportPdf}>{props.pdfExporting ? "Exporting PDF…" : "Export PDF"}</button>}
           {props.onAddToBook && <button className="toolbar-text-button" disabled={!props.note || !props.booksAvailable} onClick={props.onAddToBook}>Add to Book</button>}
           {props.onPageProperties && <button className="toolbar-text-button" onClick={props.onPageProperties}>Page Properties</button>}
           {props.onRemoveFromBook && <button className="toolbar-text-button" disabled={props.bookContext?.isHome} onClick={props.onRemoveFromBook}>Remove from Book</button>}
@@ -76,6 +81,7 @@ export function Editor(props: EditorProps) {
           <button className="icon-button danger" disabled={!props.note} aria-label="Delete note" title="Delete note" onClick={props.onDelete}><DeleteIcon /></button>
         </div>
       </header>
+      {props.pdfNotice && <div className="pdf-notice" role="status"><span>{props.pdfNotice}</span><button type="button" className="icon-button" aria-label="Dismiss PDF export notice" onClick={props.onDismissPdfNotice}>×</button></div>}
 
       {props.note ? (
         <article className="editor" spellCheck={false}>

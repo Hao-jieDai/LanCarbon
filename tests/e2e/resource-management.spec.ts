@@ -41,12 +41,36 @@ test("image settings, duplicate choices and cross-Book deletion filters",async({
       dialog.showMessageBox=(async(...values:unknown[])=>{(globalThis as unknown as {lastDialog:unknown}).lastDialog=values.at(-1);return {response:args.response,checkboxChecked:false};}) as typeof dialog.showMessageBox;
     },{response,input});
     const details=()=>app.evaluate(()=>(globalThis as unknown as {lastDialog?:{detail:string}}).lastDialog?.detail);
-    await mock(2);await page.getByRole("button",{name:"Attach file",exact:true}).click();await expect(page.getByRole("button",{name:"Attach file",exact:true})).toBeEnabled();
+    await mock(2);await page.getByRole("button",{name:"Attach file",exact:true}).click();
+    const conflict=page.getByRole("dialog",{name:"A resource with this name already exists"});
+    await expect(conflict).toContainText("Book B");await expect(conflict).toContainText("Ordinary note");
+    await conflict.getByRole("button",{name:"Cancel",exact:true}).click();await expect(conflict).not.toBeVisible();
+    await expect(page.getByRole("button",{name:"Attach file",exact:true})).toBeEnabled();
     expect(await userAssets()).toHaveLength(3);
-    await expect.poll(details).toContain("Book B");
-    await mock(1);await page.getByRole("button",{name:"Attach file",exact:true}).click();await expect(page.getByLabel("Note content")).toContainText("shared (2).txt");
+    expect(await details()).toBeUndefined(); // Duplicate imports no longer enter a Windows message-box loop.
+    await mock(1);await page.getByRole("button",{name:"Attach file",exact:true}).click();await conflict.getByRole("button",{name:"Keep both",exact:true}).click();await expect(page.getByLabel("Note content")).toContainText("shared (2).txt");
     await fs.writeFile(input,"replacement");await mock(0);await page.getByRole("button",{name:"Attach file",exact:true}).click();
-    await expect.poll(async()=>(await store.read(shared.id)).bytes.toString()).toBe("replacement");
+    await conflict.getByRole("button",{name:"Replace existing",exact:true}).click();
+    await expect(page.getByRole("button",{name:"Attach file",exact:true})).toBeEnabled();
+    await expect.poll(async()=>(await store.read(shared.id).catch(()=>({bytes:Buffer.alloc(0)}))).bytes.toString()).toBe("replacement");
+    await page.getByLabel("Note content").click();
+    await page.getByLabel("Note content").evaluate(element=>{
+      const transfer=new DataTransfer();transfer.items.add(new File(["another drop"],"shared.txt",{type:"text/plain"}));
+      element.dispatchEvent(new DragEvent("drop",{dataTransfer:transfer,bubbles:true,cancelable:true}));
+    });
+    await expect(conflict).toBeVisible();await page.keyboard.press("Escape");await expect(conflict).not.toBeVisible();
+    await expect(page.getByLabel("Note content")).toBeFocused();
+    await expect(page.getByLabel("Note content")).not.toHaveCSS("cursor","none");
+    await page.mouse.move(700,400);await page.getByLabel("Note content").press("End");await page.keyboard.type(" after duplicate drop");
+    await expect(page.getByLabel("Note content")).toContainText("after duplicate drop");
+    const differentImage=await fs.readFile("resources/starter-content/assets/32a3e216430183b9d8a8b7f239b26b4b0fb164fff5b42f399d119d880c23eb77.png");
+    await page.getByLabel("Note content").evaluate((element,base64)=>{
+      const bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),transfer=new DataTransfer();transfer.items.add(new File([bytes],"image.png",{type:"image/png"}));
+      element.dispatchEvent(new DragEvent("drop",{dataTransfer:transfer,bubbles:true,cancelable:true}));
+    },differentImage.toString("base64"));
+    await expect(conflict).toContainText("image.png");await page.keyboard.press("Escape");await expect(conflict).not.toBeVisible();
+    await expect(page.getByLabel("Note content")).toBeFocused();await page.getByLabel("Note content").press("End");await page.keyboard.type(" after duplicate image");
+    await expect(page.getByLabel("Note content")).toContainText("after duplicate image");
     await page.getByRole("button",{name:"Resources",exact:true}).click();
     await page.getByLabel("Resource scope").selectOption(`book:${second.book.id}`);
     await expect(page.locator(".asset-row")).toHaveCount(1);

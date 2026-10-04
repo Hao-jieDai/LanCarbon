@@ -13,9 +13,11 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon uploads content only when you explicitly use Publish.
 
-Version 1.1.3 adds automatic sorting for Notes and Books, working expand/collapse controls in the Book tree, and **Ctrl+Q** for switching between the renamed **Notes / Books** workspaces. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
+Version 1.1.4 adds single-page PDF export for Notes and Markdown Book pages and improves duplicate-resource dialogs. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
+
+**Resource-dialog fix:** Duplicate images and attachments now use an in-app choice dialog instead of a Windows message box, restoring focus after closing to address the reported disappearing mouse after duplicate-resource warnings.
 
 ### Main features
 
@@ -25,14 +27,19 @@ Version 1.1.3 adds automatic sorting for Notes and Books, working expand/collaps
 - CodeMirror editing, an expanded Math symbol panel, MyST-aware formatting tools and an offline Preview with **Ctrl+E** view switching.
 - Images, attachments, reusable Resources, BibTeX libraries and citations.
 - Optional export of a separate Jupyter Book source copy.
+- Export the current Note or Markdown Book page as an A4 PDF with its title, text, math, managed images, tables and page numbers. Only the selected page is included, not its children or the entire Book.
 - Managed local website builds with preflight checks and restart recovery.
 - GitHub repository connection, GitHub Pages publishing and later website updates.
 - Environment Setup with managed, independently repairable tools and folder-permission recovery under the LanCarbon root.
 - Light and Dark themes with the LanCarbon visual style.
 
+### Export a page as PDF
+
+Select **Export PDF** in the page header from Edit or Preview, choose a filename and destination (default: the page title), and save. Export saves the latest edits first and needs no optional tools. It uses a white reading layout without editor controls or line numbers. Book home pages, Sections and Child Pages are exported individually. Links to omitted Book pages and attachments remain readable labels, not embedded content. Preview limitations also apply to PDF; check export notices and inspect the result. Existing PDFs require overwrite confirmation; canceling or a failed export leaves the previous file intact. The sidebar **Export** still creates the entire Book source copy.
+
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-1.1.3-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-1.1.4-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -52,7 +59,7 @@ If the computer has no D drive, the installer uses a `LanCarbon` folder in the c
 
 ### Additional tools
 
-Basic writing, Preview and source-copy Export work inside LanCarbon. Additional tools are required only for the corresponding workflow:
+Basic writing, Preview, PDF export and source-copy Export work inside LanCarbon. Additional tools are required only for the corresponding workflow:
 
 - **Build:** Python 3, Node.js and Jupyter Book 2.
 - **Publish:** Git, GitHub CLI, a GitHub account and network access to GitHub.
@@ -98,9 +105,11 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-1.1.3 为 Notes 和 Books 增加自动排序，完善 Book 目录的展开与折叠，并新增 **Ctrl+Q** 用于切换统一命名后的 **Notes / Books** 工作区。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
+1.1.4 新增 Notes 和 Markdown Book 页面的单页 PDF 导出，并改进重复资源提示。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
+
+**资源提示修复：** 图片或附件重名时改用软件内选择对话框，关闭后恢复焦点，以处理重复资源提示后鼠标消失的问题。
 
 ### 主要功能
 
@@ -110,14 +119,19 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 - CodeMirror 编辑器、扩充后的 Math 符号面板、MyST 格式工具，以及支持 **Ctrl+E** 切换的离线 Preview。
 - 图片、附件、可重复使用的 Resources、BibTeX 文献库和 Citations。
 - 按需导出独立的 Jupyter Book 源文件副本。
+- 将当前 Note 或 Markdown Book 页面导出为 A4 PDF，保留标题、文字、公式、受管理图片、表格和页码；只包含当前页面，不包含子页面或整本 Book。
 - 带预检和重启恢复的本地网站 Build。
 - 连接 GitHub 仓库、发布到 GitHub Pages，并在以后更新网站。
 - Environment Setup 可在 LanCarbon 根目录中独立安装和修复所需工具，并恢复 Tools 文件夹权限。
 - 具有 LanCarbon 视觉风格的 Light 和 Dark 主题。
 
+### 导出页面为 PDF
+
+在 Edit 或 Preview 中点击页面顶部的 **Export PDF**，选择文件名和保存位置（默认为页面标题），然后保存。导出前会先保存最新修改，不需要额外工具。PDF 使用白底阅读排版，不包含编辑工具栏和行号。Book 首页、Section 和 Child Page 均可单独导出。指向未导出 Book 页面的链接和附件保留为可读文字，不会嵌入目标内容。Preview 的支持范围同样适用于 PDF，请检查导出后的注意事项和生成结果。覆盖已有 PDF 需要确认；取消或导出失败不会破坏原有文件。侧边栏的 **Export** 仍用于导出整本 Book 的源文件副本。
+
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-1.1.3-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-1.1.4-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 
@@ -137,7 +151,7 @@ LanCarbon/
 
 ### 额外工具
 
-普通写作、Preview 和源文件副本 Export 可以直接在 LanCarbon 中完成。只有相应流程需要以下工具：
+普通写作、Preview、PDF 导出和源文件副本 Export 可以直接在 LanCarbon 中完成。只有相应流程需要以下工具：
 
 - **Build：** Python 3、Node.js 和 Jupyter Book 2。
 - **Publish：** Git、GitHub CLI、GitHub 账号，以及能够访问 GitHub 的网络。

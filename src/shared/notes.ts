@@ -8,17 +8,19 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "1.1.3";
+export const RELEASE_VERSION = "1.1.4";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 1.1.3 adds automatic sorting by last modified time, creation time or name for Notes and Books, working expand/collapse controls in the Book tree, and **Ctrl+Q** to switch between the renamed **Notes / Books** workspaces. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
+Version 1.1.4 adds **Export PDF** for the current Note or Markdown Book page and improves duplicate-resource dialogs. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
 LanCarbon now uses the new Logo consistently across the application, installer, repository ReadMe, built-in tutorial, and the default favicon for generated Book websites.
+
+**Resource-dialog fix:** Duplicate images and attachments now use an in-app choice dialog instead of a Windows message box, restoring focus after closing to address the reported disappearing mouse after duplicate-resource warnings.
 
 ### What you can do
 
@@ -28,8 +30,13 @@ LanCarbon now uses the new Logo consistently across the application, installer, 
 - Edit Markdown and MyST content with the formatting toolbar, use the expanded Math symbol panel, then switch between Edit and Preview with **Ctrl+E**.
 - Insert and manage images, attachments, citations and other reusable Resources.
 - Export a separate Jupyter Book source copy for backup or external editing.
+- Export the current Note or Markdown Book page as an A4 PDF with its title, text, math, managed images, tables and page numbers. Only the selected page is included, not its children or the entire Book.
 - Build the current Book as a local website and reopen or rebuild the saved result later.
 - Publish a successful build to GitHub Pages, then update the same website after editing the Book.
+
+### Export a page as PDF
+
+Select **Export PDF** in the page header from Edit or Preview, choose a filename and destination (default: the page title), and save. Export saves the latest edits first and needs no optional tools. It uses a white reading layout without editor controls or line numbers. Book home pages, Sections and Child Pages are exported individually. Links to omitted Book pages and attachments remain readable labels, not embedded content. Preview limitations also apply to PDF; check export notices and inspect the result. Existing PDFs require overwrite confirmation; canceling or a failed export leaves the previous file intact. The sidebar **Export** still creates the entire Book source copy.
 
 ### Included when you first install LanCarbon
 
@@ -44,7 +51,7 @@ Open **Books** in the left sidebar and select *LanCarbon: From 0 to 1* for the d
 
 ### Tools used by Build and Publish
 
-Basic writing, Preview and source-copy Export work inside LanCarbon. This first-run ReadMe introduces **Environment Setup**; open it from the sidebar, Build or Publish to inspect every requirement and optionally install managed copies under the LanCarbon \`Tools\` folder:
+Basic writing, Preview, PDF export and source-copy Export work inside LanCarbon. This first-run ReadMe introduces **Environment Setup**; open it from the sidebar, Build or Publish to inspect every requirement and optionally install managed copies under the LanCarbon \`Tools\` folder:
 
 - **Build** requires Python 3, Node.js and Jupyter Book 2.
 - **Publish** requires Git, GitHub CLI, a GitHub account and network access to GitHub.
@@ -67,11 +74,13 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-1.1.3 为 Notes 和 Books 增加按修改时间、创建时间或名称自动排序的功能，让 Book 目录支持通过三角形展开和折叠，并新增 **Ctrl+Q** 快速切换统一命名后的 **Notes / Books** 工作区。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
+1.1.4 新增 **Export PDF**，将当前 Note 或 Markdown Book 页面导出为 PDF，并改进重复资源提示。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
 LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程以及生成 Book 网站的默认 favicon 中统一使用新版 Logo。
+
+**资源提示修复：** 图片或附件重名时改用软件内选择对话框，关闭后恢复焦点，以处理重复资源提示后鼠标消失的问题。
 
 ### 主要功能
 
@@ -81,8 +90,13 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 - 使用格式工具栏和扩充后的 Math 符号面板编辑 Markdown 与 MyST 内容，并通过 **Ctrl+E** 快速切换 Edit 和 Preview。
 - 插入和管理图片、附件、文献及其他可重复使用的 Resources。
 - 导出独立的 Jupyter Book 源文件副本，用于备份或外部编辑。
+- 将当前 Note 或 Markdown Book 页面导出为 A4 PDF，保留标题、文字、公式、受管理图片、表格和页码；只包含当前页面，不包含子页面或整本 Book。
 - 把当前 Book 构建为本地网站，并在以后重新打开或重建保存的网站。
 - 将成功构建的网站发布到 GitHub Pages，并在修改 Book 后更新同一个在线网站。
+
+### 导出页面为 PDF
+
+在 Edit 或 Preview 中点击页面顶部的 **Export PDF**，选择文件名和保存位置（默认为页面标题），然后保存。导出前会先保存最新修改，不需要额外工具。PDF 使用白底阅读排版，不包含编辑工具栏和行号。Book 首页、Section 和 Child Page 均可单独导出。指向未导出 Book 页面的链接和附件保留为可读文字，不会嵌入目标内容。Preview 的支持范围同样适用于 PDF，请检查导出后的注意事项和生成结果。覆盖已有 PDF 需要确认；取消或导出失败不会破坏原有文件。侧边栏的 **Export** 仍用于导出整本 Book 的源文件副本。
 
 ### 第一次安装自带的内容
 
@@ -97,7 +111,7 @@ LanCarbon 首次安装后会提供两项起始内容：
 
 ### Build 和 Publish 使用的工具
 
-普通写作、Preview 和源文件副本 Export 可以直接在 LanCarbon 中完成。这篇首次启动 ReadMe 会介绍 **Environment Setup**；可以从侧边栏、Build 或 Publish 打开它，集中检查全部要求，并按需把受管理版本安装到 LanCarbon 的 \`Tools\` 文件夹：
+普通写作、Preview、PDF 导出和源文件副本 Export 可以直接在 LanCarbon 中完成。这篇首次启动 ReadMe 会介绍 **Environment Setup**；可以从侧边栏、Build 或 Publish 打开它，集中检查全部要求，并按需把受管理版本安装到 LanCarbon 的 \`Tools\` 文件夹：
 
 - **Build** 需要 Python 3、Node.js 和 Jupyter Book 2。
 - **Publish** 需要 Git、GitHub CLI、GitHub 账号以及能够访问 GitHub 的网络。

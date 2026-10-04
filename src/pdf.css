@@ -1,0 +1,28 @@
+html { color-scheme: light; background: white; color: #202020; font: 11pt/1.6 "Segoe UI", "Microsoft YaHei", "Noto Sans CJK SC", Arial, sans-serif; }
+body { margin: 0; padding: 0; }
+* { box-sizing: border-box; }
+#pdf-page { width: 170mm; max-width: 100%; margin: 0 auto; overflow-wrap: anywhere; }
+.page-title { margin: 0 0 8mm; padding-bottom: 4mm; border-bottom: 1px solid #aaa; font-size: 25pt; line-height: 1.3; }
+h1, h2, h3, h4, h5, h6, summary { break-after: avoid; line-height: 1.3; }
+h1 { font-size: 21pt; } h2 { font-size: 17pt; margin-top: 1.5em; } h3 { font-size: 14pt; margin-top: 1.3em; }
+p, li { orphans: 3; widows: 3; }
+a { color: #315882; text-decoration: underline; }
+img { display: block; max-width: 100% !important; max-height: 225mm; height: auto; object-fit: contain; break-inside: avoid; }
+figure { margin: 5mm 0; break-inside: avoid; } figcaption { margin-top: 2mm; font-size: 9pt; color: #555; }
+table { width: 100%; table-layout: fixed; margin: 5mm 0; border-collapse: collapse; font-size: 9pt; }
+thead { display: table-header-group; } tr { break-inside: avoid; }
+th, td { padding: 2mm; border: 1px solid #aaa; vertical-align: top; overflow-wrap: anywhere; }
+th { background: #f2f2f2; } [align="center"] { text-align: center; } [align="right"] { text-align: right; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 3mm; border: 1px solid #ddd; background: #f7f7f7; font: 9pt/1.5 Consolas, "Microsoft YaHei", monospace; }
+code { font-family: Consolas, "Microsoft YaHei", monospace; font-size: .9em; }
+blockquote { margin: 5mm 0; padding: 1mm 4mm; border-left: 1mm solid #888; }
+.admonition, details { margin: 5mm 0; padding: 3mm 4mm; border: 1px solid #ccc; background: #f7f7f7; }
+.admonition-title, summary { font-weight: bold; }
+.preview-equation { display: flex; align-items: center; gap: 4mm; margin: 5mm 0; break-inside: avoid; }
+.preview-equation > :first-child { min-width: 0; flex: 1; } .equation-number { flex: none; color: #555; }
+.katex-display { max-width: 100%; margin: 3mm 0; } .katex-display > .katex { max-width: 100%; }
+.preview-unresolved, .math-error { color: #943333; }
+.lc-align-left { text-align: left; } .lc-align-center { text-align: center; } .lc-align-right { text-align: right; }
+.preview-smallcaps { font-variant: small-caps; }
+hr { border: 0; border-top: 1px solid #aaa; }
+@media print { #pdf-page { width: auto; } }

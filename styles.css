@@ -353,7 +353,9 @@ body.book-dragging, body.book-dragging * { cursor: grabbing !important; }
 .text-button:hover { color: var(--danger); }
 
 .editor-panel { position: relative; isolation: isolate; display: flex; min-width: 0; height: 100vh; flex-direction: column; background: var(--paper); }
-.editor-toolbar { height: 76px; padding: 0 38px; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.editor-toolbar { min-height: 76px; flex-shrink: 0; padding: 12px 38px; gap: 8px; flex-wrap: wrap; justify-content: space-between; border-bottom: 1px solid var(--line); }
+.pdf-notice { display: flex; align-items: center; gap: 8px; padding: 8px 20px; color: var(--ink); background: var(--surface); border-bottom: 1px solid var(--line); font-size: 12px; overflow-wrap: anywhere; }
+.pdf-notice span { min-width: 0; flex: 1; }
 .save-status { color: var(--muted); font-size: 11px; }
 .editor-toolbar-left { min-width: 0; gap: 18px; }
 .view-mode-control { display: flex; align-items: center; gap: 7px; }
@@ -416,6 +418,12 @@ body.book-dragging, body.book-dragging * { cursor: grabbing !important; }
 .insert-dialog { width: min(520px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); margin: auto; padding: 0; overflow-y: auto; color: var(--ink); border: 1px solid var(--line); border-radius: 14px; background: var(--paper); box-shadow: 0 20px 70px var(--shadow); font-family: var(--sans); }
 .insert-dialog-wide { width: min(800px, calc(100vw - 32px)); }
 .insert-dialog::backdrop { background: rgba(15, 10, 12, .56); }
+.asset-conflict-dialog header, .asset-conflict-dialog footer { padding: 14px 18px; }
+.asset-conflict-dialog h2 { margin: 0; font-size: 19px; }
+.asset-conflict-content { padding: 0 18px; }
+.asset-conflict-content ul { max-height: 180px; overflow-y: auto; }
+.asset-conflict-dialog footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.asset-conflict-dialog footer button { padding: 8px 12px; color: var(--ink); border: 1px solid var(--line); border-radius: 7px; background: var(--surface); }
 .insert-form { display: grid; gap: 16px; padding: 24px; }
 .insert-form header, .insert-form footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .insert-form h2 { margin: 3px 0 0; font-family: var(--serif); font-size: 23px; }
