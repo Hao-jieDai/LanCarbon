@@ -25,6 +25,9 @@ describe("workspace navigation preferences", () => {
   it("sorts both lists independently, preserves selections and does not save content when changing a preference", async () => {
     const view = render(<App />);
     await screen.findByRole("button", { name: /^Beta/ });
+    const booksTab = screen.getByRole("button", { name: "Books" });
+    expect(booksTab.querySelector("kbd")).toHaveTextContent("Q"); expect(booksTab).toHaveAttribute("title", "Switch between Notes and Books (Ctrl+Q)");
+    expect(document.querySelector(".workspace-shortcut")).toBeNull();
     await waitFor(() => expect(save).toHaveBeenCalled()); save.mockClear();
     fireEvent.click(screen.getByRole("button", { name: /^Beta/ }));
     fireEvent.change(screen.getByLabelText("Sort Notes"), { target: { value: "title" } });

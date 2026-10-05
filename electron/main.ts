@@ -352,7 +352,8 @@ app.whenReady().then(async () => {
       const { workspace } = await store.loadWorkspace();
       const note = workspace.notes.find(item => item.id === noteId);
       if (!note) throw new Error("The selected page no longer exists");
-      const selection = await dialog.showSaveDialog(mainWindow, { title: "Export current page as PDF", defaultPath: path.join(directories.exports, pdfFileName(note.title)), filters: [{ name: "PDF document", extensions: ["pdf"] }], properties: ["showOverwriteConfirmation", "createDirectory"] });
+      await fs.mkdir(directories.pdfs, { recursive: true });
+      const selection = await dialog.showSaveDialog(mainWindow, { title: "Export current page as PDF", defaultPath: path.join(directories.pdfs, pdfFileName(note.title)), filters: [{ name: "PDF document", extensions: ["pdf"] }], properties: ["showOverwriteConfirmation", "createDirectory"] });
       if (selection.canceled || !selection.filePath) return { ok: false, canceled: true, error: "PDF export canceled" };
       const destination = /\.pdf$/i.test(selection.filePath) ? selection.filePath : `${selection.filePath}.pdf`;
       const warnings = await exportPagePdf(workspace, noteId, destination, assetStore());

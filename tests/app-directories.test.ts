@@ -20,9 +20,10 @@ describe("LanCarbon application directories", () => {
       temp: path.resolve("D:\\Writing\\LanCarbon\\Temp"),
       builds: path.resolve("D:\\Writing\\LanCarbon\\Builds"),
       exports: path.resolve("D:\\Writing\\LanCarbon\\Exports"),
+      pdfs: path.resolve("D:\\Writing\\LanCarbon\\PDFs"),
       tools: path.resolve("D:\\Writing\\LanCarbon\\Tools")
     });
-    expect(new Set(directoryList(result)).size).toBe(9);
+    expect(new Set(directoryList(result)).size).toBe(10);
   });
 
   it("uses the D drive root for Windows development and an explicit root when supplied", () => {
@@ -36,5 +37,6 @@ describe("LanCarbon application directories", () => {
     expect(result.data).toBe(path.resolve("C:\\Temp\\lc-e2e"));
     expect(result.config).toBe(path.resolve("C:\\Temp\\lc-e2e"));
     expect(result.temp).toBe(path.resolve("C:\\Temp\\lc-e2e\\Temp"));
+    expect(result.pdfs).toBe(path.resolve("C:\\Temp\\lc-e2e\\PDFs"));
   });
 });

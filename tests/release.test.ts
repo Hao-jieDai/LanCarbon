@@ -18,12 +18,18 @@ describe("release metadata", () => {
     const readme = readFileSync(path.join(process.cwd(), "README.md"), "utf8");
     expect(readme).toContain("### Export a page as PDF"); expect(readme).toContain("### 导出页面为 PDF");
     expect(readme).toContain("Resource-dialog fix"); expect(readme).toContain("资源提示修复");
+    expect(readme).toContain("**PDFs**"); expect(guide).toContain("**PDFs**");
+    const storage = starter.notes.find((note: { id: string }) => note.id === "tutorial-note-s1-storage").content;
+    expect(storage.split("├─ PDFs").length).toBe(3); expect(storage).toContain("existing PDFs are not moved");
+    const tour = starter.notes.find((note: { id: string }) => note.id === "tutorial-note-s1-interface").content;
+    expect(tour).toContain("a **Q** hint is embedded"); expect(tour).toContain("Books 按钮内部右侧显示 **Q** 提示");
   });
   it("documents sorting, folding and Ctrl+Q bilingually without version history in the tutorial", () => {
     const starter = JSON.parse(readFileSync(path.join(process.cwd(), "resources", "starter-content", "notes.json"), "utf8"));
     const tour = starter.notes.find((note: { id: string }) => note.id === "tutorial-note-s1-interface").content;
+    const [english, chinese] = tour.split("\n---\n");
     for (const phrase of ["**Notes / Books**", "**Ctrl+Q**", "**Last modified**", "**Date created**", "**Name (A–Z)**"]) {
-      expect(tour.split(phrase)).toHaveLength(3);
+      expect(english).toContain(phrase); expect(chinese).toContain(phrase);
       expect(readFileSync(path.join(process.cwd(), "README.md"), "utf8")).toContain(phrase);
     }
     expect(tour).toContain("Each Book remembers its folded branches across restarts");
@@ -44,7 +50,7 @@ describe("release metadata", () => {
     expect(packageJson.build.productName).toBe("LanCarbon");
     expect(packageJson.build.nsis.include).toBe("build/installer.nsh");
     const installer = readFileSync(path.join(process.cwd(), "build", "installer.nsh"), "utf8");
-    for (const folder of ["Application", "Data", "Config", "Cache", "Temp", "Builds", "Exports", "Tools"]) expect(installer).toContain(folder);
+    for (const folder of ["Application", "Data", "Config", "Cache", "Temp", "Builds", "Exports", "PDFs", "Tools"]) expect(installer).toContain(folder);
     expect(installer).toContain('StrCpy $INSTDIR "D:\\LanCarbon"');
   });
 

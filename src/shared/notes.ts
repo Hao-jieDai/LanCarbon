@@ -26,7 +26,7 @@ LanCarbon now uses the new Logo consistently across the application, installer, 
 
 - Write and organize ordinary Markdown Notes; choose **Sort by** to order Notes or Books by **Last modified**, **Date created** (newest first) or **Name (A–Z)**. Pinned Notes stay first, and each workspace remembers its own choice.
 - Create Books with Sections and Child Pages. Use a page's triangle to expand or collapse its children; each Book remembers its folded branches. Navigating to a page or creating a child reveals its ancestors. Sorting the Book selector does not change the Book's table of contents or export order.
-- Press **Ctrl+Q** to switch between **Notes** and **Books**, keeping the selected Note or Book page. The shortcut is shown below the workspace tabs and is inactive while a dialog is open.
+- Press **Ctrl+Q** to switch between **Notes** and **Books**, keeping the selected Note or Book page. A **Q** hint is embedded at the right of the Books tab; hover to see **Ctrl+Q**. The shortcut is inactive while a dialog is open.
 - Edit Markdown and MyST content with the formatting toolbar, use the expanded Math symbol panel, then switch between Edit and Preview with **Ctrl+E**.
 - Insert and manage images, attachments, citations and other reusable Resources.
 - Export a separate Jupyter Book source copy for backup or external editing.
@@ -36,7 +36,7 @@ LanCarbon now uses the new Logo consistently across the application, installer, 
 
 ### Export a page as PDF
 
-Select **Export PDF** in the page header from Edit or Preview, choose a filename and destination (default: the page title), and save. Export saves the latest edits first and needs no optional tools. It uses a white reading layout without editor controls or line numbers. Book home pages, Sections and Child Pages are exported individually. Links to omitted Book pages and attachments remain readable labels, not embedded content. Preview limitations also apply to PDF; check export notices and inspect the result. Existing PDFs require overwrite confirmation; canceling or a failed export leaves the previous file intact. The sidebar **Export** still creates the entire Book source copy.
+Select **Export PDF** in the page header from Edit or Preview, choose a filename and destination (default: the page title), and save. The default PDF destination is the **PDFs** folder beside Exports under the LanCarbon root. Installation or startup creates it automatically; you can still choose another destination. Exports remains for Book source copies, and existing PDFs are not moved. Export saves the latest edits first and needs no optional tools. It uses a white reading layout without editor controls or line numbers. Book home pages, Sections and Child Pages are exported individually. Links to omitted Book pages and attachments remain readable labels, not embedded content. Preview limitations also apply to PDF; check export notices and inspect the result. Existing PDFs require overwrite confirmation; canceling or a failed export leaves the previous file intact. The sidebar **Export** still creates the entire Book source copy.
 
 ### Included when you first install LanCarbon
 
@@ -86,7 +86,7 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 
 - 撰写和管理普通 Markdown Notes；通过 **Sort by** 将 Notes 或 Books 按 **Last modified**（修改时间）、**Date created**（创建时间，时间均为最新在前）或 **Name (A–Z)**（名称）排序。置顶 Notes 始终优先，两个工作区分别记住排序选择。
 - 创建包含 Sections 和 Child Pages 的 Books。点击页面前的三角形展开或折叠子页面，每本 Book 分别记住折叠状态；跳转到页面或新建子页面时会自动展开上级目录。Book 下拉框的排序不会改变 Book 内部目录和导出顺序。
-- 按 **Ctrl+Q** 在 **Notes** 和 **Books** 之间切换，并保留原来选中的 Note 或 Book 页面。快捷键显示在工作区切换按钮下方，打开对话框时不触发切换。
+- 按 **Ctrl+Q** 在 **Notes** 和 **Books** 之间切换，并保留原来选中的 Note 或 Book 页面。**Q** 提示显示在 Books 按钮内部右侧，悬停可查看 **Ctrl+Q**；打开对话框时不触发切换。
 - 使用格式工具栏和扩充后的 Math 符号面板编辑 Markdown 与 MyST 内容，并通过 **Ctrl+E** 快速切换 Edit 和 Preview。
 - 插入和管理图片、附件、文献及其他可重复使用的 Resources。
 - 导出独立的 Jupyter Book 源文件副本，用于备份或外部编辑。
@@ -96,7 +96,7 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 
 ### 导出页面为 PDF
 
-在 Edit 或 Preview 中点击页面顶部的 **Export PDF**，选择文件名和保存位置（默认为页面标题），然后保存。导出前会先保存最新修改，不需要额外工具。PDF 使用白底阅读排版，不包含编辑工具栏和行号。Book 首页、Section 和 Child Page 均可单独导出。指向未导出 Book 页面的链接和附件保留为可读文字，不会嵌入目标内容。Preview 的支持范围同样适用于 PDF，请检查导出后的注意事项和生成结果。覆盖已有 PDF 需要确认；取消或导出失败不会破坏原有文件。侧边栏的 **Export** 仍用于导出整本 Book 的源文件副本。
+在 Edit 或 Preview 中点击页面顶部的 **Export PDF**，选择文件名和保存位置（默认为页面标题），然后保存。PDF 默认保存位置为 LanCarbon 根目录下与 Exports 同级的 **PDFs** 文件夹，安装或启动时会自动创建；仍可自行选择其他保存位置。Exports 继续用于 Book 源文件副本，已有 PDF 不会自动搬移。导出前会先保存最新修改，不需要额外工具。PDF 使用白底阅读排版，不包含编辑工具栏和行号。Book 首页、Section 和 Child Page 均可单独导出。指向未导出 Book 页面的链接和附件保留为可读文字，不会嵌入目标内容。Preview 的支持范围同样适用于 PDF，请检查导出后的注意事项和生成结果。覆盖已有 PDF 需要确认；取消或导出失败不会破坏原有文件。侧边栏的 **Export** 仍用于导出整本 Book 的源文件副本。
 
 ### 第一次安装自带的内容
 

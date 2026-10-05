@@ -10,6 +10,11 @@ All notable changes to official LanCarbon releases are recorded here.
 - Save-location selection, overwrite confirmation, export notices and atomic output that preserves an existing PDF if export fails.
 - Bilingual PDF instructions in the ReadMe and the corresponding interface, Preview and export tutorial pages.
 
+### Changed
+
+- Page PDFs default to a dedicated PDFs folder beside Exports, created during installation or startup without moving older exports.
+- The Ctrl+Q hint is now an inline Q inside the Books tab, with the full shortcut on hover and no separate hint row.
+
 ### Fixed
 
 - Duplicate-resource warnings now use an in-app modal with explicit Replace, Keep both and Cancel actions and focus restoration, avoiding the native Windows message-box path implicated in the disappearing-mouse report.

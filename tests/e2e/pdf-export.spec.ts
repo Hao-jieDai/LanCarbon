@@ -18,6 +18,8 @@ test("Notes and individual Book pages export offline PDFs, save edits and preser
   let book = addNoteToBook(initialBook, section, { section: true }); const sectionPage = Object.values(book.pages).find(item => item.noteId === section.id)!;
   book = addNoteToBook(book, child, { parentPageId: sectionPage.id }); Object.values(book.pages).find(item => item.noteId === child.id)!.metadata.label = "pdf-child-label";
   await fs.writeFile(path.join(directory, "notes.json"), JSON.stringify({ version: 2, notes: [note, homeNote, section, child], books: [book] }));
+  await fs.mkdir(path.join(directory, "Exports"));
+  const oldPdf = path.join(directory, "Exports", "existing.pdf"); await fs.writeFile(oldPdf, "Previous user PDF");
   const app = await electron.launch({ ...(process.env.E2E_EXECUTABLE ? { executablePath: process.env.E2E_EXECUTABLE } : {}), args: ["--in-process-gpu", "--disable-gpu", "--no-sandbox", ...(process.env.E2E_EXECUTABLE ? [] : [path.resolve(__dirname, "../..")])], env: { ...process.env, E2E_USER_DATA_DIR: directory } });
   try {
     const page = await app.firstWindow();
@@ -36,7 +38,9 @@ test("Notes and individual Book pages export offline PDFs, save edits and preser
     const notePdf = info.outputPath("note-research.pdf"); await saveTo(notePdf); await page.getByRole("button", { name: "Export PDF", exact: true }).click(); await checkPdf(notePdf, true);
     await expect(page.locator(".pdf-notice")).toContainText("PDF exported");
     const options = await app.evaluate(() => (globalThis as unknown as { pdfSaveOptions: { defaultPath: string; properties: string[] } }).pdfSaveOptions);
-    expect(path.basename(options.defaultPath)).toBe("PDF 研究记录 α.pdf"); expect(options.properties).toContain("showOverwriteConfirmation");
+    expect(path.basename(options.defaultPath)).toBe("PDF 研究记录 α.pdf"); expect(path.dirname(options.defaultPath)).toBe(path.join(directory, "PDFs"));
+    expect((await fs.stat(path.join(directory, "PDFs"))).isDirectory()).toBe(true); expect(options.properties).toContain("showOverwriteConfirmation");
+    expect(await fs.readFile(oldPdf, "utf8")).toBe("Previous user PDF"); expect(await fs.readdir(path.join(directory, "PDFs"))).toEqual([]);
     const original = await fs.readFile(notePdf); await saveTo(notePdf, true); await page.getByRole("button", { name: "Export PDF", exact: true }).click(); await expect(page.getByRole("button", { name: "Export PDF", exact: true })).toBeEnabled(); expect(await fs.readFile(notePdf)).toEqual(original);
     await page.getByRole("button", { name: "Books", exact: true }).click(); await page.getByLabel("Select Book").selectOption(book.id);
     const sourceBefore = JSON.parse(await fs.readFile(path.join(directory, "notes.json"), "utf8"));

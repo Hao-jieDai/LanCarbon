@@ -80,7 +80,7 @@ Function LanCarbonRootPage
   ${NSD_CreateBrowseButton} 80% 51u 20% 16u "Browse..."
   Pop $LanCarbonRootBrowseButton
   ${NSD_OnClick} $LanCarbonRootBrowseButton LanCarbonChooseRoot
-  ${NSD_CreateLabel} 0 78u 100% 52u "LanCarbon creates Application, Data, Config, Cache, Temp, Builds, Exports and Tools inside this folder. Existing LanCarbon Data is accepted for migration."
+  ${NSD_CreateLabel} 0 78u 100% 52u "LanCarbon creates Application, Data, Config, Cache, Temp, Builds, Exports, PDFs and Tools inside this folder. Existing LanCarbon Data is accepted for migration."
   Pop $LanCarbonRootLabel
   nsDialogs::Show
 FunctionEnd
@@ -139,6 +139,7 @@ FunctionEnd
   CreateDirectory "$INSTDIR\..\Temp"
   CreateDirectory "$INSTDIR\..\Builds"
   CreateDirectory "$INSTDIR\..\Exports"
+  CreateDirectory "$INSTDIR\..\PDFs"
   CreateDirectory "$INSTDIR\..\Tools"
 !macroend
 

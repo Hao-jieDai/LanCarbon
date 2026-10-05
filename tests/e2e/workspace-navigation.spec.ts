@@ -27,6 +27,16 @@ test("workspace sorting, real Ctrl+Q, folding, navigation and restart persistenc
   let app = await launch();
   try {
     let page = await app.firstWindow();
+    const booksTab = page.getByRole("button", { name: "Books", exact: true });
+    await expect(booksTab.locator("kbd")).toHaveText("Q"); await expect(booksTab).toHaveAttribute("title", /Ctrl\+Q/);
+    await expect(page.locator(".workspace-shortcut")).toHaveCount(0);
+    const tabBounds = (await booksTab.boundingBox())!, keyBounds = (await booksTab.locator("kbd").boundingBox())!;
+    expect(keyBounds.x).toBeGreaterThan(tabBounds.x); expect(keyBounds.x + keyBounds.width).toBeLessThan(tabBounds.x + tabBounds.width);
+    expect(keyBounds.y).toBeGreaterThan(tabBounds.y); expect(keyBounds.y + keyBounds.height).toBeLessThan(tabBounds.y + tabBounds.height);
+    for (const theme of ["Light", "Dark"]) {
+      await page.locator(".theme-option").filter({ hasText: theme }).click();
+      await page.screenshot({ path: testInfo.outputPath(`inline-q-${theme.toLowerCase()}.png`) });
+    }
     await page.getByRole("button", { name: /^B workspace note/ }).click();
     await page.getByLabel("Note content").click();
     await page.keyboard.press("Control+End"); await page.keyboard.type(" saved across switching");

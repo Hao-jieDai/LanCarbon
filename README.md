@@ -23,7 +23,7 @@ Version 1.1.4 adds single-page PDF export for Notes and Markdown Book pages and 
 
 - Offline Markdown Notes with search, tags, pinning and autosave. **Sort by** orders Notes and the Book selector by **Last modified**, **Date created** (newest first) or **Name (A–Z)**; pinned Notes stay first and the two workspaces remember their choices independently. A Book's last-modified time includes edits to its pages.
 - Structured Books with Sections, Child Pages, page properties and Book settings. Click a page's triangle to expand or collapse its children; folds are saved separately for each Book. Navigating to a page or creating a child reveals its ancestors. Sorting the Book selector never reorders the Book's contents or exports.
-- **Notes / Books** workspace tabs with a visible **Ctrl+Q** shortcut, preserving your selected Note or Book page when switching. The shortcut is inactive while a dialog is open; Jupyter Book 2 remains the Build tool's name.
+- **Notes / Books** workspace tabs with an embedded **Q** hint in the Books tab and a **Ctrl+Q** hover tooltip, preserving your selected Note or Book page when switching. The shortcut is inactive while a dialog is open; Jupyter Book 2 remains the Build tool's name.
 - CodeMirror editing, an expanded Math symbol panel, MyST-aware formatting tools and an offline Preview with **Ctrl+E** view switching.
 - Images, attachments, reusable Resources, BibTeX libraries and citations.
 - Optional export of a separate Jupyter Book source copy.
@@ -35,7 +35,7 @@ Version 1.1.4 adds single-page PDF export for Notes and Markdown Book pages and 
 
 ### Export a page as PDF
 
-Select **Export PDF** in the page header from Edit or Preview, choose a filename and destination (default: the page title), and save. Export saves the latest edits first and needs no optional tools. It uses a white reading layout without editor controls or line numbers. Book home pages, Sections and Child Pages are exported individually. Links to omitted Book pages and attachments remain readable labels, not embedded content. Preview limitations also apply to PDF; check export notices and inspect the result. Existing PDFs require overwrite confirmation; canceling or a failed export leaves the previous file intact. The sidebar **Export** still creates the entire Book source copy.
+Select **Export PDF** in the page header from Edit or Preview, choose a filename and destination (default: the page title), and save. The default PDF destination is the **PDFs** folder beside Exports under the LanCarbon root. Installation or startup creates it automatically; you can still choose another destination. Exports remains for Book source copies, and existing PDFs are not moved. Export saves the latest edits first and needs no optional tools. It uses a white reading layout without editor controls or line numbers. Book home pages, Sections and Child Pages are exported individually. Links to omitted Book pages and attachments remain readable labels, not embedded content. Preview limitations also apply to PDF; check export notices and inspect the result. Existing PDFs require overwrite confirmation; canceling or a failed export leaves the previous file intact. The sidebar **Export** still creates the entire Book source copy.
 
 ### Download and install
 
@@ -51,7 +51,8 @@ LanCarbon/
 ├─ Cache/         Re-creatable runtime cache
 ├─ Temp/          Temporary build and publishing files
 ├─ Builds/        Saved local websites
-├─ Exports/       Default starting location for Export
+├─ Exports/       Default starting location for Book source-copy Export
+├─ PDFs/          Default destination for page PDFs
 └─ Tools/         Optional tools managed by Environment Setup
 ```
 
@@ -115,7 +116,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 - 支持搜索、标签、置顶和自动保存的离线 Markdown Notes。通过 **Sort by** 将 Notes 列表或 Book 下拉框按 **Last modified**（修改时间）、**Date created**（创建时间，时间均为最新在前）或 **Name (A–Z)**（名称）排序；置顶 Notes 始终优先，两个工作区分别记住排序选择。Book 修改时间也会计入其页面正文的修改。
 - 使用 Sections、Child Pages、Page Properties 和 Book Settings 组织 Books。点击页面前的三角形展开或折叠子页面，每本 Book 分别保存折叠状态；跳转到页面或新建子页面时会自动展开上级目录。Book 下拉框的排序不会改变 Book 内部目录和导出顺序。
-- 工作区统一显示为 **Notes / Books**，旁边显示 **Ctrl+Q** 快捷键；切换时保留原来选中的 Note 或 Book 页面，对话框打开时不触发快捷键。Build 工具名称仍为 Jupyter Book 2。
+- 工作区统一显示为 **Notes / Books**，Books 按钮内部右侧显示 **Q** 提示，悬停可查看 **Ctrl+Q** 快捷键；切换时保留原来选中的 Note 或 Book 页面，对话框打开时不触发快捷键。Build 工具名称仍为 Jupyter Book 2。
 - CodeMirror 编辑器、扩充后的 Math 符号面板、MyST 格式工具，以及支持 **Ctrl+E** 切换的离线 Preview。
 - 图片、附件、可重复使用的 Resources、BibTeX 文献库和 Citations。
 - 按需导出独立的 Jupyter Book 源文件副本。
@@ -127,7 +128,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 ### 导出页面为 PDF
 
-在 Edit 或 Preview 中点击页面顶部的 **Export PDF**，选择文件名和保存位置（默认为页面标题），然后保存。导出前会先保存最新修改，不需要额外工具。PDF 使用白底阅读排版，不包含编辑工具栏和行号。Book 首页、Section 和 Child Page 均可单独导出。指向未导出 Book 页面的链接和附件保留为可读文字，不会嵌入目标内容。Preview 的支持范围同样适用于 PDF，请检查导出后的注意事项和生成结果。覆盖已有 PDF 需要确认；取消或导出失败不会破坏原有文件。侧边栏的 **Export** 仍用于导出整本 Book 的源文件副本。
+在 Edit 或 Preview 中点击页面顶部的 **Export PDF**，选择文件名和保存位置（默认为页面标题），然后保存。PDF 默认保存位置为 LanCarbon 根目录下与 Exports 同级的 **PDFs** 文件夹，安装或启动时会自动创建；仍可自行选择其他保存位置。Exports 继续用于 Book 源文件副本，已有 PDF 不会自动搬移。导出前会先保存最新修改，不需要额外工具。PDF 使用白底阅读排版，不包含编辑工具栏和行号。Book 首页、Section 和 Child Page 均可单独导出。指向未导出 Book 页面的链接和附件保留为可读文字，不会嵌入目标内容。Preview 的支持范围同样适用于 PDF，请检查导出后的注意事项和生成结果。覆盖已有 PDF 需要确认；取消或导出失败不会破坏原有文件。侧边栏的 **Export** 仍用于导出整本 Book 的源文件副本。
 
 ### 下载与安装
 
@@ -143,7 +144,8 @@ LanCarbon/
 ├─ Cache/         可以重新生成的运行缓存
 ├─ Temp/          构建和发布临时文件
 ├─ Builds/        保存的本地网站
-├─ Exports/       Export 默认起始位置
+├─ Exports/       Book 源文件副本 Export 默认起始位置
+├─ PDFs/          页面 PDF 默认保存位置
 └─ Tools/         Environment Setup 管理的可选工具
 ```
 

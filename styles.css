@@ -261,11 +261,10 @@ button:disabled { cursor: default; opacity: .45; }
 .new-note kbd { margin-left: auto; color: var(--button-kbd); background: transparent; font-size: 11px; }
 .new-note.compact { width: auto; padding: 0 20px; }
 
-.workspace-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin: -10px 0 3px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
-.workspace-tabs button { height: 31px; color: var(--muted); border: 0; border-radius: 6px; background: transparent; font-size: 11px; }
+.workspace-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 3px; margin: -10px 0 13px; padding: 3px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.workspace-tabs button { position: relative; height: 31px; padding: 0 25px; color: var(--muted); border: 0; border-radius: 6px; background: transparent; font-size: 11px; }
 .workspace-tabs button.active { color: var(--filter-active-ink); background: var(--paper); box-shadow: 0 1px 5px var(--card-shadow); font-weight: 600; }
-.workspace-shortcut { margin-bottom: 10px; color: var(--muted); text-align: right; font-size: 10px; }
-.workspace-shortcut kbd { font-family: var(--sans); }
+.workspace-tabs kbd { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: inherit; background: transparent; opacity: .75; font-size: 11px; }
 .workspace-sort { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; color: var(--muted); font-size: 11px; }
 .workspace-sort select { min-width: 0; flex: 1; height: 29px; padding: 0 7px; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font: inherit; }
 
