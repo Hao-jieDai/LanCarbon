@@ -7,3 +7,6 @@ test-results/
 playwright-report/
 .builder-cache/
 *.log
+backups/
+acceptance/
+.dev-workspace/
