@@ -11,7 +11,8 @@ test("image settings, duplicate choices and cross-Book deletion filters",async({
   const officialCatalog=JSON.parse(await fs.readFile(path.resolve("resources/starter-content/assets.json"),"utf8"));
   const officialIds=new Set<string>(officialCatalog.assets.map((asset:{id:string})=>asset.id));
   const dir=await fs.mkdtemp(path.join(os.tmpdir(),"lancarbon-resource-management-"));
-  const store=new AssetStore(dir),image=await store.importBytes("image.png",await fs.readFile("build/icon.png"),true);
+  let store=new AssetStore(dir);
+  const image=await store.importBytes("image.png",await fs.readFile("build/icon.png"),true);
   const userAssets=async()=>(await store.list()).filter(asset=>!officialIds.has(asset.id));
   const shared=await store.importBytes("shared.txt",Buffer.from("original"),false);
   await store.importBytes("unused.txt",Buffer.from("unused"),false);
@@ -21,6 +22,7 @@ test("image settings, duplicate choices and cross-Book deletion filters",async({
   const input=path.join(dir,"shared.txt");await fs.writeFile(input,"incoming");
   const launch=()=>electron.launch({...(process.env.E2E_EXECUTABLE?{executablePath:process.env.E2E_EXECUTABLE}:{}),args:["--in-process-gpu","--disable-gpu","--no-sandbox",...(process.env.E2E_EXECUTABLE?[]:[path.resolve(__dirname,"../..")])],env:{...process.env,E2E_USER_DATA_DIR:dir}});
   let app=await launch();
+  store=new AssetStore(dir,path.join(dir,"Library","assets"));
   try {
     let page=await app.firstWindow();
     await page.getByRole("button",{name:"Books",exact:true}).click();
