@@ -47,9 +47,9 @@ describe("workspace navigation preferences", () => {
     expect(screen.getByLabelText("Note title")).toHaveValue("Selected child");
     expect(save).not.toHaveBeenCalled();
     view.unmount(); render(<App />);
-    expect(await screen.findByLabelText("Sort Notes")).toHaveValue("title");
+    expect(await screen.findByLabelText("Sort Books")).toHaveValue("title");
     fireEvent.keyDown(document, { key: "q", ctrlKey: true });
-    expect(screen.getByLabelText("Sort Books")).toHaveValue("title");
+    expect(screen.getByLabelText("Sort Notes")).toHaveValue("title");
   });
 
   it("does not toggle for composition, repeat, other modifiers or while a dialog is open", async () => {

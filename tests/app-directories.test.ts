@@ -21,14 +21,14 @@ describe("LanCarbon application directories", () => {
       builds: path.resolve("D:\\Writing\\LanCarbon\\Builds"),
       exports: path.resolve("D:\\Writing\\LanCarbon\\Exports"),
       pdfs: path.resolve("D:\\Writing\\LanCarbon\\PDFs"),
-      tools: path.resolve("D:\\Writing\\LanCarbon\\Tools")
+      tools: path.resolve("D:\\Writing\\LanCarbon\\Tools"),
+      library: path.resolve("D:\\Writing\\LanCarbon\\Library")
     });
-    expect(new Set(directoryList(result)).size).toBe(10);
+    expect(new Set(directoryList(result)).size).toBe(13);
   });
 
-  it("uses the D drive root for Windows development and an explicit root when supplied", () => {
-    expect(resolveLanCarbonDirectories({ executable: "node.exe", packaged: false, platform: "win32", appData: "C:\\Users\\Writer\\AppData\\Roaming", windowsDDriveAvailable: true }).root).toBe(path.resolve("D:\\LanCarbon"));
-    expect(resolveLanCarbonDirectories({ executable: "node.exe", packaged: false, platform: "win32", appData: "C:\\Users\\Writer\\AppData\\Roaming", windowsDDriveAvailable: false }).root).toBe(path.resolve("C:\\Users\\Writer\\AppData\\Roaming\\LanCarbon"));
+  it("isolates development from installed data regardless of D drive availability", () => {
+    for (const available of [true, false]) expect(resolveLanCarbonDirectories({ executable: "node.exe", packaged: false, platform: "win32", appData: "C:\\Users\\Writer\\AppData\\Roaming", windowsDDriveAvailable: available }).root).toBe(path.resolve(".dev-workspace", "LanCarbon"));
     expect(resolveLanCarbonDirectories({ executable: "node.exe", packaged: false, platform: "win32", appData: "C:\\Users\\Writer\\AppData\\Roaming", overrideRoot: "E:\\Apps\\LanCarbon" }).exports).toBe(path.resolve("E:\\Apps\\LanCarbon\\Exports"));
   });
 

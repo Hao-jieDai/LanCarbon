@@ -45,6 +45,8 @@ export class DataLocationManager {
     const source = path.resolve(sourceDirectory);
     const target = path.resolve(targetDirectory);
     if (source.toLocaleLowerCase("en-US") === target.toLocaleLowerCase("en-US")) return;
+    const overlaps = (parent: string, child: string) => { const relative = path.relative(parent, child); return !relative.startsWith(".." + path.sep) && relative !== ".." && !path.isAbsolute(relative); };
+    if (overlaps(source, target) || overlaps(target, source)) throw new Error("Choose a data folder separate from the current workspace.");
     const targetWorkspace = path.join(target, "notes.json");
     try {
       await fs.access(targetWorkspace);
@@ -52,14 +54,16 @@ export class DataLocationManager {
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
-    await this.copyWorkspaceIfNeeded(source, target);
+    const resources = ["assets.json", "assets", "Library", "Research"];
+    for (const name of resources) if (await fs.stat(path.join(target, name)).catch(() => null)) throw new Error("The selected folder already contains resources. Choose an empty data folder.");
     // Resources travel with the workspace; never merge into an unrelated catalog.
-    for (const name of ["assets.json", "assets"]) {
+    for (const name of resources) {
       const sourcePath = path.join(source, name), targetPath = path.join(target, name);
       if (!(await fs.stat(sourcePath).catch(() => null))) continue;
       if (await fs.stat(targetPath).catch(() => null)) throw new Error("The selected folder already contains resources. Choose an empty data folder.");
       await fs.cp(sourcePath, targetPath, { recursive: true, errorOnExist: true, force: false });
     }
+    await this.copyWorkspaceIfNeeded(source, target);
   }
 
   private async readConfiguredPath(): Promise<string | null> {

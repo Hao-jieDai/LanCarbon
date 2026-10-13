@@ -171,6 +171,10 @@ export interface WindowPreferences {
 }
 
 export interface NotesDesktopApi {
+  foundation?: {
+    inspect(): Promise<{ ok: true; directories: import("./research").FoundationDirectories } | { ok: false; error: string }>;
+    openLibrary(): Promise<OperationResult>;
+  };
   assets?: {
     list(): Promise<{ ok: true; assets: import("./assets").Asset[] } | { ok: false; error: string }>;
     choose(imageOnly: boolean): Promise<{ ok: true; assets: import("./assets").Asset[] } | { ok: false; canceled?: boolean; error: string }>;

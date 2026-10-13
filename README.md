@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon uploads content only when you explicitly use Publish.
 
-Version 1.1.4 adds single-page PDF export for Notes and Markdown Book pages and improves duplicate-resource dialogs. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
+Version 2.1.0 introduces the four-workspace foundation: Notes, Books, Research and Library. Research provides five reserved pages; Library browses existing resources. AI tools, PDF/EPUB reading and literature automation will be delivered in later stages. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -33,13 +33,29 @@ Version 1.1.4 adds single-page PDF export for Notes and Markdown Book pages and 
 - Environment Setup with managed, independently repairable tools and folder-permission recovery under the LanCarbon root.
 - Light and Dark themes with the LanCarbon visual style.
 
+### Workspaces and recovery
+
+The four workspace buttons form a 2×2 grid: **Notes / Books** above **Research / Library**. Each retains its selection when switching and restarting. Research contains **Run**, **Templates**, **Outputs**, **Chat** and **AI Settings**; pages labeled **Coming soon** have no active AI or literature actions yet. Library lists existing managed resources, their references and **Save a copy**; **Open Library folder** opens the originals folder. Existing resources retain their IDs, locations and Markdown links.
+
+**Ctrl+Q** switches Notes and Books; from Research or Library it returns to the most recently used writing workspace. **Ctrl+N** and **Ctrl+E** operate only in Notes and Books.
+
+Original files have a dedicated root **Library/Imports** and **Library/AI-Paper**. Management data lives under the active **Data/Library**; templates, drafts, records and chats have separate folders under **Data/Research**. Moving Data includes these management folders; the root Library stays with the installation. Notes and Books retain Workspace v2, and unsupported workspace versions are blocked without modifying their files.
+
+Before upgrading, close LanCarbon and back up the actual data location, Config, Library and any Builds, Exports or PDFs you wish to keep. Keep the stable installer alongside the backup. Reinstalling an older application may also require restoring matching data. A restored snapshot returns to the backup date; retain later edits separately. Developers can use the verified snapshot commands below. Restore accepts a new empty folder, verifies all files before copying and adjusts saved managed paths to that folder.
+
+```powershell
+node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.1.0-x64-Setup.exe"
+node scripts/workspace-recovery.cjs verify --backup "D:\Backups\LanCarbon-snapshot"
+node scripts/workspace-recovery.cjs restore --backup "D:\Backups\LanCarbon-snapshot" --target "D:\Recovered\LanCarbon"
+```
+
 ### Export a page as PDF
 
 Select **Export PDF** in the page header from Edit or Preview, choose a filename and destination (default: the page title), and save. The default PDF destination is the **PDFs** folder beside Exports under the LanCarbon root. Installation or startup creates it automatically; you can still choose another destination. Exports remains for Book source copies, and existing PDFs are not moved. Export saves the latest edits first and needs no optional tools. It uses a white reading layout without editor controls or line numbers. Book home pages, Sections and Child Pages are exported individually. Links to omitted Book pages and attachments remain readable labels, not embedded content. Preview limitations also apply to PDF; check export notices and inspect the result. Existing PDFs require overwrite confirmation; canceling or a failed export leaves the previous file intact. The sidebar **Export** still creates the entire Book source copy.
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-1.1.4-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.1.0-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -53,6 +69,7 @@ LanCarbon/
 ├─ Builds/        Saved local websites
 ├─ Exports/       Default starting location for Book source-copy Export
 ├─ PDFs/          Default destination for page PDFs
+├─ Library/      Original source files / 原始资料
 └─ Tools/         Optional tools managed by Environment Setup
 ```
 
@@ -82,6 +99,10 @@ npm install
 npm run dev
 ```
 
+Development defaults to `.dev-workspace/LanCarbon` inside this checkout. Set `LANCARBON_ROOT` only when deliberately choosing another isolated root.
+
+开发启动默认使用当前项目中的 `.dev-workspace/LanCarbon`，与日常安装隔离；仅在明确指定另一处独立目录时设置 `LANCARBON_ROOT`。
+
 ```bash
 npm run typecheck
 npm test
@@ -106,7 +127,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-1.1.4 新增 Notes 和 Markdown Book 页面的单页 PDF 导出，并改进重复资源提示。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
+2.1.0 建立 Notes、Books、Research 和 Library 四工作区基础框架。Research 提供五个预留子页，Library 可以浏览已有资源。AI 工具、PDF/EPUB 阅读与文献自动化将在后续阶段交付。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
@@ -126,13 +147,23 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 - Environment Setup 可在 LanCarbon 根目录中独立安装和修复所需工具，并恢复 Tools 文件夹权限。
 - 具有 LanCarbon 视觉风格的 Light 和 Dark 主题。
 
+### 工作区与恢复
+
+四个工作区入口按 2×2 排列：上行为 **Notes / Books**，下行为 **Research / Library**，切换和重启后保留各自选择。Research 包含 **Run**、**Templates**、**Outputs**、**Chat** 和 **AI Settings**；标记为 **Coming soon** 的页面尚未启用 AI 或文献处理。Library 显示已有受管理资源、引用位置和 **Save a copy**；**Open Library folder** 打开原始资料文件夹。旧资源保留原有 ID、位置和 Markdown 引用。
+
+**Ctrl+Q** 在 Notes 与 Books 之间切换；在 Research 或 Library 中按下时返回最近使用的写作工作区。**Ctrl+N** 与 **Ctrl+E** 仅在 Notes 和 Books 中生效。
+
+原始文件目录为根目录下的 **Library/Imports** 和 **Library/AI-Paper**；管理数据位于实际数据目录中的 **Data/Library**。模板、生成稿、记录和聊天分别位于 **Data/Research** 下。更换 Data 位置会一并复制这些管理目录，根目录 Library 仍随安装位置保存。Notes 和 Books 沿用 Workspace v2，不支持的数据版本会停止加载，保留原文件。
+
+升级前请关闭 LanCarbon，备份实际数据位置、Config、Library，以及需要保留的 Builds、Exports 和 PDFs，并保存稳定版安装包。恢复旧程序时可能还需要恢复匹配的数据；恢复快照会回到备份时的状态，后续新增编辑应另行保留。开发者可使用英文对应章节的备份、校验和恢复命令。恢复只接受新的空目录，复制前验证全部文件，并将受管理路径调整为恢复目录。
+
 ### 导出页面为 PDF
 
 在 Edit 或 Preview 中点击页面顶部的 **Export PDF**，选择文件名和保存位置（默认为页面标题），然后保存。PDF 默认保存位置为 LanCarbon 根目录下与 Exports 同级的 **PDFs** 文件夹，安装或启动时会自动创建；仍可自行选择其他保存位置。Exports 继续用于 Book 源文件副本，已有 PDF 不会自动搬移。导出前会先保存最新修改，不需要额外工具。PDF 使用白底阅读排版，不包含编辑工具栏和行号。Book 首页、Section 和 Child Page 均可单独导出。指向未导出 Book 页面的链接和附件保留为可读文字，不会嵌入目标内容。Preview 的支持范围同样适用于 PDF，请检查导出后的注意事项和生成结果。覆盖已有 PDF 需要确认；取消或导出失败不会破坏原有文件。侧边栏的 **Export** 仍用于导出整本 Book 的源文件副本。
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-1.1.4-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.1.0-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 
@@ -146,6 +177,7 @@ LanCarbon/
 ├─ Builds/        保存的本地网站
 ├─ Exports/       Book 源文件副本 Export 默认起始位置
 ├─ PDFs/          页面 PDF 默认保存位置
+├─ Library/      Original source files / 原始资料
 └─ Tools/         Environment Setup 管理的可选工具
 ```
 

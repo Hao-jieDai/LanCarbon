@@ -75,8 +75,6 @@ test("workspace sorting, real Ctrl+Q, folding, navigation and restart persistenc
     expect(saved.notes.filter((note: { id: string }) => [beta.id, alpha.id].includes(note.id)).map((note: { id: string }) => note.id)).toEqual([beta.id, alpha.id]);
     await page.screenshot({ path: testInfo.outputPath("books-folded.png") });
     await app.close(); app = await launch(); page = await app.firstWindow();
-    await expect(page.getByLabel("Sort Notes")).toHaveValue("created");
-    await page.keyboard.press("Control+q");
     await expect(page.getByLabel("Sort Books")).toHaveValue("title");
     await expect(page.getByLabel("Select Book")).toHaveValue(book.id);
     await expect(page.getByRole("button", { name: "Expand Navigation section", exact: true })).toBeVisible();
@@ -91,6 +89,7 @@ test("workspace sorting, real Ctrl+Q, folding, navigation and restart persistenc
     await expect(page.getByRole("button", { name: "Collapse Navigation section", exact: true })).toBeVisible();
     await page.screenshot({ path: testInfo.outputPath("books-expanded.png") });
     await page.keyboard.press("Control+q");
+    await expect(page.getByLabel("Sort Notes")).toHaveValue("created");
     await page.screenshot({ path: testInfo.outputPath("notes-sorted.png") });
   } finally {
     await app.close().catch(() => undefined);

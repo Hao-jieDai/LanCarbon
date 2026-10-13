@@ -12,6 +12,7 @@ export interface LanCarbonDirectories {
   exports: string;
   pdfs: string;
   tools: string;
+  library: string;
 }
 
 function fromRoot(root: string): LanCarbonDirectories {
@@ -26,7 +27,8 @@ function fromRoot(root: string): LanCarbonDirectories {
     builds: path.join(resolved, "Builds"),
     exports: path.join(resolved, "Exports"),
     pdfs: path.join(resolved, "PDFs"),
-    tools: path.join(resolved, "Tools")
+    tools: path.join(resolved, "Tools"),
+    library: path.join(resolved, "Library")
   };
 }
 
@@ -38,12 +40,14 @@ export function resolveLanCarbonDirectories(options: {
   overrideRoot?: string;
   e2eDirectory?: string;
   windowsDDriveAvailable?: boolean;
+  developmentRoot?: string;
 }): LanCarbonDirectories {
   if (options.e2eDirectory) {
     const directory = path.resolve(options.e2eDirectory);
     return { ...fromRoot(directory), application: directory, data: directory, config: directory };
   }
   if (options.overrideRoot) return fromRoot(options.overrideRoot);
+  if (!options.packaged) return fromRoot(options.developmentRoot ?? path.resolve(".dev-workspace", "LanCarbon"));
   if (options.platform === "win32") {
     const executableDirectory = path.dirname(path.resolve(options.executable));
     if (options.packaged && path.basename(executableDirectory).toLocaleLowerCase("en-US") === "application") {
@@ -56,5 +60,5 @@ export function resolveLanCarbonDirectories(options: {
 }
 
 export function directoryList(directories: LanCarbonDirectories): string[] {
-  return [directories.root, directories.application, directories.data, directories.config, directories.cache, directories.temp, directories.builds, directories.exports, directories.pdfs, directories.tools];
+  return [directories.root, directories.application, directories.data, directories.config, directories.cache, directories.temp, directories.builds, directories.exports, directories.pdfs, directories.tools, directories.library, path.join(directories.library, "Imports"), path.join(directories.library, "AI-Paper")];
 }

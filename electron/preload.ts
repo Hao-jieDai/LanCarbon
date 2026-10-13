@@ -2,6 +2,10 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { NotesDesktopApi } from "../src/shared/types";
 
 const api: NotesDesktopApi = {
+  foundation: {
+    inspect: () => ipcRenderer.invoke("foundation:inspect"),
+    openLibrary: () => ipcRenderer.invoke("foundation:open-library")
+  },
   assets: {
     remove: ids => ipcRenderer.invoke("assets:remove",ids),
     list: () => ipcRenderer.invoke("assets:list"),

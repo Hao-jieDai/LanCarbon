@@ -22,6 +22,7 @@ import { MAX_BIB_BYTES, parseBibTeX } from "../src/shared/bibliography";
 import { directoryList, resolveLanCarbonDirectories } from "./app-directories";
 import { EnvironmentManager } from "./environment-manager";
 import type { EnvironmentToolId } from "../src/shared/types";
+import { prepareResearchDirectories } from "./research-directories";
 
 let mainWindow: BrowserWindow | null = null;
 const websiteServers = new WebsiteServerManager();
@@ -139,6 +140,7 @@ app.whenReady().then(async () => {
   };
   dataLocationManager = new DataLocationManager(configurationDirectory, directories.data, directories.data);
   dataDirectory = await dataLocationManager.resolve();
+  await prepareResearchDirectories(directories.root, dataDirectory);
   store = new NotesStore(dataDirectory, bundledStarterContent);
   let assetsDirectory = dataDirectory;
   let assetsManager = new AssetStore(dataDirectory);
@@ -278,6 +280,17 @@ app.whenReady().then(async () => {
     }
   });
   ipcMain.handle("data-location:get", () => ({ ok: true, path: dataDirectory }));
+  ipcMain.handle("foundation:inspect", async () => {
+    try { return { ok: true, directories: await prepareResearchDirectories(directories.root, dataDirectory) }; }
+    catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Unable to prepare Library and Research folders" }; }
+  });
+  ipcMain.handle("foundation:open-library", async () => {
+    try {
+      const error = await shell.openPath(directories.library);
+      if (error) throw new Error(error);
+      return { ok: true };
+    } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Unable to open Library" }; }
+  });
   ipcMain.handle("data-location:change", async () => {
     if (!mainWindow) return { ok: false, error: "The main window is unavailable" };
     const selection = await dialog.showOpenDialog(mainWindow, {
@@ -289,6 +302,7 @@ app.whenReady().then(async () => {
       await dataLocationManager.prepareTarget(dataDirectory, target);
       const current = await store.loadWorkspace();
       const targetStore = new NotesStore(target);
+      await prepareResearchDirectories(directories.root, target);
       await targetStore.saveWorkspace(current.workspace);
       const verification = await targetStore.loadWorkspace();
       if (JSON.stringify(verification.workspace) !== JSON.stringify(current.workspace)) {

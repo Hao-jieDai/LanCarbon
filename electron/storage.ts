@@ -9,6 +9,14 @@ import { syncManagedTutorial } from "../src/shared/managedTutorial";
 import { ASSET_ID, type Asset } from "../src/shared/assets";
 
 class ManagedStarterSyncError extends Error {}
+class UnsupportedWorkspaceVersionError extends Error {}
+
+function assertSupportedVersion(parsed: unknown): void {
+  if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const version = (parsed as { version?: unknown }).version;
+    if (version !== undefined && version !== 1 && version !== 2) throw new UnsupportedWorkspaceVersionError("This workspace uses an unsupported data format. Open it with a compatible LanCarbon version or restore a verified backup to a separate folder. The existing file has not been changed.");
+  }
+}
 
 export class NotesStore {
   private readonly notesPath: string;
@@ -24,6 +32,7 @@ export class NotesStore {
     try {
       const raw = await fs.readFile(this.notesPath, "utf8");
       const parsed = JSON.parse(raw) as Partial<WorkspaceFile> & { version?: number };
+      assertSupportedVersion(parsed);
       if (parsed?.version === 2 && Array.isArray(parsed.notes) && Array.isArray(parsed.books)) {
         const notes = normalizeNotes(parsed.notes);
         const workspace: WorkspaceFile = { version: 2, notes, books: normalizeBooks(parsed.books, notes) };
@@ -44,7 +53,7 @@ export class NotesStore {
       }
       throw new Error("Unrecognized workspace file version");
     } catch (error) {
-      if (error instanceof ManagedStarterSyncError) throw error;
+      if (error instanceof ManagedStarterSyncError || error instanceof UnsupportedWorkspaceVersionError) throw error;
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         const starter = await this.loadStarterContent();
         return { workspace: starter ?? createEmptyWorkspace(), isFirstRun: true, migrated: false };
@@ -198,6 +207,8 @@ export class NotesStore {
 
   private async writeWorkspaceFile(workspace: WorkspaceFile): Promise<void> {
     await fs.mkdir(this.dataDirectory, { recursive: true });
+    try { assertSupportedVersion(JSON.parse(await fs.readFile(this.notesPath, "utf8"))); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
     // Keep the full original workspace before the one-time guide consolidation.
     if (workspace.books.some(book => book.phase2GuideRevision === 1)) {
       try {

@@ -9,6 +9,27 @@ describe("DataLocationManager", () => {
   let root: string;
   beforeEach(async () => { root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-location-")); });
   afterEach(async () => { await fs.rm(root, { recursive: true, force: true }); });
+  it("moves Research and Library management data together with the existing workspace", async () => {
+    const source = path.join(root, "source"), target = path.join(root, "target");
+    await fs.mkdir(path.join(source, "Research", "Outputs"), { recursive: true });
+    await fs.mkdir(path.join(source, "Library"), { recursive: true });
+    await fs.writeFile(path.join(source, "notes.json"), JSON.stringify({ version: 2, notes: [], books: [] }));
+    await fs.writeFile(path.join(source, "Research", "Outputs", "draft.md"), "Keep draft");
+    await fs.writeFile(path.join(source, "Library", "catalog.json"), '{"version":1}');
+    await new DataLocationManager(root, source, source).prepareTarget(source, target);
+    expect(await fs.readFile(path.join(target, "Research", "Outputs", "draft.md"), "utf8")).toBe("Keep draft");
+    expect(await fs.readFile(path.join(source, "Research", "Outputs", "draft.md"), "utf8")).toBe("Keep draft");
+    expect(await fs.readFile(path.join(target, "Library", "catalog.json"), "utf8")).toBe('{"version":1}');
+  });
+  it("preflights management conflicts and overlapping locations before copying writing", async () => {
+    const source = path.join(root, "source"), target = path.join(root, "target");
+    await fs.mkdir(source); await fs.mkdir(path.join(target, "Research"), { recursive: true });
+    await fs.writeFile(path.join(source, "notes.json"), '{"version":2,"notes":[],"books":[]}');
+    const manager = new DataLocationManager(root, source, source);
+    await expect(manager.prepareTarget(source, target)).rejects.toThrow("already contains resources");
+    expect(await fs.stat(path.join(target, "notes.json")).catch(() => null)).toBeNull();
+    await expect(manager.prepareTarget(source, path.join(source, "nested"))).rejects.toThrow("separate");
+  });
 
   it("首次启动把旧工作区复制到默认目录并保留源文件", async () => {
     const legacy = path.join(root, "legacy");

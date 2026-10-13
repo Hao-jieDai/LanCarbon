@@ -14,6 +14,16 @@ describe("NotesStore 工作区存储", () => {
   let directory: string;
   beforeEach(async () => { directory = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-store-")); });
   afterEach(async () => { vi.restoreAllMocks(); await fs.rm(directory, { recursive: true, force: true }); });
+  it("refuses newer workspace formats without renaming, replacing or discarding their Books", async () => {
+    const file = path.join(directory, "notes.json");
+    const bytes = JSON.stringify({ version: 3, notes: [{ id: "future" }], books: [{ id: "future-book" }], research: { retained: true } });
+    await fs.writeFile(file, bytes);
+    const store = new NotesStore(directory);
+    await expect(store.loadWorkspace()).rejects.toThrow("unsupported data format");
+    await expect(store.saveWorkspace(createEmptyWorkspace())).rejects.toThrow("unsupported data format");
+    expect(await fs.readFile(file, "utf8")).toBe(bytes);
+    expect(await fs.readdir(directory)).toEqual(["notes.json"]);
+  });
 
   it("首次读取返回空 v2 工作区", async () => {
     await expect(new NotesStore(directory).loadWorkspace()).resolves.toEqual({ workspace: { version: 2, notes: [], books: [] }, isFirstRun: true, migrated: false });

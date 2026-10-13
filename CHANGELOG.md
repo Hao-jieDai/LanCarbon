@@ -2,6 +2,26 @@
 
 All notable changes to official LanCarbon releases are recorded here.
 
+## 2.1.0 — 2026-10-13
+
+### Added
+
+- Four workspace buttons in a 2×2 grid: Notes, Books, Research and Library, with selection recovery across switching and restarts.
+- Reserved Run, Templates, Outputs, Chat and AI Settings pages with explicit availability labels; AI and PDF/EPUB reading are not active in this foundation stage.
+- Library browsing of existing managed resources, reference locations and saved copies, without moving or changing legacy resource IDs.
+- Separate original-file and Research management folders, included in Data Location transfer where appropriate.
+- Verified user-data snapshots and recovery into a new empty folder, including the stable installer and SHA-256 checks.
+
+### Changed
+
+- Development defaults to an isolated root inside the checkout.
+- Writing shortcuts are scoped to Notes/Books; Ctrl+Q returns from the new workspaces to the previous writing workspace.
+- Refreshed the bilingual ReadMe and corresponding evergreen tutorial instructions.
+
+### Fixed
+
+- Unsupported workspace versions stop loading and saving without renaming or overwriting the original data.
+
 ## 1.1.4 — 2026-10-05
 
 ### Added

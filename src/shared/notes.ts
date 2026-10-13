@@ -8,19 +8,23 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "1.1.4";
+export const RELEASE_VERSION = "2.1.0";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 1.1.4 adds **Export PDF** for the current Note or Markdown Book page and improves duplicate-resource dialogs. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
+Version 2.1.0 introduces the Notes / Books / Research / Library workspace foundation. Research has Run, Templates, Outputs, Chat and AI Settings pages marked Coming soon. Library lets you browse existing managed resources and save copies; AI tools and PDF/EPUB reading will follow in later updates. New data is kept separately from the existing Notes/Books format. Your writing and managed resources stay in the local Data folder you selected during installation. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
 LanCarbon now uses the new Logo consistently across the application, installer, repository ReadMe, built-in tutorial, and the default favicon for generated Book websites.
 
 **Resource-dialog fix:** Duplicate images and attachments now use an in-app choice dialog instead of a Windows message box, restoring focus after closing to address the reported disappearing mouse after duplicate-resource warnings.
+
+### Workspaces
+
+The four workspace buttons are arranged in two rows: Notes / Books above Research / Library. Switching and restarting retain your selected Note, Book page, Research page and Library resource. **Ctrl+Q** switches Notes and Books; from Research or Library it returns to the most recently used writing workspace. **Ctrl+N** and **Ctrl+E** act only in Notes or Books. Existing resources remain in their current data folder with their links intact. **Open Library folder** opens the originals folder under the LanCarbon root.
 
 ### What you can do
 
@@ -74,13 +78,17 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-1.1.4 新增 **Export PDF**，将当前 Note 或 Markdown Book 页面导出为 PDF，并改进重复资源提示。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
+2.1.0 建立 Notes / Books / Research / Library 四工作区基础框架。Research 提供 Run、Templates、Outputs、Chat 和 AI Settings 入口，尚未启用的功能显示 Coming soon。Library 可以浏览现有受管理资源并保存副本；AI 工具和 PDF/EPUB 阅读将在后续阶段加入。新增数据独立保存，沿用现有 Notes/Books 数据格式。你的正文和受管理资源保存在安装时选择的本地 Data 文件夹中。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
 LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程以及生成 Book 网站的默认 favicon 中统一使用新版 Logo。
 
 **资源提示修复：** 图片或附件重名时改用软件内选择对话框，关闭后恢复焦点，以处理重复资源提示后鼠标消失的问题。
+
+### 工作区
+
+四个工作区入口按两行排列：上行为 Notes / Books，下行为 Research / Library。切换和重启后保留所选 Note、Book 页面、Research 子页和 Library 资源。**Ctrl+Q** 在 Notes 与 Books 之间切换；在 Research 或 Library 中按下时返回最近使用的写作工作区。**Ctrl+N** 和 **Ctrl+E** 仅在 Notes 或 Books 中生效。已有资源仍保存在当前数据目录，原有引用保持有效。**Open Library folder** 打开 LanCarbon 根目录下的原始资料文件夹。
 
 ### 主要功能
 

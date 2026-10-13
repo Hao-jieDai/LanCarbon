@@ -15,6 +15,18 @@ import { ensurePhase4Guide } from "./shared/phase4Guide";
 import { ensurePhase5Guide } from "./shared/phase5Guide";
 import type { PreviewDocument } from "./preview/mystPreview";
 import type { Book, BookCheckIssue, Note, NoteFilter, SaveState, Theme, WorkspaceFile, WorkspaceSortOrder } from "./shared/types";
+import { RESEARCH_PAGES, type ResearchPage, type WorkspaceMode } from "./shared/research";
+import { ResearchWorkspace } from "./components/ResearchWorkspace";
+import { LibraryWorkspace } from "./components/LibraryWorkspace";
+
+const NAVIGATION_KEY = "lancarbon-navigation-v1";
+interface WorkspaceNavigation { mode?: WorkspaceMode; noteId?: string; bookId?: string; pageId?: string; researchPage?: ResearchPage; libraryAssetId?: string }
+function navigation(): WorkspaceNavigation {
+  try {
+    const value = JSON.parse(localStorage.getItem(NAVIGATION_KEY) ?? "{}");
+    return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+  } catch { return {}; }
+}
 
 const THEME_KEY = "lancarbon-theme-v1";
 const LAST_BOOK_KEY = "lancarbon-last-book-v1";
@@ -26,7 +38,11 @@ function initialTheme(): Theme { try { return localStorage.getItem(THEME_KEY) ==
 
 export function App() {
   const [workspace, setWorkspace] = useState<WorkspaceFile>(createEmptyWorkspace());
-  const [mode, setMode] = useState<"notes" | "book">("notes");
+  const [mode, setMode] = useState<WorkspaceMode>(() => { const value = navigation().mode; return value && ["notes", "book", "research", "library"].includes(value) ? value : "notes"; });
+  const [researchPage, setResearchPage] = useState<ResearchPage>(() => { const value = navigation().researchPage; return RESEARCH_PAGES.some(page => page.id === value) ? value! : "run"; });
+  const [libraryAssetId, setLibraryAssetId] = useState<string | null>(() => navigation().libraryAssetId ?? null);
+  const [loadError, setLoadError] = useState("");
+  const lastWritingMode = useRef<"notes" | "book">("notes");
   // View mode belongs to the workspace session, not a keyed note editor.
   const [viewMode, setViewMode] = useState<"edit" | "preview">("edit");
   const [previewNavigation, setPreviewNavigation] = useState<{ noteId: string; anchor: string; sequence: number } | null>(null);
@@ -73,7 +89,7 @@ export function App() {
     let cancelled = false;
     void window.notesDesktop.loadWorkspace().then(result => {
       if (cancelled) return;
-      if (!result.ok) { setSaveState("error"); setLoaded(true); showToast(result.error); return; }
+      if (!result.ok) { setLoadError(result.error); setSaveState("error"); setLoaded(true); return; }
       const base = result.isFirstRun
         ? { ...result.workspace, notes: [...createInitialNotes(), ...result.workspace.notes.filter(note => note.id !== "lancarbon-release-readme")] }
         : result.workspace;
@@ -88,8 +104,11 @@ export function App() {
       workspaceRef.current = next; setWorkspace(next);
       const preferredNotes = result.isFirstRun ? next.notes : base.notes;
       const loose = preferredNotes.filter(note => !getBookForNote(next.books, note.id));
-      setActiveId(sortNotes(loose, initialSort(NOTES_SORT_KEY))[0]?.id ?? null);
-      setActiveBookId(next.books.find(book => book.id === lastBookId())?.id ?? next.books[0]?.id ?? null);
+      const preferred = navigation();
+      setActiveId(loose.find(note => note.id === preferred.noteId)?.id ?? sortNotes(loose, initialSort(NOTES_SORT_KEY))[0]?.id ?? null);
+      const preferredBook = next.books.find(book => book.id === preferred.bookId) ?? next.books.find(book => book.id === lastBookId()) ?? next.books[0];
+      setActiveBookId(preferredBook?.id ?? null);
+      setActivePageId(preferredBook && preferred.pageId && preferredBook.pages[preferred.pageId] ? preferred.pageId : preferredBook?.homePageId ?? null);
       setLoaded(true);
       if (result.isFirstRun || result.migrated || release.changed || guide.changed || phase3.changed || phase4.changed || phase5.changed || languageHeadings.changed) persist(next);
     });
@@ -104,6 +123,11 @@ export function App() {
     if (!loaded || !activeBookId) return;
     try { localStorage.setItem(LAST_BOOK_KEY, activeBookId); } catch { /* optional preference */ }
   }, [loaded, activeBookId]);
+  useEffect(() => {
+    if (!loaded || loadError) return;
+    if (mode === "notes" || mode === "book") lastWritingMode.current = mode;
+    try { localStorage.setItem(NAVIGATION_KEY, JSON.stringify({ mode, noteId: activeId, bookId: activeBookId, pageId: activePageId, researchPage, libraryAssetId })); } catch { /* optional UI state */ }
+  }, [loaded, loadError, mode, activeId, activeBookId, activePageId, researchPage, libraryAssetId]);
 
   const activeBook = useMemo(() => workspace.books.find(book => book.id === activeBookId) ?? null, [workspace.books, activeBookId]);
   const activePage = activeBook && activePageId ? activeBook.pages[activePageId] ?? null : null;
@@ -138,13 +162,13 @@ export function App() {
     setActivePageId(page.id); showToast(section ? "Section created" : "Child page created");
   }, [activeBookId, activePageId, persist, showToast]);
 
-  const switchMode = useCallback((value: "notes" | "book") => {
+  const switchMode = useCallback((value: WorkspaceMode) => {
     const current = workspaceRef.current;
     setMode(value);
     if (value === "notes") {
       const loose = current.notes.filter(note => !getBookForNote(current.books, note.id));
       setActiveId(loose.some(note => note.id === activeId) ? activeId : sortNotes(loose, notesSort)[0]?.id ?? null);
-    } else {
+    } else if (value === "book") {
       const book = current.books.find(item => item.id === activeBookId) ?? current.books[0];
       setActiveBookId(book?.id ?? null);
       setActivePageId(book && activePageId && book.pages[activePageId] ? activePageId : book?.homePageId ?? null);
@@ -157,11 +181,11 @@ export function App() {
       const mod = event.ctrlKey || event.metaKey;
       if (event.ctrlKey && !event.metaKey && !event.shiftKey && !event.altKey && event.key.toLowerCase() === "q") {
         event.preventDefault();
-        if (!event.repeat && !document.querySelector(".modal-backdrop, dialog[open]")) switchMode(mode === "notes" ? "book" : "notes");
+        if (!event.repeat && !document.querySelector(".modal-backdrop, dialog[open]")) switchMode(mode === "notes" ? "book" : mode === "book" ? "notes" : lastWritingMode.current);
       }
       if (mod && event.key.toLowerCase() === "k") { event.preventDefault(); if (mode === "notes") searchRef.current?.focus(); }
-      if (mod && event.key.toLowerCase() === "n") { event.preventDefault(); mode === "book" ? addBookPage(false) : addOrdinaryNote(); }
-      if (mod && !event.shiftKey && !event.altKey && event.key.toLowerCase() === "e" && activeNoteId && !document.querySelector("dialog[open]")) {
+      if (mod && event.key.toLowerCase() === "n" && (mode === "notes" || mode === "book")) { event.preventDefault(); mode === "book" ? addBookPage(false) : addOrdinaryNote(); }
+      if (mod && !event.shiftKey && !event.altKey && event.key.toLowerCase() === "e" && (mode === "notes" || mode === "book") && activeNoteId && !document.querySelector("dialog[open]")) {
         event.preventDefault();
         const next = viewMode === "edit" ? "preview" : "edit";
         setViewMode(next);
@@ -289,10 +313,13 @@ export function App() {
   };
 
   if (!loaded) return <div className="loading-screen" role="status">Loading notes…</div>;
+  if (loadError) return <div className="loading-screen"><section className="foundation-card" role="alert"><h1>Workspace unavailable</h1><p>{loadError}</p><p>Your workspace is protected. Close LanCarbon and choose a compatible version or recover your backup.</p></section></div>;
   return <>
     <main className="app-shell" aria-label="LanCarbon application">
-      <Sidebar notesSort={notesSort} booksSort={booksSort} onNotesSortChange={setNotesSort} onBooksSortChange={setBooksSort} notes={workspace.notes} books={workspace.books} mode={mode} activeBookId={activeBookId} activePageId={activePageId} activeId={activeId} query={query} filter={filter} theme={theme} searchRef={searchRef} onModeChange={switchMode} onBookChange={switchBook} onQueryChange={setQuery} onFilterChange={setFilter} onSelectNote={id => { setActiveId(id); document.body.classList.remove("sidebar-open"); }} onSelectPage={id => { setActivePageId(id); document.body.classList.remove("sidebar-open"); }} onNewNote={addOrdinaryNote} onNewBook={() => setShowCreateBook(true)} onNewPage={addBookPage} onMovePage={(pageId, targetId, placement) => { if (!activeBook) return; const updated = movePage(activeBook, pageId, targetId, placement); persist({ ...workspaceRef.current, books: workspaceRef.current.books.map(book => book.id === activeBook.id ? updated : book) }); }} onBookSettings={() => setShowBookSettings(true)} onExportBook={() => void exportBook()} onBuildBook={() => void checkAndBuildBook()} onPublishBook={() => void openPublishBook()} onDeleteBook={deleteBook} onClear={clearLoose} onEnvironmentSetup={() => setShowEnvironmentSetup(true)} onDataLocation={() => setShowDataLocation(true)} onThemeChange={value => { setTheme(value); showToast(value === "light" ? "Switched to light theme" : "Switched to dark theme"); }} onClose={() => document.body.classList.remove("sidebar-open")} />
-      <Editor onExportPdf={() => void exportPdf()} pdfExporting={pdfExporting} pdfNotice={pdfNotice} onDismissPdfNotice={() => setPdfNotice("")} bibliographyBook={mode === "book" ? activeBook ?? undefined : undefined} onBibliographyBookChange={updated => persist({...workspaceRef.current,books:workspaceRef.current.books.map(book=>book.id===updated.id?updated:book)})} onResourcesChanged={next => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); }} resourceBooks={workspace.books} beforeResourceChange={async () => { const result = await saveNow(); if (!result.ok) throw new Error(result.error); }} resourceNotes={workspace.notes} key={`${mode}:${activeNoteId ?? "empty"}`} previewDocuments={previewDocuments} previewNavigation={previewNavigation} onPreviewNavigate={navigatePreview} onPreviewNavigated={() => setPreviewNavigation(null)} note={activeNote} saveState={saveState} theme={theme} viewMode={viewMode} onViewModeChange={setViewMode} bookContext={activePage ? { isHome: activePage.id === activeBook?.homePageId } : undefined} booksAvailable={workspace.books.length > 0} onChange={updateActive} onNew={mode === "book" ? () => addBookPage(false) : addOrdinaryNote} onPin={togglePin} onDelete={deleteActive} onAddToBook={mode === "notes" ? addActiveToBook : undefined} onRemoveFromBook={mode === "book" && activePage ? removeActiveFromBook : undefined} onPageProperties={mode === "book" && activePage ? () => setShowPageProperties(true) : undefined} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />
+      <Sidebar researchPage={researchPage} onResearchPageChange={setResearchPage} notesSort={notesSort} booksSort={booksSort} onNotesSortChange={setNotesSort} onBooksSortChange={setBooksSort} notes={workspace.notes} books={workspace.books} mode={mode} activeBookId={activeBookId} activePageId={activePageId} activeId={activeId} query={query} filter={filter} theme={theme} searchRef={searchRef} onModeChange={switchMode} onBookChange={switchBook} onQueryChange={setQuery} onFilterChange={setFilter} onSelectNote={id => { setActiveId(id); document.body.classList.remove("sidebar-open"); }} onSelectPage={id => { setActivePageId(id); document.body.classList.remove("sidebar-open"); }} onNewNote={addOrdinaryNote} onNewBook={() => setShowCreateBook(true)} onNewPage={addBookPage} onMovePage={(pageId, targetId, placement) => { if (!activeBook) return; const updated = movePage(activeBook, pageId, targetId, placement); persist({ ...workspaceRef.current, books: workspaceRef.current.books.map(book => book.id === activeBook.id ? updated : book) }); }} onBookSettings={() => setShowBookSettings(true)} onExportBook={() => void exportBook()} onBuildBook={() => void checkAndBuildBook()} onPublishBook={() => void openPublishBook()} onDeleteBook={deleteBook} onClear={clearLoose} onEnvironmentSetup={() => setShowEnvironmentSetup(true)} onDataLocation={() => setShowDataLocation(true)} onThemeChange={value => { setTheme(value); showToast(value === "light" ? "Switched to light theme" : "Switched to dark theme"); }} onClose={() => document.body.classList.remove("sidebar-open")} />
+      {(mode === "notes" || mode === "book") && <Editor onExportPdf={() => void exportPdf()} pdfExporting={pdfExporting} pdfNotice={pdfNotice} onDismissPdfNotice={() => setPdfNotice("")} bibliographyBook={mode === "book" ? activeBook ?? undefined : undefined} onBibliographyBookChange={updated => persist({...workspaceRef.current,books:workspaceRef.current.books.map(book=>book.id===updated.id?updated:book)})} onResourcesChanged={next => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); }} resourceBooks={workspace.books} beforeResourceChange={async () => { const result = await saveNow(); if (!result.ok) throw new Error(result.error); }} resourceNotes={workspace.notes} key={`${mode}:${activeNoteId ?? "empty"}`} previewDocuments={previewDocuments} previewNavigation={previewNavigation} onPreviewNavigate={navigatePreview} onPreviewNavigated={() => setPreviewNavigation(null)} note={activeNote} saveState={saveState} theme={theme} viewMode={viewMode} onViewModeChange={setViewMode} bookContext={activePage ? { isHome: activePage.id === activeBook?.homePageId } : undefined} booksAvailable={workspace.books.length > 0} onChange={updateActive} onNew={mode === "book" ? () => addBookPage(false) : addOrdinaryNote} onPin={togglePin} onDelete={deleteActive} onAddToBook={mode === "notes" ? addActiveToBook : undefined} onRemoveFromBook={mode === "book" && activePage ? removeActiveFromBook : undefined} onPageProperties={mode === "book" && activePage ? () => setShowPageProperties(true) : undefined} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />}
+      {mode === "research" && <ResearchWorkspace page={researchPage} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />}
+      {mode === "library" && <LibraryWorkspace key={dataLocation} notes={workspace.notes} books={workspace.books} selectedId={libraryAssetId} onSelect={setLibraryAssetId} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />}
     </main>
     <button className="sidebar-backdrop" aria-label="Close notes list" onClick={() => document.body.classList.remove("sidebar-open")} />
     <div className={`toast ${toast ? "show" : ""}`} role="status" aria-live="polite">{toast}</div>
