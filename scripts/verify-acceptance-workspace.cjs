@@ -19,7 +19,7 @@ function personal(workspace) {
   });
 }
 
-async function verify(root, backup, expectedVersion) {
+async function verify(root, backup, expectedVersion, reportDirectory) {
   root = path.resolve(root); backup = path.resolve(backup);
   const manifest = await verifySnapshot(backup);
   const initial = JSON.parse(await fs.readFile(path.join(backup, "Data", "notes.json"), "utf8"));
@@ -35,7 +35,7 @@ async function verify(root, backup, expectedVersion) {
     const version = await app.evaluate(({ app }) => app.getVersion());
     if (version !== expectedVersion) throw new Error("Unexpected installed application version: " + version);
     const data = await page.evaluate(() => window.notesDesktop.getDataLocation());
-    if (!data.ok || await fs.realpath(data.path) !== await fs.realpath(path.join(root, "Data"))) throw new Error("Acceptance application is not using its isolated data folder");
+    if (!data.ok || await fs.realpath(data.path) !== await fs.realpath(path.join(root, "Data"))) throw new Error("Application is not using the expected data folder");
     const result = await page.evaluate(() => window.notesDesktop.loadWorkspace());
     if (!result.ok || JSON.stringify(personal(result.workspace)) !== JSON.stringify(expectedPersonal)) throw new Error("Personal Notes, Books or publishing bindings changed");
     if (expectedVersion === "2.1.0") {
@@ -56,11 +56,13 @@ async function verify(root, backup, expectedVersion) {
   const saved = JSON.parse(await fs.readFile(path.join(root, "Data", "notes.json"), "utf8"));
   if (JSON.stringify(personal(saved)) !== JSON.stringify(expectedPersonal)) throw new Error("Saved user writing changed");
   const summary = { version: expectedVersion, root, personalNotes: expectedPersonal.notes.length, personalBooks: expectedPersonal.books.length, personalResourceFiles: resources, userDataPreserved: true };
-  await fs.writeFile(path.join(path.dirname(root), `verified-${expectedVersion}-${Date.now()}.json`), JSON.stringify(summary, null, 2));
+  const reports = path.resolve(reportDirectory ?? path.dirname(root));
+  await fs.mkdir(reports, { recursive: true });
+  await fs.writeFile(path.join(reports, `verified-${expectedVersion}-${Date.now()}.json`), JSON.stringify(summary, null, 2));
   return summary;
 }
 if (require.main === module) {
-  const [root, backup, version] = process.argv.slice(2);
-  if (!root || !backup || !version) throw new Error("Usage: node scripts/verify-acceptance-workspace.cjs ROOT BACKUP VERSION");
-  verify(root, backup, version).then(result => console.log(JSON.stringify(result))).catch(error => { console.error(error.message); process.exitCode = 1; });
+  const [root, backup, version, reportDirectory] = process.argv.slice(2);
+  if (!root || !backup || !version) throw new Error("Usage: node scripts/verify-acceptance-workspace.cjs ROOT BACKUP VERSION [REPORT_DIRECTORY]");
+  verify(root, backup, version, reportDirectory).then(result => console.log(JSON.stringify(result))).catch(error => { console.error(error.message); process.exitCode = 1; });
 }

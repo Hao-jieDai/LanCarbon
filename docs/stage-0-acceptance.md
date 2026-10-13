@@ -6,9 +6,11 @@
 
 ## 验收入口
 
-优先使用项目 `acceptance` 目录中的 `打开第0阶段验收.cmd`。该入口启动隔离安装的 LanCarbon，使用独立的数据和配置副本。日常安装仍位于 `D:\LanCarbon`，稳定版为 1.1.4。
+日常安装位于 `D:\LanCarbon`，已升级为 2.1.0。使用原来的桌面快捷方式即可验收四工作区及教程等功能，编辑内容保存在原有工作区。
 
-`release/LanCarbon-2.1.0-x64-Setup.exe` 是正式应用身份的安装包。完成隔离验收后，可以将其安装到日常 LanCarbon 根目录。阶段验收不等同于创建 GitHub Release 草稿。
+项目 `acceptance` 目录中的 `打开第0阶段验收.cmd` 用于可选的独立测试，使用升级前资料的副本。该副本上的编辑与日常工作区分别保存。
+
+`release/LanCarbon-2.1.0-x64-Setup.exe` 是已用于日常升级的正式应用身份安装包。阶段验收不等同于创建 GitHub Release 草稿。
 
 ## 操作检查
 
@@ -28,6 +30,8 @@
 ## 稳定版本与备份
 
 升级前快照位于项目 `backups/phase-0-2026-10-13`，其中 `Installer` 保存已核对的 1.1.4 安装包。备份包含实际 Data、Config、Builds、Exports、PDFs，以及当时存在的根目录 Library。Cache、Temp 和可重新安装的 Tools 不属于该用户资料快照。
+
+日常安装升级前另保存了最新快照 `backups/pre-install-2.1.0-2026-10-13`；需要回到升级前状态时，优先使用这份快照及其中的 1.1.4 安装包。
 
 `recovery.json` 记录全部备份文件的大小及 SHA-256。验证方式：
 

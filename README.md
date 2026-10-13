@@ -101,7 +101,11 @@ npm run dev
 
 Development defaults to `.dev-workspace/LanCarbon` inside this checkout. Set `LANCARBON_ROOT` only when deliberately choosing another isolated root.
 
+Installed-workspace verification accepts an optional report directory: `node scripts/verify-acceptance-workspace.cjs ROOT BACKUP VERSION REPORT_DIRECTORY`. Choose a report folder inside the checkout when verifying a daily installation.
+
 开发启动默认使用当前项目中的 `.dev-workspace/LanCarbon`，与日常安装隔离；仅在明确指定另一处独立目录时设置 `LANCARBON_ROOT`。
+
+已安装工作区验证可通过 `node scripts/verify-acceptance-workspace.cjs ROOT BACKUP VERSION REPORT_DIRECTORY` 指定报告目录。验证日常安装时，请将报告保存到项目内的独立目录。
 
 ```bash
 npm run typecheck
