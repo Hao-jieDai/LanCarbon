@@ -182,6 +182,8 @@ export interface NotesDesktopApi {
     remove(ids: string[]): Promise<{ok:true;removed:boolean;workspace?:WorkspaceFile} | {ok:false;error:string}>;
     image(id: string): Promise<{ ok: true; url: string } | { ok: false; error: string }>;
     saveCopy(id: string): Promise<OperationResult>;
+    reveal?(id: string): Promise<OperationResult>;
+    rename?(id: string, name: string): Promise<{ ok: true; asset: import("./assets").Asset } | { ok: false; error: string }>;
     chooseBibliography(): Promise<{ok:true;source:BibliographySource}|{ok:false;canceled?:boolean;error:string}>;
   };
   loadWorkspace(): Promise<LoadWorkspaceResult>;

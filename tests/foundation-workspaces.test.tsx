@@ -18,6 +18,24 @@ beforeEach(() => {
 });
 
 describe("foundation workspaces", () => {
+  it("renames resource metadata and navigates its writing reference without rewriting the Note", async () => {
+    const linked = { ...note, content: `Before\n[Original label](assets/${asset.id})\nAfter` };
+    vi.mocked(window.notesDesktop.loadWorkspace).mockResolvedValue({ ok: true, isFirstRun: false, migrated: false, workspace: { version: 2, notes: [linked, homeNote], books: [book] } });
+    window.notesDesktop.assets!.rename = vi.fn().mockImplementation(async (id, name) => ({ ok: true, asset: { ...asset, id, name } }));
+    render(<App />); await screen.findByDisplayValue(note.title);
+    fireEvent.click(screen.getByRole("button", { name: "Library" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Original.pdf" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rename Original.pdf" }));
+    fireEvent.change(screen.getByLabelText("Resource name"), { target: { value: "Renamed.pdf" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save name" }));
+    expect(await screen.findByRole("heading", { name: "Renamed.pdf" })).toBeVisible();
+    expect(window.notesDesktop.assets!.rename).toHaveBeenCalledWith(asset.id, "Renamed.pdf");
+    fireEvent.click(screen.getByRole("button", { name: /Notes \/ Personal writing · line 2/ }));
+    await screen.findByDisplayValue(note.title);
+    expect(screen.getByLabelText("Note content")).toHaveTextContent("Original label");
+    expect(document.querySelector(".cm-activeLine")).toHaveTextContent(asset.id);
+    expect(window.notesDesktop.saveWorkspace).toHaveBeenCalledWith(expect.objectContaining({ notes: expect.arrayContaining([expect.objectContaining({ id: note.id, content: linked.content })]) }));
+  });
   it("keeps edited writing across all workspaces and restores Research selection after restarting", async () => {
     const view = render(<App />); await screen.findByDisplayValue("Personal writing");
     fireEvent.change(screen.getByLabelText("Note title"), { target: { value: "Edited writing" } });
@@ -29,7 +47,7 @@ describe("foundation workspaces", () => {
     expect(screen.getByRole("button", { name: "Research" })).toHaveAttribute("aria-pressed", "true");
     await waitFor(() => expect(window.notesDesktop.saveWorkspace).toHaveBeenCalledWith(expect.objectContaining({ notes: expect.arrayContaining([expect.objectContaining({ id: note.id, title: "Edited writing" })]) })));
     fireEvent.click(screen.getByRole("button", { name: "Library" }));
-    fireEvent.click(await screen.findByRole("button", { name: /Original.pdf/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Original.pdf" }));
     fireEvent.click(screen.getByRole("button", { name: "Save a copy" }));
     expect(window.notesDesktop.assets!.saveCopy).toHaveBeenCalledWith(asset.id);
     fireEvent.click(screen.getByRole("button", { name: "Notes" }));

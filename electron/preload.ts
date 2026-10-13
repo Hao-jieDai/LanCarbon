@@ -7,6 +7,8 @@ const api: NotesDesktopApi = {
     openLibrary: () => ipcRenderer.invoke("foundation:open-library")
   },
   assets: {
+    reveal: id => ipcRenderer.invoke("assets:reveal", id),
+    rename: (id, name) => ipcRenderer.invoke("assets:rename", id, name),
     remove: ids => ipcRenderer.invoke("assets:remove",ids),
     list: () => ipcRenderer.invoke("assets:list"),
     choose: imageOnly => ipcRenderer.invoke("assets:choose", imageOnly),

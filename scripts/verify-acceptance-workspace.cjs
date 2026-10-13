@@ -38,7 +38,7 @@ async function verify(root, backup, expectedVersion, reportDirectory) {
     if (!data.ok || await fs.realpath(data.path) !== await fs.realpath(path.join(root, "Data"))) throw new Error("Application is not using the expected data folder");
     const result = await page.evaluate(() => window.notesDesktop.loadWorkspace());
     if (!result.ok || JSON.stringify(personal(result.workspace)) !== JSON.stringify(expectedPersonal)) throw new Error("Personal Notes, Books or publishing bindings changed");
-    if (expectedVersion === "2.1.0") {
+    if (expectedVersion.startsWith("2.1.")) {
       for (const name of ["Notes", "Books", "Research", "Library"]) await page.getByRole("button", { name, exact: true }).waitFor();
       const tutorial = result.workspace.books.find(book => book.id === "lancarbon-from-zero-to-one");
       if (!tutorial?.pages["tutorial-page-s6"]) throw new Error("The independent Research and Library tutorial chapter is missing");
@@ -48,13 +48,15 @@ async function verify(root, backup, expectedVersion, reportDirectory) {
   const officialAssets = JSON.parse(await fs.readFile(path.resolve("resources/starter-content/assets.json"), "utf8"));
   const officialFiles = new Set(officialAssets.assets.map(asset => asset.file ?? asset.id));
   let resources = 0;
-  for (const entry of manifest.files.filter(entry => entry.path.startsWith("Data/assets/") && !officialFiles.has(path.basename(entry.path)))) {
-    const bytes = await fs.readFile(path.join(root, entry.path));
+  for (const entry of manifest.files.filter(entry => (entry.path.startsWith("Data/assets/") || entry.path.startsWith("Library/assets/")) && !officialFiles.has(path.basename(entry.path)))) {
+    const resourcePath = expectedVersion === "2.1.1" && entry.path.startsWith("Data/assets/") ? "Library/assets/" + entry.path.slice("Data/assets/".length) : entry.path;
+    const bytes = await fs.readFile(path.join(root, resourcePath));
     if (createHash("sha256").update(bytes).digest("hex").toUpperCase() !== entry.sha256) throw new Error("A personal original changed");
     resources++;
   }
   const saved = JSON.parse(await fs.readFile(path.join(root, "Data", "notes.json"), "utf8"));
   if (JSON.stringify(personal(saved)) !== JSON.stringify(expectedPersonal)) throw new Error("Saved user writing changed");
+  if (expectedVersion === "2.1.1" && await fs.stat(path.join(root, "Data", "assets")).catch(() => null)) throw new Error("Legacy Data/assets was not retired");
   const summary = { version: expectedVersion, root, personalNotes: expectedPersonal.notes.length, personalBooks: expectedPersonal.books.length, personalResourceFiles: resources, userDataPreserved: true };
   const reports = path.resolve(reportDirectory ?? path.dirname(root));
   await fs.mkdir(reports, { recursive: true });

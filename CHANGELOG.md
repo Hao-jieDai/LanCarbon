@@ -2,6 +2,21 @@
 
 All notable changes to official LanCarbon releases are recorded here.
 
+## 2.1.1 — 2026-10-13
+
+### Added
+
+- Resource-folder migration to Library/assets with copy verification, conflict checks and retry recovery, preserving Workspace v2, resource IDs and writing links.
+- Library reference navigation to Notes/Book writing lines, Book settings and bibliography panels.
+- Containing-folder actions and resource renaming with extension, duplicate-name and built-in-resource safeguards.
+
+### Changed
+
+- Compact Library rows and a fixed selected-resource panel with independently scrolling file/reference lists.
+- Save a copy sits beside the filename; redundant storage text is removed and introductory text uses the available width.
+- Newly imported, pasted and dropped writing resources and managed tutorial images use Library/assets; assets.json remains in Data.
+- Updated the bilingual ReadMe and the corresponding long-term Research/Library tutorial instructions.
+
 ## 2.1.0 — 2026-10-13
 
 ### Added

@@ -40,7 +40,7 @@ test("four workspaces preserve writing, resources, selections and isolated direc
     await expect(page.getByRole("button", { name: "Research", exact: true })).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "Library", exact: true }).click();
     await page.getByLabel("Find Library resource").fill("Original.pdf");
-    await page.getByRole("button", { name: /Original.pdf/ }).click();
+    await page.getByRole("button", { name: "Original.pdf", exact: true }).click();
     await app.evaluate(({ dialog }, filename) => { dialog.showSaveDialog = (async () => ({ canceled: false, filePath: filename })) as typeof dialog.showSaveDialog; }, path.join(root, "saved-original.pdf"));
     await page.getByRole("button", { name: "Save a copy", exact: true }).click();
     await expect.poll(() => fs.readFile(path.join(root, "saved-original.pdf")).then(value => value.equals(bytes)).catch(() => false)).toBe(true);
@@ -71,7 +71,7 @@ test("four workspaces preserve writing, resources, selections and isolated direc
     const saved = JSON.parse(await fs.readFile(path.join(data, "notes.json"), "utf8"));
     expect(saved.version).toBe(2);
     expect(saved.notes.find((item: { id: string }) => item.id === note.id).content).toBe(note.content);
-    expect(await fs.readFile(path.join(data, "assets", id))).toEqual(bytes);
+    expect(await fs.readFile(path.join(root, "Library", "assets", id))).toEqual(bytes);
     for (const folder of ["Library/Imports", "Library/AI-Paper", "Data/Library", "Data/Research/Templates", "Data/Research/Outputs", "Data/Research/Records", "Data/Research/Chats"]) expect((await fs.stat(path.join(root, folder))).isDirectory()).toBe(true);
   } finally { await app.close().catch(() => undefined); await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 });

@@ -6,7 +6,7 @@ import { EnvironmentSetupPanel } from "./components/EnvironmentSetupPanel";
 import { Editor } from "./components/Editor";
 import { Sidebar } from "./components/Sidebar";
 import { AssetConflictDialog } from "./components/AssetConflictDialog";
-import type { AssetConflictRequest } from "./shared/assets";
+import type { AssetConflictRequest, ResourceUsage, EditorNavigation } from "./shared/assets";
 import { addNoteToBook, createBook, createEmptyWorkspace, getBookForNote, isValidExportPath, movePage, removeBookLanguageHeadings, removePageFromBook, updatePageMetadata } from "./shared/books";
 import { createInitialNotes, createNote, ensureReleaseReadme, parseTags, sortNotes } from "./shared/notes";
 import { ensurePhase2Guide } from "./shared/releaseGuide";
@@ -46,6 +46,7 @@ export function App() {
   // View mode belongs to the workspace session, not a keyed note editor.
   const [viewMode, setViewMode] = useState<"edit" | "preview">("edit");
   const [previewNavigation, setPreviewNavigation] = useState<{ noteId: string; anchor: string; sequence: number } | null>(null);
+  const [editorNavigation, setEditorNavigation] = useState<EditorNavigation | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeBookId, setActiveBookId] = useState<string | null>(null);
   const [activePageId, setActivePageId] = useState<string | null>(null);
@@ -303,6 +304,20 @@ export function App() {
     const result = await window.notesDesktop.openDataLocation();
     if (!result.ok) showToast(result.error);
   };
+  const navigateResource = async (usage: ResourceUsage) => {
+    const saved = await saveNow();
+    if (!saved.ok) { showToast(saved.error); return; }
+    const current = workspaceRef.current;
+    const book = usage.bookId ? current.books.find(book => book.id === usage.bookId) : undefined;
+    const page = book && (usage.noteId ? Object.values(book.pages).find(page => page.noteId === usage.noteId) : book.pages[book.homePageId]);
+    const noteId = page?.noteId ?? usage.noteId;
+    if (!noteId || !current.notes.some(note => note.id === noteId) || (usage.bookId && !page)) { showToast("This reference is no longer available"); return; }
+    if (book && page) { setMode("book"); setActiveBookId(book.id); setActivePageId(page.id); }
+    else { setMode("notes"); setActiveId(noteId); }
+    setViewMode("edit"); setPreviewNavigation(null);
+    if (usage.kind === "settings") setShowBookSettings(true);
+    else setEditorNavigation({ noteId, line: usage.line || 1, sequence: Date.now(), bibliography: usage.kind === "bibliography" });
+  };
 
   const savePageProperties = (value: { exportPath: string; showInToc: boolean; metadata: typeof activePage extends infer _T ? NonNullable<typeof activePage>["metadata"] : never }) => {
     if (!activeBook || !activePage) return;
@@ -317,9 +332,9 @@ export function App() {
   return <>
     <main className="app-shell" aria-label="LanCarbon application">
       <Sidebar researchPage={researchPage} onResearchPageChange={setResearchPage} notesSort={notesSort} booksSort={booksSort} onNotesSortChange={setNotesSort} onBooksSortChange={setBooksSort} notes={workspace.notes} books={workspace.books} mode={mode} activeBookId={activeBookId} activePageId={activePageId} activeId={activeId} query={query} filter={filter} theme={theme} searchRef={searchRef} onModeChange={switchMode} onBookChange={switchBook} onQueryChange={setQuery} onFilterChange={setFilter} onSelectNote={id => { setActiveId(id); document.body.classList.remove("sidebar-open"); }} onSelectPage={id => { setActivePageId(id); document.body.classList.remove("sidebar-open"); }} onNewNote={addOrdinaryNote} onNewBook={() => setShowCreateBook(true)} onNewPage={addBookPage} onMovePage={(pageId, targetId, placement) => { if (!activeBook) return; const updated = movePage(activeBook, pageId, targetId, placement); persist({ ...workspaceRef.current, books: workspaceRef.current.books.map(book => book.id === activeBook.id ? updated : book) }); }} onBookSettings={() => setShowBookSettings(true)} onExportBook={() => void exportBook()} onBuildBook={() => void checkAndBuildBook()} onPublishBook={() => void openPublishBook()} onDeleteBook={deleteBook} onClear={clearLoose} onEnvironmentSetup={() => setShowEnvironmentSetup(true)} onDataLocation={() => setShowDataLocation(true)} onThemeChange={value => { setTheme(value); showToast(value === "light" ? "Switched to light theme" : "Switched to dark theme"); }} onClose={() => document.body.classList.remove("sidebar-open")} />
-      {(mode === "notes" || mode === "book") && <Editor onExportPdf={() => void exportPdf()} pdfExporting={pdfExporting} pdfNotice={pdfNotice} onDismissPdfNotice={() => setPdfNotice("")} bibliographyBook={mode === "book" ? activeBook ?? undefined : undefined} onBibliographyBookChange={updated => persist({...workspaceRef.current,books:workspaceRef.current.books.map(book=>book.id===updated.id?updated:book)})} onResourcesChanged={next => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); }} resourceBooks={workspace.books} beforeResourceChange={async () => { const result = await saveNow(); if (!result.ok) throw new Error(result.error); }} resourceNotes={workspace.notes} key={`${mode}:${activeNoteId ?? "empty"}`} previewDocuments={previewDocuments} previewNavigation={previewNavigation} onPreviewNavigate={navigatePreview} onPreviewNavigated={() => setPreviewNavigation(null)} note={activeNote} saveState={saveState} theme={theme} viewMode={viewMode} onViewModeChange={setViewMode} bookContext={activePage ? { isHome: activePage.id === activeBook?.homePageId } : undefined} booksAvailable={workspace.books.length > 0} onChange={updateActive} onNew={mode === "book" ? () => addBookPage(false) : addOrdinaryNote} onPin={togglePin} onDelete={deleteActive} onAddToBook={mode === "notes" ? addActiveToBook : undefined} onRemoveFromBook={mode === "book" && activePage ? removeActiveFromBook : undefined} onPageProperties={mode === "book" && activePage ? () => setShowPageProperties(true) : undefined} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />}
+      {(mode === "notes" || mode === "book") && <Editor navigation={editorNavigation?.noteId === activeNoteId ? editorNavigation : null} onNavigated={() => setEditorNavigation(null)} onExportPdf={() => void exportPdf()} pdfExporting={pdfExporting} pdfNotice={pdfNotice} onDismissPdfNotice={() => setPdfNotice("")} bibliographyBook={mode === "book" ? activeBook ?? undefined : undefined} onBibliographyBookChange={updated => persist({...workspaceRef.current,books:workspaceRef.current.books.map(book=>book.id===updated.id?updated:book)})} onResourcesChanged={next => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); }} resourceBooks={workspace.books} beforeResourceChange={async () => { const result = await saveNow(); if (!result.ok) throw new Error(result.error); }} resourceNotes={workspace.notes} key={`${mode}:${activeNoteId ?? "empty"}`} previewDocuments={previewDocuments} previewNavigation={previewNavigation} onPreviewNavigate={navigatePreview} onPreviewNavigated={() => setPreviewNavigation(null)} note={activeNote} saveState={saveState} theme={theme} viewMode={viewMode} onViewModeChange={setViewMode} bookContext={activePage ? { isHome: activePage.id === activeBook?.homePageId } : undefined} booksAvailable={workspace.books.length > 0} onChange={updateActive} onNew={mode === "book" ? () => addBookPage(false) : addOrdinaryNote} onPin={togglePin} onDelete={deleteActive} onAddToBook={mode === "notes" ? addActiveToBook : undefined} onRemoveFromBook={mode === "book" && activePage ? removeActiveFromBook : undefined} onPageProperties={mode === "book" && activePage ? () => setShowPageProperties(true) : undefined} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />}
       {mode === "research" && <ResearchWorkspace page={researchPage} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />}
-      {mode === "library" && <LibraryWorkspace key={dataLocation} notes={workspace.notes} books={workspace.books} selectedId={libraryAssetId} onSelect={setLibraryAssetId} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />}
+      {mode === "library" && <LibraryWorkspace onNavigate={usage => void navigateResource(usage)} key={dataLocation} notes={workspace.notes} books={workspace.books} selectedId={libraryAssetId} onSelect={setLibraryAssetId} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />}
     </main>
     <button className="sidebar-backdrop" aria-label="Close notes list" onClick={() => document.body.classList.remove("sidebar-open")} />
     <div className={`toast ${toast ? "show" : ""}`} role="status" aria-live="polite">{toast}</div>

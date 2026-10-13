@@ -13,6 +13,22 @@ const directories: string[] = [];
 async function temporary() { const dir = await fs.mkdtemp(path.join(os.tmpdir(),"lancarbon-assets-")); directories.push(dir); return dir; }
 afterEach(async () => { for (const dir of directories.splice(0)) await fs.rm(dir,{recursive:true,force:true}); });
 const png = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j2XcAAAAASUVORK5CYII=", "base64");
+it("renames catalog names while keeping bytes, IDs, writing links and file extensions stable", async () => {
+  const data = await temporary(), files = path.join(await temporary(), "assets");
+  const store = new AssetStore(data, files);
+  const first = await store.importBytes("Original.pdf", Buffer.from("Original PDF"), false);
+  const reference = assetMarkdown(first);
+  const renamed = await store.rename(first.id, "New title.pdf");
+  expect(renamed.id).toBe(first.id); expect(renamed.file).toBe(first.file);
+  expect(await store.filePath(first.id)).toBe(await fs.realpath(path.join(files, first.file!)));
+  expect((await new AssetStore(data, files).read(first.id)).bytes.toString()).toBe("Original PDF");
+  expect(assetReferences(reference)[0].id).toBe(first.id);
+  await store.importBytes("Other.pdf", Buffer.from("Other PDF"), false);
+  for (const invalid of ["../escape.pdf", "CON.pdf", "Other.pdf", "Wrong.txt", ""]) await expect(store.rename(first.id, invalid)).rejects.toThrow();
+  expect((await store.list()).find(asset => asset.id === first.id)?.name).toBe("New title.pdf");
+  const protectedStore = new AssetStore(data, files, new Set([first.id]));
+  await expect(protectedStore.rename(first.id, "Changed.pdf")).rejects.toThrow("Built-in tutorial");
+});
 it("keeps imported copies across restart, deduplicates, and separates equal file names", async () => {
   const directory = await temporary(), store = new AssetStore(directory);
   const first = await store.importBytes("中文 图.png",png,true);

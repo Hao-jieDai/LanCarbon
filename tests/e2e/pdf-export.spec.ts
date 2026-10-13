@@ -48,7 +48,7 @@ test("Notes and individual Book pages export offline PDFs, save edits and preser
       await page.getByRole("button", { name: title, exact: true }).click(); await page.getByRole("button", { name: "Preview", exact: true }).click();
       const output = info.outputPath(file); await saveTo(output); await page.getByRole("button", { name: "Export PDF", exact: true }).click(); await checkPdf(output, false);
     }
-    await fs.unlink(path.join(directory, "assets", image.id));
+    await fs.unlink(path.join(directory, "Library", "assets", image.id));
     const childPdf = info.outputPath("book-child.pdf"), previous = await fs.readFile(childPdf); await saveTo(childPdf); await page.getByRole("button", { name: "Export PDF", exact: true }).click();
     await expect(page.locator(".pdf-notice")).toContainText("Missing or damaged resource"); expect(await fs.readFile(childPdf)).toEqual(previous);
     const sourceAfter = JSON.parse(await fs.readFile(path.join(directory, "notes.json"), "utf8"));

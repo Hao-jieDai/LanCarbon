@@ -11,12 +11,14 @@ import { applyDraft, openDraft, runCommand, type Command, type PanelDraft, type 
 import { FormattingToolbar } from "./FormattingToolbar";
 import { MarkdownInsertDialog } from "./MarkdownInsertDialog";
 import { AssetPanel } from "./AssetPanel";
-import { assetMarkdown, MAX_ASSET_BYTES, MAX_IMAGE_BYTES, type Asset } from "../shared/assets";
+import { assetMarkdown, MAX_ASSET_BYTES, MAX_IMAGE_BYTES, type Asset, type EditorNavigation } from "../shared/assets";
 import type { Note, Book } from "../shared/types";
 import { ImageSettingsDialog } from "./ImageSettingsDialog";
 import { BibliographyPanel } from "./BibliographyPanel";
 
 interface MarkdownEditorProps {
+  navigation?: EditorNavigation | null;
+  onNavigated?(): void;
   bibliographyBook?: Book;
   onBibliographyBookChange?(book:Book):void;
   resourceNotes?: Note[];
@@ -82,7 +84,7 @@ function editorTheme(theme: Theme) {
   ];
 }
 
-export function MarkdownEditor({ value, theme, visible = true, onChange, resourceNotes = [], resourceBooks = [], beforeResourceChange, onResourcesChanged,bibliographyBook,onBibliographyBookChange }: MarkdownEditorProps) {
+export function MarkdownEditor({ value, theme, visible = true, onChange, resourceNotes = [], resourceBooks = [], beforeResourceChange, onResourcesChanged,bibliographyBook,onBibliographyBookChange,navigation,onNavigated }: MarkdownEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -190,6 +192,15 @@ export function MarkdownEditor({ value, theme, visible = true, onChange, resourc
   }, [theme]);
 
   useEffect(() => { if (visible) viewRef.current?.requestMeasure(); else { setDraft(null); setImageSettings(null); setResourcesOpen(false); setCitationsOpen(false); setMessage(""); } }, [visible]);
+  useEffect(() => {
+    const view = viewRef.current;
+    if (!visible || !view || !navigation) return;
+    const line = view.state.doc.line(Math.min(view.state.doc.lines, Math.max(1, navigation.line)));
+    view.dispatch({ selection: { anchor: line.from, head: line.to }, effects: EditorView.scrollIntoView(line.from, { y: "center" }) });
+    view.focus();
+    if (navigation.bibliography && bibliographyBook) setCitationsOpen(true);
+    onNavigated?.();
+  }, [visible, navigation, bibliographyBook, onNavigated]);
 
   return <div className="markdown-workspace" hidden={!visible}
     onPasteCapture={event => {

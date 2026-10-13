@@ -5,8 +5,11 @@ import { DeleteIcon, PinIcon } from "./Icons";
 import { MarkdownEditor } from "./MarkdownEditor";
 import { MarkdownPreview } from "./MarkdownPreview";
 import type { PreviewDocument } from "../preview/mystPreview";
+import type { EditorNavigation } from "../shared/assets";
 
 interface EditorProps {
+  navigation?: EditorNavigation | null;
+  onNavigated?(): void;
   bibliographyBook?: Book;
   onBibliographyBookChange?(book:Book):void;
   resourceNotes?: Note[];
@@ -88,7 +91,7 @@ export function Editor(props: EditorProps) {
           <div className="date-line">{longDate(props.note.updatedAt)}</div>
           <input spellCheck={false} autoCorrect="off" autoCapitalize="off" className="title-input" aria-label="Note title" placeholder="Untitled Note" maxLength={120} value={props.note.title} onChange={event => props.onChange({ title: event.target.value })} />
           <div className="accent-line" />
-          <MarkdownEditor bibliographyBook={props.bibliographyBook} onBibliographyBookChange={props.onBibliographyBookChange} onResourcesChanged={props.onResourcesChanged} key={props.note.id} resourceNotes={props.resourceNotes} resourceBooks={props.resourceBooks} beforeResourceChange={props.beforeResourceChange} value={props.note.content} theme={props.theme} visible={viewMode === "edit"} onChange={content => props.onChange({ content })} />
+          <MarkdownEditor navigation={props.navigation} onNavigated={props.onNavigated} bibliographyBook={props.bibliographyBook} onBibliographyBookChange={props.onBibliographyBookChange} onResourcesChanged={props.onResourcesChanged} key={props.note.id} resourceNotes={props.resourceNotes} resourceBooks={props.resourceBooks} beforeResourceChange={props.beforeResourceChange} value={props.note.content} theme={props.theme} visible={viewMode === "edit"} onChange={content => props.onChange({ content })} />
           <MarkdownPreview content={props.note.content} visible={viewMode === "preview"} document={props.previewDocuments?.find(doc => doc.id === props.note?.id)} documents={props.previewDocuments} navigation={props.previewNavigation} onNavigate={props.onPreviewNavigate} onNavigated={props.onPreviewNavigated} />
           <div className="tag-area"><span className="tag-prefix">#</span><input spellCheck={false} autoCorrect="off" autoCapitalize="off" aria-label="Tags" placeholder="Add tags, separated by commas" value={tagsDraft} onChange={event => { setTagsDraft(event.target.value); props.onChange({ tags: parseTags(event.target.value) }); }} /></div>
         </article>

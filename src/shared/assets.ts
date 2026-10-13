@@ -7,8 +7,10 @@ export interface Asset {
   mime: string;
   createdAt: string;
   missing?: boolean;
+  systemManaged?: boolean;
 }
-export interface ResourceUsage { id: string; noteId?: string; bookId?: string; title: string; location: string; line: number }
+export interface ResourceUsage { id: string; noteId?: string; bookId?: string; title: string; location: string; line: number; kind?: "content" | "settings" | "bibliography" }
+export interface EditorNavigation { noteId: string; line: number; sequence: number; bibliography?: boolean }
 export type AssetConflictChoice = "replace" | "keep" | "cancel";
 export interface AssetConflictRequest {
   id: string;
@@ -24,9 +26,9 @@ export function resourceUsages(notes: import("./types").Note[], books: import(".
   }
   for (const book of books) for (const field of ["logo","favicon"] as const) {
     const id = assetId(book.settings[field] ?? "");
-    if (id) result.push({id,bookId:book.id,title:`Book settings (${field})`,location:`Book: ${book.settings.title}`,line:0});
+    if (id) result.push({id,bookId:book.id,title:`Book settings (${field})`,location:`Book: ${book.settings.title}`,line:0,kind:"settings"});
   }
-  for (const book of books) for (const source of book.settings.bibliography ?? []) result.push({id:source.assetId,bookId:book.id,title:`Bibliography (${source.name})`,location:`Book: ${book.settings.title}`,line:0});
+  for (const book of books) for (const source of book.settings.bibliography ?? []) result.push({id:source.assetId,bookId:book.id,title:`Bibliography (${source.name})`,location:`Book: ${book.settings.title}`,line:0,kind:"bibliography"});
   return result;
 }
 export const ASSET_ID = /^[a-f0-9]{64}\.[a-z0-9]{1,12}$/;

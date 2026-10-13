@@ -23,6 +23,7 @@ import { directoryList, resolveLanCarbonDirectories } from "./app-directories";
 import { EnvironmentManager } from "./environment-manager";
 import type { EnvironmentToolId } from "../src/shared/types";
 import { prepareResearchDirectories } from "./research-directories";
+import { migrateAssetsToLibrary } from "./asset-migration";
 
 let mainWindow: BrowserWindow | null = null;
 const websiteServers = new WebsiteServerManager();
@@ -141,11 +142,15 @@ app.whenReady().then(async () => {
   dataLocationManager = new DataLocationManager(configurationDirectory, directories.data, directories.data);
   dataDirectory = await dataLocationManager.resolve();
   await prepareResearchDirectories(directories.root, dataDirectory);
-  store = new NotesStore(dataDirectory, bundledStarterContent);
+  const managedAssetDirectory = path.join(directories.library, "assets");
+  await migrateAssetsToLibrary(dataDirectory, directories.library);
+  const officialCatalog = JSON.parse(await fs.readFile(path.join(bundledStarterContent, "assets.json"), "utf8"));
+  const systemAssetIds = new Set<string>(officialCatalog.assets.map((asset: { id: string }) => asset.id));
+  store = new NotesStore(dataDirectory, bundledStarterContent, managedAssetDirectory);
   let assetsDirectory = dataDirectory;
-  let assetsManager = new AssetStore(dataDirectory);
+  let assetsManager = new AssetStore(dataDirectory, managedAssetDirectory, systemAssetIds);
   const assetStore = () => {
-    if (assetsDirectory !== dataDirectory) { assetsDirectory = dataDirectory; assetsManager = new AssetStore(dataDirectory); }
+    if (assetsDirectory !== dataDirectory) { assetsDirectory = dataDirectory; assetsManager = new AssetStore(dataDirectory, managedAssetDirectory, systemAssetIds); }
     return assetsManager;
   };
   const runManagedBuild = async (bookId: string, chooseLocation = false) => {
@@ -264,6 +269,14 @@ app.whenReady().then(async () => {
       return { ok: true };
     } catch (e) { return assetError(e); }
   });
+  ipcMain.handle("assets:reveal", async (_event, id: string) => {
+    try { shell.showItemInFolder(await assetStore().filePath(id)); return { ok: true }; }
+    catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("assets:rename", async (_event, id: string, name: string) => {
+    try { return { ok: true, asset: await assetStore().rename(id, name) }; }
+    catch (error) { return assetError(error); }
+  });
   ipcMain.handle("workspace:load", async () => {
     try {
       return { ok: true, ...(await store.loadWorkspace()) };
@@ -301,7 +314,7 @@ app.whenReady().then(async () => {
     try {
       await dataLocationManager.prepareTarget(dataDirectory, target);
       const current = await store.loadWorkspace();
-      const targetStore = new NotesStore(target);
+      const targetStore = new NotesStore(target, bundledStarterContent, managedAssetDirectory);
       await prepareResearchDirectories(directories.root, target);
       await targetStore.saveWorkspace(current.workspace);
       const verification = await targetStore.loadWorkspace();
@@ -496,6 +509,9 @@ app.whenReady().then(async () => {
   });
   await createWindow();
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) void createWindow(); });
+}).catch(error => {
+  dialog.showErrorBox("LanCarbon could not start", error instanceof Error ? error.message : "Unable to prepare the workspace");
+  app.quit();
 });
 
 app.on("before-quit", () => { environmentManager?.cancel(); websiteServers.closeAll(); });

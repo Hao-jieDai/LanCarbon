@@ -281,21 +281,43 @@ button:disabled { cursor: default; opacity: .45; }
 .foundation-card h2 { font-size: 17px; font-weight: 600; overflow-wrap: anywhere; }
 .foundation-card p { color: var(--muted); font-size: 13px; line-height: 1.75; }
 .foundation-card-icon { font-size: 32px; color: var(--accent); }
-.library-search { display: grid; gap: 8px; margin: 28px 0; color: var(--muted); font-size: 12px; }
-.library-search input { padding: 11px 13px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: var(--surface); }
-.library-heading { display: flex; justify-content: space-between; align-items: center; }
-.library-heading h2 { font-size: 16px; }
-.library-heading span { color: var(--muted); font-size: 12px; }
-.library-resource-list { display: grid; gap: 7px; }
-.library-resource { display: flex; gap: 14px; align-items: center; padding: 15px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: transparent; text-align: left; min-width: 0; }
-.library-resource:hover, .library-resource.selected { background: var(--surface); border-color: var(--accent); }
-.library-resource > span:nth-child(2) { flex: 1; min-width: 0; }
-.library-resource strong { display: block; overflow-wrap: anywhere; font-size: 13px; }
-.library-resource small, .library-resource > span:last-child { color: var(--muted); font-size: 11px; }
-.library-file-kind { display: grid; place-items: center; flex: none; min-width: 44px; height: 44px; padding: 5px; border-radius: 7px; background: var(--surface); color: var(--accent); font-size: 10px; }
-.library-empty, .foundation-error { padding: 20px 0; color: var(--muted); font-size: 13px; }
-.foundation-error { color: var(--danger); }
-.library-detail li { color: var(--muted); font-size: 12px; line-height: 1.8; overflow-wrap: anywhere; }
+/* Keep the selected reference panel outside the file-list scroller. */
+.library-content { display: flex; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; width: min(1120px, calc(100% - 64px)); padding: 22px 0 18px; }
+.library-content .foundation-eyebrow { margin: 0 0 7px; }
+.library-content h1 { margin: 0 0 8px; font-size: 32px; }
+.library-content .foundation-description { max-width: none; margin: 0; font-size: 13px; line-height: 1.6; }
+.library-overview, .library-search, .library-detail, .library-heading, .library-column-heading { flex-shrink: 0; }
+.library-search { display: grid; gap: 5px; margin: 14px 0 12px; color: var(--muted); font-size: 11px; }
+.library-search input { min-width: 0; padding: 8px 11px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: var(--surface); }
+.library-detail { display: flex; flex-direction: column; min-height: 0; max-height: min(170px, 24vh); margin: 0 0 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); }
+.library-detail-heading { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.library-detail-heading h2 { flex: 1; min-width: 0; margin: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.library-detail-heading button { flex: none; padding: 5px 8px; font-size: 11px; }
+.library-reference-list { min-height: 0; overflow: auto; margin-top: 6px; }
+.library-reference-list p { margin: 4px 0; color: var(--muted); font-size: 11px; }
+.library-reference { display: flex; width: 100%; justify-content: space-between; gap: 8px; padding: 5px 0; border: 0; background: transparent; color: var(--muted); text-align: left; font-size: 11px; line-height: 1.45; }
+.library-reference:hover { color: var(--accent); text-decoration: underline; }
+.library-reference span { flex: none; }
+.library-heading { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.library-heading h2 { margin: 0; font-size: 14px; }
+.library-heading span { color: var(--muted); font-size: 11px; }
+.library-column-heading, .library-resource { display: grid; grid-template-columns: minmax(0, 1fr) 74px 66px 68px 100px; gap: 9px; align-items: center; }
+.library-column-heading { padding: 6px 10px; color: var(--muted); font-size: 10px; border-bottom: 1px solid var(--line); }
+.library-resource-list { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding-top: 3px; }
+.library-resource { min-height: 42px; padding: 5px 10px; border: 1px solid transparent; border-bottom-color: var(--line); border-radius: 6px; color: var(--muted); font-size: 11px; }
+.library-resource:hover, .library-resource.selected { background: var(--surface); }
+.library-resource.selected { border-color: var(--accent); }
+.library-select { display: flex; gap: 9px; align-items: center; min-width: 0; padding: 0; border: 0; background: transparent; color: var(--ink); text-align: left; }
+.library-select strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
+.library-file-kind { display: grid; place-items: center; flex: none; width: 30px; height: 25px; border-radius: 5px; background: var(--surface); color: var(--accent); font-size: 9px; }
+.library-missing { color: var(--danger); font-size: 10px; }
+.library-row-actions { display: flex; justify-content: end; gap: 4px; }
+.library-row-actions button { padding: 4px; border: 0; background: transparent; color: var(--muted); font-size: 10px; border-radius: 4px; }
+.library-row-actions button:hover:not(:disabled) { background: var(--paper); color: var(--ink); }
+.library-empty { color: var(--muted); font-size: 12px; padding: 15px 0; }
+.library-content .foundation-error { margin: 0 0 10px; color: var(--danger); font-size: 12px; }
+@media (max-width: 1100px) { .library-column-heading, .library-resource { grid-template-columns: minmax(0, 1fr) 62px 60px 94px; gap: 6px; } .library-type { display: none; } .library-content { width: calc(100% - 40px); } }
+@media (max-height: 680px) { .library-content { padding-top: 14px; } .library-content h1 { font-size: 27px; } .library-content .foundation-eyebrow { display: none; } .library-detail { max-height: 120px; } }
 .workspace-sort { display: flex; align-items: center; gap: 7px; margin-bottom: 10px; color: var(--muted); font-size: 11px; }
 .workspace-sort select { min-width: 0; flex: 1; height: 29px; padding: 0 7px; color: var(--ink); border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font: inherit; }
 

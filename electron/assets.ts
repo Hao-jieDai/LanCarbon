@@ -13,7 +13,12 @@ function imageMime(data: Buffer): string | undefined {
 }
 export class AssetStore {
   private queue: Promise<unknown> = Promise.resolve();
-  constructor(private readonly root: string) {}
+  constructor(private readonly root: string, private readonly filesDirectory = path.join(root, "assets"), private readonly systemIds: ReadonlySet<string> = new Set()) {}
+  private async checkedDirectory(): Promise<string> {
+    const directory = await fs.realpath(this.filesDirectory);
+    if (path.dirname(directory) !== await fs.realpath(path.dirname(this.filesDirectory))) throw new Error("Asset folder leaves the managed directory");
+    return directory;
+  }
   private async manifest(): Promise<Asset[]> {
     try {
       const data = JSON.parse(await fs.readFile(path.join(this.root,"assets.json"),"utf8"));
@@ -22,13 +27,13 @@ export class AssetStore {
     } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return []; throw error; }
   }
   async list(): Promise<Asset[]> {
-    return Promise.all((await this.manifest()).map(async a => ({ ...a, missing: !(await fs.stat(path.join(this.root,"assets",a.file ?? a.id)).catch(() => null))?.isFile() })));
+    return Promise.all((await this.manifest()).map(async a => ({ ...a, ...(this.systemIds.has(a.id) ? { systemManaged: true } : {}), missing: !(await fs.stat(path.join(this.filesDirectory,a.file ?? a.id)).catch(() => null))?.isFile() })));
   }
   async read(id: string): Promise<{ asset: Asset; bytes: Buffer }> {
     if (!ASSET_ID.test(id)) throw new Error("Invalid asset ID");
     const asset = (await this.manifest()).find(a => a.id === id);
     if (!asset) throw new Error("This resource is not in the asset catalog");
-    const directory = await fs.realpath(path.join(this.root,"assets"));
+    const directory = await this.checkedDirectory();
     const file = await fs.realpath(path.join(directory,asset.file ?? id));
     if (path.dirname(file) !== directory) throw new Error("Asset path leaves the managed folder");
     const stat = await fs.stat(file);
@@ -63,17 +68,16 @@ export class AssetStore {
       let id = file;
       if (assets.some(a => a.id === id)) id = `${createHash("sha256").update(file + name + Date.now()).digest("hex")}.${ext}`;
       const asset: Asset = decision === "replace" ? {...conflict!,file,size:bytes.length,mime:mime ?? "application/octet-stream",updatedAt:new Date().toISOString()} : identical || {id,file,name,size:bytes.length,mime:mime ?? "application/octet-stream",createdAt:new Date().toISOString()};
-      await fs.mkdir(path.join(this.root,"assets"), {recursive:true});
-      const actualRoot = await fs.realpath(this.root), actualAssets = await fs.realpath(path.join(this.root,"assets"));
-      if (path.dirname(actualAssets) !== actualRoot) throw new Error("Asset folder leaves the data directory");
-      const target = path.join(this.root,"assets",file);
+      await fs.mkdir(this.filesDirectory, {recursive:true});
+      await this.checkedDirectory();
+      const target = path.join(this.filesDirectory,file);
       // Repair a missing managed copy on re-import; identical imports share one file.
       await fs.writeFile(`${target}.tmp`, bytes);
       await fs.rename(`${target}.tmp`,target);
       const next = decision === "replace" ? assets.map(a => a.id === asset.id ? asset : a) : assets.some(a => a.id === asset.id) ? assets : [...assets,asset];
       await this.writeCatalog(next);
       const previousFile = conflict && (conflict.file ?? conflict.id);
-      if (decision === "replace" && previousFile !== file && !next.some(a => (a.file ?? a.id) === previousFile)) await fs.unlink(path.join(this.root,"assets",previousFile!)).catch(e => { if (e.code !== "ENOENT") throw e; });
+      if (decision === "replace" && previousFile !== file && !next.some(a => (a.file ?? a.id) === previousFile)) await fs.unlink(path.join(this.filesDirectory,previousFile!)).catch(e => { if (e.code !== "ENOENT") throw e; });
       return asset;
     });
     this.queue = action.catch(() => undefined);
@@ -84,6 +88,33 @@ export class AssetStore {
     await fs.writeFile(`${file}.tmp`,JSON.stringify({version:1,assets},null,2),"utf8");
     await fs.rename(`${file}.tmp`,file);
   }
+  async filePath(id: string): Promise<string> {
+    if (!ASSET_ID.test(id)) throw new Error("Invalid asset ID");
+    const asset = (await this.manifest()).find(item => item.id === id);
+    if (!asset) throw new Error("Resource is no longer available");
+    const directory = await this.checkedDirectory();
+    const file = await fs.realpath(path.join(directory, asset.file ?? id));
+    if (path.dirname(file) !== directory || !(await fs.stat(file)).isFile()) throw new Error("Resource is outside the managed folder");
+    return file;
+  }
+  rename(id: string, name: string): Promise<Asset> {
+    const action = this.queue.then(async () => {
+      if (!ASSET_ID.test(id)) throw new Error("Invalid asset ID");
+      if (this.systemIds.has(id)) throw new Error("Built-in tutorial resources are managed by LanCarbon and cannot be renamed.");
+      const assets = await this.manifest(), previous = assets.find(asset => asset.id === id);
+      if (!previous) throw new Error("Resource is no longer available");
+      if (typeof name !== "string") throw new Error("Enter a resource name");
+      name = name.trim();
+      if (!name || name.length > 200 || /[<>:"/\\|?*\x00-\x1f]/.test(name) || /[. ]$/.test(name) || /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(name)) throw new Error("Enter a valid filename of up to 200 characters");
+      if (path.extname(name).toLowerCase() !== path.extname(previous.name).toLowerCase()) throw new Error("Keep the original file extension");
+      if (assets.some(asset => asset.id !== id && asset.name.toLocaleLowerCase() === name.toLocaleLowerCase())) throw new Error("Another resource already uses this name");
+      const asset = { ...previous, name, updatedAt: new Date().toISOString() };
+      await this.writeCatalog(assets.map(item => item.id === id ? asset : item));
+      return asset;
+    });
+    this.queue = action.catch(() => undefined);
+    return action;
+  }
   remove(ids: string[], confirm: (assets: Asset[]) => Promise<boolean>, updateReferences?: () => Promise<() => Promise<void>>): Promise<boolean> {
     const action = this.queue.then(async () => {
       if (!Array.isArray(ids) || !ids.length || !ids.every(id => typeof id === "string" && ASSET_ID.test(id))) throw new Error("Invalid resource selection");
@@ -92,9 +123,9 @@ export class AssetStore {
       if (!await confirm(selected)) return false;
       const remaining = catalog.filter(a => !ids.includes(a.id));
       const files = [...new Set(selected.map(a => a.file ?? a.id))].filter(file => !remaining.some(a => (a.file ?? a.id) === file));
-      const directory = path.join(this.root,"assets");
+      const directory = this.filesDirectory;
       if (files.length && await fs.stat(directory).catch(()=>null)) {
-        if (path.dirname(await fs.realpath(directory)) !== await fs.realpath(this.root)) throw new Error("Asset folder leaves the data directory");
+        await this.checkedDirectory();
       }
       const staged: Array<[string,string]> = [];
       let rollbackReferences: (() => Promise<void>) | undefined;

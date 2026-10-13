@@ -23,7 +23,7 @@ export class NotesStore {
   private readonly preferencesPath: string;
   private writeQueue: Promise<void> = Promise.resolve();
 
-  constructor(private readonly dataDirectory: string, private readonly starterContentDirectory?: string) {
+  constructor(private readonly dataDirectory: string, private readonly starterContentDirectory?: string, private readonly assetDirectory = path.join(dataDirectory, "assets")) {
     this.notesPath = path.join(dataDirectory, "notes.json");
     this.preferencesPath = path.join(dataDirectory, "window.json");
   }
@@ -111,7 +111,7 @@ export class NotesStore {
       .filter(asset => officialIds.has(asset.id) && !officialAssets.some(official => official.id === asset.id && (official.file ?? official.id) === (asset.file ?? asset.id)))
       .map(asset => asset.file ?? asset.id);
     const merged = [...existing.filter(asset => !officialIds.has(asset.id)), ...officialAssets];
-    const destinationAssets = path.join(this.dataDirectory, "assets");
+    const destinationAssets = this.assetDirectory;
     await fs.mkdir(destinationAssets, { recursive: true });
     for (const asset of officialAssets) {
       const file = asset.file ?? asset.id;
