@@ -1,11 +1,15 @@
 export type AIUsagePurpose = "chat" | "test";
 export type AIUsageStatus = "pending" | "complete" | "stopped" | "error" | "interrupted";
 export type AICurrency = "CNY" | "USD";
+// A user-editable display reference, not a live exchange-rate quote.
+export const DEFAULT_USD_TO_CNY = 7;
 
 export interface AIModelPrice {
   providerId: string;
   baseUrl: string;
   modelId: string;
+  providerName?: string;
+  modelName?: string;
   currency: AICurrency;
   input: number;
   output: number;
@@ -14,6 +18,7 @@ export interface AIModelPrice {
   updatedAt: string;
 }
 export type AIModelPriceInput = Omit<AIModelPrice, "updatedAt">;
+export type AIModelPriceKey = Pick<AIModelPrice, "providerId" | "baseUrl" | "modelId">;
 export interface AIReportedUsage {
   inputTokens?: number;
   outputTokens?: number;
@@ -83,7 +88,14 @@ export interface AIUsagePage {
   pageSize: number;
   sources: Array<{ id: string; name: string }>;
   models: Array<{ id: string; name: string }>;
+  activity: AIUsageActivity[];
+  usdToCny: number;
   warning?: string;
+}
+export interface AIUsageActivity {
+  day: string;
+  summary: AIUsageTotals;
+  hours: Array<{ hour: number; summary: AIUsageTotals }>;
 }
 
 export function localUsageDay(date = new Date()): string {
@@ -157,6 +169,26 @@ export function summarizeUsage(records: AIUsageRecord[]): Pick<AIUsagePage, "sum
     addUsage(group, record);
   }
   return { summary, groups: [...groups.values()].sort((a, b) => b.requests - a.requests) };
+}
+export function usageActivity(records: AIUsageRecord[]): AIUsageActivity[] {
+  const days = new Map<string, AIUsageActivity>();
+  for (const record of records) {
+    let day = days.get(record.day);
+    if (!day) { day = { day: record.day, summary: emptyUsageTotals(), hours: [] }; days.set(record.day, day); }
+    addUsage(day.summary, record);
+    const hour = new Date(record.startedAt).getHours();
+    let bucket = day.hours.find(value => value.hour === hour);
+    if (!bucket) { bucket = { hour, summary: emptyUsageTotals() }; day.hours.push(bucket); }
+    addUsage(bucket.summary, record);
+  }
+  return [...days.values()].sort((a, b) => a.day.localeCompare(b.day)).map(day => ({ ...day, hours: day.hours.sort((a, b) => a.hour - b.hour) }));
+}
+export function cnyUsageCost(totals: AIUsageTotals, usdToCny: number): number | undefined {
+  if (!totals.costs.length) return undefined;
+  return totals.costs.reduce((sum, cost) => sum + (cost.reported + cost.estimated) * (cost.currency === "USD" ? usdToCny : 1), 0);
+}
+export function formatCnyCost(amount: number): string {
+  return `¥${amount > 0 && amount < 0.000001 ? "<0.000001" : amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`;
 }
 export function formatUsageCost(amount: number, currency: AICurrency): string {
   return `${currency} ${amount > 0 && amount < 0.000001 ? "<0.000001" : amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 })}`;

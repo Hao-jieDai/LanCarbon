@@ -6,6 +6,8 @@ import { createServer } from "node:http";
 
 test("records native usage, snapshots prices, separates retries and survives offline restart", async ({}, info) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-usage-desktop-"));
+  await fs.mkdir(path.join(root, "Config"), { recursive: true });
+  await fs.writeFile(path.join(root, "Config", "ai-pricing.json"), JSON.stringify({ version: 1, prices: [{ providerId: "others-old", baseUrl: "https://old.example/v1", modelId: "removed-model", currency: "USD", input: 1, output: 1, updatedAt: "2026-01-01T00:00:00Z" }] }));
   let networkCalls = 0, attempts = 0;
   const server = createServer(async (request, response) => {
     networkCalls++; let raw = ""; for await (const chunk of request) raw += chunk;
@@ -27,6 +29,7 @@ test("records native usage, snapshots prices, separates retries and survives off
   let app = await launch();
   try {
     let page = await app.firstWindow(); await page.getByRole("main").waitFor();
+    const cleaned = await page.evaluate(() => window.notesDesktop.ai!.prices()); expect(cleaned.ok && cleaned.prices.length).toBe(0);
     const writing = await page.getByLabel("Note title").inputValue();
     await page.evaluate(async () => {
       const api = window.notesDesktop.ai!, loaded = await api.providers(); if (!loaded.ok) throw Error(loaded.error);
@@ -67,6 +70,19 @@ test("records native usage, snapshots prices, separates retries and survives off
     expect(result.usage.summary).toMatchObject({ requests: 6, inputTokens: 225, outputTokens: 113, totalTokens: 338, unknownTokens: 2, unknownCosts: 3, pending: 0 });
     expect(result.usage.summary.costs.find(value => value.currency === "USD")).toMatchObject({ reported: 0.004, estimated: 0, reportedRequests: 1, estimatedRequests: 0 }); expect(result.usage.summary.costs.find(value => value.currency === "CNY")).toMatchObject({ reported: 0, estimated: 0.00052, reportedRequests: 0, estimatedRequests: 2 });
     expect(result.usage.records.filter(record => record.status === "stopped")).toHaveLength(1); expect(result.usage.records.filter(record => record.attempt === 2)).toHaveLength(1);
+    await expect(page.locator(".usage-overview > div")).toHaveCount(3);
+    await expect(page.locator(".usage-overview > div > span")).toHaveText(["Requests", "Tokens", "Costs"]);
+    await expect(page.locator(".usage-overview > div").nth(1).locator("strong")).toHaveText("338");
+    await expect(page.locator(".usage-overview > div").nth(2).locator("strong")).toHaveText("≈ ¥0.02852");
+    await expect(page.getByRole("table", { name: "Usage by source and model" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "All time", exact: true })).toHaveCount(0);
+    await expect(page.locator(".usage-hours button")).toHaveCount(24);
+    expect(await page.getByRole("table", { name: "Usage requests" }).locator("tbody tr td:nth-child(3) small").count()).toBe(0);
+    expect(await page.locator(".usage-overview > div").evaluateAll(cards => cards.every(card => { const title = card.querySelector("span")!.getBoundingClientRect(), amount = card.querySelector("strong")!.getBoundingClientRect(); return Math.abs((title.top + title.bottom) / 2 - (amount.top + amount.bottom) / 2) < 2; }))).toBe(true);
+    await page.locator('.usage-hours button:not([data-tokens="0"])').first().hover(); await expect(page.getByRole("tooltip")).toContainText("Tokens"); await expect(page.getByRole("tooltip")).toContainText("Costs");
+    await page.getByLabel("USD to CNY exchange rate").fill("6.8"); await page.getByRole("button", { name: "Save exchange rate", exact: true }).click();
+    await expect(page.locator(".usage-overview > div").nth(2).locator("strong")).toHaveText("≈ ¥0.02772");
+    const converted = await page.evaluate(() => window.notesDesktop.ai!.usage()); expect(converted.ok && converted.usage.records).toEqual(result.usage.records);
     const before = networkCalls;
     await page.getByRole("combobox", { name: "Usage source", exact: true }).click(); await page.getByRole("option", { name: "OpenRouter", exact: true }).click();
     await expect(page.locator(".usage-overview > div").first().locator("strong")).toHaveText("2");
@@ -74,6 +90,17 @@ test("records native usage, snapshots prices, separates retries and survives off
     await page.getByRole("combobox", { name: "Usage purpose", exact: true }).click(); await page.getByRole("option", { name: "Connection test", exact: true }).click();
     await expect(page.locator(".usage-overview > div").first().locator("strong")).toHaveText("2");
     await page.getByRole("combobox", { name: "Usage purpose", exact: true }).click(); await page.getByRole("option", { name: "All purposes", exact: true }).click();
+    await page.getByRole("button", { name: "Last 7 days", exact: true }).click(); await expect(page.locator(".usage-days button")).toHaveCount(7);
+    await page.locator('.usage-days button:not([data-tokens="0"])').first().hover(); await expect(page.getByRole("tooltip")).toContainText("Tokens 338"); await expect(page.getByRole("tooltip")).toContainText("¥0.02772");
+    await page.getByRole("button", { name: "Last 30 days", exact: true }).click(); await expect(page.getByRole("button", { name: "Daily", exact: true })).toHaveAttribute("aria-pressed", "true");
+    const today = await page.getByLabel("Usage to", { exact: true }).inputValue();
+    await page.getByLabel("Usage from", { exact: true }).fill("2025-12-31"); await expect(page.getByLabel("Heatmap year", { exact: true })).toHaveValue("2026");
+    await page.getByLabel("Heatmap year", { exact: true }).fill("2025"); await expect(page.locator(".usage-days button")).toHaveCount(1);
+    await page.getByRole("button", { name: "Hourly", exact: true }).click(); await page.getByLabel("Heatmap day", { exact: true }).fill("2025-12-31"); await expect(page.locator('.usage-hours button:not([data-tokens="0"])')).toHaveCount(0);
+    await page.getByRole("button", { name: "Daily", exact: true }).click(); await page.getByLabel("Usage from", { exact: true }).fill("2026-01-01"); await page.getByLabel("Usage to", { exact: true }).fill(today);
+    await page.locator(".usage-prices summary").click(); await page.locator(".ai-usage-content").evaluate(element => { element.scrollTop = 0; }); await page.screenshot({ path: info.outputPath("usage-daily.png") });
+    await page.getByRole("button", { name: "Today", exact: true }).click();
+    await page.locator(".usage-prices summary").click();
     await page.locator(".usage-prices summary").click(); await page.locator(".ai-usage-content").evaluate(element => { element.scrollTop = 0; }); await page.screenshot({ path: info.outputPath("usage-dark.png") });
     await page.locator(".theme-option").filter({ hasText: "Light" }).click(); await expect(page.locator(".toast")).not.toHaveClass(/show/); await page.screenshot({ path: info.outputPath("usage-light.png") });
     await page.setViewportSize({ width: 900, height: 650 }); await page.screenshot({ path: info.outputPath("usage-small.png") }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -81,8 +108,15 @@ test("records native usage, snapshots prices, separates retries and survives off
     expect((await page.evaluate(() => window.notesDesktop.ai!.usage())).ok).toBe(true); expect(networkCalls).toBe(before);
     const filenames = await fs.readdir(path.join(root, "Data", "Research", "Usage")); const log = (await Promise.all(filenames.map(name => fs.readFile(path.join(root, "Data", "Research", "Usage", name), "utf8")))).join(""); expect(log).not.toContain("fixture-key-private"); expect(log).not.toContain("retry accounting");
     await page.getByRole("button", { name: "Notes", exact: true }).click(); await expect(page.getByLabel("Note title")).toHaveValue(writing);
+    await page.getByRole("button", { name: "Research", exact: true }).click(); await page.getByRole("navigation", { name: "Research pages" }).getByRole("button", { name: "AI Settings", exact: true }).click();
+    await page.getByRole("button", { name: "Remove Fixture SF", exact: true }).click(); await page.getByRole("button", { name: "Save configuration", exact: true }).click(); await expect(page.getByText("Configuration saved.", { exact: true })).toBeVisible();
+    const pruned = await page.evaluate(() => window.notesDesktop.ai!.prices()); expect(pruned.ok && pruned.prices.map(price => price.modelId)).toEqual(["fixture-free"]);
+    const preserved = await page.evaluate(() => window.notesDesktop.ai!.usage()); expect(preserved.ok && preserved.usage.summary.costs).toEqual(result.usage.summary.costs);
+    const removedService = await page.evaluate(() => window.notesDesktop.ai!.removeProvider("others-fixture")); expect(removedService.ok).toBe(true);
+    const emptyPrices = await page.evaluate(() => window.notesDesktop.ai!.prices()); expect(emptyPrices.ok && emptyPrices.prices).toEqual([]);
     await app.close(); app = await launch(true); page = await app.firstWindow(); await page.getByRole("main").waitFor();
     await page.getByRole("button", { name: "Research", exact: true }).click(); await page.getByRole("button", { name: "Usage", exact: true }).click(); await expect(page.locator(".usage-overview > div").first().locator("strong")).toHaveText("6");
+    await expect(page.locator(".usage-overview > div").nth(2).locator("strong")).toHaveText("≈ ¥0.02772");
     await page.getByRole("button", { name: "Refresh", exact: true }).click(); await expect(page.getByText(/History is available offline/)).toBeVisible(); expect(networkCalls).toBe(before);
   } finally { await app.close().catch(() => undefined); server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); if (path.dirname(root) !== path.resolve(os.tmpdir()) || !path.basename(root).startsWith("lancarbon-usage-desktop-")) throw Error("Unexpected test cleanup path"); await fs.rm(root, { recursive: true, force: true }); }
 });

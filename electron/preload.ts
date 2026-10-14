@@ -23,6 +23,7 @@ const api: NotesDesktopApi = {
     usage: query => ipcRenderer.invoke("ai:usage", query),
     prices: () => ipcRenderer.invoke("ai:prices"),
     savePrice: price => ipcRenderer.invoke("ai:save-price", price),
+    saveExchangeRate: rate => ipcRenderer.invoke("ai:save-exchange-rate", rate),
     onUsageChanged: callback => { const listener = () => callback(); ipcRenderer.on("ai:usage-changed", listener); return () => ipcRenderer.removeListener("ai:usage-changed", listener); }
   },
   foundation: {

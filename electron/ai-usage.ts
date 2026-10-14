@@ -1,7 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { aiBaseUrl } from "./ai-storage";
-import { localUsageDay, priceKey, summarizeUsage, usageCost, type AIModelPrice, type AIModelPriceInput, type AIUsageEvent, type AIUsagePage, type AIUsageQuery, type AIUsageRecord } from "../src/shared/aiUsage";
+import { DEFAULT_USD_TO_CNY, localUsageDay, priceKey, summarizeUsage, usageActivity, usageCost, type AIModelPrice, type AIModelPriceInput, type AIModelPriceKey, type AIUsageEvent, type AIUsagePage, type AIUsageQuery, type AIUsageRecord } from "../src/shared/aiUsage";
 
 class SerializedUsage {
   private tail: Promise<unknown> = Promise.resolve();
@@ -23,25 +23,46 @@ export class AIPriceStore extends SerializedUsage {
     if (!["CNY", "USD"].includes(input.currency)) throw new Error("Choose CNY or USD.");
     for (const value of [input.input, input.output, input.cacheRead, input.cacheWrite]) if (value !== undefined && (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1_000_000)) throw new Error("Prices must be non-negative amounts per million tokens.");
     if (input.input === undefined || input.output === undefined) throw new Error("Enter both input and output prices. Zero is allowed for a free model.");
-    return { providerId: input.providerId, modelId: input.modelId, baseUrl: aiBaseUrl(input.baseUrl), currency: input.currency, input: input.input, output: input.output, cacheRead: input.cacheRead, cacheWrite: input.cacheWrite };
+    const name = (value: unknown) => typeof value === "string" && value.trim() && value.length <= 256 ? value.trim() : undefined;
+    return { providerId: input.providerId, modelId: input.modelId, baseUrl: aiBaseUrl(input.baseUrl), currency: input.currency, input: input.input, output: input.output, cacheRead: input.cacheRead, cacheWrite: input.cacheWrite, providerName: name(input.providerName), modelName: name(input.modelName) };
   }
-  private async read(): Promise<AIModelPrice[]> {
-    const raw = await readFile(this.filename, 2_000_000); if (!raw) return [];
+  private rate(value: unknown): number {
+    if (typeof value !== "number" || !Number.isFinite(value) || value <= 0 || value > 1_000_000) throw new Error("Enter a positive USD to CNY exchange rate.");
+    return value;
+  }
+  private async read(): Promise<{ prices: AIModelPrice[]; usdToCny: number }> {
+    const raw = await readFile(this.filename, 2_000_000); if (!raw) return { prices: [], usdToCny: DEFAULT_USD_TO_CNY };
     const value = JSON.parse(raw);
     if (value.version !== 1 || !Array.isArray(value.prices) || value.prices.length > 3000) throw new Error("Unsupported model price data. Existing prices have been preserved.");
-    return value.prices.map((price: AIModelPrice) => ({ ...this.validate(price), updatedAt: price.updatedAt }));
+    return { prices: value.prices.map((price: AIModelPrice) => ({ ...this.validate(price), updatedAt: price.updatedAt })), usdToCny: value.usdToCny === undefined ? DEFAULT_USD_TO_CNY : this.rate(value.usdToCny) };
   }
-  async list(): Promise<AIModelPrice[]> { return this.serial(() => this.read()); }
+  private async write(data: { prices: AIModelPrice[]; usdToCny: number }): Promise<void> {
+    await fs.mkdir(path.dirname(this.filename), { recursive: true });
+    const temporary = this.filename + ".tmp";
+    try { await fs.writeFile(temporary, JSON.stringify({ version: 1, ...data }, null, 2), { mode: 0o600 }); await fs.rename(temporary, this.filename); }
+    finally { await fs.unlink(temporary).catch(() => undefined); }
+  }
+  async list(): Promise<AIModelPrice[]> { return this.serial(async () => (await this.read()).prices); }
+  async exchangeRate(): Promise<number> { return this.serial(async () => (await this.read()).usdToCny); }
+  async saveExchangeRate(input: number): Promise<number> {
+    const usdToCny = this.rate(input);
+    return this.serial(async () => { await this.write({ ...await this.read(), usdToCny }); return usdToCny; });
+  }
+  async retain(configured: AIModelPriceKey[]): Promise<AIModelPrice[]> {
+    const keys = new Set(configured.map(value => priceKey(value)));
+    return this.serial(async () => {
+      const data = await this.read(), prices = data.prices.filter(price => keys.has(priceKey(price)));
+      if (prices.length !== data.prices.length) await this.write({ ...data, prices });
+      return prices;
+    });
+  }
   async save(input: AIModelPriceInput): Promise<AIModelPrice[]> {
     const value = { ...this.validate(input), updatedAt: new Date().toISOString() };
     return this.serial(async () => {
-      const prices = await this.read(), key = priceKey(value), index = prices.findIndex(price => priceKey(price) === key);
+      const data = await this.read(), prices = data.prices, key = priceKey(value), index = prices.findIndex(price => priceKey(price) === key);
       if (index >= 0) prices[index] = value; else prices.push(value);
       if (prices.length > 3000) throw new Error("Too many saved model prices.");
-      await fs.mkdir(path.dirname(this.filename), { recursive: true });
-      const temporary = this.filename + ".tmp";
-      try { await fs.writeFile(temporary, JSON.stringify({ version: 1, prices }, null, 2), { mode: 0o600 }); await fs.rename(temporary, this.filename); }
-      finally { await fs.unlink(temporary).catch(() => undefined); }
+      await this.write({ ...data, prices });
       return prices;
     });
   }
@@ -63,7 +84,7 @@ export class AIUsageStore extends SerializedUsage {
   private readonly active = new Map<string, AIUsageRecord>();
   private warning = "";
   constructor(data: string, private readonly prices: AIPriceStore) { super(); this.directory = path.join(data, "Research", "Usage"); }
-  reportFailure(): void { this.warning = "Some usage records could not be saved. Check your data folder. Chat remains available; these totals may be incomplete."; }
+  reportFailure(message = "Some usage records could not be saved. Check your data folder. Chat remains available; these totals may be incomplete."): void { this.warning = message; }
   private async append(day: string, event: LedgerEvent): Promise<void> {
     await fs.mkdir(this.directory, { recursive: true });
     const directory = await fs.lstat(this.directory);
@@ -127,8 +148,8 @@ export class AIUsageStore extends SerializedUsage {
       const sources = [...new Map(all.map(record => [record.providerId, { id: record.providerId, name: record.providerName }])).values()];
       const models = [...new Map(all.filter(record => !input.providerId || record.providerId === input.providerId).map(record => [record.modelId, { id: record.modelId, name: record.modelName }])).values()];
       const filtered = all.filter(record => (!input.providerId || record.providerId === input.providerId) && (!input.modelId || record.modelId === input.modelId) && (!input.purpose || record.purpose === input.purpose));
-      const pageSize = 50, page = Math.min(input.page ?? 1, Math.max(1, Math.ceil(filtered.length / pageSize)));
-      return { ...summarizeUsage(filtered), records: filtered.slice((page - 1) * pageSize, page * pageSize), totalRecords: filtered.length, page, pageSize, sources, models, ...(warning ? { warning } : {}) };
+      const pageSize = 10, page = Math.min(input.page ?? 1, Math.max(1, Math.ceil(filtered.length / pageSize)));
+      return { ...summarizeUsage(filtered), activity: usageActivity(filtered), usdToCny: await this.prices.exchangeRate(), records: filtered.slice((page - 1) * pageSize, page * pageSize), totalRecords: filtered.length, page, pageSize, sources, models, ...(warning ? { warning } : {}) };
     });
   }
 }

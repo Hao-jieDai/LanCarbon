@@ -161,6 +161,11 @@ app.whenReady().then(async () => {
   const aiPrices = new AIPriceStore(configurationDirectory);
   const usageStores = new Map<string, AIUsageStore>();
   const usage = () => { let value = usageStores.get(dataDirectory); if (!value) { value = new AIUsageStore(dataDirectory, aiPrices); usageStores.set(dataDirectory, value); } return value; };
+  const syncPrices = async () => {
+    try { const providers = await aiSettings.list(); await aiPrices.retain(providers.flatMap(provider => provider.models.map(model => ({ providerId: provider.id, baseUrl: provider.baseUrl, modelId: model.id })))); }
+    catch { usage().reportFailure("Saved model prices could not be cleaned. Historical usage is preserved; check your configuration folder."); }
+  };
+  await syncPrices();
   const usageRequests = new Map<string, AIUsageStore>();
   // Electron's network stack follows the computer's system proxy. Keys stay in the main process.
   aiService = new AIService(aiSettings, chats, new AIClient((input, init) => net.fetch(input as string, init), async event => {
@@ -174,8 +179,8 @@ app.whenReady().then(async () => {
     try { return { ok: true, ...await action(...args) }; } catch (error) { return { ok: false, error: redactAIError(error) }; }
   });
   aiHandler("ai:providers", async () => ({ providers: await aiSettings.list() }));
-  aiHandler("ai:save-provider", async (input: AIProviderInput) => ({ providers: await aiSettings.save(input) }));
-  aiHandler("ai:remove-provider", async (id: string) => ({ providers: await aiSettings.remove(id) }));
+  aiHandler("ai:save-provider", async (input: AIProviderInput) => { const providers = await aiSettings.save(input); await syncPrices(); return { providers }; });
+  aiHandler("ai:remove-provider", async (id: string) => { const providers = await aiSettings.remove(id); await syncPrices(); return { providers }; });
   aiHandler("ai:clear-key", async (id: string) => ({ providers: await aiSettings.clearKey(id) }));
   aiHandler("ai:preferences", async () => ({ systemPrompt: await aiSettings.preferences() }));
   aiHandler("ai:save-preferences", async (prompt: string) => ({ systemPrompt: await aiSettings.savePreferences(prompt) }));
@@ -189,11 +194,17 @@ app.whenReady().then(async () => {
   aiHandler("ai:send", async (id: string, provider: string, model: string, text: string, retry?: boolean) => ({ chat: await aiService.send(id, provider, model, text, retry) }));
   aiHandler("ai:stop", async (id: string) => { await aiService.stop(id); return {}; });
   aiHandler("ai:usage", async (query: AIUsageQuery) => ({ usage: await usage().query(query) }));
-  aiHandler("ai:prices", async () => ({ prices: await aiPrices.list() }));
+  aiHandler("ai:prices", async () => ({ prices: await aiPrices.list(), usdToCny: await aiPrices.exchangeRate() }));
   aiHandler("ai:save-price", async (input: AIModelPriceInput) => {
     const provider = (await aiSettings.list()).find(value => value.id === input?.providerId);
-    if (!provider || provider.baseUrl !== input.baseUrl || !provider.models.some(model => model.id === input.modelId)) throw new Error("Choose a currently configured service and model.");
-    return { prices: await aiPrices.save(input) };
+    const model = provider?.baseUrl === input.baseUrl ? provider.models.find(model => model.id === input.modelId) : undefined;
+    if (!model) throw new Error("Choose a currently configured service and model.");
+    return { prices: await aiPrices.save({ ...input, providerName: provider!.name, modelName: model.name }) };
+  });
+  aiHandler("ai:save-exchange-rate", async (input: number) => {
+    const usdToCny = await aiPrices.saveExchangeRate(input);
+    mainWindow?.webContents.send("ai:usage-changed");
+    return { usdToCny };
   });
   let assetsDirectory = dataDirectory;
   let assetsManager = new AssetStore(dataDirectory, managedAssetDirectory, systemAssetIds);

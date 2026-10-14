@@ -6,7 +6,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AIClient } from "../electron/ai-client";
 import { AIPriceStore, AIUsageStore } from "../electron/ai-usage";
 import { defaultAIProviders } from "../src/shared/ai";
-import { parseAIUsage, priceKey, summarizeUsage, usageCost, type AIModelPrice, type AIUsageEvent, type AIUsageRequest } from "../src/shared/aiUsage";
+import { cnyUsageCost, DEFAULT_USD_TO_CNY, localUsageDay, parseAIUsage, priceKey, summarizeUsage, usageCost, type AIModelPrice, type AIUsageEvent, type AIUsageRequest } from "../src/shared/aiUsage";
+import { calendarDays } from "../src/components/AIUsageHeatmap";
 
 let root: string;
 const provider = { ...defaultAIProviders()[1], models: [{ id: "fixture-model", name: "Fixture model", purpose: "chat" as const }] };
@@ -108,7 +109,62 @@ describe("local usage ledger", () => {
       await store.record({ type: "start", request: request(`request-${index}`) });
       await store.record({ type: "finish", id: `request-${index}`, completedAt: "2026-10-14T06:01:00Z", status: "complete", usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 } });
     }
-    const result = await store.query({ page: 2 }); expect(result.records).toHaveLength(3); expect(result.summary.totalTokens).toBe(106); expect(result.totalRecords).toBe(53);
+    const result = await store.query({ page: 6 }); expect(result.records).toHaveLength(3); expect(result.pageSize).toBe(10); expect(result.summary.totalTokens).toBe(106); expect(result.totalRecords).toBe(53);
+    expect(result.activity.reduce((sum, day) => sum + day.summary.totalTokens, 0)).toBe(106);
+    expect(result.activity.flatMap(day => day.hours).reduce((sum, hour) => sum + hour.summary.requests, 0)).toBe(53);
+  });
+  it("automatically prunes removed models and services without changing completed or in-flight historical prices", async () => {
+    const prices = new AIPriceStore(root), store = new AIUsageStore(root, prices);
+    await prices.save(price); await prices.save({ ...price, modelId: "keep-model" });
+    await store.record({ type: "start", request: request("in-flight") });
+    const remaining = await prices.retain([{ ...price, modelId: "keep-model" }]);
+    expect(remaining.map(value => value.modelId)).toEqual(["keep-model"]);
+    await store.record({ type: "finish", id: "in-flight", completedAt: "2026-10-14T06:01:00Z", status: "complete", usage: { inputTokens: 100, outputTokens: 50, totalTokens: 150 } });
+    await prices.retain([]);
+    const restarted = await new AIUsageStore(root, new AIPriceStore(root)).query();
+    expect(await prices.list()).toEqual([]);
+    expect(restarted.records[0].price?.input).toBe(2); expect(restarted.records[0].cost?.amount).toBe(0.0006);
+    expect(restarted.summary.unknownCosts).toBe(0);
+  });
+  it("migrates legacy prices and persists a display rate without repricing original charges", async () => {
+    await fs.writeFile(path.join(root, "ai-pricing.json"), JSON.stringify({ version: 1, prices: [price] }));
+    const prices = new AIPriceStore(root), store = new AIUsageStore(root, prices);
+    expect(await prices.exchangeRate()).toBe(DEFAULT_USD_TO_CNY);
+    await store.record({ type: "start", request: request("usd") });
+    await store.record({ type: "finish", id: "usd", completedAt: "2026-10-14T06:01:00Z", status: "complete", usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2, reportedCost: 0.1, currency: "USD" } });
+    const before = await store.query(); expect(cnyUsageCost(before.summary, before.usdToCny)).toBeCloseTo(0.7);
+    await prices.saveExchangeRate(6.5); await prices.save({ ...price, input: 90 });
+    const after = await new AIUsageStore(root, new AIPriceStore(root)).query();
+    expect(after.usdToCny).toBe(6.5); expect(cnyUsageCost(after.summary, after.usdToCny)).toBeCloseTo(0.65);
+    expect(after.records).toEqual(before.records); expect(after.records[0].cost?.currency).toBe("USD");
+    for (const invalid of [0, -7, Infinity, NaN, 1_000_001]) await expect(prices.saveExchangeRate(invalid)).rejects.toThrow("positive");
+    expect(await prices.exchangeRate()).toBe(6.5);
+    await prices.retain([]); expect(await prices.exchangeRate()).toBe(6.5);
+  });
+  it("aggregates local days and hours across midnight, respects filters, and preserves zero versus unknown costs", async () => {
+    const prices = new AIPriceStore(root), store = new AIUsageStore(root, prices);
+    for (const [index, time, purpose, tokens, cost] of [
+      [0, new Date(2026, 9, 13, 23, 15), "chat", 15, 0],
+      [1, new Date(2026, 9, 14, 0, 5), "test", 30, 0.02],
+      [2, new Date(2026, 9, 14, 9, 0), "chat", undefined, undefined]
+    ] as const) {
+      await store.record({ type: "start", request: request(String(index), { startedAt: time.toISOString(), purpose }) });
+      await store.record({ type: "finish", id: String(index), completedAt: time.toISOString(), status: "complete", usage: { ...(tokens === undefined ? {} : { inputTokens: tokens, outputTokens: 0, totalTokens: tokens }), ...(cost === undefined ? {} : { reportedCost: cost, currency: "USD" }) } });
+    }
+    const result = await store.query(); expect(result.activity.map(value => value.day)).toEqual(["2026-10-13", "2026-10-14"]);
+    expect(result.activity[0].hours[0]).toMatchObject({ hour: 23, summary: { totalTokens: 15, unknownCosts: 0 } });
+    expect(cnyUsageCost(result.activity[0].summary, 7)).toBe(0);
+    expect(result.activity[1].hours.find(value => value.hour === 9)?.summary.unknownCosts).toBe(1);
+    expect(cnyUsageCost(result.activity[1].hours.find(value => value.hour === 9)!.summary, 7)).toBeUndefined();
+    const filtered = await store.query({ from: localUsageDay(new Date(2026, 9, 14)), purpose: "test" });
+    expect(filtered.activity).toHaveLength(1); expect(filtered.activity[0].summary.totalTokens).toBe(30);
+    expect(filtered.activity[0].hours.map(value => value.hour)).toEqual([0]);
+  });
+  it("builds bounded leap-year calendars with Monday-first padding and no duplicate dates", () => {
+    const leap = calendarDays("2024-01-01", "2024-12-31").filter(Boolean);
+    expect(leap).toHaveLength(366); expect(leap).toContain("2024-02-29"); expect(new Set(leap).size).toBe(366);
+    const sunday = calendarDays("2026-10-11", "2026-10-11"); expect(sunday.slice(0, 6)).toEqual(Array(6).fill(null)); expect(sunday[6]).toBe("2026-10-11");
+    expect(calendarDays("2026-10-15", "2026-10-14")).toEqual([]);
   });
   it("rejects corrupted negative usage instead of presenting false totals", async () => {
     const prices = new AIPriceStore(root), store = new AIUsageStore(root, prices);

@@ -1,17 +1,16 @@
 # AI 配置与 Chat 验收
 
-当前安装包：**LanCarbon 2.2.2**。使用原有 LanCarbon 快捷方式。
+当前安装包：**LanCarbon 2.2.3**。使用原有 LanCarbon 快捷方式。SiliconFlow、OpenRouter 和 Others（BigModel）接入已验收；本次调整 Usage，翻译另行更新。自动化验收只使用隔离目录与本地测试服务，不调用真实账号。
 
-SiliconFlow、OpenRouter 和 Others（BigModel）的真实账号接入均已由用户验收，OpenRouter 的 Llama 4 Maverick 使用稳定。当前只增加用量统计、移除两个预设添加按钮，翻译留待后续验收。自动化检查使用隔离目录和本地 AI 测试服务，不调用真实账号或消耗用户额度。
+## 用量界面验收
 
-## 用量统计验收
-
-1. AI Settings 中不再有 Add GPT-6 Luna / Add DeepSeek V4 Pro；Refresh models、Model ID、Add model 和已保存模型继续可用。
-2. 打开 Research → Usage。初始没有历史补算；Chat 和 Test model 后应出现来源、模型、Token、用途与状态记录。Today、Last 30 days、All time、日期、来源、模型与用途可筛选。
-3. OpenRouter 返回金额时显示 Reported / USD。SiliconFlow 和 Others 未返回金额时，先在 Model prices 选择模型，填写每百万 Token 的输入／输出单价和币种，Save price 后发起新请求，费用显示 Estimated。缓存价格可单独填；留空按输入价估算。BigModel 免费型号可将输入、输出均填零。不能把 Unknown 当作零。
-4. 修改单价不改写旧记录；取消、失败和自动重试分别留有状态，未知费用明确标示。删除聊天后统计仍保留。
-5. 断网或重启后查看、筛选、Refresh 历史数据不增加模型调用。不同币种分别汇总，实际费用以平台账单为准。
-6. 原有密钥、回答规范、模型列表、聊天、Notes、Books、Library 文件与发布设置仍正常。用量在 Data/Research/Usage；单价在 Config/ai-pricing.json。
+1. Research → Usage 默认 Today；Today、Last 7 days、Last 30 days 和自选日期可用，来源／模型／用途筛选仍保留。
+2. 只保留 Requests、Tokens、Costs 三张卡片，标题和数字在同一行。Requests 每页十条，Tokens 列只显示总量，没有重复的分组表格。
+3. Hourly 指定一天有 24 格；Daily 每天一格并标记月份，跨年可切换年份。悬浮格子显示时间／日期、总 Token、人民币费用；统计不受分页影响。
+4. Model prices 可编辑模型单价，并设置 1 USD = CNY；默认参考值 7，可自行调整，不实时联网。人民币费用合并显示，悬浮费用可查看原币金额及 Reported／Estimated 来源。
+5. 修改汇率只改变历史美元费用的人民币显示值；修改单价不重新计算旧请求。免费型号可填零；未知数据不当作零。
+6. 删除模型后保存配置，或删除服务，价格自动清理；此前已经删除的模型遗留价格也会清理。历史费用、请求记录及聊天保留。保留的模型价格不应被清理。
+7. 重启或离线后查看、筛选和刷新不增加模型调用。核对 Notes、Books、Library、API 配置、聊天与发布连接。
 
 ## 已验收功能回归检查
 
@@ -28,16 +27,20 @@ SiliconFlow、OpenRouter 和 Others（BigModel）的真实账号接入均已由�
 
 ## 备份与回滚
 
-备份需包含完整 LanCarbon 目录，包括保存密钥解密状态的 Cache；另选的数据目录也要备份。安装前完整目录及匹配的 2.2.1 安装包已保存在 **backups/pre-install-2.2.2-2026-10-14**。安装包验证后 release 已保留 **2.2.2、2.2.1、2.2.0**，只清理更早的安装包和配套 blockmap。
+安装前备份完整 LanCarbon 文件夹及另选 Data 目录，包含 Config、Cache、Library、聊天、用量日志和价格。对应快照位于 **backups/pre-install-2.2.3-2026-10-14**，包含匹配的旧安装包。验证后 release 保留 **2.2.3、2.2.2、2.2.1**；只清理更早安装包及其 blockmap。回滚前保留升级后的新编辑。
 
-已完成 252 项单元测试、18 项桌面场景检查、最终安装包的相关场景验证和实际安装后的 4 项隔离检查。日常数据核对确认：56 个既有写作条目、2 个个人 Book、30 个 Library 文件、2 个聊天与 16 条消息保持一致；3 套服务配置可解密，配置密文及聊天文件字节保持一致，Book 发布绑定保留。官方教程同步新增的用量说明，未调用真实 API 或消耗用户额度。
+自动化验证结果及日常数据核对保存在 acceptance/2.2.3-verification.json。系统教程自动同步；个人写作内容不参与教程覆盖。
 
-回滚前关闭软件，并另行保留升级后的新增编辑；恢复快照会回到备份日期。用户自己的 Notes 和 Books 与系统教程同步分开处理。系统教程由软件自动更新，用户不应编辑。
+已通过 256 项单元测试、18 个桌面场景（其中 Book 构建与 Library 经单独复查通过）、最终安装包的 4 项核心场景，以及实际安装后的 4 项检查。真实数据升级演练及安装后核对保留了 56 个既有写作条目、2 个个人 Book、30 个 Library 文件、2 个聊天的 16 条消息、2 条历史用量记录和 4 个模型价格；原币费用、日志字节、加密配置及发布绑定保持一致。
 
 ## English
 
-Use the existing shortcut. SiliconFlow, OpenRouter and Others (BigModel) account connectivity has been accepted. This update removes the two preset Add buttons and adds Research → Usage; translation will be handled separately. Verify token counts and costs grouped by source, model and purpose; reported USD charges from OpenRouter; and future estimates after saving per-million-token input/output/cache prices. Zero prices are valid for a confirmed free model. Missing data stays Unknown. Price changes do not recalculate past requests, retry attempts are distinct, and deleting chats does not erase usage. Filters, Refresh and offline restart read local records without model calls. Preserve all existing writing, connections and chats.
+Use the existing shortcut. Usage defaults to Today, offers seven/thirty-day presets and custom dates, and retains source/model/purpose filters. Three compact cards place titles and values on one line. The single request table shows total tokens and CNY costs, ten requests per page.
 
-Tests and Chat retry transient pre-output rate limits/server errors at most twice, honor server backoff and allow cancellation. Partial output is never automatically replayed. Persistent upstream shared-pool limits remain a service issue. Confirm settings, chats, personal writing, resources and publishing connections after restart. Others requires the actual service's base URL, key and model ID, followed by Test model and real Chat acceptance.
+Hourly activity has 24 cells for a selected local day. Daily activity uses a weekly calendar with month labels and a year control when needed. Hover cells for time/date, tokens and CNY cost. Totals and activity include all matching records, independently of pagination.
 
-The matching backup and previous installer are in backups/pre-install-2.2.2-2026-10-14. Release retains 2.2.2, 2.2.1 and 2.2.0 after installer verification. Preserve later edits before restoring an older snapshot. Validation covered 252 unit tests, 18 desktop scenarios, the extracted final installer, and four isolated scenarios on the installed executable. The daily data audit preserved 56 existing writing records, two personal Books, 30 Library files, two chats with 16 messages, all three encrypted service configurations and publishing bindings. No live API calls or user credits were used.
+Model prices are editable. Removing and saving a model, deleting a service or changing its address automatically cleans obsolete prices, including earlier leftovers at startup. Historical price snapshots, original charges and request history stay intact. The editable USD-to-CNY display reference defaults to 7, without a live lookup; changing it updates historical CNY display values without repricing original charges. Missing data stays unknown. Viewing records works offline without model calls.
+
+The full pre-install snapshot and matching previous installer are in backups/pre-install-2.2.3-2026-10-14. After verification, release retains 2.2.3, 2.2.2 and 2.2.1. Preserve later edits before restoring an older snapshot. Verify personal writing, resources, encrypted settings, chats, usage and publishing bindings. Validation evidence is in acceptance/2.2.3-verification.json. Translation is a separate update.
+
+Validation passed 256 unit tests, all 18 desktop scenarios (Book build and Library passed isolated rechecks), four final-installer scenarios and four installed-program checks. Rehearsal and actual-data audits preserved 56 existing writing records, two personal Books, 30 Library files, two chats with 16 messages, two usage records and four saved model prices. Original charges, ledger bytes, encrypted settings and publishing bindings were preserved.

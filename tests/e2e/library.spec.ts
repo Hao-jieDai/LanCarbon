@@ -49,7 +49,7 @@ test("Library migrates resources, pins references, renames safely and navigates 
     await page.getByLabel("Find Library resource").fill("Original.pdf");
     await app.evaluate(({ shell }) => { shell.showItemInFolder = (filename => { (globalThis as unknown as { revealed: string }).revealed = filename; }) as typeof shell.showItemInFolder; });
     await page.getByRole("button", { name: "Open folder for Original.pdf", exact: true }).click();
-    expect(await app.evaluate(() => (globalThis as unknown as { revealed: string }).revealed)).toBe(await fs.realpath(path.join(root, "Library", "assets", paper.file!)));
+    await expect.poll(() => app.evaluate(() => (globalThis as unknown as { revealed: string }).revealed)).toBe(await fs.realpath(path.join(root, "Library", "assets", paper.file!)));
     await page.getByRole("button", { name: "Rename Original.pdf", exact: true }).click();
     await page.getByLabel("Resource name").fill("Renamed.pdf");
     await page.getByRole("button", { name: "Save name", exact: true }).click();

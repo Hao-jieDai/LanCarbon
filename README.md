@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
 
-Version 2.2.2 adds local token/cost accounting and removes the two preset model-add shortcuts. AI Settings and Chat support SiliconFlow, OpenRouter and named Others configurations, system-network connections, encrypted API keys, model selection, streaming, cancellation, retry and locally saved conversations. PDF/EPUB reading and literature automation remain reserved. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
+Version 2.2.3 adds compact usage cards, hourly/daily activity heatmaps, editable CNY conversion and automatic price cleanup that preserves historical costs. AI Settings and Chat support SiliconFlow, OpenRouter and named Others configurations, system-network connections, encrypted API keys, model selection, streaming, cancellation, retry and locally saved conversations. PDF/EPUB reading and literature automation remain reserved. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -51,9 +51,15 @@ Keys remain encrypted for the current Windows account in **Config/ai-settings.js
 
 ### Token usage and costs
 
-Open **Research → Usage** for local request history and totals by date, source, model and purpose. Input, output, cached and reasoning tokens use the service's returned counts. OpenRouter can return **Reported** costs; other services can use **Model prices → Save price** to record **Estimated** costs from input/output/cache rates per million tokens. Prices are saved with each new request, currencies remain separate, and missing data is **Unknown**, not zero. Connection tests, cancelled requests and retries are recorded. Existing chats are not backfilled, and calls in other apps are outside this local ledger. Viewing or refreshing Usage works offline without extra model calls. The service's billing statement remains authoritative.
+Open **Research → Usage**. The default is **Today**; choose **Last 7 days**, **Last 30 days**, or custom **From / To** dates. Source, model and purpose filters apply to the entire range. The compact overview shows **Requests**, total **Tokens** and **Costs**, with each title and value on one line. Requests are newest first, ten per page; pagination does not change totals or activity.
 
-Usage logs live in **Data/Research/Usage**, separately from writing and chats; prices are in **Config/ai-pricing.json**. Logs contain no API keys or conversation bodies and rotate into small files without deleting history. Removing a model or chat does not erase its usage.
+**Token activity → Hourly** shows 24 hours for a selected local date. **Daily** shows one cell per date, arranged by week with month labels; use the year control for a range spanning multiple years. Darker cells mean more tokens. Hover or focus a cell for its time/date, tokens and CNY cost. Missing usage or fees remain unknown rather than zero.
+
+In **Model prices**, choose a configured model and save its input/output rates per million tokens and original currency. Optional cache rates use the input rate when blank; enter zero for a verified free model. Saved prices can be edited. Removing a model and saving its configuration, deleting a service, or changing its API address automatically removes obsolete prices. Historical requests retain their own price snapshots and original reported charges.
+
+Set **1 USD = CNY → Save exchange rate** to choose a local display reference (default 7, not a live quote). USD fees are converted and combined with CNY fees for display; changing this rate updates historical CNY display values without changing original charges. Hover a cost for its original currency and Reported/Estimated source. Reported costs come from the API; estimates use the price saved when the request started. The platform statement remains authoritative.
+
+Viewing Usage works offline and does not call a model. Local logs are in **Data/Research/Usage**, prices and exchange rate in **Config/ai-pricing.json**. Logs contain no keys or conversation bodies; model/chat deletion does not erase history. Only recorded LanCarbon calls are included, without backfilling older chats or other apps.
 
 ### Workspaces and recovery
 
@@ -66,7 +72,7 @@ Managed writing resources are stored in root **Library/assets**. Existing Data/a
 Before upgrading, close LanCarbon and back up the complete LanCarbon home folder and any separately selected Data location. Include Cache because its encryption state is needed to read previously saved API keys. Keep the stable installer alongside the backup. Reinstalling an older application may also require restoring matching data. A restored snapshot returns to the backup date; retain later edits separately. Developers can use the verified snapshot commands below. Restore accepts a new empty folder, verifies all files before copying and adjusts saved managed paths to that folder.
 
 ```powershell
-node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.2.2-x64-Setup.exe"
+node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.2.3-x64-Setup.exe"
 node scripts/workspace-recovery.cjs verify --backup "D:\Backups\LanCarbon-snapshot"
 node scripts/workspace-recovery.cjs restore --backup "D:\Backups\LanCarbon-snapshot" --target "D:\Recovered\LanCarbon"
 ```
@@ -77,7 +83,7 @@ Select **Export PDF** in the page header from Edit or Preview, choose a filename
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.2.2-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.2.3-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -153,7 +159,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-2.2.2 新增本地 Token 与费用统计，并移除两个预设模型添加按钮。AI Settings 与 Chat 支持 SiliconFlow、OpenRouter 和命名 Others 配置、系统网络连接、加密 API Key、模型选择、流式回复、停止、重试和本地会话保存。PDF/EPUB 阅读与文献自动化仍留待后续阶段。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
+2.2.3 调整用量界面，加入小时／每日热力图、可编辑汇率的人民币费用合计，以及保留历史费用的价格自动清理。AI Settings 与 Chat 支持 SiliconFlow、OpenRouter 和命名 Others 配置、系统网络连接、加密 API Key、模型选择、流式回复、停止、重试和本地会话保存。PDF/EPUB 阅读与文献自动化仍留待后续阶段。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
@@ -191,9 +197,15 @@ SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `ht
 
 ### Token 用量与费用
 
-打开 **Research → Usage**，按日期、来源、模型与用途查看本地请求明细及汇总。输入、输出、缓存和推理 Token 使用平台返回数据；OpenRouter 可返回 **Reported** 费用，其他服务通过 **Model prices → Save price** 设置每百万 Token 的输入／输出／缓存单价后记录 **Estimated** 费用。每次新请求保存当时单价，不同币种分别汇总，缺失数据显示 **Unknown**，不当作零。连接测试、取消和重试也会记录；不补算旧聊天，不统计其他软件的消耗。查看、筛选和刷新 Usage 支持离线，不额外调用模型，最终费用以平台账单为准。
+打开 **Research → Usage**，默认查看 **Today**；可选 **Last 7 days**、**Last 30 days**，或自选 **From / To** 日期。来源、模型和用途筛选作用于整个区间。紧凑概览只显示 **Requests**、总 **Tokens** 和 **Costs**，标题与数字在同一行。请求按最新在前排列，每页十条；翻页不影响汇总和活动热力图。
 
-用量日志位于 **Data/Research/Usage**，与写作和聊天分开；单价位于 **Config/ai-pricing.json**。日志不保存 API Key 或对话正文，按小文件分段保存，不删除历史；移除模型或删除聊天也不清除用量。
+**Token activity → Hourly** 展示指定本地日期的 24 小时；**Daily** 每天一格，按周排列并标记月份，跨年区间可切换年份。颜色越深表示 Token 越多；悬浮或键盘聚焦格子可查看时间／日期、总 Token 和人民币费用。缺失用量或费用仍为未知，不当作零。
+
+在 **Model prices** 选择已配置模型，保存每百万 Token 的输入／输出单价及原始币种。缓存价格留空按输入价；经平台确认的免费模型可填零。已保存价格可编辑。删除模型并保存配置、删除服务或更改 API 地址时，自动清理对应的旧价格；历史请求保留当时单价及平台返回的原币费用，不受清理影响。
+
+通过 **1 USD = CNY → Save exchange rate** 设置本地换算参考值（默认 7，不是实时汇率）。美元费用折算后与人民币费用合计显示；修改汇率会更新历史记录的人民币显示值，但不改变原币费用。悬浮费用可查看原币金额以及 Reported／Estimated 来源。Reported 来自接口，Estimated 按请求开始时的单价估算，最终以平台账单为准。
+
+查看 Usage 支持离线，不额外调用模型。日志位于 **Data/Research/Usage**，单价和汇率位于 **Config/ai-pricing.json**。日志不包含密钥或对话正文；删除模型或聊天不删除历史。仅统计 LanCarbon 已记录的调用，不补算旧聊天或其他软件消耗。
 
 ### 工作区与恢复
 
@@ -211,7 +223,7 @@ SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `ht
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.2.2-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.2.3-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 
