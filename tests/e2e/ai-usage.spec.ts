@@ -75,7 +75,7 @@ test("records native usage, snapshots prices, separates retries and survives off
     await expect(page.locator(".usage-overview > div").first().locator("strong")).toHaveText("2");
     await page.getByRole("combobox", { name: "Usage purpose", exact: true }).click(); await page.getByRole("option", { name: "All purposes", exact: true }).click();
     await page.locator(".usage-prices summary").click(); await page.locator(".ai-usage-content").evaluate(element => { element.scrollTop = 0; }); await page.screenshot({ path: info.outputPath("usage-dark.png") });
-    await page.locator(".theme-option").filter({ hasText: "Light" }).click(); await expect(page.locator(".toast")).toBeHidden(); await page.screenshot({ path: info.outputPath("usage-light.png") });
+    await page.locator(".theme-option").filter({ hasText: "Light" }).click(); await expect(page.locator(".toast")).not.toHaveClass(/show/); await page.screenshot({ path: info.outputPath("usage-light.png") });
     await page.setViewportSize({ width: 900, height: 650 }); await page.screenshot({ path: info.outputPath("usage-small.png") }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.evaluate(async id => { const result = await window.notesDesktop.ai!.deleteChat(id); if (!result.ok) throw Error(result.error); }, stopChat);
     expect((await page.evaluate(() => window.notesDesktop.ai!.usage())).ok).toBe(true); expect(networkCalls).toBe(before);
