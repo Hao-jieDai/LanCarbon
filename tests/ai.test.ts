@@ -83,7 +83,7 @@ describe("provider adapters and durable streaming", () => {
     let started!: () => void; const ready = new Promise<void>(resolve => { started = resolve; });
     const fetcher = vi.fn().mockImplementationOnce(async (_url, init: RequestInit) => new Response(new ReadableStream<Uint8Array>({ start(controller) { controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"partial"}}]}\n\n')); init.signal!.addEventListener("abort", () => controller.error(new Error("Aborted"))); started(); } }))).mockImplementation(async () => sse("Complete reply"));
     const service = new AIService(settings, () => store, new AIClient(fetcher), chat => events.push(chat));
-    const chat = await store.create("siliconflow", config().models[0].id); await service.send(chat.id, "siliconflow", config().models[0].id, "Remember 42"); await ready; await service.stop(chat.id);
+    const chat = await store.create("siliconflow", config().models[0].id); await service.send(chat.id, "siliconflow", config().models[0].id, "Remember 42"); await ready; await vi.waitFor(() => expect(events.at(-1)?.messages.at(-1)?.content).toBe("partial")); await service.stop(chat.id);
     expect((await store.get(chat.id)).messages.at(-1)).toMatchObject({ status: "stopped", content: "partial" });
     await service.send(chat.id, "openrouter", config("openrouter").models[0].id, "", true);
     await vi.waitFor(async () => expect((await store.get(chat.id)).messages.at(-1)?.status).toBe("complete"));

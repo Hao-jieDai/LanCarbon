@@ -1,3 +1,4 @@
+import type { AIModelPrice, AIModelPriceInput, AIUsagePage, AIUsageQuery } from "./aiUsage";
 export type AIProviderKind = "siliconflow" | "openrouter" | "others";
 // Retrieval roles are reserved for the later RAG phase; this release exposes chat only.
 export type AIModelPurpose = "chat" | "embedding" | "rerank";
@@ -25,6 +26,10 @@ export interface AIDesktopApi {
   send(id: string, providerId: string, modelId: string, text: string, retry?: boolean): Promise<AIResult<{ chat: AIChat }>>;
   stop(id: string): Promise<AIResult<object>>;
   onChat(callback: (chat: AIChat) => void): () => void;
+  usage(query?: AIUsageQuery): Promise<AIResult<{ usage: AIUsagePage }>>;
+  prices(): Promise<AIResult<{ prices: AIModelPrice[] }>>;
+  savePrice(price: AIModelPriceInput): Promise<AIResult<{ prices: AIModelPrice[] }>>;
+  onUsageChanged(callback: () => void): () => void;
 }
 export const DEFAULT_AI_SYSTEM_PROMPT = `Use a professional, accurate, calm, neutral and concise academic style. Answer in the user's language unless requested otherwise. Do not use emoji, decorative icons, exaggerated praise or promotional language. Give the main answer first and use clear paragraphs; use headings, lists, tables, code or mathematics only when they improve understanding. Distinguish established facts, assumptions, interpretations and uncertainty. Do not invent citations, quotations, sources, data or capabilities. State relevant limitations briefly and ask for essential missing information. Follow the user's specific task and requested format.`;
 export const AI_PRESETS = {

@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
 
-Version 2.2.1 enables AI Settings and Chat with SiliconFlow, OpenRouter and named Others configurations, system-network connections, encrypted API keys, model selection, streaming, cancellation, retry and locally saved conversations. PDF/EPUB reading and literature automation remain reserved. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
+Version 2.2.2 adds local token/cost accounting and removes the two preset model-add shortcuts. AI Settings and Chat support SiliconFlow, OpenRouter and named Others configurations, system-network connections, encrypted API keys, model selection, streaming, cancellation, retry and locally saved conversations. PDF/EPUB reading and literature automation remain reserved. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -38,7 +38,7 @@ Version 2.2.1 enables AI Settings and Chat with SiliconFlow, OpenRouter and name
 ### AI Settings and Chat
 
 1. Open **Research → AI Settings** and choose **SiliconFlow**, **OpenRouter** or **Others**. Presets supply their base addresses. Others supports OpenAI-compatible Chat Completions services and additional named configurations.
-2. Paste the service's **API Key** and select **Refresh models**, or enter an exact **Model ID** and **Display name**, then **Add model → Save models**. Choose a **Default model**. Catalogue availability and permissions depend on your platform account; a suggested model is a shortcut, not a guarantee of access.
+2. Paste the service's **API Key** and select **Refresh models**, or enter an exact **Model ID** and **Display name**, then **Add model → Save models**. Choose a **Default model**. Use the platform catalogue for current model IDs and account permissions.
 3. Saved keys appear as **Configured**, showing their first four and last four characters with the middle hidden. Leave the key input blank to retain it, or enter a replacement and save. **Remove saved key** asks for confirmation and removes only the local key, preserving models and chats. Revoke the key separately at the service when required.
 4. Expand **Response guidelines · all chat models** to edit the shared **System prompt**, then select **Save guidelines**. **Restore default guidelines** fills the default; save to apply it. Defaults request professional, accurate, calm, neutral and concise responses, without emoji or decorative language, and distinguish facts from interpretation and uncertainty. These instructions apply to future replies across all services; they do not rewrite history or guarantee identical model quality.
 5. **Test model** saves the connection and makes a small request. **Stop test** cancels a running test. Connections follow the computer's network and system proxy; normal service charges apply.
@@ -48,6 +48,12 @@ Version 2.2.1 enables AI Settings and Chat with SiliconFlow, OpenRouter and name
 SiliconFlow uses base address `https://api.siliconflow.cn/v1`; OpenRouter uses `https://openrouter.ai/api/v1`. Use **Refresh models** or your platform's catalogue for current IDs. The OpenRouter model `meta-llama/llama-4-maverick` can be added manually when available to your account.
 
 Keys remain encrypted for the current Windows account in **Config/ai-settings.json**; only masked previews reach the interface. Moving to another Windows account may require re-entry. Back up the complete LanCarbon home folder, including Config, Cache and Library, together with any separately selected Data location. Conversations are local in **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; closing LanCarbon stops it and preserves partial replies. Chat submits your conversation text and response guidelines; Notes, Books and Library files are not automatically attached. PDF/EPUB reading, retrieval and literature workflows remain reserved.
+
+### Token usage and costs
+
+Open **Research → Usage** for local request history and totals by date, source, model and purpose. Input, output, cached and reasoning tokens use the service's returned counts. OpenRouter can return **Reported** costs; other services can use **Model prices → Save price** to record **Estimated** costs from input/output/cache rates per million tokens. Prices are saved with each new request, currencies remain separate, and missing data is **Unknown**, not zero. Connection tests, cancelled requests and retries are recorded. Existing chats are not backfilled, and calls in other apps are outside this local ledger. Viewing or refreshing Usage works offline without extra model calls. The service's billing statement remains authoritative.
+
+Usage logs live in **Data/Research/Usage**, separately from writing and chats; prices are in **Config/ai-pricing.json**. Logs contain no API keys or conversation bodies and rotate into small files without deleting history. Removing a model or chat does not erase its usage.
 
 ### Workspaces and recovery
 
@@ -60,7 +66,7 @@ Managed writing resources are stored in root **Library/assets**. Existing Data/a
 Before upgrading, close LanCarbon and back up the complete LanCarbon home folder and any separately selected Data location. Include Cache because its encryption state is needed to read previously saved API keys. Keep the stable installer alongside the backup. Reinstalling an older application may also require restoring matching data. A restored snapshot returns to the backup date; retain later edits separately. Developers can use the verified snapshot commands below. Restore accepts a new empty folder, verifies all files before copying and adjusts saved managed paths to that folder.
 
 ```powershell
-node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.2.1-x64-Setup.exe"
+node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.2.2-x64-Setup.exe"
 node scripts/workspace-recovery.cjs verify --backup "D:\Backups\LanCarbon-snapshot"
 node scripts/workspace-recovery.cjs restore --backup "D:\Backups\LanCarbon-snapshot" --target "D:\Recovered\LanCarbon"
 ```
@@ -71,7 +77,7 @@ Select **Export PDF** in the page header from Edit or Preview, choose a filename
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.2.1-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.2.2-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -147,7 +153,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-2.2.1 启用 AI Settings 与 Chat，支持 SiliconFlow、OpenRouter 和命名 Others 配置、系统网络连接、加密 API Key、模型选择、流式回复、停止、重试和本地会话保存。PDF/EPUB 阅读与文献自动化仍留待后续阶段。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
+2.2.2 新增本地 Token 与费用统计，并移除两个预设模型添加按钮。AI Settings 与 Chat 支持 SiliconFlow、OpenRouter 和命名 Others 配置、系统网络连接、加密 API Key、模型选择、流式回复、停止、重试和本地会话保存。PDF/EPUB 阅读与文献自动化仍留待后续阶段。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
@@ -172,7 +178,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 ### AI Settings 与 Chat
 
 1. 打开 **Research → AI Settings**，选择 **SiliconFlow**、**OpenRouter** 或 **Others**。前两项预填 API 地址；Others 支持兼容 OpenAI Chat Completions 的服务，也可添加多个命名配置。
-2. 填入服务的 **API Key** 后点击 **Refresh models**，或填写准确的 **Model ID** 与 **Display name**，点击 **Add model → Save models**，并选择 **Default model**。模型目录与调用权限取决于平台账号，预设添加按钮只是快捷入口，不保证账号有权限。
+2. 填入服务的 **API Key** 后点击 **Refresh models**，或填写准确的 **Model ID** 与 **Display name**，点击 **Add model → Save models**，并选择 **Default model**。通过平台目录确认当前模型 ID 与账号调用权限。
 3. 已保存密钥显示 **Configured**，仅展示前四位和后四位，中间隐藏。密钥输入栏留空保留原密钥，填写新密钥并保存可替换。**Remove saved key** 经确认后仅清除本地保存的密钥，保留模型配置与会话；需要撤销平台上的密钥时另到平台操作。
 4. 展开 **Response guidelines · all chat models**，编辑共用的 **System prompt**，点击 **Save guidelines** 保存。**Restore default guidelines** 填入默认内容，保存后生效。默认要求专业准确、冷静中立、简洁高效，不使用 emoji 或装饰性表达，区分事实、解释与不确定性。规范用于各服务后续回复，不改写旧记录，也不保证不同模型质量相同。
 5. **Test model** 保存配置并发送小型请求，运行期间可以 **Stop test**。连接跟随电脑网络与系统代理，可能产生平台正常费用。
@@ -182,6 +188,12 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `https://openrouter.ai/api/v1`。通过 **Refresh models** 或平台目录获取当前准确 ID；账号可用时可以手动添加 OpenRouter 模型 `meta-llama/llama-4-maverick`。
 
 密钥仍使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，界面只接收掩码。迁移 Windows 账户后可能需要重填；备份时保留完整 LanCarbon 文件夹（包括 Config、Cache 和 Library），另选的数据目录也需同时备份。会话位于 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，关闭软件会停止生成并保存已有回复。Chat 提交会话文字与回答规范，Notes、Books 和 Library 文件不会自动附加。PDF/EPUB 阅读、检索与文献工作流仍留待后续阶段。
+
+### Token 用量与费用
+
+打开 **Research → Usage**，按日期、来源、模型与用途查看本地请求明细及汇总。输入、输出、缓存和推理 Token 使用平台返回数据；OpenRouter 可返回 **Reported** 费用，其他服务通过 **Model prices → Save price** 设置每百万 Token 的输入／输出／缓存单价后记录 **Estimated** 费用。每次新请求保存当时单价，不同币种分别汇总，缺失数据显示 **Unknown**，不当作零。连接测试、取消和重试也会记录；不补算旧聊天，不统计其他软件的消耗。查看、筛选和刷新 Usage 支持离线，不额外调用模型，最终费用以平台账单为准。
+
+用量日志位于 **Data/Research/Usage**，与写作和聊天分开；单价位于 **Config/ai-pricing.json**。日志不保存 API Key 或对话正文，按小文件分段保存，不删除历史；移除模型或删除聊天也不清除用量。
 
 ### 工作区与恢复
 
@@ -199,7 +211,7 @@ SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `ht
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.2.1-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.2.2-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 

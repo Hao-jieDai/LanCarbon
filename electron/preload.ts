@@ -19,7 +19,11 @@ const api: NotesDesktopApi = {
     deleteChat: id => ipcRenderer.invoke("ai:delete-chat", id),
     send: (id, providerId, modelId, text, retry) => ipcRenderer.invoke("ai:send", id, providerId, modelId, text, retry),
     stop: id => ipcRenderer.invoke("ai:stop", id),
-    onChat: callback => { const listener = (_event: Electron.IpcRendererEvent, chat: Parameters<typeof callback>[0]) => callback(chat); ipcRenderer.on("ai:chat", listener); return () => ipcRenderer.removeListener("ai:chat", listener); }
+    onChat: callback => { const listener = (_event: Electron.IpcRendererEvent, chat: Parameters<typeof callback>[0]) => callback(chat); ipcRenderer.on("ai:chat", listener); return () => ipcRenderer.removeListener("ai:chat", listener); },
+    usage: query => ipcRenderer.invoke("ai:usage", query),
+    prices: () => ipcRenderer.invoke("ai:prices"),
+    savePrice: price => ipcRenderer.invoke("ai:save-price", price),
+    onUsageChanged: callback => { const listener = () => callback(); ipcRenderer.on("ai:usage-changed", listener); return () => ipcRenderer.removeListener("ai:usage-changed", listener); }
   },
   foundation: {
     inspect: () => ipcRenderer.invoke("foundation:inspect"),

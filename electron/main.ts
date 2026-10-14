@@ -27,6 +27,8 @@ import { migrateAssetsToLibrary } from "./asset-migration";
 import { AISettingsStore, AIChatStore } from "./ai-storage";
 import { AIClient, redactAIError } from "./ai-client";
 import { AIService } from "./ai-service";
+import { AIPriceStore, AIUsageStore } from "./ai-usage";
+import type { AIModelPriceInput, AIUsageQuery } from "../src/shared/aiUsage";
 import type { AIProviderInput } from "../src/shared/ai";
 
 let mainWindow: BrowserWindow | null = null;
@@ -156,8 +158,17 @@ app.whenReady().then(async () => {
   let chatDirectory = dataDirectory;
   let chatStore = new AIChatStore(chatDirectory);
   const chats = () => { if (chatDirectory !== dataDirectory) { chatDirectory = dataDirectory; chatStore = new AIChatStore(chatDirectory); } return chatStore; };
+  const aiPrices = new AIPriceStore(configurationDirectory);
+  const usageStores = new Map<string, AIUsageStore>();
+  const usage = () => { let value = usageStores.get(dataDirectory); if (!value) { value = new AIUsageStore(dataDirectory, aiPrices); usageStores.set(dataDirectory, value); } return value; };
+  const usageRequests = new Map<string, AIUsageStore>();
   // Electron's network stack follows the computer's system proxy. Keys stay in the main process.
-  aiService = new AIService(aiSettings, chats, new AIClient((input, init) => net.fetch(input as string, init)), chat => mainWindow?.webContents.send("ai:chat", chat));
+  aiService = new AIService(aiSettings, chats, new AIClient((input, init) => net.fetch(input as string, init), async event => {
+    const target = event.type === "start" ? usage() : usageRequests.get(event.id) ?? usage();
+    if (event.type === "start") usageRequests.set(event.request.id, target);
+    try { await target.record(event); } catch { target.reportFailure(); }
+    finally { if (event.type === "finish") usageRequests.delete(event.id); if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("ai:usage-changed"); }
+  }), chat => mainWindow?.webContents.send("ai:chat", chat));
   const aiHandler = (channel: string, action: (...args: any[]) => Promise<object>) => ipcMain.handle(channel, async (event, ...args) => {
     if (event.sender !== mainWindow?.webContents) return { ok: false, error: "The AI workspace is unavailable" };
     try { return { ok: true, ...await action(...args) }; } catch (error) { return { ok: false, error: redactAIError(error) }; }
@@ -177,6 +188,13 @@ app.whenReady().then(async () => {
   aiHandler("ai:delete-chat", async (id: string) => { await aiService.remove(id); return {}; });
   aiHandler("ai:send", async (id: string, provider: string, model: string, text: string, retry?: boolean) => ({ chat: await aiService.send(id, provider, model, text, retry) }));
   aiHandler("ai:stop", async (id: string) => { await aiService.stop(id); return {}; });
+  aiHandler("ai:usage", async (query: AIUsageQuery) => ({ usage: await usage().query(query) }));
+  aiHandler("ai:prices", async () => ({ prices: await aiPrices.list() }));
+  aiHandler("ai:save-price", async (input: AIModelPriceInput) => {
+    const provider = (await aiSettings.list()).find(value => value.id === input?.providerId);
+    if (!provider || provider.baseUrl !== input.baseUrl || !provider.models.some(model => model.id === input.modelId)) throw new Error("Choose a currently configured service and model.");
+    return { prices: await aiPrices.save(input) };
+  });
   let assetsDirectory = dataDirectory;
   let assetsManager = new AssetStore(dataDirectory, managedAssetDirectory, systemAssetIds);
   const assetStore = () => {

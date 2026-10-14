@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.2.1";
+export const RELEASE_VERSION = "2.2.2";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.2.1 enables AI Settings and Chat: configure SiliconFlow, OpenRouter or an OpenAI-compatible Others service, save encrypted API keys and chat models, then stream, stop, retry and reopen local conversations. Connections follow your computer’s network. PDF/EPUB reading and literature tasks remain reserved. Notes, Books and Library files are not automatically attached to AI requests.
+Version 2.2.2 adds local token/cost accounting and removes the two preset model-add shortcuts. AI Settings and Chat: configure SiliconFlow, OpenRouter or an OpenAI-compatible Others service, save encrypted API keys and chat models, then stream, stop, retry and reopen local conversations. Connections follow your computer’s network. PDF/EPUB reading and literature tasks remain reserved. Notes, Books and Library files are not automatically attached to AI requests.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -27,7 +27,7 @@ LanCarbon now uses the new Logo consistently across the application, installer, 
 ### AI Settings and Chat
 
 1. Open **Research → AI Settings** and choose **SiliconFlow**, **OpenRouter** or **Others**. Presets supply their base addresses. Others supports OpenAI-compatible Chat Completions services and additional named configurations.
-2. Paste the service's **API Key** and select **Refresh models**, or enter an exact **Model ID** and **Display name**, then **Add model → Save models**. Choose a **Default model**. Catalogue availability and permissions depend on your platform account; a suggested model is a shortcut, not a guarantee of access.
+2. Paste the service's **API Key** and select **Refresh models**, or enter an exact **Model ID** and **Display name**, then **Add model → Save models**. Choose a **Default model**. Use the platform catalogue for current model IDs and account permissions.
 3. Saved keys appear as **Configured**, showing their first four and last four characters with the middle hidden. Leave the key input blank to retain it, or enter a replacement and save. **Remove saved key** asks for confirmation and removes only the local key, preserving models and chats. Revoke the key separately at the service when required.
 4. Expand **Response guidelines · all chat models** to edit the shared **System prompt**, then select **Save guidelines**. **Restore default guidelines** fills the default; save to apply it. Defaults request professional, accurate, calm, neutral and concise responses, without emoji or decorative language, and distinguish facts from interpretation and uncertainty. These instructions apply to future replies across all services; they do not rewrite history or guarantee identical model quality.
 5. **Test model** saves the connection and makes a small request. **Stop test** cancels a running test. Connections follow the computer's network and system proxy; normal service charges apply.
@@ -37,6 +37,18 @@ LanCarbon now uses the new Logo consistently across the application, installer, 
 SiliconFlow uses base address \`https://api.siliconflow.cn/v1\`; OpenRouter uses \`https://openrouter.ai/api/v1\`. Use **Refresh models** or your platform's catalogue for current IDs. The OpenRouter model \`meta-llama/llama-4-maverick\` can be added manually when available to your account.
 
 Keys remain encrypted for the current Windows account in **Config/ai-settings.json**; only masked previews reach the interface. Moving to another Windows account may require re-entry. Back up the complete LanCarbon home folder, including Config, Cache and Library, together with any separately selected Data location. Conversations are local in **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; closing LanCarbon stops it and preserves partial replies. Chat submits your conversation text and response guidelines; Notes, Books and Library files are not automatically attached. PDF/EPUB reading, retrieval and literature workflows remain reserved.
+
+### Token usage and costs
+
+Open **Research → Usage** for local request history and totals by date, source, model and purpose. Input, output, cached and reasoning tokens use the service's returned counts. OpenRouter can return **Reported** costs; other services can use **Model prices → Save price** to record **Estimated** costs from input/output/cache rates per million tokens. Prices are saved with each new request, currencies remain separate, and missing data is **Unknown**, not zero. Connection tests, cancelled requests and retries are recorded. Existing chats are not backfilled, and calls in other apps are outside this local ledger. Viewing or refreshing Usage works offline without extra model calls. The service's billing statement remains authoritative.
+
+Usage logs live in **Data/Research/Usage**, separately from writing and chats; prices are in **Config/ai-pricing.json**. Logs contain no API keys or conversation bodies and rotate into small files without deleting history. Removing a model or chat does not erase its usage.
+
+### Token 用量与费用
+
+打开 **Research → Usage**，按日期、来源、模型与用途查看本地请求明细及汇总。输入、输出、缓存和推理 Token 使用平台返回数据；OpenRouter 可返回 **Reported** 费用，其他服务通过 **Model prices → Save price** 设置每百万 Token 的输入／输出／缓存单价后记录 **Estimated** 费用。每次新请求保存当时单价，不同币种分别汇总，缺失数据显示 **Unknown**，不当作零。连接测试、取消和重试也会记录；不补算旧聊天，不统计其他软件的消耗。查看、筛选和刷新 Usage 支持离线，不额外调用模型，最终费用以平台账单为准。
+
+用量日志位于 **Data/Research/Usage**，与写作和聊天分开；单价位于 **Config/ai-pricing.json**。日志不保存 API Key 或对话正文，按小文件分段保存，不删除历史；移除模型或删除聊天也不清除用量。
 
 ### Workspaces
 
@@ -94,7 +106,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.2.1 启用 AI Settings 与 Chat：配置 SiliconFlow、OpenRouter 或兼容 OpenAI 的 Others 服务，保存加密密钥及聊天模型，然后进行流式对话、停止、重试与会话恢复。连接跟随电脑网络。PDF/EPUB 阅读和文献任务留待后续阶段，Notes、Books 和 Library 文件不会自动附加到 AI 请求。
+2.2.2 启用 AI Settings 与 Chat：配置 SiliconFlow、OpenRouter 或兼容 OpenAI 的 Others 服务，保存加密密钥及聊天模型，然后进行流式对话、停止、重试与会话恢复。连接跟随电脑网络。PDF/EPUB 阅读和文献任务留待后续阶段，Notes、Books 和 Library 文件不会自动附加到 AI 请求。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
@@ -107,7 +119,7 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 ### AI Settings 与 Chat
 
 1. 打开 **Research → AI Settings**，选择 **SiliconFlow**、**OpenRouter** 或 **Others**。前两项预填 API 地址；Others 支持兼容 OpenAI Chat Completions 的服务，也可添加多个命名配置。
-2. 填入服务的 **API Key** 后点击 **Refresh models**，或填写准确的 **Model ID** 与 **Display name**，点击 **Add model → Save models**，并选择 **Default model**。模型目录与调用权限取决于平台账号，预设添加按钮只是快捷入口，不保证账号有权限。
+2. 填入服务的 **API Key** 后点击 **Refresh models**，或填写准确的 **Model ID** 与 **Display name**，点击 **Add model → Save models**，并选择 **Default model**。通过平台目录确认当前模型 ID 与账号调用权限。
 3. 已保存密钥显示 **Configured**，仅展示前四位和后四位，中间隐藏。密钥输入栏留空保留原密钥，填写新密钥并保存可替换。**Remove saved key** 经确认后仅清除本地保存的密钥，保留模型配置与会话；需要撤销平台上的密钥时另到平台操作。
 4. 展开 **Response guidelines · all chat models**，编辑共用的 **System prompt**，点击 **Save guidelines** 保存。**Restore default guidelines** 填入默认内容，保存后生效。默认要求专业准确、冷静中立、简洁高效，不使用 emoji 或装饰性表达，区分事实、解释与不确定性。规范用于各服务后续回复，不改写旧记录，也不保证不同模型质量相同。
 5. **Test model** 保存配置并发送小型请求，运行期间可以 **Stop test**。连接跟随电脑网络与系统代理，可能产生平台正常费用。

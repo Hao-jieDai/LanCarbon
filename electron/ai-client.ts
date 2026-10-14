@@ -1,4 +1,6 @@
 import { aiModelName, type AIModel, type AIProvider } from "../src/shared/ai";
+import { randomUUID } from "node:crypto";
+import { parseAIUsage, type AIReportedUsage, type AIUsageEvent } from "../src/shared/aiUsage";
 
 export function redactAIError(error: unknown, key = ""): string {
   let text = error instanceof Error ? error.message : String(error);
@@ -29,7 +31,10 @@ function waitForRetry(milliseconds: number, signal: AbortSignal): Promise<void> 
   });
 }
 export class AIClient {
-  constructor(private readonly fetcher: typeof fetch) {}
+  constructor(private readonly fetcher: typeof fetch, private readonly observeUsage?: (event: AIUsageEvent) => Promise<void>) {}
+  private async track(event: AIUsageEvent): Promise<void> {
+    try { await this.observeUsage?.(event); } catch { /* The observer reports storage failures without interrupting a model request. */ }
+  }
   async models(provider: AIProvider, key: string): Promise<AIModel[]> {
     try {
       const url = `${provider.baseUrl}/models${provider.kind === "siliconflow" ? "?sub_type=chat" : ""}`;
@@ -54,7 +59,7 @@ export class AIClient {
     try {
       for (let attempt = 0; ; attempt++) {
         try {
-          await this.completeAttempt(provider, key, modelId, messages, controller.signal, (content, reasoning) => { received = true; onProgress(""); onDelta(content, reasoning); }, test);
+          await this.completeAttempt(provider, key, modelId, messages, controller.signal, (content, reasoning) => { received = true; onProgress(""); onDelta(content, reasoning); }, test, attempt + 1);
           onProgress(""); return;
         } catch (error) {
           const delay = error instanceof AIRequestError ? error.retryAfter ?? (attempt === 0 ? 5 : 15) : 0;
@@ -69,7 +74,7 @@ export class AIClient {
       throw new Error(redactAIError(error, key));
     } finally { clearTimeout(overall); signal.removeEventListener("abort", abort); }
   }
-  private async completeAttempt(provider: AIProvider, key: string, modelId: string, messages: Array<{ role: string; content: string }>, signal: AbortSignal, onDelta: (content: string, reasoning: string) => void, test = false): Promise<void> {
+  private async completeAttempt(provider: AIProvider, key: string, modelId: string, messages: Array<{ role: string; content: string }>, signal: AbortSignal, onDelta: (content: string, reasoning: string) => void, test = false, attempt = 1): Promise<void> {
     const controller = new AbortController();
     const abort = () => controller.abort(signal.reason);
     signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort();
@@ -78,13 +83,22 @@ export class AIClient {
     const overall = setTimeout(() => { timedOut = true; controller.abort(); }, 600_000);
     const touch = () => { clearTimeout(timer); timer = setTimeout(() => { timedOut = true; controller.abort(); }, 180_000); };
     let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
+    const requestId = randomUUID();
+    let usage: AIReportedUsage = {}, status: "complete" | "stopped" | "error" = "error";
+    const captureUsage = (value: unknown) => {
+      const parsed = parseAIUsage(value, provider.baseUrl);
+      for (const [key, value] of Object.entries(parsed)) if (value !== undefined) (usage as Record<string, unknown>)[key] = value;
+      if (usage.inputTokens !== undefined && usage.outputTokens !== undefined) usage.totalTokens = usage.inputTokens + usage.outputTokens;
+    };
+    await this.track({ type: "start", request: { id: requestId, startedAt: new Date().toISOString(), providerId: provider.id, providerName: provider.name, baseUrl: provider.baseUrl, modelId, modelName: provider.models.find(model => model.id === modelId)?.name ?? aiModelName(modelId), purpose: test ? "test" : "chat", attempt } });
     try {
       const response = await this.fetcher(`${provider.baseUrl}/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(provider.kind === "openrouter" ? { "X-OpenRouter-Title": "LanCarbon" } : {}) }, redirect: "error", signal: controller.signal, body: JSON.stringify({ model: modelId, messages, stream: true, ...(test ? { max_tokens: 128, ...(provider.kind === "siliconflow" && modelId.includes("DeepSeek-V4") ? { enable_thinking: false } : {}) } : {}) }) });
-      if (!response.ok) throw statusError(response.status, await response.text(), response.headers);
+      if (!response.ok) { const detail = await response.text(); try { captureUsage(JSON.parse(detail).usage); } catch { /* Plain-text service errors have no usage metadata. */ } throw statusError(response.status, detail, response.headers); }
       touch();
       let received = false, finished = false;
       const consume = (data: unknown) => {
-        const item = data as { error?: { message?: string; code?: number; metadata?: object } | string; message?: string; choices?: Array<{ delta?: { content?: unknown; reasoning_content?: unknown; reasoning?: unknown }; message?: { content?: unknown; reasoning_content?: unknown }; finish_reason?: string }> };
+        const item = data as { usage?: unknown; error?: { message?: string; code?: number; metadata?: object } | string; message?: string; choices?: Array<{ delta?: { content?: unknown; reasoning_content?: unknown; reasoning?: unknown }; message?: { content?: unknown; reasoning_content?: unknown }; finish_reason?: string }> };
+        captureUsage(item.usage);
         if (item.error) throw statusError(typeof item.error === "object" && typeof item.error.code === "number" ? item.error.code : 500, JSON.stringify({ error: typeof item.error === "string" ? { message: item.error } : item.error }));
         const choice = item.choices?.[0]; if (!choice) return;
         const delta = choice.delta ?? choice.message;
@@ -105,12 +119,14 @@ export class AIClient {
       }
       if (!received) throw new Error("The model returned no text. Check that this is a chat model and retry.");
       if (!finished) throw new Error("The connection ended before the response finished. Partial text was saved; you can retry.");
+      status = "complete";
     } catch (error) {
+      if (signal.aborted) status = "stopped";
       if (signal.aborted) throw new Error("Generation stopped");
       if (timedOut) throw new Error("The AI service timed out. Check your computer's network and retry.");
       const detail = redactAIError(error, key);
       if (error instanceof AIRequestError) throw new AIRequestError(detail, error.status, error.retryAfter);
       throw new Error(/fetch failed|ERR_|ENOTFOUND|ECONN|network/i.test(detail) ? `Connection failed. Check your computer's network or system proxy and retry. ${detail}` : detail);
-    } finally { clearTimeout(timer); clearTimeout(overall); signal.removeEventListener("abort", abort); await reader?.cancel().catch(() => undefined); }
+    } finally { clearTimeout(timer); clearTimeout(overall); signal.removeEventListener("abort", abort); await reader?.cancel().catch(() => undefined); await this.track({ type: "finish", id: requestId, completedAt: new Date().toISOString(), status, usage }); }
   }
 }

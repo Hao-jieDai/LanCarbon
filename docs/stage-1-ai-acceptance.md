@@ -1,8 +1,17 @@
 # AI 配置与 Chat 验收
 
-当前安装包：**LanCarbon 2.2.1**。使用原有 LanCarbon 快捷方式。
+当前更新：**LanCarbon 2.2.2**。使用原有 LanCarbon 快捷方式。
 
-SiliconFlow 与 OpenRouter 的真实账号接入已经由用户验收，OpenRouter 的 Llama 4 Maverick 使用稳定。Others 的真实服务配置留待此次修正后验收。自动化检查使用隔离目录和本地 AI 测试服务，不调用真实账号或消耗用户额度。
+SiliconFlow、OpenRouter 和 Others（BigModel）的真实账号接入均已由用户验收，OpenRouter 的 Llama 4 Maverick 使用稳定。当前只增加用量统计、移除两个预设添加按钮，翻译留待后续验收。自动化检查使用隔离目录和本地 AI 测试服务，不调用真实账号或消耗用户额度。
+
+## 用量统计验收
+
+1. AI Settings 中不再有 Add GPT-6 Luna / Add DeepSeek V4 Pro；Refresh models、Model ID、Add model 和已保存模型继续可用。
+2. 打开 Research → Usage。初始没有历史补算；Chat 和 Test model 后应出现来源、模型、Token、用途与状态记录。Today、Last 30 days、All time、日期、来源、模型与用途可筛选。
+3. OpenRouter 返回金额时显示 Reported / USD。SiliconFlow 和 Others 未返回金额时，先在 Model prices 选择模型，填写每百万 Token 的输入／输出单价和币种，Save price 后发起新请求，费用显示 Estimated。缓存价格可单独填；留空按输入价估算。BigModel 免费型号可将输入、输出均填零。不能把 Unknown 当作零。
+4. 修改单价不改写旧记录；取消、失败和自动重试分别留有状态，未知费用明确标示。删除聊天后统计仍保留。
+5. 断网或重启后查看、筛选、Refresh 历史数据不增加模型调用。不同币种分别汇总，实际费用以平台账单为准。
+6. 原有密钥、回答规范、模型列表、聊天、Notes、Books、Library 文件与发布设置仍正常。用量在 Data/Research/Usage；单价在 Config/ai-pricing.json。
 
 ## 本次修正验收
 
@@ -19,14 +28,14 @@ SiliconFlow 与 OpenRouter 的真实账号接入已经由用户验收，OpenRout
 
 ## 备份与回滚
 
-备份需包含完整 LanCarbon 目录，包括保存密钥解密状态的 Cache；另选的数据目录也要备份。升级前完整目录及匹配的 2.2.0 安装包位于 **backups/pre-install-2.2.1-2026-10-14**。本次安装包验证后 release 保留 **2.2.1、2.2.0、2.1.1**，只清理更早的安装包和配套 blockmap。
+备份需包含完整 LanCarbon 目录，包括保存密钥解密状态的 Cache；另选的数据目录也要备份。安装前完整目录及匹配的 2.2.1 安装包将保存在 **backups/pre-install-2.2.2-2026-10-14**。安装包验证后 release 保留 **2.2.2、2.2.1、2.2.0**，只清理更早的安装包和配套 blockmap。
 
 回滚前关闭软件，并另行保留升级后的新增编辑；恢复快照会回到备份日期。用户自己的 Notes 和 Books 与系统教程同步分开处理。系统教程由软件自动更新，用户不应编辑。
 
 ## English
 
-Use the existing shortcut. SiliconFlow and OpenRouter account connectivity has already been accepted; Llama 4 Maverick is the accepted OpenRouter model. Validate model switching, editable shared response guidelines, the compact conversation heading, masked saved keys and confirmed local key removal. Repeated questions after switching omit other models' earlier answers to that question from the outgoing request while preserving the transcript. Similar independently generated answers are still possible.
+Use the existing shortcut. SiliconFlow, OpenRouter and Others (BigModel) account connectivity has been accepted. This update removes the two preset Add buttons and adds Research → Usage; translation will be handled separately. Verify token counts and costs grouped by source, model and purpose; reported USD charges from OpenRouter; and future estimates after saving per-million-token input/output/cache prices. Zero prices are valid for a confirmed free model. Missing data stays Unknown. Price changes do not recalculate past requests, retry attempts are distinct, and deleting chats does not erase usage. Filters, Refresh and offline restart read local records without model calls. Preserve all existing writing, connections and chats.
 
 Tests and Chat retry transient pre-output rate limits/server errors at most twice, honor server backoff and allow cancellation. Partial output is never automatically replayed. Persistent upstream shared-pool limits remain a service issue. Confirm settings, chats, personal writing, resources and publishing connections after restart. Others requires the actual service's base URL, key and model ID, followed by Test model and real Chat acceptance.
 
-The matching backup and previous installer are in backups/pre-install-2.2.1-2026-10-14. Release retains 2.2.1, 2.2.0 and 2.1.1 after installer verification. Preserve later edits before restoring an older snapshot.
+The matching backup and previous installer will be in backups/pre-install-2.2.2-2026-10-14. Release retains 2.2.2, 2.2.1 and 2.2.0 after installer verification. Preserve later edits before restoring an older snapshot.
