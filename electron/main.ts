@@ -28,6 +28,8 @@ import { AISettingsStore, AIChatStore } from "./ai-storage";
 import { AIClient, redactAIError } from "./ai-client";
 import { AIService } from "./ai-service";
 import { AIPriceStore, AIUsageStore } from "./ai-usage";
+import { TranslationCache, TranslationService, TranslationSettingsStore } from "./translation";
+import { translationPriceProviders, type TranslationSettings } from "../src/shared/translation";
 import type { AIModelPriceInput, AIUsageQuery } from "../src/shared/aiUsage";
 import type { AIProviderInput } from "../src/shared/ai";
 
@@ -40,6 +42,7 @@ let dataDirectory: string;
 let saveWindowTimer: NodeJS.Timeout | undefined;
 let environmentManager: EnvironmentManager;
 let aiService: AIService;
+let translationService: TranslationService;
 
 const directories = resolveLanCarbonDirectories({
   executable: process.execPath,
@@ -154,34 +157,44 @@ app.whenReady().then(async () => {
   const officialCatalog = JSON.parse(await fs.readFile(path.join(bundledStarterContent, "assets.json"), "utf8"));
   const systemAssetIds = new Set<string>(officialCatalog.assets.map((asset: { id: string }) => asset.id));
   store = new NotesStore(dataDirectory, bundledStarterContent, managedAssetDirectory);
-  const aiSettings = new AISettingsStore(configurationDirectory, { available: () => safeStorage.isAsyncEncryptionAvailable(), encrypt: text => safeStorage.encryptStringAsync(text), decrypt: async bytes => (await safeStorage.decryptStringAsync(bytes)).result });
+  const secretCodec = { available: () => safeStorage.isAsyncEncryptionAvailable(), encrypt: (text: string) => safeStorage.encryptStringAsync(text), decrypt: async (bytes: Buffer) => (await safeStorage.decryptStringAsync(bytes)).result };
+  const aiSettings = new AISettingsStore(configurationDirectory, secretCodec);
+  const translationConnections = new AISettingsStore(configurationDirectory, secretCodec, "translation-");
+  const translationSettings = new TranslationSettingsStore(configurationDirectory);
+  let cacheDirectory = dataDirectory, translationCache = new TranslationCache(dataDirectory);
+  const cache = () => { if (cacheDirectory !== dataDirectory) { cacheDirectory = dataDirectory; translationCache = new TranslationCache(dataDirectory); } return translationCache; };
   let chatDirectory = dataDirectory;
   let chatStore = new AIChatStore(chatDirectory);
   const chats = () => { if (chatDirectory !== dataDirectory) { chatDirectory = dataDirectory; chatStore = new AIChatStore(chatDirectory); } return chatStore; };
   const aiPrices = new AIPriceStore(configurationDirectory);
+  const priceProviders = async () => translationPriceProviders(await aiSettings.list(), await translationConnections.list(), await translationSettings.get());
   const usageStores = new Map<string, AIUsageStore>();
   const usage = () => { let value = usageStores.get(dataDirectory); if (!value) { value = new AIUsageStore(dataDirectory, aiPrices); usageStores.set(dataDirectory, value); } return value; };
   const syncPrices = async () => {
-    try { const providers = await aiSettings.list(); await aiPrices.retain(providers.flatMap(provider => provider.models.map(model => ({ providerId: provider.id, baseUrl: provider.baseUrl, modelId: model.id })))); }
+    try { const providers = await priceProviders(); await aiPrices.retain(providers.flatMap(provider => provider.models.map(model => ({ providerId: provider.id, baseUrl: provider.baseUrl, modelId: model.id })))); }
     catch { usage().reportFailure("Saved model prices could not be cleaned. Historical usage is preserved; check your configuration folder."); }
   };
   await syncPrices();
   const usageRequests = new Map<string, AIUsageStore>();
   // Electron's network stack follows the computer's system proxy. Keys stay in the main process.
-  aiService = new AIService(aiSettings, chats, new AIClient((input, init) => net.fetch(input as string, init), async event => {
+  const aiClient = new AIClient((input, init) => net.fetch(input as string, init), async event => {
     const target = event.type === "start" ? usage() : usageRequests.get(event.id) ?? usage();
     if (event.type === "start") usageRequests.set(event.request.id, target);
     try { await target.record(event); } catch { target.reportFailure(); }
     finally { if (event.type === "finish") usageRequests.delete(event.id); if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("ai:usage-changed"); }
-  }), chat => mainWindow?.webContents.send("ai:chat", chat));
+  });
+  aiService = new AIService(aiSettings, chats, aiClient, chat => mainWindow?.webContents.send("ai:chat", chat));
+  translationService = new TranslationService(translationSettings, translationConnections, aiSettings, cache, aiClient);
+  const translationChanged = () => mainWindow?.webContents.send("translation:changed");
   const aiHandler = (channel: string, action: (...args: any[]) => Promise<object>) => ipcMain.handle(channel, async (event, ...args) => {
     if (event.sender !== mainWindow?.webContents) return { ok: false, error: "The AI workspace is unavailable" };
     try { return { ok: true, ...await action(...args) }; } catch (error) { return { ok: false, error: redactAIError(error) }; }
   });
   aiHandler("ai:providers", async () => ({ providers: await aiSettings.list() }));
-  aiHandler("ai:save-provider", async (input: AIProviderInput) => { const providers = await aiSettings.save(input); await syncPrices(); return { providers }; });
-  aiHandler("ai:remove-provider", async (id: string) => { const providers = await aiSettings.remove(id); await syncPrices(); return { providers }; });
-  aiHandler("ai:clear-key", async (id: string) => ({ providers: await aiSettings.clearKey(id) }));
+  aiHandler("ai:price-providers", async () => ({ providers: await priceProviders() }));
+  aiHandler("ai:save-provider", async (input: AIProviderInput) => { const providers = await aiSettings.save(input); await syncPrices(); translationChanged(); return { providers }; });
+  aiHandler("ai:remove-provider", async (id: string) => { const providers = await aiSettings.remove(id); await syncPrices(); translationChanged(); return { providers }; });
+  aiHandler("ai:clear-key", async (id: string) => { const providers = await aiSettings.clearKey(id); translationChanged(); return { providers }; });
   aiHandler("ai:preferences", async () => ({ systemPrompt: await aiSettings.preferences() }));
   aiHandler("ai:save-preferences", async (prompt: string) => ({ systemPrompt: await aiSettings.savePreferences(prompt) }));
   aiHandler("ai:models", async (id: string) => ({ models: await aiService.models(id) }));
@@ -196,7 +209,7 @@ app.whenReady().then(async () => {
   aiHandler("ai:usage", async (query: AIUsageQuery) => ({ usage: await usage().query(query) }));
   aiHandler("ai:prices", async () => ({ prices: await aiPrices.list(), usdToCny: await aiPrices.exchangeRate() }));
   aiHandler("ai:save-price", async (input: AIModelPriceInput) => {
-    const provider = (await aiSettings.list()).find(value => value.id === input?.providerId);
+    const provider = (await priceProviders()).find(value => value.id === input?.providerId);
     const model = provider?.baseUrl === input.baseUrl ? provider.models.find(model => model.id === input.modelId) : undefined;
     if (!model) throw new Error("Choose a currently configured service and model.");
     return { prices: await aiPrices.save({ ...input, providerName: provider!.name, modelName: model.name }) };
@@ -206,6 +219,21 @@ app.whenReady().then(async () => {
     mainWindow?.webContents.send("ai:usage-changed");
     return { usdToCny };
   });
+  aiHandler("translation:settings", async () => ({ settings: await translationSettings.get(), providers: await translationConnections.list(), enabled: translationService.enabled, cache: await cache().stats().catch(() => ({ entries: 0, bytes: 0 })) }));
+  aiHandler("translation:save-settings", async (input: TranslationSettings) => {
+    await translationService.cancel();
+    const providers = await (input?.mode === "custom" ? translationConnections : aiSettings).list();
+    if (!input?.modelId || !providers.some(provider => provider.id === input.providerId)) throw Error("Choose a translation service and model first.");
+    const settings = await translationSettings.save(input); await syncPrices(); translationChanged(); return { settings };
+  });
+  aiHandler("translation:save-provider", async (input: AIProviderInput) => { await translationService.cancel(); const providers = await translationConnections.save(input); await syncPrices(); translationChanged(); return { providers }; });
+  aiHandler("translation:clear-key", async (id: string) => { await translationService.cancel(); const providers = await translationConnections.clearKey(id); translationChanged(); return { providers }; });
+  aiHandler("translation:models", async (mode: TranslationSettings["mode"], id: string) => ({ models: await translationService.models(mode, id) }));
+  aiHandler("translation:set-enabled", async (input: boolean) => { const enabled = await translationService.setEnabled(input); translationChanged(); return { enabled }; });
+  aiHandler("translation:translate", async (id: string, text: string) => ({ result: await translationService.translate(id, text) }));
+  aiHandler("translation:cancel", async (id?: string) => { await translationService.cancel(id); return {}; });
+  aiHandler("translation:test", async () => ({ result: await translationService.translate(randomUUID(), "Climate change affects investment.", true) }));
+  aiHandler("translation:clear-cache", async () => { await translationService.cancel(); const stats = await cache().clear(); translationChanged(); return { cache: stats }; });
   let assetsDirectory = dataDirectory;
   let assetsManager = new AssetStore(dataDirectory, managedAssetDirectory, systemAssetIds);
   const assetStore = () => {
@@ -371,7 +399,7 @@ app.whenReady().then(async () => {
     if (selection.canceled || !selection.filePaths[0]) return { ok: false, canceled: true, error: "Data location change canceled" };
     const target = path.resolve(selection.filePaths[0]);
     try {
-      await aiService.shutdown();
+      await translationService.shutdown(); await aiService.shutdown();
       await dataLocationManager.prepareTarget(dataDirectory, target);
       const current = await store.loadWorkspace();
       const targetStore = new NotesStore(target, bundledStarterContent, managedAssetDirectory);
@@ -577,6 +605,6 @@ app.whenReady().then(async () => {
 let aiQuitFlushed = false;
 app.on("before-quit", event => {
   environmentManager?.cancel(); websiteServers.closeAll();
-  if (aiService && !aiQuitFlushed) { event.preventDefault(); aiQuitFlushed = true; void aiService.shutdown().finally(() => app.quit()); }
+  if (aiService && !aiQuitFlushed) { event.preventDefault(); aiQuitFlushed = true; void Promise.all([aiService.shutdown(), translationService?.shutdown()]).finally(() => app.quit()); }
 });
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });

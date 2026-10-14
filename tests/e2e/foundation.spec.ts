@@ -31,7 +31,7 @@ test("four workspaces preserve writing, resources, selections and isolated direc
     expect(bounds[2]!.y).toBeGreaterThan(bounds[0]!.y); expect(bounds[0]!.x).toBe(bounds[2]!.x);
     await page.getByLabel("Note title").fill("Edited foundation writing");
     await page.getByRole("button", { name: "Research", exact: true }).click();
-    for (const name of ["Run", "Templates", "Outputs", "Chat", "Usage", "AI Settings"]) {
+    for (const name of ["Run", "Templates", "Outputs", "Chat", "Usage", "AI Settings", "Translation Settings"]) {
       await page.getByRole("navigation", { name: "Research pages" }).getByRole("button", { name, exact: true }).click();
       await expect(page.getByRole("heading", { name: name === "Chat" ? "Start a conversation" : name, exact: true })).toBeVisible();
       if (["Run", "Templates", "Outputs"].includes(name)) await expect(page.getByText("Coming soon", { exact: true })).toBeVisible();

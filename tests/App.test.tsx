@@ -88,7 +88,7 @@ describe("App", () => {
 
   it("在 Edit 与 MyST Preview 间切换并保留同一编辑器", async () => {
     const user = userEvent.setup(); render(<App />); await screen.findByDisplayValue("第一篇");
-    const editor = screen.getByLabelText("Note content");
+    const editor = await screen.findByLabelText("Note content");
     expect(screen.getByText("Ctrl+E")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Preview" }));
     expect(screen.getByLabelText("Rendered preview").querySelector("p")).toHaveTextContent("已有正文");

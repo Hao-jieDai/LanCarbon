@@ -17,6 +17,7 @@ import type { PreviewDocument } from "./preview/mystPreview";
 import type { Book, BookCheckIssue, Note, NoteFilter, SaveState, Theme, WorkspaceFile, WorkspaceSortOrder } from "./shared/types";
 import { RESEARCH_PAGES, type ResearchPage, type WorkspaceMode } from "./shared/research";
 import { ResearchWorkspace } from "./components/ResearchWorkspace";
+import { TranslationWidget } from "./components/TranslationWidget";
 import { LibraryWorkspace } from "./components/LibraryWorkspace";
 
 const NAVIGATION_KEY = "lancarbon-navigation-v1";
@@ -336,6 +337,7 @@ export function App() {
       <ResearchWorkspace key={`research:${dataLocation}`} visible={mode === "research"} page={researchPage} onPageChange={setResearchPage} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />
       {mode === "library" && <LibraryWorkspace onNavigate={usage => void navigateResource(usage)} key={dataLocation} notes={workspace.notes} books={workspace.books} selectedId={libraryAssetId} onSelect={setLibraryAssetId} onOpenSidebar={() => document.body.classList.add("sidebar-open")} />}
     </main>
+    <TranslationWidget key={dataLocation} scope={`${mode}:${activeNoteId}:${viewMode}`} onSettings={() => { switchMode("research"); setResearchPage("translation"); }}/>
     <button className="sidebar-backdrop" aria-label="Close notes list" onClick={() => document.body.classList.remove("sidebar-open")} />
     <div className={`toast ${toast ? "show" : ""}`} role="status" aria-live="polite">{toast}</div>
     {showCreateBook && <CreateBookDialog onClose={() => setShowCreateBook(false)} onCreate={createNewBook} />}

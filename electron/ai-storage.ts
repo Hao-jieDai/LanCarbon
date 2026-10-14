@@ -35,22 +35,24 @@ class Serialized {
 }
 export class AISettingsStore extends Serialized {
   private readonly filename: string;
-  constructor(config: string, private readonly codec: SecretCodec) { super(); this.filename = path.join(config, "ai-settings.json"); }
+  constructor(config: string, private readonly codec: SecretCodec, private readonly namespace = "") { super(); this.filename = path.join(config, namespace ? "translation-connections.json" : "ai-settings.json"); }
+  private defaults(): AIProvider[] { return defaultAIProviders().map(provider => ({ ...provider, id: this.namespace + provider.id, name: provider.name + (this.namespace ? " Translation" : "") })); }
   private async read(): Promise<StoredSettings> {
     const data = await readJson(this.filename, 2_000_000) as { version?: number; providers?: StoredProvider[]; systemPrompt?: string } | undefined;
-    if (!data) return { version: 1, providers: defaultAIProviders().map(({ hasKey: _key, ...provider }) => provider), systemPrompt: DEFAULT_AI_SYSTEM_PROMPT };
+    if (!data) return { version: 1, providers: this.defaults().map(({ hasKey: _key, ...provider }) => provider), systemPrompt: DEFAULT_AI_SYSTEM_PROMPT };
     if (data.version !== 1 || !Array.isArray(data.providers) || data.providers.length > 30) throw new Error("Unsupported AI settings format. Existing settings have been preserved.");
     const ids = new Set<string>();
     for (const provider of data.providers) { validId(provider.id); if (ids.has(provider.id)) throw new Error("Duplicate AI configuration"); ids.add(provider.id); const validated = this.validate(provider); if (validated.baseUrl !== provider.baseUrl) throw new Error("Invalid stored API address"); if (provider.encryptedKey !== undefined && (typeof provider.encryptedKey !== "string" || provider.encryptedKey.length > 20000)) throw new Error("Invalid stored API key"); }
-    if (["siliconflow", "openrouter", "others"].some(id => !ids.has(id))) throw new Error("AI settings are incomplete. Existing settings have been preserved.");
+    if (this.defaults().some(provider => !ids.has(provider.id))) throw new Error("AI settings are incomplete. Existing settings have been preserved.");
     const systemPrompt = data.systemPrompt === undefined ? DEFAULT_AI_SYSTEM_PROMPT : bounded(data.systemPrompt, "response guidelines", 12000);
     return { version: 1, providers: data.providers, systemPrompt };
   }
   private validate(input: AIProviderInput): Omit<AIProvider, "hasKey"> {
     validId(input.id);
     if (!["siliconflow", "openrouter", "others"].includes(input.kind)) throw new Error("Unknown AI service");
-    if (input.kind !== "others" && input.id !== input.kind) throw new Error("Invalid preset configuration");
-    const name = input.kind === "others" ? bounded(input.name, "configuration name", 100) : AI_PRESETS[input.kind].name;
+    if (input.kind !== "others" && input.id !== this.namespace + input.kind) throw new Error("Invalid preset configuration");
+    if (this.namespace && !input.id.startsWith(this.namespace)) throw new Error("Invalid translation configuration");
+    const name = input.kind === "others" ? bounded(input.name, "configuration name", 100) : AI_PRESETS[input.kind].name + (this.namespace ? " Translation" : "");
     if (!name) throw new Error("Enter a configuration name");
     const baseUrl = input.kind === "others" ? (input.baseUrl.trim() ? aiBaseUrl(input.baseUrl) : "") : AI_PRESETS[input.kind].baseUrl;
     if (!Array.isArray(input.models) || input.models.length > 100) throw new Error("Configure up to 100 chat models per service");
@@ -89,7 +91,7 @@ export class AISettingsStore extends Serialized {
       return this.publicProviders(updated);
     });
   }
-  async remove(id: string): Promise<AIProvider[]> { validId(id); if (["siliconflow", "openrouter", "others"].includes(id)) throw new Error("Clear the preset's API key instead of deleting the preset"); return this.serial(async () => { const settings = await this.read(), providers = settings.providers.filter(item => item.id !== id); await atomicJson(this.filename, { ...settings, providers }); return this.publicProviders(providers); }); }
+  async remove(id: string): Promise<AIProvider[]> { validId(id); if (this.defaults().some(provider => provider.id === id)) throw new Error("Clear the preset's API key instead of deleting the preset"); return this.serial(async () => { const settings = await this.read(), providers = settings.providers.filter(item => item.id !== id); await atomicJson(this.filename, { ...settings, providers }); return this.publicProviders(providers); }); }
   async connection(id: string): Promise<{ provider: AIProvider; key: string }> {
     return this.serial(async () => { validId(id); const saved = (await this.read()).providers.find(item => item.id === id); if (!saved?.baseUrl || !saved.encryptedKey) throw new Error("Save an API address and API key in AI Settings first"); if (!await this.codec.available()) throw new Error("Windows secure key storage is unavailable"); let key: string; try { key = await this.codec.decrypt(Buffer.from(saved.encryptedKey, "base64")); } catch { throw new Error("This API key cannot be decrypted on this Windows account. Enter it again in AI Settings."); } const { encryptedKey: _secret, ...provider } = saved; return { provider: { ...provider, hasKey: true }, key }; });
   }

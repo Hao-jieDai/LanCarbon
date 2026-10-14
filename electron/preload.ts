@@ -2,8 +2,22 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { NotesDesktopApi } from "../src/shared/types";
 
 const api: NotesDesktopApi = {
+  translation: {
+    settings: () => ipcRenderer.invoke("translation:settings"),
+    saveSettings: settings => ipcRenderer.invoke("translation:save-settings", settings),
+    saveProvider: input => ipcRenderer.invoke("translation:save-provider", input),
+    clearKey: id => ipcRenderer.invoke("translation:clear-key", id),
+    models: (mode, id) => ipcRenderer.invoke("translation:models", mode, id),
+    setEnabled: enabled => ipcRenderer.invoke("translation:set-enabled", enabled),
+    translate: (id, text) => ipcRenderer.invoke("translation:translate", id, text),
+    cancel: id => ipcRenderer.invoke("translation:cancel", id),
+    test: () => ipcRenderer.invoke("translation:test"),
+    clearCache: () => ipcRenderer.invoke("translation:clear-cache"),
+    onChanged: callback => { const listener = () => callback(); ipcRenderer.on("translation:changed", listener); return () => ipcRenderer.removeListener("translation:changed", listener); }
+  },
   ai: {
     providers: () => ipcRenderer.invoke("ai:providers"),
+    priceProviders: () => ipcRenderer.invoke("ai:price-providers"),
     saveProvider: input => ipcRenderer.invoke("ai:save-provider", input),
     removeProvider: id => ipcRenderer.invoke("ai:remove-provider", id),
     clearKey: id => ipcRenderer.invoke("ai:clear-key", id),

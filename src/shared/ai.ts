@@ -10,6 +10,7 @@ export interface AIChat { id: string; title: string; providerId: string; modelId
 export type AIResult<T> = ({ ok: true } & T) | { ok: false; error: string };
 export interface AIDesktopApi {
   providers(): Promise<AIResult<{ providers: AIProvider[] }>>;
+  priceProviders(): Promise<AIResult<{ providers: AIProvider[] }>>;
   saveProvider(input: AIProviderInput): Promise<AIResult<{ providers: AIProvider[] }>>;
   removeProvider(id: string): Promise<AIResult<{ providers: AIProvider[] }>>;
   clearKey(id: string): Promise<AIResult<{ providers: AIProvider[] }>>;

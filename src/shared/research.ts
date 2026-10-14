@@ -1,5 +1,5 @@
 export type WorkspaceMode = "notes" | "book" | "research" | "library";
-export type ResearchPage = "run" | "templates" | "outputs" | "chat" | "usage" | "settings";
+export type ResearchPage = "run" | "templates" | "outputs" | "chat" | "usage" | "settings" | "translation";
 
 export const RESEARCH_PAGES: Array<{ id: ResearchPage; label: string; description: string }> = [
   { id: "run", label: "Run", description: "Discover papers, expand your collection, and read selected materials." },
@@ -7,7 +7,8 @@ export const RESEARCH_PAGES: Array<{ id: ResearchPage; label: string; descriptio
   { id: "outputs", label: "Outputs", description: "Review generated drafts and archive selected versions to Notes or Books." },
   { id: "chat", label: "Chat", description: "Discuss ideas with your selected AI model. Document questions will be added later." },
   { id: "usage", label: "Usage", description: "Review local token usage and reported or estimated model costs." },
-  { id: "settings", label: "AI Settings", description: "Manage your AI connections and models for reading and conversation." }
+  { id: "settings", label: "AI Settings", description: "Manage your AI connections and models for reading and conversation." },
+  { id: "translation", label: "Translation Settings", description: "Choose the service, model and prompt for selected-text translation." }
 ];
 
 export interface FoundationDirectories {

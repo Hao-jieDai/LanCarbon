@@ -58,7 +58,7 @@ describe("release metadata", () => {
     const starter = JSON.parse(readFileSync(path.join(process.cwd(), "resources", "starter-content", "notes.json"), "utf8"));
     const book = starter.books.find((item: { id: string }) => item.id === "lancarbon-from-zero-to-one");
     expect(book.settings.title).toBe("LanCarbon: From 0 to 1");
-    expect(Object.keys(book.pages)).toHaveLength(44);
+    expect(Object.keys(book.pages)).toHaveLength(45);
     expect(book.settings.publishing).toBeUndefined();
     const bookNoteIds = new Set(Object.values(book.pages).map((page: unknown) => (page as { noteId: string }).noteId));
     const content = starter.notes.filter((note: { id: string }) => bookNoteIds.has(note.id)).map((note: { content: string }) => note.content).join("\n");

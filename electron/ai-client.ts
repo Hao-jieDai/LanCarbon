@@ -1,6 +1,7 @@
 import { aiModelName, type AIModel, type AIProvider } from "../src/shared/ai";
 import { randomUUID } from "node:crypto";
-import { parseAIUsage, type AIReportedUsage, type AIUsageEvent } from "../src/shared/aiUsage";
+import { parseAIUsage, type AIReportedUsage, type AIUsageEvent, type AIUsagePurpose } from "../src/shared/aiUsage";
+export interface AICompletionOptions { purpose?: AIUsagePurpose; maxTokens?: number; temperature?: number; disableThinking?: boolean; timeoutMs?: number }
 
 export function redactAIError(error: unknown, key = ""): string {
   let text = error instanceof Error ? error.message : String(error);
@@ -50,16 +51,16 @@ export class AIClient {
       return [...models.values()].sort((a, b) => a.id.localeCompare(b.id));
     } catch (error) { throw new Error(redactAIError(error, key)); }
   }
-  async complete(provider: AIProvider, key: string, modelId: string, messages: Array<{ role: string; content: string }>, signal: AbortSignal, onDelta: (content: string, reasoning: string) => void, test = false, onProgress: (message: string) => void = () => {}): Promise<void> {
+  async complete(provider: AIProvider, key: string, modelId: string, messages: Array<{ role: string; content: string }>, signal: AbortSignal, onDelta: (content: string, reasoning: string) => void, test = false, onProgress: (message: string) => void = () => {}, options: AICompletionOptions = {}): Promise<void> {
     const controller = new AbortController();
     const abort = () => controller.abort(signal.reason);
     signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort();
     let received = false, timedOut = false;
-    const overall = setTimeout(() => { timedOut = true; controller.abort(); }, 600_000);
+    const overall = setTimeout(() => { timedOut = true; controller.abort(); }, options.timeoutMs ?? 600_000);
     try {
       for (let attempt = 0; ; attempt++) {
         try {
-          await this.completeAttempt(provider, key, modelId, messages, controller.signal, (content, reasoning) => { received = true; onProgress(""); onDelta(content, reasoning); }, test, attempt + 1);
+          await this.completeAttempt(provider, key, modelId, messages, controller.signal, (content, reasoning) => { received = true; onProgress(""); onDelta(content, reasoning); }, test, attempt + 1, options);
           onProgress(""); return;
         } catch (error) {
           const delay = error instanceof AIRequestError ? error.retryAfter ?? (attempt === 0 ? 5 : 15) : 0;
@@ -74,7 +75,7 @@ export class AIClient {
       throw new Error(redactAIError(error, key));
     } finally { clearTimeout(overall); signal.removeEventListener("abort", abort); }
   }
-  private async completeAttempt(provider: AIProvider, key: string, modelId: string, messages: Array<{ role: string; content: string }>, signal: AbortSignal, onDelta: (content: string, reasoning: string) => void, test = false, attempt = 1): Promise<void> {
+  private async completeAttempt(provider: AIProvider, key: string, modelId: string, messages: Array<{ role: string; content: string }>, signal: AbortSignal, onDelta: (content: string, reasoning: string) => void, test = false, attempt = 1, options: AICompletionOptions = {}): Promise<void> {
     const controller = new AbortController();
     const abort = () => controller.abort(signal.reason);
     signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort();
@@ -90,9 +91,9 @@ export class AIClient {
       for (const [key, value] of Object.entries(parsed)) if (value !== undefined) (usage as Record<string, unknown>)[key] = value;
       if (usage.inputTokens !== undefined && usage.outputTokens !== undefined) usage.totalTokens = usage.inputTokens + usage.outputTokens;
     };
-    await this.track({ type: "start", request: { id: requestId, startedAt: new Date().toISOString(), providerId: provider.id, providerName: provider.name, baseUrl: provider.baseUrl, modelId, modelName: provider.models.find(model => model.id === modelId)?.name ?? aiModelName(modelId), purpose: test ? "test" : "chat", attempt } });
+    await this.track({ type: "start", request: { id: requestId, startedAt: new Date().toISOString(), providerId: provider.id, providerName: provider.name, baseUrl: provider.baseUrl, modelId, modelName: provider.models.find(model => model.id === modelId)?.name ?? aiModelName(modelId), purpose: options.purpose ?? (test ? "test" : "chat"), attempt } });
     try {
-      const response = await this.fetcher(`${provider.baseUrl}/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(provider.kind === "openrouter" ? { "X-OpenRouter-Title": "LanCarbon" } : {}) }, redirect: "error", signal: controller.signal, body: JSON.stringify({ model: modelId, messages, stream: true, ...(test ? { max_tokens: 128, ...(provider.kind === "siliconflow" && modelId.includes("DeepSeek-V4") ? { enable_thinking: false } : {}) } : {}) }) });
+      const response = await this.fetcher(`${provider.baseUrl}/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(provider.kind === "openrouter" ? { "X-OpenRouter-Title": "LanCarbon" } : {}) }, redirect: "error", signal: controller.signal, body: JSON.stringify({ model: modelId, messages, stream: true, ...(test ? { max_tokens: 128 } : {}), ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}), ...(options.temperature !== undefined ? { temperature: options.temperature } : {}), ...((test || options.disableThinking) && provider.kind === "siliconflow" && /DeepSeek-V[34]/.test(modelId) ? { enable_thinking: false } : {}) }) });
       if (!response.ok) { const detail = await response.text(); try { captureUsage(JSON.parse(detail).usage); } catch { /* Plain-text service errors have no usage metadata. */ } throw statusError(response.status, detail, response.headers); }
       touch();
       let received = false, finished = false;

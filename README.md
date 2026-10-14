@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
 
-Version 2.2.3 adds compact usage cards, hourly/daily activity heatmaps, editable CNY conversion and automatic price cleanup that preserves historical costs. AI Settings and Chat support SiliconFlow, OpenRouter and named Others configurations, system-network connections, encrypted API keys, model selection, streaming, cancellation, retry and locally saved conversations. PDF/EPUB reading and literature automation remain reserved. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
+Version 2.2.4 adds optional selection translation across all workspaces, independent translation settings, bounded local reuse and translation usage accounting. Hourly activity now uses three rows of eight cells. AI Settings and Chat support SiliconFlow, OpenRouter and named Others configurations, system-network connections, encrypted API keys, model selection, streaming, cancellation, retry and locally saved conversations. PDF/EPUB reading and literature automation remain reserved. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -49,21 +49,31 @@ SiliconFlow uses base address `https://api.siliconflow.cn/v1`; OpenRouter uses `
 
 Keys remain encrypted for the current Windows account in **Config/ai-settings.json**; only masked previews reach the interface. Moving to another Windows account may require re-entry. Back up the complete LanCarbon home folder, including Config, Cache and Library, together with any separately selected Data location. Conversations are local in **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; closing LanCarbon stops it and preserves partial replies. Chat submits your conversation text and response guidelines; Notes, Books and Library files are not automatically attached. PDF/EPUB reading, retrieval and literature workflows remain reserved.
 
+### Selection translation
+
+1. Open **Research → Translation Settings**. Choose **Use an existing AI connection** to reuse a saved key without changing Chat models, or **Separate translation connection** for a dedicated SiliconFlow, OpenRouter or Others key and address. Saved dedicated keys show a masked preview and **Remove translation key**; blank inputs retain the key.
+2. Choose **Service**, use **Refresh translation models** or enter the exact **Model ID**, then **Save translation settings**. **Test translation** makes a short real request, even with automatic translation off; **Stop translation test** cancels it. Translation uses an independent model and prompt. General models receive an academic Chinese-only system prompt; **Automatic** uses the official user-only translation template for Hunyuan-MT / HY-MT. Expand **Translation prompt** to adjust or restore it.
+3. Translation starts **off** each time LanCarbon opens. Enable the sidebar **Translate** switch or press **Ctrl+Alt+T**. Select an English word, phrase or short passage in Notes/Books **Edit** or **Preview**, Research, Library or selectable interface text. After selection settles, the floating panel shows the selected English and Chinese translation. Drag its header to move it; the position is remembered. Close the panel or use the switch/shortcut to disable automatic requests. Passwords, API keys and connection addresses are excluded.
+4. Select at most **1,600 characters / 250 words**. Only the selection and translation instructions are sent, without the whole Note, Book or Chat. New selections cancel earlier translation requests. Cancellation cannot undo charges already incurred upstream.
+5. Repeated selections with the same saved service/model/prompt reuse local results without another API call. **Saved translations → Clear translation cache** clears only the translation cache, limited to **1,000 results / 5 MB**, stored under **Data/Research/Translation**. Changing service, model or prompt uses a separate cache identity. Translation and its manual tests appear in **Usage → Purpose: Translation**; locally reused results do not add tokens or requests. Configure the translation model's price in **Model prices** when the service does not report costs.
+
+For a low-cost starting point, SiliconFlow offers **tencent/Hunyuan-MT-7B**. Confirm availability, quotas and current prices in its official catalogue; no free entitlement is assumed by LanCarbon.
+
 ### Token usage and costs
 
 Open **Research → Usage**. The default is **Today**; choose **Last 7 days**, **Last 30 days**, or custom **From / To** dates. Source, model and purpose filters apply to the entire range. The compact overview shows **Requests**, total **Tokens** and **Costs**, with each title and value on one line. Requests are newest first, ten per page; pagination does not change totals or activity.
 
-**Token activity → Hourly** shows 24 hours for a selected local date. **Daily** shows one cell per date, arranged by week with month labels; use the year control for a range spanning multiple years. Darker cells mean more tokens. Hover or focus a cell for its time/date, tokens and CNY cost. Missing usage or fees remain unknown rather than zero.
+**Token activity → Hourly** shows 24 hours for a selected local date in three rows of eight cells (00–07, 08–15, 16–23). **Daily** shows one cell per date, arranged by week with month labels; use the year control for a range spanning multiple years. Darker cells mean more tokens. Hover or focus a cell for its time/date, tokens and CNY cost. Missing usage or fees remain unknown rather than zero.
 
 In **Model prices**, choose a configured model and save its input/output rates per million tokens and original currency. Optional cache rates use the input rate when blank; enter zero for a verified free model. Saved prices can be edited. Removing a model and saving its configuration, deleting a service, or changing its API address automatically removes obsolete prices. Historical requests retain their own price snapshots and original reported charges.
 
 Set **1 USD = CNY → Save exchange rate** to choose a local display reference (default 7, not a live quote). USD fees are converted and combined with CNY fees for display; changing this rate updates historical CNY display values without changing original charges. Hover a cost for its original currency and Reported/Estimated source. Reported costs come from the API; estimates use the price saved when the request started. The platform statement remains authoritative.
 
-Viewing Usage works offline and does not call a model. Local logs are in **Data/Research/Usage**, prices and exchange rate in **Config/ai-pricing.json**. Logs contain no keys or conversation bodies; model/chat deletion does not erase history. Only recorded LanCarbon calls are included, without backfilling older chats or other apps.
+Viewing Usage works offline and does not call a model. Local logs are in **Data/Research/Usage**, prices and exchange rate in **Config/ai-pricing.json**. Logs contain no keys or conversation bodies; model/chat deletion does not erase history. Use **Purpose: Translation** for selection translation and its tests; locally reused translations do not create requests. Only recorded LanCarbon calls are included, without backfilling older chats or other apps.
 
 ### Workspaces and recovery
 
-The four workspace buttons form a 2×2 grid: **Notes / Books** above **Research / Library**. Each retains its selection when switching and restarting. Research contains **Run**, **Templates**, **Outputs**, **Chat** and **AI Settings**; pages labeled **Coming soon** have no active AI or literature actions yet. Library uses a compact file list. Selecting a file keeps its references in a fixed panel above the independently scrolling list; **Save a copy** sits beside its filename. Select a reference to open its Note or Book page and highlight the cited line, or open the corresponding Book settings/Citations panel. **Folder** reveals the actual file and **Rename** changes its display and saved-copy name while retaining IDs, extensions and existing writing. Built-in tutorial resources cannot be renamed; **Open Library folder** opens the originals folder. Existing resources retain their IDs, locations and Markdown links.
+The four workspace buttons form a 2×2 grid: **Notes / Books** above **Research / Library**. Each retains its selection when switching and restarting. Research contains **Run**, **Templates**, **Outputs**, **Chat**, **Usage**, **AI Settings** and **Translation Settings**; pages labeled **Coming soon** have no active AI or literature actions yet. Library uses a compact file list. Selecting a file keeps its references in a fixed panel above the independently scrolling list; **Save a copy** sits beside its filename. Select a reference to open its Note or Book page and highlight the cited line, or open the corresponding Book settings/Citations panel. **Folder** reveals the actual file and **Rename** changes its display and saved-copy name while retaining IDs, extensions and existing writing. Built-in tutorial resources cannot be renamed; **Open Library folder** opens the originals folder. Existing resources retain their IDs, locations and Markdown links.
 
 **Ctrl+Q** switches Notes and Books; from Research or Library it returns to the most recently used writing workspace. **Ctrl+N** and **Ctrl+E** operate only in Notes and Books.
 
@@ -72,7 +82,7 @@ Managed writing resources are stored in root **Library/assets**. Existing Data/a
 Before upgrading, close LanCarbon and back up the complete LanCarbon home folder and any separately selected Data location. Include Cache because its encryption state is needed to read previously saved API keys. Keep the stable installer alongside the backup. Reinstalling an older application may also require restoring matching data. A restored snapshot returns to the backup date; retain later edits separately. Developers can use the verified snapshot commands below. Restore accepts a new empty folder, verifies all files before copying and adjusts saved managed paths to that folder.
 
 ```powershell
-node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.2.3-x64-Setup.exe"
+node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.2.4-x64-Setup.exe"
 node scripts/workspace-recovery.cjs verify --backup "D:\Backups\LanCarbon-snapshot"
 node scripts/workspace-recovery.cjs restore --backup "D:\Backups\LanCarbon-snapshot" --target "D:\Recovered\LanCarbon"
 ```
@@ -83,7 +93,7 @@ Select **Export PDF** in the page header from Edit or Preview, choose a filename
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.2.3-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.2.4-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -159,7 +169,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-2.2.3 调整用量界面，加入小时／每日热力图、可编辑汇率的人民币费用合计，以及保留历史费用的价格自动清理。AI Settings 与 Chat 支持 SiliconFlow、OpenRouter 和命名 Others 配置、系统网络连接、加密 API Key、模型选择、流式回复、停止、重试和本地会话保存。PDF/EPUB 阅读与文献自动化仍留待后续阶段。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
+2.2.4 加入全工作区可开关的选词翻译、独立翻译配置、有上限的本地缓存和翻译用量统计；小时热力图调整为三行八列。AI Settings 与 Chat 支持 SiliconFlow、OpenRouter 和命名 Others 配置、系统网络连接、加密 API Key、模型选择、流式回复、停止、重试和本地会话保存。PDF/EPUB 阅读与文献自动化仍留待后续阶段。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
@@ -195,21 +205,31 @@ SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `ht
 
 密钥仍使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，界面只接收掩码。迁移 Windows 账户后可能需要重填；备份时保留完整 LanCarbon 文件夹（包括 Config、Cache 和 Library），另选的数据目录也需同时备份。会话位于 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，关闭软件会停止生成并保存已有回复。Chat 提交会话文字与回答规范，Notes、Books 和 Library 文件不会自动附加。PDF/EPUB 阅读、检索与文献工作流仍留待后续阶段。
 
+### 选词翻译
+
+1. 打开 **Research → Translation Settings**。选择 **Use an existing AI connection** 复用已保存密钥，聊天模型不受影响；或用 **Separate translation connection** 配置独立的 SiliconFlow、OpenRouter 或 Others 密钥与地址。独立密钥显示掩码，可用 **Remove translation key** 清除本地保存；输入框留空保留原密钥。
+2. 选择 **Service**，通过 **Refresh translation models** 选择或手填准确的 **Model ID**，再 **Save translation settings**。**Test translation** 发起短测试请求，即使自动翻译关闭也可用；**Stop translation test** 取消测试。翻译模型与提示词独立于 Chat。通用模型使用只输出中文、无 emoji 的学术翻译系统提示词；**Automatic** 为 Hunyuan-MT / HY-MT 使用官方用户消息翻译模板。展开 **Translation prompt** 可修改或恢复默认要求。
+3. 每次启动默认**关闭**。点击侧栏 **Translate** 或按 **Ctrl+Alt+T** 开启后，在 Notes／Books 的 **Edit** 或 **Preview**、Research、Library，以及可选取的界面文字中选择英文单词、词组或短句。选取稳定后，浮窗显示原文与中文；拖动标题栏可移动并记住位置。关闭浮窗或使用开关／快捷键停止自动调用。密码、API Key 和接口地址不参与翻译。
+4. 单次最多 **1,600 字符／250 词**，仅发送选取内容与翻译要求，不附带整篇 Note、Book 或聊天。新的选取会取消旧翻译请求；取消不能撤销上游已经发生的费用。
+5. 相同来源、模型、提示词的重复选取复用本地结果，不再次请求 API。**Saved translations → Clear translation cache** 仅清除翻译缓存；缓存位于 **Data/Research/Translation**，上限 **1,000 条／5 MB**。更换来源、模型或提示词后使用各自缓存。翻译及手动测试在 **Usage → Purpose: Translation** 中统计；本地复用不增加请求与 Token。服务不返回费用时，在 **Model prices** 配置翻译模型价格。
+
+可先尝试 SiliconFlow 的 **tencent/Hunyuan-MT-7B**；可用性、额度与当前价格以官方目录为准，LanCarbon 不预设免费权益。
+
 ### Token 用量与费用
 
 打开 **Research → Usage**，默认查看 **Today**；可选 **Last 7 days**、**Last 30 days**，或自选 **From / To** 日期。来源、模型和用途筛选作用于整个区间。紧凑概览只显示 **Requests**、总 **Tokens** 和 **Costs**，标题与数字在同一行。请求按最新在前排列，每页十条；翻页不影响汇总和活动热力图。
 
-**Token activity → Hourly** 展示指定本地日期的 24 小时；**Daily** 每天一格，按周排列并标记月份，跨年区间可切换年份。颜色越深表示 Token 越多；悬浮或键盘聚焦格子可查看时间／日期、总 Token 和人民币费用。缺失用量或费用仍为未知，不当作零。
+**Token activity → Hourly** 按三行八列展示指定本地日期的 24 小时（00–07、08–15、16–23）；**Daily** 每天一格，按周排列并标记月份，跨年区间可切换年份。颜色越深表示 Token 越多；悬浮或键盘聚焦格子可查看时间／日期、总 Token 和人民币费用。缺失用量或费用仍为未知，不当作零。
 
 在 **Model prices** 选择已配置模型，保存每百万 Token 的输入／输出单价及原始币种。缓存价格留空按输入价；经平台确认的免费模型可填零。已保存价格可编辑。删除模型并保存配置、删除服务或更改 API 地址时，自动清理对应的旧价格；历史请求保留当时单价及平台返回的原币费用，不受清理影响。
 
 通过 **1 USD = CNY → Save exchange rate** 设置本地换算参考值（默认 7，不是实时汇率）。美元费用折算后与人民币费用合计显示；修改汇率会更新历史记录的人民币显示值，但不改变原币费用。悬浮费用可查看原币金额以及 Reported／Estimated 来源。Reported 来自接口，Estimated 按请求开始时的单价估算，最终以平台账单为准。
 
-查看 Usage 支持离线，不额外调用模型。日志位于 **Data/Research/Usage**，单价和汇率位于 **Config/ai-pricing.json**。日志不包含密钥或对话正文；删除模型或聊天不删除历史。仅统计 LanCarbon 已记录的调用，不补算旧聊天或其他软件消耗。
+查看 Usage 支持离线，不额外调用模型。日志位于 **Data/Research/Usage**，单价和汇率位于 **Config/ai-pricing.json**。日志不包含密钥或对话正文；删除模型或聊天不删除历史。通过 **Purpose: Translation** 查看选词翻译及其测试，本地复用不产生请求。仅统计 LanCarbon 已记录的调用，不补算旧聊天或其他软件消耗。
 
 ### 工作区与恢复
 
-四个工作区入口按 2×2 排列：上行为 **Notes / Books**，下行为 **Research / Library**，切换和重启后保留各自选择。Research 包含 **Run**、**Templates**、**Outputs**、**Chat** 和 **AI Settings**；标记为 **Coming soon** 的页面尚未启用 AI 或文献处理。Library 使用紧凑列表，选择文件后引用面板固定在独立滚动列表上方，**Save a copy** 位于文件名旁。点击引用可打开对应 Note 或 Book 页面并选中引用行，或进入对应 Book Settings/Citations。**Folder** 定位实际文件，**Rename** 修改显示与副本保存名称，保留 ID、扩展名和原有正文；系统教程资源不提供重命名；**Open Library folder** 打开原始资料文件夹。旧资源保留原有 ID、位置和 Markdown 引用。
+四个工作区入口按 2×2 排列：上行为 **Notes / Books**，下行为 **Research / Library**，切换和重启后保留各自选择。Research 包含 **Run**、**Templates**、**Outputs**、**Chat**、**Usage**、**AI Settings** 和 **Translation Settings**；标记为 **Coming soon** 的页面尚未启用 AI 或文献处理。Library 使用紧凑列表，选择文件后引用面板固定在独立滚动列表上方，**Save a copy** 位于文件名旁。点击引用可打开对应 Note 或 Book 页面并选中引用行，或进入对应 Book Settings/Citations。**Folder** 定位实际文件，**Rename** 修改显示与副本保存名称，保留 ID、扩展名和原有正文；系统教程资源不提供重命名；**Open Library folder** 打开原始资料文件夹。旧资源保留原有 ID、位置和 Markdown 引用。
 
 **Ctrl+Q** 在 Notes 与 Books 之间切换；在 Research 或 Library 中按下时返回最近使用的写作工作区。**Ctrl+N** 与 **Ctrl+E** 仅在 Notes 和 Books 中生效。
 
@@ -223,7 +243,7 @@ SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `ht
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.2.3-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.2.4-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 
