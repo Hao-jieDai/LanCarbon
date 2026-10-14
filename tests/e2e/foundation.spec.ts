@@ -33,7 +33,7 @@ test("four workspaces preserve writing, resources, selections and isolated direc
     await page.getByRole("button", { name: "Research", exact: true }).click();
     for (const name of ["Run", "Templates", "Outputs", "Chat", "AI Settings"]) {
       await page.getByRole("navigation", { name: "Research pages" }).getByRole("button", { name, exact: true }).click();
-      await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
+      await expect(page.getByRole("heading", { name: name === "Chat" ? "Start a conversation" : name, exact: true })).toBeVisible();
       if (["Run", "Templates", "Outputs"].includes(name)) await expect(page.getByText("Coming soon", { exact: true })).toBeVisible();
       else await expect(page.getByText("Coming soon", { exact: true })).toBeHidden();
     }
@@ -60,7 +60,7 @@ test("four workspaces preserve writing, resources, selections and isolated direc
     await page.getByRole("button", { name: "Chat", exact: true }).click();
     await page.screenshot({ path: info.outputPath("research-chat.png") });
     await app.close(); app = await launch(); page = await app.firstWindow();
-    await expect(page.getByRole("heading", { name: "Chat", exact: true })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Start a conversation", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Library", exact: true }).click();
     await expect(page.getByRole("heading", { name: "Original.pdf", exact: true })).toBeVisible();
     const status = await page.evaluate(() => window.notesDesktop.foundation!.inspect());

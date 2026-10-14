@@ -165,8 +165,12 @@ app.whenReady().then(async () => {
   aiHandler("ai:providers", async () => ({ providers: await aiSettings.list() }));
   aiHandler("ai:save-provider", async (input: AIProviderInput) => ({ providers: await aiSettings.save(input) }));
   aiHandler("ai:remove-provider", async (id: string) => ({ providers: await aiSettings.remove(id) }));
+  aiHandler("ai:clear-key", async (id: string) => ({ providers: await aiSettings.clearKey(id) }));
+  aiHandler("ai:preferences", async () => ({ systemPrompt: await aiSettings.preferences() }));
+  aiHandler("ai:save-preferences", async (prompt: string) => ({ systemPrompt: await aiSettings.savePreferences(prompt) }));
   aiHandler("ai:models", async (id: string) => ({ models: await aiService.models(id) }));
-  aiHandler("ai:test", async (id: string, model: string) => ({ message: await aiService.test(id, model) }));
+  aiHandler("ai:test", async (id: string, model: string) => ({ message: await aiService.test(id, model, message => mainWindow?.webContents.send("ai:test-progress", message)) }));
+  aiHandler("ai:stop-test", async () => { await aiService.stopTest(); return {}; });
   aiHandler("ai:chats", async () => ({ chats: await chats().list() }));
   aiHandler("ai:create-chat", async (provider: string, model: string) => ({ chat: await chats().create(provider, model) }));
   aiHandler("ai:rename-chat", async (id: string, title: string) => ({ chat: await chats().rename(id, title) }));

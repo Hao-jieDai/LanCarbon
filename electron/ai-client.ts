@@ -5,9 +5,28 @@ export function redactAIError(error: unknown, key = ""): string {
   if (key) text = text.split(key).join("[API key hidden]");
   return text.replace(/Bearer\s+[^\s"']+/gi, "Bearer [hidden]").replace(/sk-[\w-]{8,}/g, "[API key hidden]").slice(0, 700);
 }
-function statusError(status: number, detail: string): Error {
+class AIRequestError extends Error {
+  constructor(message: string, readonly status: number, readonly retryAfter?: number) { super(message); }
+}
+function retrySeconds(value: unknown): number | undefined { const number = typeof value === "number" || typeof value === "string" ? Number(value) : NaN; return Number.isFinite(number) && number >= 0 ? number : undefined; }
+function statusError(status: number, detail: string, headers?: Headers): AIRequestError {
+  let error: any; try { error = JSON.parse(detail).error; } catch { /* Some compatible services return plain text. */ }
+  const metadata = error?.metadata ?? {};
   const label = status === 401 ? "API key rejected" : status === 402 ? "Insufficient account balance or key spending limit" : status === 403 ? "Account or model access denied" : status === 404 ? "API address or model not found" : status === 429 ? "Rate limit reached; try again later" : status >= 500 ? "AI service temporarily unavailable" : "AI request rejected";
-  return new Error(`${label} (HTTP ${status})${detail ? `: ${detail.slice(0, 500)}` : ""}`);
+  const provider = typeof metadata.provider_name === "string" ? metadata.provider_name.slice(0, 60) : "The AI service";
+  const message = metadata.limit_source === "upstream_provider_shared_pool" ? `${provider} is temporarily busy (HTTP ${status}). OpenRouter's shared provider pool is rate-limited. Try later or choose another model.` : `${label} (HTTP ${status})${detail ? `: ${(typeof error?.message === "string" ? error.message : detail).slice(0, 500)}` : ""}`;
+  const header = headers?.get("retry-after");
+  let retryAfter = retrySeconds(header) ?? retrySeconds(metadata.retry_after_seconds) ?? retrySeconds(metadata.headers?.["Retry-After"]);
+  if (retryAfter === undefined && header) { const date = Date.parse(header); if (Number.isFinite(date)) retryAfter = Math.max(0, (date - Date.now()) / 1000); }
+  return new AIRequestError(message, status, retryAfter);
+}
+function waitForRetry(milliseconds: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) { reject(signal.reason); return; }
+    const abort = () => { clearTimeout(timer); signal.removeEventListener("abort", abort); reject(signal.reason); };
+    const timer = setTimeout(() => { signal.removeEventListener("abort", abort); resolve(); }, milliseconds);
+    signal.addEventListener("abort", abort, { once: true });
+  });
 }
 export class AIClient {
   constructor(private readonly fetcher: typeof fetch) {}
@@ -26,7 +45,31 @@ export class AIClient {
       return [...models.values()].sort((a, b) => a.id.localeCompare(b.id));
     } catch (error) { throw new Error(redactAIError(error, key)); }
   }
-  async complete(provider: AIProvider, key: string, modelId: string, messages: Array<{ role: string; content: string }>, signal: AbortSignal, onDelta: (content: string, reasoning: string) => void, test = false): Promise<void> {
+  async complete(provider: AIProvider, key: string, modelId: string, messages: Array<{ role: string; content: string }>, signal: AbortSignal, onDelta: (content: string, reasoning: string) => void, test = false, onProgress: (message: string) => void = () => {}): Promise<void> {
+    const controller = new AbortController();
+    const abort = () => controller.abort(signal.reason);
+    signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort();
+    let received = false, timedOut = false;
+    const overall = setTimeout(() => { timedOut = true; controller.abort(); }, 600_000);
+    try {
+      for (let attempt = 0; ; attempt++) {
+        try {
+          await this.completeAttempt(provider, key, modelId, messages, controller.signal, (content, reasoning) => { received = true; onProgress(""); onDelta(content, reasoning); }, test);
+          onProgress(""); return;
+        } catch (error) {
+          const delay = error instanceof AIRequestError ? error.retryAfter ?? (attempt === 0 ? 5 : 15) : 0;
+          if (!(error instanceof AIRequestError) || ![429, 500, 502, 503, 504].includes(error.status) || received || attempt >= 2 || controller.signal.aborted || delay > 120) throw error;
+          onProgress(`Upstream service busy. Retrying ${attempt + 1}/2 in ${Math.max(1, Math.ceil(delay))}s…`);
+          await waitForRetry(Math.max(1, delay) * 1000, controller.signal);
+        }
+      }
+    } catch (error) {
+      if (signal.aborted) throw new Error(test ? "Connection test stopped." : "Generation stopped");
+      if (timedOut) throw new Error("The AI service timed out. Please retry later.");
+      throw new Error(redactAIError(error, key));
+    } finally { clearTimeout(overall); signal.removeEventListener("abort", abort); }
+  }
+  private async completeAttempt(provider: AIProvider, key: string, modelId: string, messages: Array<{ role: string; content: string }>, signal: AbortSignal, onDelta: (content: string, reasoning: string) => void, test = false): Promise<void> {
     const controller = new AbortController();
     const abort = () => controller.abort(signal.reason);
     signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort();
@@ -37,12 +80,12 @@ export class AIClient {
     let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
     try {
       const response = await this.fetcher(`${provider.baseUrl}/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(provider.kind === "openrouter" ? { "X-OpenRouter-Title": "LanCarbon" } : {}) }, redirect: "error", signal: controller.signal, body: JSON.stringify({ model: modelId, messages, stream: true, ...(test ? { max_tokens: 128, ...(provider.kind === "siliconflow" && modelId.includes("DeepSeek-V4") ? { enable_thinking: false } : {}) } : {}) }) });
-      if (!response.ok) throw statusError(response.status, await response.text());
+      if (!response.ok) throw statusError(response.status, await response.text(), response.headers);
       touch();
       let received = false, finished = false;
       const consume = (data: unknown) => {
-        const item = data as { error?: { message?: string } | string; message?: string; choices?: Array<{ delta?: { content?: unknown; reasoning_content?: unknown; reasoning?: unknown }; message?: { content?: unknown; reasoning_content?: unknown }; finish_reason?: string }> };
-        if (item.error) throw new Error(typeof item.error === "string" ? item.error : item.error.message || "The service reported a streaming error");
+        const item = data as { error?: { message?: string; code?: number; metadata?: object } | string; message?: string; choices?: Array<{ delta?: { content?: unknown; reasoning_content?: unknown; reasoning?: unknown }; message?: { content?: unknown; reasoning_content?: unknown }; finish_reason?: string }> };
+        if (item.error) throw statusError(typeof item.error === "object" && typeof item.error.code === "number" ? item.error.code : 500, JSON.stringify({ error: typeof item.error === "string" ? { message: item.error } : item.error }));
         const choice = item.choices?.[0]; if (!choice) return;
         const delta = choice.delta ?? choice.message;
         const content = typeof delta?.content === "string" ? delta.content : "";
@@ -66,6 +109,7 @@ export class AIClient {
       if (signal.aborted) throw new Error("Generation stopped");
       if (timedOut) throw new Error("The AI service timed out. Check your computer's network and retry.");
       const detail = redactAIError(error, key);
+      if (error instanceof AIRequestError) throw new AIRequestError(detail, error.status, error.retryAfter);
       throw new Error(/fetch failed|ERR_|ENOTFOUND|ECONN|network/i.test(detail) ? `Connection failed. Check your computer's network or system proxy and retry. ${detail}` : detail);
     } finally { clearTimeout(timer); clearTimeout(overall); signal.removeEventListener("abort", abort); await reader?.cancel().catch(() => undefined); }
   }

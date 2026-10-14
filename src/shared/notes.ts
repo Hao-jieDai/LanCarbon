@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.2.0";
+export const RELEASE_VERSION = "2.2.1";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.2.0 enables AI Settings and Chat: configure SiliconFlow, OpenRouter or an OpenAI-compatible Others service, save encrypted API keys and chat models, then stream, stop, retry and reopen local conversations. Connections follow your computer’s network. PDF/EPUB reading and literature tasks remain reserved. Notes, Books and Library files are not automatically attached to AI requests.
+Version 2.2.1 enables AI Settings and Chat: configure SiliconFlow, OpenRouter or an OpenAI-compatible Others service, save encrypted API keys and chat models, then stream, stop, retry and reopen local conversations. Connections follow your computer’s network. PDF/EPUB reading and literature tasks remain reserved. Notes, Books and Library files are not automatically attached to AI requests.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -22,17 +22,21 @@ LanCarbon now uses the new Logo consistently across the application, installer, 
 
 **Resource-dialog fix:** Duplicate images and attachments now use an in-app choice dialog instead of a Windows message box, restoring focus after closing to address the reported disappearing mouse after duplicate-resource warnings.
 
+**AI refinements:** Cross-model history now carries source attribution and current-model identity instructions; shared editable response guidelines request professional replies without emoji. Chat uses its conversation title, saved keys have masked previews and a direct removal action, and transient rate-limit/server errors receive at most two cancellable retries before any output. Existing keys, chats and personal writing are retained. Persistent upstream limits still require the provider to recover.
+
 ### AI Settings and Chat
 
-1. Open **Research → AI Settings** and choose **SiliconFlow**, **OpenRouter** or **Others**. Presets supply their official base addresses. Others supports an OpenAI-compatible Chat Completions service and additional named configurations.
-2. Paste that service's **API Key**. Use **Refresh models** to save the connection and fetch its chat models, or enter a **Model ID** and **Display name** manually and select **Add model**. The preset shortcut adds DeepSeek V4 Pro or GPT-6 Luna. Choose a **Default model**, then **Save models**.
-3. Select **Test model** to save and make a small API request; normal service charges may apply. Connections follow the computer's network and system proxy. LanCarbon has no separate proxy controls.
-4. Open **Chat**, choose a model labelled **service · model**, and send text. **Enter** sends; **Shift+Enter** inserts a line break. Use **Stop generating** or **Retry reply** for a stopped or failed reply. Replies support Markdown, code and mathematics; provided reasoning is shown separately. **Copy** copies the original text.
-5. Use **New chat**, **Rename chat** and **Delete chat** to manage conversations. Messages are saved locally in the active **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; reopening Chat or restarting restores conversations. Closing LanCarbon stops generation and saves partial replies.
+1. Open **Research → AI Settings** and choose **SiliconFlow**, **OpenRouter** or **Others**. Presets supply their base addresses. Others supports OpenAI-compatible Chat Completions services and additional named configurations.
+2. Paste the service's **API Key** and select **Refresh models**, or enter an exact **Model ID** and **Display name**, then **Add model → Save models**. Choose a **Default model**. Catalogue availability and permissions depend on your platform account; a suggested model is a shortcut, not a guarantee of access.
+3. Saved keys appear as **Configured**, showing their first four and last four characters with the middle hidden. Leave the key input blank to retain it, or enter a replacement and save. **Remove saved key** asks for confirmation and removes only the local key, preserving models and chats. Revoke the key separately at the service when required.
+4. Expand **Response guidelines · all chat models** to edit the shared **System prompt**, then select **Save guidelines**. **Restore default guidelines** fills the default; save to apply it. Defaults request professional, accurate, calm, neutral and concise responses, without emoji or decorative language, and distinguish facts from interpretation and uncertainty. These instructions apply to future replies across all services; they do not rewrite history or guarantee identical model quality.
+5. **Test model** saves the connection and makes a small request. **Stop test** cancels a running test. Connections follow the computer's network and system proxy; normal service charges apply.
+6. In **Chat**, select **service · model** and send text. **Enter** sends; **Shift+Enter** inserts a line break. Use **Stop generating**, **Retry reply** and **Copy**. Markdown, code and mathematics are rendered; provided reasoning is folded separately. The heading shows the actual conversation title.
+7. Use **New chat**, **Rename chat** and **Delete chat** to manage local conversations. Switching models retains relevant context, but earlier replies from other models are explicitly attributed reference material. The current model is asked to answer independently, using its configured model ID for identity questions. Similar answers alone do not establish which model was used; check each reply's recorded service/model. When the same question is repeated after switching models, earlier answers to that exact question from other models are omitted from the request and retained locally. For a comparison without any prior context, start a separate chat.
 
-SiliconFlow: base address \`https://api.siliconflow.cn/v1\`, model ID \`deepseek-ai/DeepSeek-V4-Pro\`. OpenRouter: base address \`https://openrouter.ai/api/v1\`, model ID \`openai/gpt-6-luna\`. Use the exact ID shown by your platform if its catalogue changes. Each service can contain several saved chat models; changing service within a conversation sends its relevant conversation history with the next message.
+SiliconFlow uses base address \`https://api.siliconflow.cn/v1\`; OpenRouter uses \`https://openrouter.ai/api/v1\`. Use **Refresh models** or your platform's catalogue for current IDs. The OpenRouter model \`meta-llama/llama-4-maverick\` can be added manually when available to your account.
 
-API keys are encrypted for the current Windows account in **Config/ai-settings.json** and are not returned to the Chat interface. A blank key field retains the existing key; the remove-key checkbox clears it when saving. Enter keys again after moving to another Windows account. Back up Config together with the active Data folder. Only conversation text you send is submitted; Notes, Books and Library files are not automatically attached. PDF/EPUB reading, document-based answers, Embedding, Rerank and literature tasks are reserved for later phases.
+Keys remain encrypted for the current Windows account in **Config/ai-settings.json**; only masked previews reach the interface. Moving to another Windows account may require re-entry. Back up Config together with the active Data folder. Conversations are local in **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; closing LanCarbon stops it and preserves partial replies. Chat submits your conversation text and response guidelines; Notes, Books and Library files are not automatically attached. PDF/EPUB reading, retrieval and literature workflows remain reserved.
 
 ### Workspaces
 
@@ -90,7 +94,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.2.0 启用 AI Settings 与 Chat：配置 SiliconFlow、OpenRouter 或兼容 OpenAI 的 Others 服务，保存加密密钥及聊天模型，然后进行流式对话、停止、重试与会话恢复。连接跟随电脑网络。PDF/EPUB 阅读和文献任务留待后续阶段，Notes、Books 和 Library 文件不会自动附加到 AI 请求。
+2.2.1 启用 AI Settings 与 Chat：配置 SiliconFlow、OpenRouter 或兼容 OpenAI 的 Others 服务，保存加密密钥及聊天模型，然后进行流式对话、停止、重试与会话恢复。连接跟随电脑网络。PDF/EPUB 阅读和文献任务留待后续阶段，Notes、Books 和 Library 文件不会自动附加到 AI 请求。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
@@ -98,17 +102,21 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 
 **资源提示修复：** 图片或附件重名时改用软件内选择对话框，关闭后恢复焦点，以处理重复资源提示后鼠标消失的问题。
 
+**AI 功能修正：** 跨模型历史标注来源并明确当前模型身份；可编辑共用回答规范默认要求专业表达、不使用 emoji。聊天顶部直接显示会话标题；密钥提供掩码与直接删除入口；输出开始前的临时限流或服务错误最多进行两次可取消重试。已有密钥、会话和个人写作保留，持续的上游限流仍需平台恢复。
+
 ### AI Settings 与 Chat
 
-1. 打开 **Research → AI Settings**，选择 **SiliconFlow**、**OpenRouter** 或 **Others**。前两项预填官方 API 地址；Others 支持兼容 OpenAI Chat Completions 的服务，也可以添加多个命名配置。
-2. 粘贴对应平台的 **API Key**。点击 **Refresh models** 保存连接并获取聊天模型，或手动填写 **Model ID** 和 **Display name**，点击 **Add model**。预设快捷按钮可添加 DeepSeek V4 Pro 或 GPT-6 Luna。选择 **Default model** 后点击 **Save models**。
-3. 点击 **Test model** 保存并发送一次小型 API 请求，可能产生平台正常费用。连接跟随电脑网络与系统代理，LanCarbon 不提供单独的代理设置。
-4. 进入 **Chat**，选择标为 **服务 · 模型** 的模型并发送文字。**Enter** 发送，**Shift+Enter** 换行。可以 **Stop generating** 停止生成，或用 **Retry reply** 重试最后一条停止或失败的回复。回复支持 Markdown、代码和公式，模型提供的推理文字单独折叠显示；**Copy** 复制原始文本。
-5. 使用 **New chat**、**Rename chat** 和 **Delete chat** 管理会话。消息保存在实际 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，返回 Chat 或重启后恢复记录。关闭 LanCarbon 会停止生成并保存已有回复。
+1. 打开 **Research → AI Settings**，选择 **SiliconFlow**、**OpenRouter** 或 **Others**。前两项预填 API 地址；Others 支持兼容 OpenAI Chat Completions 的服务，也可添加多个命名配置。
+2. 填入服务的 **API Key** 后点击 **Refresh models**，或填写准确的 **Model ID** 与 **Display name**，点击 **Add model → Save models**，并选择 **Default model**。模型目录与调用权限取决于平台账号，预设添加按钮只是快捷入口，不保证账号有权限。
+3. 已保存密钥显示 **Configured**，仅展示前四位和后四位，中间隐藏。密钥输入栏留空保留原密钥，填写新密钥并保存可替换。**Remove saved key** 经确认后仅清除本地保存的密钥，保留模型配置与会话；需要撤销平台上的密钥时另到平台操作。
+4. 展开 **Response guidelines · all chat models**，编辑共用的 **System prompt**，点击 **Save guidelines** 保存。**Restore default guidelines** 填入默认内容，保存后生效。默认要求专业准确、冷静中立、简洁高效，不使用 emoji 或装饰性表达，区分事实、解释与不确定性。规范用于各服务后续回复，不改写旧记录，也不保证不同模型质量相同。
+5. **Test model** 保存配置并发送小型请求，运行期间可以 **Stop test**。连接跟随电脑网络与系统代理，可能产生平台正常费用。
+6. 在 **Chat** 中选择 **服务 · 模型** 并发送文字。**Enter** 发送，**Shift+Enter** 换行。使用 **Stop generating**、**Retry reply** 与 **Copy**；支持 Markdown、代码和公式，提供的推理文字单独折叠。顶部直接显示会话标题。
+7. **New chat**、**Rename chat** 和 **Delete chat** 管理本地会话。切换模型保留相关上下文，但其他模型的旧回答会标注来源，作为参考资料传递。当前模型按自己的配置 ID 回答身份问题，并独立分析新问题。回答相似不能单独证明调用了哪个模型，应查看回复记录的服务和模型；切换模型后重复同一问题时，不向新模型发送其他模型对这道题的旧答案，旧记录仍保留在本地；需要完全独立的上下文时另建会话。
 
-SiliconFlow 的地址为 \`https://api.siliconflow.cn/v1\`，模型 ID 为 \`deepseek-ai/DeepSeek-V4-Pro\`；OpenRouter 的地址为 \`https://openrouter.ai/api/v1\`，模型 ID 为 \`openai/gpt-6-luna\`。平台目录变化时，以平台显示的准确 ID 为准。每个服务可以保存多个聊天模型；在同一会话切换服务后，下次发送会携带相关会话历史。
+SiliconFlow 地址为 \`https://api.siliconflow.cn/v1\`，OpenRouter 地址为 \`https://openrouter.ai/api/v1\`。通过 **Refresh models** 或平台目录获取当前准确 ID；账号可用时可以手动添加 OpenRouter 模型 \`meta-llama/llama-4-maverick\`。
 
-API Key 使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，不会返回 Chat 界面。密钥栏留空会保留已有密钥，勾选删除项后保存会清除密钥；迁移到另一个 Windows 账户后需要重新输入。备份时同时保存 Config 和实际 Data。仅提交发送的会话文字，Notes、Books 和 Library 文件不会自动附加。PDF/EPUB 阅读、基于文档的问答、Embedding、Rerank 和文献任务留待后续阶段。
+密钥仍使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，界面只接收掩码。迁移 Windows 账户后可能需要重填；备份时同时保留 Config 与实际 Data。会话位于 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，关闭软件会停止生成并保存已有回复。Chat 提交会话文字与回答规范，Notes、Books 和 Library 文件不会自动附加。PDF/EPUB 阅读、检索与文献工作流仍留待后续阶段。
 
 ### 工作区
 

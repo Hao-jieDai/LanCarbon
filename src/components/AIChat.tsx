@@ -10,7 +10,7 @@ const Message = memo(function Message({ message, onCopy }: { message: AIMessage;
     <header><strong>{message.role === "user" ? "You" : `${message.providerName} · ${message.modelName}`}</strong>{message.content && <button className="quiet-button" aria-label={`Copy ${message.role === "user" ? "message" : "reply"}`} onClick={() => onCopy(message.content)}>Copy</button>}</header>
     {message.reasoning && <details className="ai-reasoning"><summary>Reasoning</summary><pre>{message.reasoning}</pre></details>}
     {rendered && !rendered.error ? <div className="markdown-preview ai-markdown"><div className="preview-body" onClick={event => { if ((event.target as HTMLElement).closest("a")) event.preventDefault(); }} dangerouslySetInnerHTML={{ __html: rendered.html }}/></div> : <div className="ai-plain-text">{message.content || (message.status === "streaming" ? (message.reasoning ? "Thinking…" : "Waiting for the model…") : "")}</div>}
-    {message.status === "streaming" && <span className="ai-generating" role="status">Generating…</span>}
+    {message.status === "streaming" && <span className="ai-generating" role="status">{message.progress || "Generating…"}</span>}
     {message.error && <p className={message.status === "error" ? "ai-error" : "modal-help"} role={message.status === "error" ? "alert" : "status"}>{message.error}</p>}
   </article>;
 });
@@ -49,7 +49,7 @@ export function AIChat({ providers, chats, onChats, onSettings, draft, onDraft }
   };
   return <div className="ai-chat-layout">
     <aside className="ai-chat-list" aria-label="Conversations"><button className="primary-button" disabled={busy} onClick={() => void act(async () => { await create(); onDraft(""); })}>New chat</button><div>{ordered.map(item => <button key={item.id} aria-pressed={chat?.id === item.id} onClick={() => chooseChat(item.id)}><span>{item.title}</span>{item.messages.at(-1)?.status === "streaming" && <small>Generating…</small>}</button>)}</div></aside>
-    <div className="ai-chat-main"><header className="ai-chat-heading"><div><h1>Chat</h1><p>{chat?.title ?? "Start a conversation"}</p></div><div className="ai-actions">{chat && <><button className="quiet-button" disabled={busy || generating} onClick={() => { setTitle(chat.title); setDialog("rename"); }}>Rename chat</button><button className="quiet-button" disabled={busy || generating} onClick={() => setDialog("delete")}>Delete chat</button></>}</div></header>
+    <div className="ai-chat-main"><header className="ai-chat-heading"><h1>{chat?.title ?? "Start a conversation"}</h1><div className="ai-actions">{chat && <><button className="quiet-button" disabled={busy || generating} onClick={() => { setTitle(chat.title); setDialog("rename"); }}>Rename chat</button><button className="quiet-button" disabled={busy || generating} onClick={() => setDialog("delete")}>Delete chat</button></>}</div></header>
       <div className="ai-chat-model"><ThemedSelect label="Chat model" value={value} placeholder="Choose a model" options={options} disabled={busy || generating} onChange={setChoice}/><button className="quiet-button" onClick={onSettings}>AI Settings</button></div>
       {chat?.messages.length && value && value !== savedChoice ? <p className="ai-context-notice">The next message and this conversation's history will be sent to the selected service.</p> : null}
       <div className="ai-thread" ref={thread} onScroll={() => { const element = thread.current; if (element) follow.current = element.scrollHeight - element.scrollTop - element.clientHeight < 100; }}>

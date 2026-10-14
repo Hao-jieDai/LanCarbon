@@ -5,8 +5,8 @@ import os from "node:os";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AISettingsStore, AIChatStore, type SecretCodec } from "../electron/ai-storage";
 import { AIClient } from "../electron/ai-client";
-import { AIService } from "../electron/ai-service";
-import { defaultAIProviders, type AIChat, type AIProviderInput } from "../src/shared/ai";
+import { AIService, conversationMessages } from "../electron/ai-service";
+import { DEFAULT_AI_SYSTEM_PROMPT, defaultAIProviders, type AIChat, type AIProviderInput } from "../src/shared/ai";
 
 let root: string;
 const secret = "fixture-api-key-private";
@@ -14,18 +14,31 @@ const codec: SecretCodec = { available: () => true, encrypt: value => Buffer.fro
 const config = (id = "siliconflow"): AIProviderInput => ({ ...defaultAIProviders().find(item => item.id === id)!, apiKey: secret, models: [{ id: id === "openrouter" ? "openai/gpt-6-luna" : "deepseek-ai/DeepSeek-V4-Pro", name: "Fixture model", purpose: "chat" }], defaultModel: "" });
 const sse = (text = "Hello") => new Response(`: keepalive\r\n\r\ndata: ${JSON.stringify({ choices: [{ delta: { reasoning_content: "Provided reasoning" } }] })}\r\n\r\ndata: ${JSON.stringify({ choices: [{ delta: { content: text }, finish_reason: "stop" }] })}\r\n\r\ndata: ${JSON.stringify({ choices: [], usage: { total_tokens: 9 } })}\r\n\r\ndata: [DONE]\r\n\r\n`, { headers: { "Content-Type": "text/event-stream" } });
 beforeEach(async () => { root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-ai-unit-")); });
-afterEach(async () => { await fs.rm(root, { recursive: true, force: true }); });
+afterEach(async () => { vi.useRealTimers(); await fs.rm(root, { recursive: true, force: true }); });
 
 describe("AI settings and conversations", () => {
   it("encrypts keys, keeps them out of public records, preserves blank keys and supports re-entry on another Windows account", async () => {
     const store = new AISettingsStore(root, codec); const saved = await store.save(config());
     expect(saved[0].hasKey).toBe(true); expect(JSON.stringify(saved)).not.toContain(secret);
+    expect(saved[0].maskedKey).toBe("fixt••••••••vate");
     expect(await fs.readFile(path.join(root, "ai-settings.json"), "utf8")).not.toContain(secret);
     expect((await store.connection("siliconflow")).key).toBe(secret);
     await store.save({ ...config(), apiKey: undefined }); expect((await store.connection("siliconflow")).key).toBe(secret);
     const moved = new AISettingsStore(root, { ...codec, decrypt: () => { throw new Error("Wrong account"); } });
     await expect(moved.connection("siliconflow")).rejects.toThrow("Enter it again");
     await store.save({ ...config(), apiKey: undefined, clearKey: true }); expect((await store.list())[0].hasKey).toBe(false);
+  });
+  it("upgrades legacy keys to masked public views and preserves shared guidelines and other providers when removing a key", async () => {
+    const store = new AISettingsStore(root, codec); await store.save(config()); await store.save(config("openrouter"));
+    const filename = path.join(root, "ai-settings.json"), legacy = JSON.parse(await fs.readFile(filename, "utf8")); delete legacy.systemPrompt; await fs.writeFile(filename, JSON.stringify(legacy));
+    expect(await store.preferences()).toBe(DEFAULT_AI_SYSTEM_PROMPT);
+    await store.savePreferences("专业、中立，不使用 emoji。"); await store.save({ ...config(), apiKey: undefined });
+    expect(await new AISettingsStore(root, codec).preferences()).toContain("专业");
+    const cleared = await store.clearKey("siliconflow"); expect(cleared[0]).toMatchObject({ hasKey: false, models: config().models }); expect(cleared[0].maskedKey).toBeUndefined();
+    expect((await store.connection("openrouter")).key).toBe(secret); expect(await store.preferences()).toContain("专业");
+    await expect(store.savePreferences("x".repeat(12001))).rejects.toThrow("response guidelines");
+    expect(JSON.stringify(await store.list())).not.toContain(secret);
+    await store.save({ ...config(), apiKey: "tiny" }); expect((await store.list())[0].maskedKey).toBe("••••••••");
   });
   it("refuses plaintext fallback, malformed endpoints and unsupported formats without overwriting saved settings", async () => {
     await expect(new AISettingsStore(root, { ...codec, available: () => false }).save(config())).rejects.toThrow("key was not saved");
@@ -76,7 +89,62 @@ describe("provider adapters and durable streaming", () => {
     await vi.waitFor(async () => expect((await store.get(chat.id)).messages.at(-1)?.status).toBe("complete"));
     expect((await store.get(chat.id)).messages.filter(message => message.role === "user")).toHaveLength(1);
     await service.send(chat.id, "openrouter", config("openrouter").models[0].id, "What number?"); await vi.waitFor(async () => expect((await store.get(chat.id)).messages.at(-1)?.status).toBe("complete"));
-    expect(JSON.parse(fetcher.mock.calls.at(-1)![1].body as string).messages).toEqual([{ role: "user", content: "Remember 42" }, { role: "assistant", content: "Complete reply" }, { role: "user", content: "What number?" }]); expect(events.at(-1)?.messages.at(-1)?.providerName).toBe("OpenRouter");
+    const payload = JSON.parse(fetcher.mock.calls.at(-1)![1].body as string); expect(payload.messages[0]).toMatchObject({ role: "system" }); expect(payload.messages[0].content).toContain("openai/gpt-6-luna");
+    expect(payload.messages.slice(1)).toEqual([{ role: "user", content: "Remember 42" }, { role: "assistant", content: "Complete reply" }, { role: "user", content: "What number?" }]); expect(events.at(-1)?.messages.at(-1)?.providerName).toBe("OpenRouter");
     await service.shutdown();
+  });
+});
+
+describe("model switching and bounded retries", () => {
+  it("marks other-model answers as reference material while retaining user questions and current-model continuity", async () => {
+    const store = new AIChatStore(root), chat = await store.create("siliconflow", "deepseek-ai/DeepSeek-V4-Pro");
+    chat.messages = [
+      { id: "user-1", role: "user", content: "你是谁？", status: "complete", createdAt: "today" },
+      { id: "reply-1", role: "assistant", content: "我是 DeepSeek。", providerId: "siliconflow", modelId: "deepseek-ai/DeepSeek-V4-Pro", providerName: "SiliconFlow", status: "complete", createdAt: "today" },
+      { id: "user-2", role: "user", content: "什么是搁浅资产？", status: "complete", createdAt: "today" },
+      { id: "reply-2", role: "assistant", content: "Earlier definition", providerId: "openrouter", modelId: "mistralai/mistral-small-2603", status: "complete", createdAt: "today" },
+      { id: "user-3", role: "user", content: "什么是搁浅资产？", status: "complete", createdAt: "today" }
+    ];
+    const messages = conversationMessages(chat, defaultAIProviders()[1], "meta-llama/llama-4-maverick", "Professional; no emoji.");
+    expect(messages[0].content).toContain("meta-llama/llama-4-maverick"); expect(messages[0].content).toContain("Professional; no emoji.");
+    expect(messages.filter(message => message.role === "assistant")).toHaveLength(0);
+    expect(messages[2]).toMatchObject({ role: "user" }); expect(messages[2].content).toContain("SiliconFlow / deepseek-ai/DeepSeek-V4-Pro"); expect(messages[2].content).toContain("我是 DeepSeek。");
+    expect(messages.at(-1)?.content).toBe("什么是搁浅资产？");
+    expect(messages.some(message => message.content.includes("Earlier definition"))).toBe(false);
+    expect(conversationMessages(chat, defaultAIProviders()[1], "mistralai/mistral-small-2603", "").filter(message => message.role === "assistant")).toEqual([{ role: "assistant", content: "Earlier definition" }]);
+    expect(chat.messages[1].content).toBe("我是 DeepSeek。");
+  });
+  it("honors Retry-After for a shared-pool 429 and retries the same model and payload only twice", async () => {
+    vi.useFakeTimers();
+    const limited = () => new Response(JSON.stringify({ error: { message: "Provider returned error", metadata: { provider_name: "Mistral", limit_source: "upstream_provider_shared_pool" } } }), { status: 429, headers: { "Retry-After": "60" } });
+    const fetcher = vi.fn().mockImplementationOnce(async () => limited()).mockImplementationOnce(async () => limited()).mockImplementation(async () => sse("Recovered"));
+    const progress: string[] = [], output: string[] = [];
+    const result = new AIClient(fetcher).complete(defaultAIProviders()[1], secret, "mistralai/mistral-small-2603", [{ role: "user", content: "Hello" }], new AbortController().signal, text => output.push(text), false, text => progress.push(text));
+    await vi.advanceTimersByTimeAsync(0); expect(fetcher).toHaveBeenCalledTimes(1); expect(progress[0]).toContain("1/2 in 60s");
+    await vi.advanceTimersByTimeAsync(59_999); expect(fetcher).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1); expect(fetcher).toHaveBeenCalledTimes(2);
+    await vi.advanceTimersByTimeAsync(60_000); await result; expect(fetcher).toHaveBeenCalledTimes(3); expect(output.join("")).toBe("Recovered");
+    expect(new Set(fetcher.mock.calls.map(call => call[1].body)).size).toBe(1);
+  });
+  it("exhausts bounded retries with a concise supplier error and cancels during a wait without another call", async () => {
+    vi.useFakeTimers();
+    const limited = () => new Response(JSON.stringify({ error: { message: secret, metadata: { provider_name: "DeepInfra", limit_source: "upstream_provider_shared_pool", retry_after_seconds: 1 } } }), { status: 429 });
+    const fetcher = vi.fn().mockImplementation(async () => limited()), client = new AIClient(fetcher);
+    const outcome = client.complete(defaultAIProviders()[1], secret, "model", [], new AbortController().signal, () => {}).catch(error => error);
+    await vi.advanceTimersByTimeAsync(2000); const error = await outcome; expect(fetcher).toHaveBeenCalledTimes(3); expect(error.message).toContain("shared provider pool"); expect(error.message).not.toContain(secret);
+    const controller = new AbortController(); const canceled = client.complete(defaultAIProviders()[1], secret, "model", [], controller.signal, () => {}, true).catch(error => error);
+    await vi.advanceTimersByTimeAsync(0); controller.abort(); expect((await canceled).message).toBe("Connection test stopped.");
+    await vi.advanceTimersByTimeAsync(5000); expect(fetcher).toHaveBeenCalledTimes(4);
+  });
+  it("never replays partial content or reasoning, retries an SSE error before output, and leaves account errors untouched", async () => {
+    vi.useFakeTimers();
+    const frame = JSON.stringify({ error: { code: 429, message: "busy", metadata: { retry_after_seconds: 1 } } });
+    for (const delta of [{ content: "partial" }, { reasoning: "thinking" }]) {
+      const fetcher = vi.fn().mockResolvedValue(new Response(`data: ${JSON.stringify({ choices: [{ delta }] })}\n\ndata: ${frame}\n\n`));
+      await expect(new AIClient(fetcher).complete(defaultAIProviders()[1], secret, "model", [], new AbortController().signal, () => {})).rejects.toThrow("HTTP 429"); expect(fetcher).toHaveBeenCalledTimes(1);
+    }
+    const early = vi.fn().mockResolvedValueOnce(new Response(`data: ${frame}\n\n`)).mockResolvedValueOnce(sse());
+    const recovered = new AIClient(early).complete(defaultAIProviders()[1], secret, "model", [], new AbortController().signal, () => {}); await vi.advanceTimersByTimeAsync(1000); await recovered; expect(early).toHaveBeenCalledTimes(2);
+    for (const status of [401, 402, 403, 404]) { const fetcher = vi.fn().mockResolvedValue(new Response("blocked", { status })); await expect(new AIClient(fetcher).complete(defaultAIProviders()[1], secret, "model", [], new AbortController().signal, () => {})).rejects.toThrow(`HTTP ${status}`); expect(fetcher).toHaveBeenCalledTimes(1); }
   });
 });

@@ -650,10 +650,17 @@ body.book-dragging, body.book-dragging * { cursor: grabbing !important; }
 .ai-chat-list small { display: block; margin-top: 5px; }
 .ai-chat-main { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .ai-chat-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 20px 22px 10px; }
-.ai-chat-heading h1 { font-size: 27px; }
+.ai-chat-heading h1 { font-size: 23px; margin: 0; min-width: 0; overflow-wrap: anywhere; line-height: 1.35; }
 .ai-chat-heading p { margin: 0; font-size: 12px; overflow-wrap: anywhere; }
 .ai-chat-heading .ai-actions { flex-wrap: wrap; justify-content: flex-end; }
 .ai-chat-heading .quiet-button { padding: 0 8px; font-size: 11px; }
+.ai-guidelines { max-width: 880px; border: 1px solid var(--line); border-radius: 9px; padding: 13px 16px; margin-top: 18px; }
+.ai-guidelines summary { cursor: pointer; color: var(--ink); font-size: 13px; font-weight: 600; }
+.ai-guidelines label { display: grid; gap: 7px; color: var(--muted); font-size: 12px; }
+.ai-guidelines textarea { width: 100%; resize: vertical; min-height: 135px; padding: 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font: 13px/1.6 var(--sans); }
+.ai-guidelines .ai-actions { margin-top: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.ai-saved-key { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--muted); font-size: 12px; flex-wrap: wrap; }
+.ai-saved-key output { color: var(--ink); margin-left: 8px; font: 13px var(--mono); overflow-wrap: anywhere; }
 .ai-chat-model { display: flex; gap: 10px; align-items: center; padding: 8px 22px 14px; border-bottom: 1px solid var(--line); }
 .ai-chat-model .themed-select { flex: 1; min-width: 0; }
 .ai-chat-model .themed-select-trigger { width: 100%; }
