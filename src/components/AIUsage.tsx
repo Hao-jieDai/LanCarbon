@@ -3,6 +3,7 @@ import type { AIProvider } from "../shared/ai";
 import { cnyUsageCost, formatCnyCost, formatUsageCost, localUsageDay, priceKey, type AICurrency, type AIModelPrice, type AIUsagePage, type AIUsageQuery, type AIUsageTotals } from "../shared/aiUsage";
 import { ThemedSelect } from "./ThemedSelect";
 import { AIUsageHeatmap } from "./AIUsageHeatmap";
+import { DatePicker } from "./DatePicker";
 
 const number = (value: number) => value.toLocaleString("en-US");
 function range(days = 1): AIUsageQuery { const from = new Date(); from.setDate(from.getDate() - days + 1); return { from: localUsageDay(from), to: localUsageDay(), page: 1 }; }
@@ -88,16 +89,16 @@ export function AIUsage({ providers, visible }: { providers: AIProvider[]; visib
   return <div className="ai-usage-content">
     <div className="usage-heading"><div><h1>Usage</h1><p>Token usage and costs recorded by LanCarbon. History is available offline.</p></div><button className="quiet-button" disabled={busy} onClick={() => void reload()}>Refresh</button></div>
     <div className="usage-filters">
-      <label>From<input aria-label="Usage from" type="date" value={query.from ?? ""} onChange={event => { filter({ from: event.target.value || undefined }); setMode("daily"); }}/></label>
-      <label>To<input aria-label="Usage to" type="date" value={query.to ?? ""} onChange={event => { filter({ to: event.target.value || undefined }); setMode("daily"); }}/></label>
+      <label>From<DatePicker label="Usage from" value={query.from ?? ""} onChange={from => filter({ from: from || undefined })}/></label>
+      <label>To<DatePicker label="Usage to" value={query.to ?? ""} onChange={to => filter({ to: to || undefined })}/></label>
       <label>Source<ThemedSelect label="Usage source" value={query.providerId ?? ""} options={[{ value: "", label: "All sources" }, ...(data?.sources ?? []).map(value => ({ value: value.id, label: value.name }))]} onChange={providerId => filter({ providerId: providerId || undefined, modelId: undefined })}/></label>
       <label>Model<ThemedSelect label="Usage model" value={query.modelId ?? ""} options={[{ value: "", label: "All models" }, ...(data?.models ?? []).map(value => ({ value: value.id, label: value.name }))]} onChange={modelId => filter({ modelId: modelId || undefined })}/></label>
       <label>Purpose<ThemedSelect label="Usage purpose" value={query.purpose ?? ""} options={[{ value: "", label: "All purposes" }, { value: "chat", label: "Chat" }, { value: "test", label: "Connection test" }, { value: "translation", label: "Translation" }]} onChange={purpose => filter({ purpose: purpose === "chat" || purpose === "test" || purpose === "translation" ? purpose : undefined })}/></label>
     </div>
-    <div className="usage-ranges">{([1, 7, 30] as const).map(days => <button className="text-button" key={days} onClick={() => { filter(range(days)); setMode(days === 1 ? "hourly" : "daily"); }}>{days === 1 ? "Today" : "Last " + days + " days"}</button>)}</div>
+    <div className="usage-ranges">{([1, 7, 30] as const).map(days => <button className="text-button" key={days} onClick={() => filter(range(days))}>{days === 1 ? "Today" : "Last " + days + " days"}</button>)}</div>
     {error && <p role="alert" className="usage-warning">{error}</p>}{data?.warning && <p role="alert" className="usage-warning">{data.warning}</p>}
     {!data ? <p role="status">{busy ? "Loading local usage…" : "Usage is unavailable."}</p> : <>
-      <AIUsageHeatmap activity={data.activity} query={query} usdToCny={data.usdToCny} mode={mode} onMode={setMode}/>
+      <AIUsageHeatmap query={query} usdToCny={data.usdToCny} mode={mode} onMode={setMode} visible={visible}/>
       <div className="usage-overview"><div><span>Requests</span><strong>{number(data.summary.requests)}</strong></div><div><span>Tokens</span><strong>{number(data.summary.totalTokens)}</strong></div><div><span>Costs</span><Costs totals={data.summary} rate={data.usdToCny}/></div></div>
       {(data.summary.unknownTokens > 0 || data.summary.unknownCosts > 0 || data.summary.pending > 0) && <p className="usage-coverage">{[data.summary.unknownTokens ? number(data.summary.unknownTokens) + " without token data" : "", data.summary.unknownCosts ? number(data.summary.unknownCosts) + " without known costs" : "", data.summary.pending ? number(data.summary.pending) + " in progress" : ""].filter(Boolean).join(" · ")}. Totals include known data only.</p>}
       <section className="usage-section"><h2>Requests <small>{number(data.totalRecords)}</small></h2>{!data.records.length ? <p>No requests in this range.</p> : <><div className="usage-table-scroll"><table className="usage-table" aria-label="Usage requests"><thead><tr><th>Time / Source / Model</th><th>Purpose</th><th>Tokens</th><th>Cost</th><th>Status</th></tr></thead><tbody>{data.records.map(record => <tr key={record.id}>

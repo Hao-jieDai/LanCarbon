@@ -675,11 +675,11 @@ body.book-dragging, body.book-dragging * { cursor: grabbing !important; }
 .usage-activity-controls [aria-pressed="true"] { color: var(--ink); font-weight: 600; }
 .usage-activity-controls input { width: 132px; min-width: 0; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 5px 7px; font: inherit; }
 .usage-activity-controls input[type="number"] { width: 72px; }
-.usage-hours { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 8px; }
+.usage-hours { display: grid; grid-template-columns: repeat(8, 32px); gap: 12px; width: max-content; max-width: 100%; margin: 22px auto; }
 .usage-hours > div { min-width: 0; }
 .usage-hours span { display: block; margin-top: 5px; color: var(--muted); font-size: 9px; text-align: center; }
 .usage-heat-cell { display: block; width: var(--heat-cell); height: var(--heat-cell); min-width: 0; border: 1px solid transparent; border-radius: 4px; padding: 0; background: var(--surface); }
-.usage-hours .usage-heat-cell { width: 100%; height: 30px; }
+.usage-hours .usage-heat-cell { width: 32px; height: 32px; }
 .usage-heat-cell.level-1 { background: color-mix(in srgb, var(--accent) 25%, var(--surface)); }
 .usage-heat-cell.level-2 { background: color-mix(in srgb, var(--accent) 50%, var(--surface)); }
 .usage-heat-cell.level-3 { background: color-mix(in srgb, var(--accent) 75%, var(--surface)); }
@@ -735,6 +735,39 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .translation-model-row .quiet-button { height: 40px; font-size: 11px; }
 .translation-cache { margin-top: 25px; border-top: 1px solid var(--line); padding-top: 18px; }
 .translation-cache h2 { margin: 0; font-size: 15px; }
+.translation-reuse-model { margin-top: 18px; }
+.translation-model-id { font-size: 11px; color: var(--muted); margin: 8px 0 0; overflow-wrap: anywhere; }
+.translation-settings form > .ai-actions { margin-top: 20px; flex-wrap: wrap; }
+.translation-settings .ai-guidelines label { margin-top: 16px; }
+.translation-test-result { margin-top: 18px; border: 1px solid var(--line); border-radius: 9px; padding: 15px 16px; background: var(--surface); }
+.translation-test-result > strong { color: var(--ink); font-size: 13px; }
+.translation-test-model { color: var(--muted); font-size: 11px; margin: 8px 0 12px; }
+.translation-test-result dl { display: grid; grid-template-columns: 55px minmax(0, 1fr); gap: 12px; margin: 0; font-size: 13px; line-height: 1.6; }
+.translation-test-result dt { color: var(--muted); }
+.translation-test-result dd { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.date-picker { position: relative; min-width: 0; width: 100%; }
+.date-picker > input { padding-right: 38px; }
+.date-picker-toggle { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: grid; place-items: center; border: 0; background: transparent; color: var(--muted); cursor: pointer; width: 24px; height: 26px; padding: 3px; }
+.date-picker-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.usage-filters .date-picker input { width: 100%; }
+.usage-activity-controls .date-picker { width: 145px; }
+.usage-activity-controls .date-picker input { width: 100%; padding-right: 32px; }
+.date-picker-popup { position: fixed; z-index: 120; width: 300px; max-width: calc(100vw - 16px); max-height: calc(100vh - 16px); overflow-y: auto; margin: 0; padding: 12px; background: var(--sidebar); color: var(--ink); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 28px var(--shadow); font-family: var(--sans); }
+.date-picker-popup header { display: grid; grid-template-columns: 24px 1fr 1fr 24px; gap: 6px; align-items: center; margin-bottom: 13px; }
+.date-picker-popup header .icon-button { width: 24px; height: 28px; font-size: 21px; }
+.date-picker-popup .themed-select-trigger { width: 100%; min-width: 0; padding: 7px 8px; font-size: 12px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.date-picker-weekdays, .date-picker-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 3px; }
+.date-picker-weekdays span { text-align: center; color: var(--muted); font-size: 11px; padding: 3px 0 7px; }
+.date-picker-days button { border: 1px solid transparent; background: transparent; color: var(--ink); border-radius: 7px; aspect-ratio: 1; padding: 0; font: 12px var(--sans); cursor: pointer; }
+.date-picker-days button.outside-month { color: var(--muted); opacity: .55; }
+.date-picker-days button[aria-current="date"] { border-color: var(--accent); }
+.date-picker-days button:hover, .date-picker-days button:focus-visible { background: var(--surface); outline: 1px solid var(--accent); }
+.date-picker-days button[aria-selected="true"] { background: var(--accent); color: var(--button-ink, var(--ink)); opacity: 1; }
+.date-picker-popup footer { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.date-picker-popup footer .text-button { font-size: 12px; }
+.usage-activity { container-type: inline-size; }
+.usage-days-scroll { --heat-cell: clamp(8px, calc((100cqw - 36px) / 54 - 4px), 16px); }
+.usage-days .usage-heat-cell { border-radius: 2px; }
 .translation-settings .themed-select-trigger { width: 100%; min-width: 0; }
 @media (max-width: 950px) { .translation-config-grid, .translation-model-row { grid-template-columns: 1fr; } .translation-model-row button { justify-self: start; } }
 .ai-model-entry { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) auto; gap: 10px; align-items: end; }

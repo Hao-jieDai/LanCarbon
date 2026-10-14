@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.2.4";
+export const RELEASE_VERSION = "2.2.5";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.2.4 adds optional selection translation across all workspaces, independent translation settings, bounded local reuse and translation usage accounting. Hourly activity now uses three rows of eight cells. AI Settings and Chat: configure SiliconFlow, OpenRouter or an OpenAI-compatible Others service, save encrypted API keys and chat models, then stream, stop, retry and reopen local conversations. Connections follow your computer’s network. PDF/EPUB reading and literature tasks remain reserved. Notes, Books and Library files are not automatically attached to AI requests.
+Version 2.2.5 refines activity views with centered square hourly cells, an independent full-year daily calendar and themed date pickers. Translation reuses saved models without editing, automatically adapts prompts, supports selecting prompt text and clearly displays test source/results. AI Settings and Chat: configure SiliconFlow, OpenRouter or an OpenAI-compatible Others service, save encrypted API keys and chat models, then stream, stop, retry and reopen local conversations. Connections follow your computer’s network. PDF/EPUB reading and literature tasks remain reserved. Notes, Books and Library files are not automatically attached to AI requests.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -40,19 +40,17 @@ Keys remain encrypted for the current Windows account in **Config/ai-settings.js
 
 ### Selection translation
 
-1. Open **Research → Translation Settings**. Choose **Use an existing AI connection** to reuse a saved key without changing Chat models, or **Separate translation connection** for a dedicated SiliconFlow, OpenRouter or Others key and address. Saved dedicated keys show a masked preview and **Remove translation key**; blank inputs retain the key.
-2. Choose **Service**, use **Refresh translation models** or enter the exact **Model ID**, then **Save translation settings**. **Test translation** makes a short real request, even with automatic translation off; **Stop translation test** cancels it. Translation uses an independent model and prompt. General models receive an academic Chinese-only system prompt; **Automatic** uses the official user-only translation template for Hunyuan-MT / HY-MT. Expand **Translation prompt** to adjust or restore it.
+1. Open **Research → Translation Settings**. With **Use an existing AI connection**, select a service and a model already saved in AI Settings. The saved key and model display name are reused; this mode has no model catalogue refresh or editable model fields. To add a dedicated translation service/model, choose **Separate translation connection**, configure SiliconFlow, OpenRouter or Others, then use **Refresh translation models** or enter its exact Model ID and display name. Refresh reads a platform catalogue; account access and pricing still need checking.
+2. **Save translation settings**, then **Test translation**. The result beside the buttons shows **Translation test succeeded**, the selected service/model, the fixed English sentence **Climate change affects investment.**, and its Chinese translation. **Stop translation test** cancels a running test. Testing makes a real request even with automatic translation off. The editable **Translation prompt** applies only to translation; model format adaptation is automatic. The default asks for accurate academic Chinese without explanations or emoji. English within this prompt field can also be selected for translation without changing its contents.
 3. Translation starts **off** each time LanCarbon opens. Enable the sidebar **Translate** switch or press **Ctrl+Alt+T**. Select an English word, phrase or short passage in Notes/Books **Edit** or **Preview**, Research, Library or selectable interface text. After selection settles, the floating panel shows the selected English and Chinese translation. Drag its header to move it; the position is remembered. Close the panel or use the switch/shortcut to disable automatic requests. Passwords, API keys and connection addresses are excluded.
 4. Select at most **1,600 characters / 250 words**. Only the selection and translation instructions are sent, without the whole Note, Book or Chat. New selections cancel earlier translation requests. Cancellation cannot undo charges already incurred upstream.
-5. Repeated selections with the same saved service/model/prompt reuse local results without another API call. **Saved translations → Clear translation cache** clears only the translation cache, limited to **1,000 results / 5 MB**, stored under **Data/Research/Translation**. Changing service, model or prompt uses a separate cache identity. Translation and its manual tests appear in **Usage → Purpose: Translation**; locally reused results do not add tokens or requests. Configure the translation model's price in **Model prices** when the service does not report costs.
-
-For a low-cost starting point, SiliconFlow offers **tencent/Hunyuan-MT-7B**. Confirm availability, quotas and current prices in its official catalogue; no free entitlement is assumed by LanCarbon.
+5. Repeated selections with the same saved service/model/prompt reuse local results without another API call. **Saved translations → Clear translation cache** clears only the translation cache, limited to **1,000 results / 5 MB**, stored under **Data/Research/Translation**. Translation and manual tests appear in **Usage → Purpose: Translation**; locally reused results do not add tokens or requests. Configure the translation model's price in **Model prices** when the service does not report costs. Dedicated keys have masked previews and **Remove translation key**; blank key inputs retain the saved key.
 
 ### Token usage and costs
 
 Open **Research → Usage**. The default is **Today**; choose **Last 7 days**, **Last 30 days**, or custom **From / To** dates. Source, model and purpose filters apply to the entire range. The compact overview shows **Requests**, total **Tokens** and **Costs**, with each title and value on one line. Requests are newest first, ten per page; pagination does not change totals or activity.
 
-**Token activity → Hourly** shows 24 hours for a selected local date in three rows of eight cells (00–07, 08–15, 16–23). **Daily** shows one cell per date, arranged by week with month labels; use the year control for a range spanning multiple years. Darker cells mean more tokens. Hover or focus a cell for its time/date, tokens and CNY cost. Missing usage or fees remain unknown rather than zero.
+**Token activity** has its own dates, independently of the summary/request filters above. **Hourly** defaults to today and shows 24 square cells centered in three rows of eight (00–07, 08–15, 16–23); choose another day using its calendar. **Daily** defaults to the current full year, with 365/366 cells arranged by week and labeled by month; select a different year independently. Changing From / To or Today / Last 7 days / Last 30 days changes summaries and request records without switching activity mode or dates. Source, model and purpose filters apply to both. From, To and the hourly day use the LanCarbon-themed calendar; dates can also be typed as YYYY-MM-DD. Darker cells mean more tokens. Hover or focus for time/date, tokens and CNY cost; missing data stays unknown.
 
 In **Model prices**, choose a configured model and save its input/output rates per million tokens and original currency. Optional cache rates use the input rate when blank; enter zero for a verified free model. Saved prices can be edited. Removing a model and saving its configuration, deleting a service, or changing its API address automatically removes obsolete prices. Historical requests retain their own price snapshots and original reported charges.
 
@@ -62,19 +60,17 @@ Viewing Usage works offline and does not call a model. Local logs are in **Data/
 
 ### 选词翻译
 
-1. 打开 **Research → Translation Settings**。选择 **Use an existing AI connection** 复用已保存密钥，聊天模型不受影响；或用 **Separate translation connection** 配置独立的 SiliconFlow、OpenRouter 或 Others 密钥与地址。独立密钥显示掩码，可用 **Remove translation key** 清除本地保存；输入框留空保留原密钥。
-2. 选择 **Service**，通过 **Refresh translation models** 选择或手填准确的 **Model ID**，再 **Save translation settings**。**Test translation** 发起短测试请求，即使自动翻译关闭也可用；**Stop translation test** 取消测试。翻译模型与提示词独立于 Chat。通用模型使用只输出中文、无 emoji 的学术翻译系统提示词；**Automatic** 为 Hunyuan-MT / HY-MT 使用官方用户消息翻译模板。展开 **Translation prompt** 可修改或恢复默认要求。
-3. 每次启动默认**关闭**。点击侧栏 **Translate** 或按 **Ctrl+Alt+T** 开启后，在 Notes／Books 的 **Edit** 或 **Preview**、Research、Library，以及可选取的界面文字中选择英文单词、词组或短句。选取稳定后，浮窗显示原文与中文；拖动标题栏可移动并记住位置。关闭浮窗或使用开关／快捷键停止自动调用。密码、API Key 和接口地址不参与翻译。
-4. 单次最多 **1,600 字符／250 词**，仅发送选取内容与翻译要求，不附带整篇 Note、Book 或聊天。新的选取会取消旧翻译请求；取消不能撤销上游已经发生的费用。
-5. 相同来源、模型、提示词的重复选取复用本地结果，不再次请求 API。**Saved translations → Clear translation cache** 仅清除翻译缓存；缓存位于 **Data/Research/Translation**，上限 **1,000 条／5 MB**。更换来源、模型或提示词后使用各自缓存。翻译及手动测试在 **Usage → Purpose: Translation** 中统计；本地复用不增加请求与 Token。服务不返回费用时，在 **Model prices** 配置翻译模型价格。
-
-可先尝试 SiliconFlow 的 **tencent/Hunyuan-MT-7B**；可用性、额度与当前价格以官方目录为准，LanCarbon 不预设免费权益。
+1. 打开 **Research → Translation Settings**。选择 **Use an existing AI connection** 时，仅选择服务与 AI Settings 已保存的模型，密钥和显示名称沿用原配置；该模式不提供目录刷新或模型字段编辑。新增独立的翻译服务／模型时，选择 **Separate translation connection** 配置 SiliconFlow、OpenRouter 或 Others，再 **Refresh translation models** 或手填准确的 Model ID 与显示名称。刷新读取平台目录，可调用权限与价格仍需核对。
+2. **Save translation settings → Test translation**。按钮附近的结果明确展示 **Translation test succeeded**、服务／模型、固定原句 **Climate change affects investment.** 与中文译文。**Stop translation test** 取消正在进行的测试；自动翻译关闭时也可手动测试，会产生真实请求。可编辑的 **Translation prompt** 仅用于翻译，所需模型格式自动适配；默认要求准确、专业、只输出简体中文且不用 emoji。提示词输入框中的英文也可选取翻译，原内容不受修改。
+3. 每次启动默认**关闭**。点击侧栏 **Translate** 或按 **Ctrl+Alt+T** 开启后，在 Notes／Books 的 **Edit** 或 **Preview**、Research、Library 及可选取的界面文字中选择英文单词、词组或短句。选取稳定后浮窗显示原文与中文；拖动标题栏可移动并记住位置。关闭浮窗或使用开关／快捷键停止自动调用。密码、API Key 与接口地址不参与翻译。
+4. 单次最多 **1,600 字符／250 词**，仅发送选取内容与翻译要求，不附带整篇 Note、Book 或聊天。新的选取取消旧翻译请求；取消不能撤销上游已经发生的费用。
+5. 相同来源、模型、提示词的重复选取复用本地结果，不再次请求 API。**Saved translations → Clear translation cache** 仅清除翻译缓存，位于 **Data/Research/Translation**，上限 **1,000 条／5 MB**。翻译及手动测试在 **Usage → Purpose: Translation** 中统计；本地复用不增加请求与 Token。服务不返回费用时，在 **Model prices** 配置翻译模型价格。独立密钥显示掩码，可用 **Remove translation key** 清除本地保存；输入框留空保留原密钥。
 
 ### Token 用量与费用
 
 打开 **Research → Usage**，默认查看 **Today**；可选 **Last 7 days**、**Last 30 days**，或自选 **From / To** 日期。来源、模型和用途筛选作用于整个区间。紧凑概览只显示 **Requests**、总 **Tokens** 和 **Costs**，标题与数字在同一行。请求按最新在前排列，每页十条；翻页不影响汇总和活动热力图。
 
-**Token activity → Hourly** 按三行八列展示指定本地日期的 24 小时（00–07、08–15、16–23）；**Daily** 每天一格，按周排列并标记月份，跨年区间可切换年份。颜色越深表示 Token 越多；悬浮或键盘聚焦格子可查看时间／日期、总 Token 和人民币费用。缺失用量或费用仍为未知，不当作零。
+**Token activity** 使用独立日期，不跟随上方汇总／请求筛选。**Hourly** 默认今天，24 个正方形格子按三行八列居中排列（00–07、08–15、16–23），可用自己的日历切换日期。**Daily** 默认当前完整年份，365／366 格按周排列、标记月份，可独立切换年份。修改 From／To 或 Today／Last 7 days／Last 30 days 只调整汇总和请求记录，不切换热力图模式或日期；来源、模型和用途筛选同时作用于两者。From、To 与小时日期使用 LanCarbon 风格日历，也可手填 YYYY-MM-DD。颜色越深表示 Token 越多；悬浮或聚焦查看时间／日期、总 Token 和人民币费用，缺失数据仍为未知。
 
 在 **Model prices** 选择已配置模型，保存每百万 Token 的输入／输出单价及原始币种。缓存价格留空按输入价；经平台确认的免费模型可填零。已保存价格可编辑。删除模型并保存配置、删除服务或更改 API 地址时，自动清理对应的旧价格；历史请求保留当时单价及平台返回的原币费用，不受清理影响。
 
@@ -138,7 +134,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.2.4 加入全工作区选词翻译、独立翻译配置、有上限的缓存与翻译用量统计，小时热力图调整为三行八列；AI Settings 与 Chat：配置 SiliconFlow、OpenRouter 或兼容 OpenAI 的 Others 服务，保存加密密钥及聊天模型，然后进行流式对话、停止、重试与会话恢复。连接跟随电脑网络。PDF/EPUB 阅读和文献任务留待后续阶段，Notes、Books 和 Library 文件不会自动附加到 AI 请求。
+2.2.5 调整小时格为居中正方形、日度为独立全年展示并统一日历；简化翻译模型选择、自动适配提示词、允许提示词选取翻译并明确展示测试原文与译文；AI Settings 与 Chat：配置 SiliconFlow、OpenRouter 或兼容 OpenAI 的 Others 服务，保存加密密钥及聊天模型，然后进行流式对话、停止、重试与会话恢复。连接跟随电脑网络。PDF/EPUB 阅读和文献任务留待后续阶段，Notes、Books 和 Library 文件不会自动附加到 AI 请求。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 

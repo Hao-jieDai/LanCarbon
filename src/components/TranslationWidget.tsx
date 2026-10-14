@@ -9,7 +9,7 @@ export function translationSelection(origin: Element | null): string {
   const input = origin.closest("input,textarea") as HTMLInputElement | HTMLTextAreaElement | null;
   if (input) {
     if (input instanceof HTMLInputElement && !["text", "search", "tel"].includes(input.type)) return "";
-    if (/api.*(?:key|address)|system prompt|translation prompt|saved api key/i.test(input.getAttribute("aria-label") ?? "")) return "";
+    if (/api.*(?:key|address)|saved api key/i.test(input.getAttribute("aria-label") ?? "")) return "";
     const start = input.selectionStart, end = input.selectionEnd;
     return start !== null && end !== null && start !== end ? input.value.slice(start, end) : "";
   }

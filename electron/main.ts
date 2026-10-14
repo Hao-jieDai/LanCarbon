@@ -29,7 +29,7 @@ import { AIClient, redactAIError } from "./ai-client";
 import { AIService } from "./ai-service";
 import { AIPriceStore, AIUsageStore } from "./ai-usage";
 import { TranslationCache, TranslationService, TranslationSettingsStore } from "./translation";
-import { translationPriceProviders, type TranslationSettings } from "../src/shared/translation";
+import { translationPriceProviders, TRANSLATION_TEST_TEXT, type TranslationSettings } from "../src/shared/translation";
 import type { AIModelPriceInput, AIUsageQuery } from "../src/shared/aiUsage";
 import type { AIProviderInput } from "../src/shared/ai";
 
@@ -224,6 +224,7 @@ app.whenReady().then(async () => {
     await translationService.cancel();
     const providers = await (input?.mode === "custom" ? translationConnections : aiSettings).list();
     if (!input?.modelId || !providers.some(provider => provider.id === input.providerId)) throw Error("Choose a translation service and model first.");
+    if (input.mode === "reuse" && !providers.find(provider => provider.id === input.providerId)?.models.some(model => model.id === input.modelId)) throw Error("Choose a model saved in AI Settings, or use a separate translation connection.");
     const settings = await translationSettings.save(input); await syncPrices(); translationChanged(); return { settings };
   });
   aiHandler("translation:save-provider", async (input: AIProviderInput) => { await translationService.cancel(); const providers = await translationConnections.save(input); await syncPrices(); translationChanged(); return { providers }; });
@@ -232,7 +233,7 @@ app.whenReady().then(async () => {
   aiHandler("translation:set-enabled", async (input: boolean) => { const enabled = await translationService.setEnabled(input); translationChanged(); return { enabled }; });
   aiHandler("translation:translate", async (id: string, text: string) => ({ result: await translationService.translate(id, text) }));
   aiHandler("translation:cancel", async (id?: string) => { await translationService.cancel(id); return {}; });
-  aiHandler("translation:test", async () => ({ result: await translationService.translate(randomUUID(), "Climate change affects investment.", true) }));
+  aiHandler("translation:test", async () => ({ result: await translationService.translate(randomUUID(), TRANSLATION_TEST_TEXT, true) }));
   aiHandler("translation:clear-cache", async () => { await translationService.cancel(); const stats = await cache().clear(); translationChanged(); return { cache: stats }; });
   let assetsDirectory = dataDirectory;
   let assetsManager = new AssetStore(dataDirectory, managedAssetDirectory, systemAssetIds);

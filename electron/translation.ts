@@ -76,6 +76,7 @@ export class TranslationService {
       const settings = await this.settings.get();
       if (!settings.providerId || !settings.modelId) throw Error("Choose and save a model in Translation Settings first.");
       const connection = await (settings.mode === "reuse" ? this.shared : this.custom).connection(settings.providerId); key = connection.key;
+      if (settings.mode === "reuse" && !connection.provider.models.some(model => model.id === settings.modelId)) throw Error("Choose a model saved in AI Settings, or use a separate translation connection.");
       const messages = translationMessages(settings, source);
       const cacheKey = createHash("sha256").update(JSON.stringify([settings.mode, connection.provider.id, connection.provider.baseUrl, settings.modelId, messages])).digest("hex");
       const cache = this.cache();

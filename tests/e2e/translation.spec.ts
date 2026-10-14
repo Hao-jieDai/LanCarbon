@@ -19,7 +19,7 @@ test("global selection translation protects writing, keys, cache and usage acros
     const body = JSON.parse(raw); requests.push(body);
     let source = body.messages.at(-1).content;
     try { source = JSON.parse(source).text_to_translate; } catch { source = source.split("\n\n").at(-1); }
-    const translated = source === "stranded assets" ? "搁浅资产" : source === "carbon pricing" ? "碳定价" : source.startsWith("Your Notes") ? "可通过工作区按钮访问笔记和书籍。" : source === "Your source materials" ? "你的源材料" : source.startsWith("This workspace") ? "较早的回复" : "气候变化影响投资。";
+    const translated = source === "stranded assets" ? "搁浅资产" : source === "carbon pricing" ? "碳定价" : source.startsWith("Your Notes") ? "可通过工作区按钮访问笔记和书籍。" : source === "Your source materials" ? "你的源材料" : source.startsWith("This workspace") ? "较早的回复" : source === "Translate" ? "翻译" : "气候变化影响投资。";
     response.writeHead(200, { "content-type": "text/event-stream" });
     const timer = setTimeout(() => response.end(`data: ${JSON.stringify({ choices: [{ delta: { content: translated } }] })}\n\ndata: ${JSON.stringify({ choices: [], usage: { prompt_tokens: 20, completion_tokens: 6, total_tokens: 26 } })}\n\ndata: [DONE]\n\n`), source.startsWith("This workspace") ? 2500 : 60);
     response.on("close", () => clearTimeout(timer));
@@ -39,16 +39,18 @@ test("global selection translation protects writing, keys, cache and usage acros
   let app = await launch();
   try {
     let page = await app.firstWindow(); await expect(page.getByLabel("Note title")).toHaveValue(note.title);
-    await page.evaluate(async () => { const result = await window.notesDesktop.ai!.saveProvider({ id: "siliconflow", kind: "siliconflow", name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", models: [{ id: "chat-model", name: "Chat model", purpose: "chat" }], defaultModel: "chat-model", apiKey: "fixture-chat-private" }); if (!result.ok) throw Error(result.error); });
+    await page.evaluate(async () => { const result = await window.notesDesktop.ai!.saveProvider({ id: "siliconflow", kind: "siliconflow", name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", models: [{ id: "chat-model", name: "Chat model", purpose: "chat" }, { id: "tencent/Hunyuan-MT-7B", name: "Hunyuan MT", purpose: "chat" }], defaultModel: "chat-model", apiKey: "fixture-chat-private" }); if (!result.ok) throw Error(result.error); });
     const selectEditor = async () => { await page.getByLabel("Note content", { exact: true }).click(); await page.keyboard.press("Control+End"); await page.keyboard.press("Home"); await page.keyboard.press("Shift+End"); };
     await selectEditor(); await page.waitForTimeout(550); expect(requests).toHaveLength(0);
     await expect(page.getByRole("region", { name: "Selection translation" })).toHaveCount(0);
     await page.getByRole("button", { name: "Research", exact: true }).click(); await page.getByRole("button", { name: "Translation Settings", exact: true }).click();
     await page.getByRole("combobox", { name: "Translation service", exact: true }).click(); await page.getByRole("option", { name: "SiliconFlow", exact: true }).click();
-    await page.getByRole("button", { name: "Refresh translation models", exact: true }).click(); await expect(page.getByText(/2 models found/)).toBeVisible();
-    await page.getByRole("combobox", { name: "Translation model ID", exact: true }).fill("tencent/Hunyuan-MT-7B"); await page.getByLabel("Translation model display name", { exact: true }).fill("Hunyuan MT");
+    await expect(page.getByRole("button", { name: "Refresh translation models", exact: true })).toHaveCount(0); await expect(page.getByLabel("Translation model display name", { exact: true })).toHaveCount(0);
+    await page.getByRole("combobox", { name: "Translation model", exact: true }).click(); await expect(page.getByRole("option")).toHaveCount(2); await page.getByRole("option", { name: "Hunyuan MT", exact: true }).click();
+    await expect(page.getByRole("combobox", { name: "Translation model ID", exact: true })).toHaveCount(0); await expect(page.getByLabel("Translation prompt style", { exact: true })).toHaveCount(0);
     await page.getByRole("button", { name: "Save translation settings", exact: true }).click(); await expect(page.getByText("Translation settings saved.", { exact: true })).toBeVisible();
     await page.screenshot({ path: info.outputPath("translation-settings-dark.png") });
+    expect(await page.evaluate(() => { const a = document.querySelector('.translation-settings .ai-guidelines')!.getBoundingClientRect(), b = document.querySelector('.translation-settings form > .ai-actions')!.getBoundingClientRect(); return b.top - a.bottom; })).toBeGreaterThanOrEqual(18);
     const originalChat = await fs.readFile(path.join(root, "Config/ai-settings.json"), "utf8");
     await page.evaluate(async () => { const result = await window.notesDesktop.ai!.savePrice({ providerId: "siliconflow", baseUrl: "https://api.siliconflow.cn/v1", modelId: "tencent/Hunyuan-MT-7B", currency: "CNY", input: 0, output: 0 }); if (!result.ok) throw Error(result.error); });
     await page.getByRole("button", { name: "Notes", exact: true }).click(); await page.getByRole("button", { name: "Toggle translation", exact: true }).click(); await selectEditor();
@@ -66,8 +68,8 @@ test("global selection translation protects writing, keys, cache and usage acros
     await page.getByRole("button", { name: "Library", exact: true }).click(); await select(page.getByRole("heading", { name: "Your source materials", exact: true }));
     await expect(page.getByLabel("Chinese translation", { exact: true })).toHaveText("你的源材料"); expect(requests).toHaveLength(5);
     const panel = page.getByRole("region", { name: "Selection translation" }), before = (await panel.boundingBox())!;
-    await page.mouse.move(before.x + 40, before.y + 20); await page.mouse.down(); await page.mouse.move(before.x - 90, before.y - 80); await page.mouse.up();
-    expect((await panel.boundingBox())!.x).toBeLessThan(before.x - 80);
+    await page.mouse.move(before.x + 40, before.y + 20); await page.mouse.down(); await page.mouse.move(before.x - 90, before.y - 80, { steps: 5 }); await page.mouse.up();
+    await expect.poll(async () => (await panel.boundingBox())!.x).toBeLessThan(before.x - 80);
     await page.screenshot({ path: info.outputPath("translation-library-dark.png") }); await page.locator(".theme-option").filter({ hasText: "Light" }).click(); await page.screenshot({ path: info.outputPath("translation-library-light.png") });
     await page.keyboard.press("Control+Alt+t"); await expect(panel).toHaveCount(0); await select(page.getByRole("heading", { name: "Your source materials", exact: true })); await page.waitForTimeout(550); expect(requests).toHaveLength(5);
     await page.getByRole("button", { name: "Research", exact: true }).click(); await page.getByRole("button", { name: "Translation Settings", exact: true }).click();
@@ -75,20 +77,26 @@ test("global selection translation protects writing, keys, cache and usage acros
     await page.getByRole("combobox", { name: "Translation service", exact: true }).click(); await page.getByRole("option", { name: "Others Translation · Key needed", exact: true }).click();
     await page.getByLabel("Translation API base address", { exact: true }).fill("https://translation.example/v1"); await page.getByLabel("Translation API Key", { exact: true }).fill("fixture-translation-private");
     await page.getByRole("button", { name: "Toggle translation", exact: true }).click(); await page.getByLabel("Translation API Key", { exact: true }).click(); await page.keyboard.press("Control+a"); await page.waitForTimeout(550); expect(requests).toHaveLength(5);
+    await page.getByRole("button", { name: "Refresh translation models", exact: true }).click(); await expect(page.getByText(/2 catalogue models found/)).toBeVisible();
     await page.getByRole("combobox", { name: "Translation model ID", exact: true }).fill("fixture-translation"); await page.getByRole("button", { name: "Save translation settings", exact: true }).click(); await expect(page.getByText("Translation settings saved.", { exact: true })).toBeVisible();
     await expect(page.getByLabel("Saved translation API key")).toHaveText("fixt••••••••vate"); expect(await fs.readFile(path.join(root, "Config/ai-settings.json"), "utf8")).toBe(originalChat);
     expect(await fs.readFile(path.join(root, "Config/translation-connections.json"), "utf8")).not.toContain("fixture-translation-private");
-    await page.getByRole("button", { name: "Test translation", exact: true }).click(); await expect(page.getByText("Translation test: 气候变化影响投资。", { exact: true })).toBeVisible(); expect(requests).toHaveLength(6); expect(requests[5].messages[0].role).toBe("system");
+    await page.getByRole("button", { name: "Test translation", exact: true }).click(); const testResult = page.getByRole("region", { name: "Translation test result" }); await expect(testResult).toContainText("Translation test succeeded"); await expect(testResult).toContainText("Climate change affects investment."); await expect(testResult).toContainText("气候变化影响投资。"); expect(requests).toHaveLength(6); expect(requests[5].messages[0].role).toBe("system");
+    expect(await testResult.evaluate(element => element.getBoundingClientRect().bottom < document.querySelector('.translation-cache')!.getBoundingClientRect().top)).toBe(true);
+    await page.locator('.translation-settings .ai-guidelines summary').click(); const prompt = page.getByLabel("Translation prompt", { exact: true }), originalPrompt = await prompt.inputValue();
+    await prompt.click(); await page.keyboard.press("Control+Home"); for (let index = 0; index < 9; index++) await page.keyboard.press("Shift+ArrowRight");
+    await expect(page.getByLabel("Selected English", { exact: true })).toHaveText("Translate"); await expect(page.getByLabel("Chinese translation", { exact: true })).toHaveText("翻译"); expect(requests).toHaveLength(7); expect(JSON.parse(requests[6].messages.at(-1).content).text_to_translate).toBe("Translate"); expect(await prompt.inputValue()).toBe(originalPrompt);
+    await page.screenshot({ path: info.outputPath("translation-prompt-selection.png") });
     await page.getByRole("button", { name: "Clear translation cache", exact: true }).click(); await expect(page.getByText("Saved translations cleared.", { exact: true })).toBeVisible(); await expect(page.getByText(/0 saved results/)).toBeVisible();
     await page.getByRole("button", { name: "Usage", exact: true }).click(); await page.getByRole("combobox", { name: "Usage purpose", exact: true }).click(); await page.getByRole("option", { name: "Translation", exact: true }).click();
-    await expect(page.locator(".usage-overview > div").first().locator("strong")).toHaveText("6");
+    await expect(page.locator(".usage-overview > div").first().locator("strong")).toHaveText("7");
     const rows = await page.locator(".usage-hours button").evaluateAll(elements => elements.map(element => Math.round(element.getBoundingClientRect().top))); expect([...new Set(rows)].map(row => rows.filter(value => value === row).length)).toEqual([8, 8, 8]);
     const usage = await page.evaluate(() => window.notesDesktop.ai!.usage({ purpose: "translation" })); if (!usage.ok) throw Error(usage.error);
-    expect(usage.usage.summary).toMatchObject({ requests: 6, totalTokens: 130, pending: 0 }); expect(usage.usage.records.filter(record => record.status === "stopped")).toHaveLength(1);
+    expect(usage.usage.summary).toMatchObject({ requests: 7, totalTokens: 156, pending: 0 }); expect(usage.usage.records.filter(record => record.status === "stopped")).toHaveLength(1);
     await page.setViewportSize({ width: 900, height: 650 }); await page.screenshot({ path: info.outputPath("translation-usage-small.png") }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await app.close(); app = await launch(); page = await app.firstWindow(); await page.getByRole("main").waitFor();
     await expect(page.getByRole("region", { name: "Selection translation" })).toHaveCount(0); await expect(page.getByRole("button", { name: "Toggle translation", exact: true })).toBeVisible();
-    const settings = await page.evaluate(() => window.notesDesktop.translation!.settings()); expect(settings.ok && settings.settings.modelId).toBe("fixture-translation"); expect(requests).toHaveLength(6);
+    const settings = await page.evaluate(() => window.notesDesktop.translation!.settings()); expect(settings.ok && settings.settings.modelId).toBe("fixture-translation"); expect(requests).toHaveLength(7);
     const saved = JSON.parse(await fs.readFile(path.join(root, "Data/notes.json"), "utf8")); expect(saved.notes.find((value: any) => value.id === note.id).content).toBe(note.content); expect(saved.notes.find((value: any) => value.id === homeNote.id).content).toBe(homeNote.content);
   } finally { await app.close().catch(() => undefined); server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); const target = path.resolve(root); if (target.startsWith(path.resolve(os.tmpdir()) + path.sep) && path.basename(target).startsWith("lancarbon-translation-")) await fs.rm(target, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 });

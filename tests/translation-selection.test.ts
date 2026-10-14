@@ -4,6 +4,10 @@ import { EditorView } from "@codemirror/view";
 import { translationSelection } from "../src/components/TranslationWidget";
 afterEach(() => { document.body.replaceChildren(); window.getSelection()?.removeAllRanges(); });
 describe("global translation selection", () => {
+  it("reads selected translation instructions without changing the prompt", () => {
+    const prompt = document.createElement("textarea"); prompt.setAttribute("aria-label", "Translation prompt"); prompt.value = "Translate the supplied English word."; document.body.append(prompt); prompt.setSelectionRange(0, 9);
+    expect(translationSelection(prompt)).toBe("Translate"); expect(prompt.value).toBe("Translate the supplied English word.");
+  });
   it("reads a text input selection without changing its value", () => {
     const input = document.createElement("input"); input.value = "climate change"; document.body.append(input); input.setSelectionRange(0, 7);
     expect(translationSelection(input)).toBe("climate"); expect(input.value).toBe("climate change");
