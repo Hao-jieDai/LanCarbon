@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, net, screen, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, net, screen, shell, safeStorage } from "electron";
 import path from "node:path";
 import { promises as fs } from "node:fs";
 import { mkdirSync } from "node:fs";
@@ -24,6 +24,10 @@ import { EnvironmentManager } from "./environment-manager";
 import type { EnvironmentToolId } from "../src/shared/types";
 import { prepareResearchDirectories } from "./research-directories";
 import { migrateAssetsToLibrary } from "./asset-migration";
+import { AISettingsStore, AIChatStore } from "./ai-storage";
+import { AIClient, redactAIError } from "./ai-client";
+import { AIService } from "./ai-service";
+import type { AIProviderInput } from "../src/shared/ai";
 
 let mainWindow: BrowserWindow | null = null;
 const websiteServers = new WebsiteServerManager();
@@ -33,6 +37,7 @@ let dataLocationManager: DataLocationManager;
 let dataDirectory: string;
 let saveWindowTimer: NodeJS.Timeout | undefined;
 let environmentManager: EnvironmentManager;
+let aiService: AIService;
 
 const directories = resolveLanCarbonDirectories({
   executable: process.execPath,
@@ -147,6 +152,27 @@ app.whenReady().then(async () => {
   const officialCatalog = JSON.parse(await fs.readFile(path.join(bundledStarterContent, "assets.json"), "utf8"));
   const systemAssetIds = new Set<string>(officialCatalog.assets.map((asset: { id: string }) => asset.id));
   store = new NotesStore(dataDirectory, bundledStarterContent, managedAssetDirectory);
+  const aiSettings = new AISettingsStore(configurationDirectory, { available: () => safeStorage.isAsyncEncryptionAvailable(), encrypt: text => safeStorage.encryptStringAsync(text), decrypt: async bytes => (await safeStorage.decryptStringAsync(bytes)).result });
+  let chatDirectory = dataDirectory;
+  let chatStore = new AIChatStore(chatDirectory);
+  const chats = () => { if (chatDirectory !== dataDirectory) { chatDirectory = dataDirectory; chatStore = new AIChatStore(chatDirectory); } return chatStore; };
+  // Electron's network stack follows the computer's system proxy. Keys stay in the main process.
+  aiService = new AIService(aiSettings, chats, new AIClient((input, init) => net.fetch(input as string, init)), chat => mainWindow?.webContents.send("ai:chat", chat));
+  const aiHandler = (channel: string, action: (...args: any[]) => Promise<object>) => ipcMain.handle(channel, async (event, ...args) => {
+    if (event.sender !== mainWindow?.webContents) return { ok: false, error: "The AI workspace is unavailable" };
+    try { return { ok: true, ...await action(...args) }; } catch (error) { return { ok: false, error: redactAIError(error) }; }
+  });
+  aiHandler("ai:providers", async () => ({ providers: await aiSettings.list() }));
+  aiHandler("ai:save-provider", async (input: AIProviderInput) => ({ providers: await aiSettings.save(input) }));
+  aiHandler("ai:remove-provider", async (id: string) => ({ providers: await aiSettings.remove(id) }));
+  aiHandler("ai:models", async (id: string) => ({ models: await aiService.models(id) }));
+  aiHandler("ai:test", async (id: string, model: string) => ({ message: await aiService.test(id, model) }));
+  aiHandler("ai:chats", async () => ({ chats: await chats().list() }));
+  aiHandler("ai:create-chat", async (provider: string, model: string) => ({ chat: await chats().create(provider, model) }));
+  aiHandler("ai:rename-chat", async (id: string, title: string) => ({ chat: await chats().rename(id, title) }));
+  aiHandler("ai:delete-chat", async (id: string) => { await aiService.remove(id); return {}; });
+  aiHandler("ai:send", async (id: string, provider: string, model: string, text: string, retry?: boolean) => ({ chat: await aiService.send(id, provider, model, text, retry) }));
+  aiHandler("ai:stop", async (id: string) => { await aiService.stop(id); return {}; });
   let assetsDirectory = dataDirectory;
   let assetsManager = new AssetStore(dataDirectory, managedAssetDirectory, systemAssetIds);
   const assetStore = () => {
@@ -312,6 +338,7 @@ app.whenReady().then(async () => {
     if (selection.canceled || !selection.filePaths[0]) return { ok: false, canceled: true, error: "Data location change canceled" };
     const target = path.resolve(selection.filePaths[0]);
     try {
+      await aiService.shutdown();
       await dataLocationManager.prepareTarget(dataDirectory, target);
       const current = await store.loadWorkspace();
       const targetStore = new NotesStore(target, bundledStarterContent, managedAssetDirectory);
@@ -514,5 +541,9 @@ app.whenReady().then(async () => {
   app.quit();
 });
 
-app.on("before-quit", () => { environmentManager?.cancel(); websiteServers.closeAll(); });
+let aiQuitFlushed = false;
+app.on("before-quit", event => {
+  environmentManager?.cancel(); websiteServers.closeAll();
+  if (aiService && !aiQuitFlushed) { event.preventDefault(); aiQuitFlushed = true; void aiService.shutdown().finally(() => app.quit()); }
+});
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });

@@ -4,11 +4,11 @@ import { createPortal } from "react-dom";
 export interface SelectOption { value: string; label: string; disabled?: boolean }
 interface Props {
   label: string; value: string; options: SelectOption[]; onChange(value: string): void;
-  placeholder?: string; editable?: boolean; action?: boolean; disabled?: boolean; className?: string; title?: string;
+  placeholder?: string; emptyMessage?: string; editable?: boolean; action?: boolean; disabled?: boolean; className?: string; title?: string;
 }
 
 /** Application-owned popup, including inside native dialogs. No OS select UI. */
-export function ThemedSelect({ label, value, options, onChange, placeholder, editable = false, action = false, disabled, className = "", title }: Props) {
+export function ThemedSelect({ label, value, options, onChange, placeholder, emptyMessage = "Use a custom language name.", editable = false, action = false, disabled, className = "", title }: Props) {
   const id = useId();
   const host = useRef<HTMLDivElement>(null), popup = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false), [active, setActive] = useState(-1), [filter, setFilter] = useState("");
@@ -81,7 +81,7 @@ export function ThemedSelect({ label, value, options, onChange, placeholder, edi
       {available.map((option, index) => <div key={option.value} id={`${id}-${index}`} role={action ? "menuitem" : "option"} aria-selected={action ? undefined : option.value === value} aria-disabled={option.disabled || undefined} data-index={index} className={`themed-select-option ${index === active ? "is-active" : ""}`} onPointerMove={() => { if (!option.disabled) setActive(index); }} onClick={event => { event.stopPropagation(); choose(index); }}>
         <span>{option.label}</span>{!action && option.value === value && <span aria-hidden="true">✓</span>}
       </div>)}
-      {!available.length && <div className="select-empty">Use a custom language name.</div>}
+      {!available.length && <div className="select-empty">{emptyMessage}</div>}
     </div>, host.current?.closest("dialog") ?? document.body)}
   </div>;
 }

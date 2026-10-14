@@ -2,6 +2,20 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { NotesDesktopApi } from "../src/shared/types";
 
 const api: NotesDesktopApi = {
+  ai: {
+    providers: () => ipcRenderer.invoke("ai:providers"),
+    saveProvider: input => ipcRenderer.invoke("ai:save-provider", input),
+    removeProvider: id => ipcRenderer.invoke("ai:remove-provider", id),
+    models: id => ipcRenderer.invoke("ai:models", id),
+    test: (id, modelId) => ipcRenderer.invoke("ai:test", id, modelId),
+    chats: () => ipcRenderer.invoke("ai:chats"),
+    createChat: (providerId, modelId) => ipcRenderer.invoke("ai:create-chat", providerId, modelId),
+    renameChat: (id, title) => ipcRenderer.invoke("ai:rename-chat", id, title),
+    deleteChat: id => ipcRenderer.invoke("ai:delete-chat", id),
+    send: (id, providerId, modelId, text, retry) => ipcRenderer.invoke("ai:send", id, providerId, modelId, text, retry),
+    stop: id => ipcRenderer.invoke("ai:stop", id),
+    onChat: callback => { const listener = (_event: Electron.IpcRendererEvent, chat: Parameters<typeof callback>[0]) => callback(chat); ipcRenderer.on("ai:chat", listener); return () => ipcRenderer.removeListener("ai:chat", listener); }
+  },
   foundation: {
     inspect: () => ipcRenderer.invoke("foundation:inspect"),
     openLibrary: () => ipcRenderer.invoke("foundation:open-library")

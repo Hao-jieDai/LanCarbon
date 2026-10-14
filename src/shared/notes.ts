@@ -8,19 +8,31 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.1.1";
+export const RELEASE_VERSION = "2.2.0";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.1.1 stores managed images and attachments in **Library/assets**, preserving resource IDs and existing writing links. Library uses a compact file list with a fixed reference panel, clickable writing references, containing-folder actions and resource renaming. Writing and resource records remain in the active Data folder. Research remains reserved; AI and PDF/EPUB reading are not enabled yet. LanCarbon does not require an account for ordinary writing and does not automatically upload your content.
+Version 2.2.0 enables AI Settings and Chat: configure SiliconFlow, OpenRouter or an OpenAI-compatible Others service, save encrypted API keys and chat models, then stream, stop, retry and reopen local conversations. Connections follow your computer’s network. PDF/EPUB reading and literature tasks remain reserved. Notes, Books and Library files are not automatically attached to AI requests.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
 LanCarbon now uses the new Logo consistently across the application, installer, repository ReadMe, built-in tutorial, and the default favicon for generated Book websites.
 
 **Resource-dialog fix:** Duplicate images and attachments now use an in-app choice dialog instead of a Windows message box, restoring focus after closing to address the reported disappearing mouse after duplicate-resource warnings.
+
+### AI Settings and Chat
+
+1. Open **Research → AI Settings** and choose **SiliconFlow**, **OpenRouter** or **Others**. Presets supply their official base addresses. Others supports an OpenAI-compatible Chat Completions service and additional named configurations.
+2. Paste that service's **API Key**. Use **Refresh models** to save the connection and fetch its chat models, or enter a **Model ID** and **Display name** manually and select **Add model**. The preset shortcut adds DeepSeek V4 Pro or GPT-6 Luna. Choose a **Default model**, then **Save models**.
+3. Select **Test model** to save and make a small API request; normal service charges may apply. Connections follow the computer's network and system proxy. LanCarbon has no separate proxy controls.
+4. Open **Chat**, choose a model labelled **service · model**, and send text. **Enter** sends; **Shift+Enter** inserts a line break. Use **Stop generating** or **Retry reply** for a stopped or failed reply. Replies support Markdown, code and mathematics; provided reasoning is shown separately. **Copy** copies the original text.
+5. Use **New chat**, **Rename chat** and **Delete chat** to manage conversations. Messages are saved locally in the active **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; reopening Chat or restarting restores conversations. Closing LanCarbon stops generation and saves partial replies.
+
+SiliconFlow: base address \`https://api.siliconflow.cn/v1\`, model ID \`deepseek-ai/DeepSeek-V4-Pro\`. OpenRouter: base address \`https://openrouter.ai/api/v1\`, model ID \`openai/gpt-6-luna\`. Use the exact ID shown by your platform if its catalogue changes. Each service can contain several saved chat models; changing service within a conversation sends its relevant conversation history with the next message.
+
+API keys are encrypted for the current Windows account in **Config/ai-settings.json** and are not returned to the Chat interface. A blank key field retains the existing key; the remove-key checkbox clears it when saving. Enter keys again after moving to another Windows account. Back up Config together with the active Data folder. Only conversation text you send is submitted; Notes, Books and Library files are not automatically attached. PDF/EPUB reading, document-based answers, Embedding, Rerank and literature tasks are reserved for later phases.
 
 ### Workspaces
 
@@ -78,13 +90,25 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.1.1 将受管理图片与附件统一保存到 **Library/assets**，保留资源 ID 和原有正文引用。Library 改为紧凑文件列表，提供固定引用面板、点击引用跳转、打开所在文件夹与资源重命名。正文和资源管理记录仍归属实际 Data 目录。Research 保留预留页面，尚未启用 AI 与 PDF/EPUB 阅读。普通写作不需要注册账号，LanCarbon 也不会自动把你的内容上传到网络。
+2.2.0 启用 AI Settings 与 Chat：配置 SiliconFlow、OpenRouter 或兼容 OpenAI 的 Others 服务，保存加密密钥及聊天模型，然后进行流式对话、停止、重试与会话恢复。连接跟随电脑网络。PDF/EPUB 阅读和文献任务留待后续阶段，Notes、Books 和 Library 文件不会自动附加到 AI 请求。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
 LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程以及生成 Book 网站的默认 favicon 中统一使用新版 Logo。
 
 **资源提示修复：** 图片或附件重名时改用软件内选择对话框，关闭后恢复焦点，以处理重复资源提示后鼠标消失的问题。
+
+### AI Settings 与 Chat
+
+1. 打开 **Research → AI Settings**，选择 **SiliconFlow**、**OpenRouter** 或 **Others**。前两项预填官方 API 地址；Others 支持兼容 OpenAI Chat Completions 的服务，也可以添加多个命名配置。
+2. 粘贴对应平台的 **API Key**。点击 **Refresh models** 保存连接并获取聊天模型，或手动填写 **Model ID** 和 **Display name**，点击 **Add model**。预设快捷按钮可添加 DeepSeek V4 Pro 或 GPT-6 Luna。选择 **Default model** 后点击 **Save models**。
+3. 点击 **Test model** 保存并发送一次小型 API 请求，可能产生平台正常费用。连接跟随电脑网络与系统代理，LanCarbon 不提供单独的代理设置。
+4. 进入 **Chat**，选择标为 **服务 · 模型** 的模型并发送文字。**Enter** 发送，**Shift+Enter** 换行。可以 **Stop generating** 停止生成，或用 **Retry reply** 重试最后一条停止或失败的回复。回复支持 Markdown、代码和公式，模型提供的推理文字单独折叠显示；**Copy** 复制原始文本。
+5. 使用 **New chat**、**Rename chat** 和 **Delete chat** 管理会话。消息保存在实际 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，返回 Chat 或重启后恢复记录。关闭 LanCarbon 会停止生成并保存已有回复。
+
+SiliconFlow 的地址为 \`https://api.siliconflow.cn/v1\`，模型 ID 为 \`deepseek-ai/DeepSeek-V4-Pro\`；OpenRouter 的地址为 \`https://openrouter.ai/api/v1\`，模型 ID 为 \`openai/gpt-6-luna\`。平台目录变化时，以平台显示的准确 ID 为准。每个服务可以保存多个聊天模型；在同一会话切换服务后，下次发送会携带相关会话历史。
+
+API Key 使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，不会返回 Chat 界面。密钥栏留空会保留已有密钥，勾选删除项后保存会清除密钥；迁移到另一个 Windows 账户后需要重新输入。备份时同时保存 Config 和实际 Data。仅提交发送的会话文字，Notes、Books 和 Library 文件不会自动附加。PDF/EPUB 阅读、基于文档的问答、Embedding、Rerank 和文献任务留待后续阶段。
 
 ### 工作区
 

@@ -171,6 +171,7 @@ export interface WindowPreferences {
 }
 
 export interface NotesDesktopApi {
+  ai?: import("./ai").AIDesktopApi;
   foundation?: {
     inspect(): Promise<{ ok: true; directories: import("./research").FoundationDirectories } | { ok: false; error: string }>;
     openLibrary(): Promise<OperationResult>;

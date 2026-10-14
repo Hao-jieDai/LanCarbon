@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon uploads content only when you explicitly use Publish.
 
-Version 2.1.1 moves managed images and attachments to **Library/assets** without changing existing resource IDs or writing links. Library now has compact rows, a fixed reference panel, navigation to cited writing lines, containing-folder actions and resource renaming. Research remains reserved; AI, PDF/EPUB reading and literature automation are not enabled. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
+Version 2.2.0 enables AI Settings and Chat with SiliconFlow, OpenRouter and named Others configurations, system-network connections, encrypted API keys, model selection, streaming, cancellation, retry and locally saved conversations. PDF/EPUB reading and literature automation remain reserved. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -33,6 +33,18 @@ Version 2.1.1 moves managed images and attachments to **Library/assets** without
 - Environment Setup with managed, independently repairable tools and folder-permission recovery under the LanCarbon root.
 - Light and Dark themes with the LanCarbon visual style.
 
+### AI Settings and Chat
+
+1. Open **Research → AI Settings** and choose **SiliconFlow**, **OpenRouter** or **Others**. Presets supply their official base addresses. Others supports an OpenAI-compatible Chat Completions service and additional named configurations.
+2. Paste that service's **API Key**. Use **Refresh models** to save the connection and fetch its chat models, or enter a **Model ID** and **Display name** manually and select **Add model**. The preset shortcut adds DeepSeek V4 Pro or GPT-6 Luna. Choose a **Default model**, then **Save models**.
+3. Select **Test model** to save and make a small API request; normal service charges may apply. Connections follow the computer's network and system proxy. LanCarbon has no separate proxy controls.
+4. Open **Chat**, choose a model labelled **service · model**, and send text. **Enter** sends; **Shift+Enter** inserts a line break. Use **Stop generating** or **Retry reply** for a stopped or failed reply. Replies support Markdown, code and mathematics; provided reasoning is shown separately. **Copy** copies the original text.
+5. Use **New chat**, **Rename chat** and **Delete chat** to manage conversations. Messages are saved locally in the active **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; reopening Chat or restarting restores conversations. Closing LanCarbon stops generation and saves partial replies.
+
+SiliconFlow: base address `https://api.siliconflow.cn/v1`, model ID `deepseek-ai/DeepSeek-V4-Pro`. OpenRouter: base address `https://openrouter.ai/api/v1`, model ID `openai/gpt-6-luna`. Use the exact ID shown by your platform if its catalogue changes. Each service can contain several saved chat models; changing service within a conversation sends its relevant conversation history with the next message.
+
+API keys are encrypted for the current Windows account in **Config/ai-settings.json** and are not returned to the Chat interface. A blank key field retains the existing key; the remove-key checkbox clears it when saving. Enter keys again after moving to another Windows account. Back up Config together with the active Data folder. Only conversation text you send is submitted; Notes, Books and Library files are not automatically attached. PDF/EPUB reading, document-based answers, Embedding, Rerank and literature tasks are reserved for later phases.
+
 ### Workspaces and recovery
 
 The four workspace buttons form a 2×2 grid: **Notes / Books** above **Research / Library**. Each retains its selection when switching and restarting. Research contains **Run**, **Templates**, **Outputs**, **Chat** and **AI Settings**; pages labeled **Coming soon** have no active AI or literature actions yet. Library uses a compact file list. Selecting a file keeps its references in a fixed panel above the independently scrolling list; **Save a copy** sits beside its filename. Select a reference to open its Note or Book page and highlight the cited line, or open the corresponding Book settings/Citations panel. **Folder** reveals the actual file and **Rename** changes its display and saved-copy name while retaining IDs, extensions and existing writing. Built-in tutorial resources cannot be renamed; **Open Library folder** opens the originals folder. Existing resources retain their IDs, locations and Markdown links.
@@ -44,7 +56,7 @@ Managed writing resources are stored in root **Library/assets**. Existing Data/a
 Before upgrading, close LanCarbon and back up the actual data location, Config, Library and any Builds, Exports or PDFs you wish to keep. Keep the stable installer alongside the backup. Reinstalling an older application may also require restoring matching data. A restored snapshot returns to the backup date; retain later edits separately. Developers can use the verified snapshot commands below. Restore accepts a new empty folder, verifies all files before copying and adjusts saved managed paths to that folder.
 
 ```powershell
-node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.1.1-x64-Setup.exe"
+node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.2.0-x64-Setup.exe"
 node scripts/workspace-recovery.cjs verify --backup "D:\Backups\LanCarbon-snapshot"
 node scripts/workspace-recovery.cjs restore --backup "D:\Backups\LanCarbon-snapshot" --target "D:\Recovered\LanCarbon"
 ```
@@ -55,7 +67,7 @@ Select **Export PDF** in the page header from Edit or Preview, choose a filename
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.1.1-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.2.0-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -131,7 +143,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-2.1.1 将受管理图片和附件迁移到 **Library/assets**，保留资源 ID 和正文引用。Library 提供紧凑列表、固定引用面板、点击引用定位正文、打开所在文件夹及资源重命名。Research 仍为预留页面，尚未启用 AI、PDF/EPUB 阅读或文献自动化。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
+2.2.0 启用 AI Settings 与 Chat，支持 SiliconFlow、OpenRouter 和命名 Others 配置、系统网络连接、加密 API Key、模型选择、流式回复、停止、重试和本地会话保存。PDF/EPUB 阅读与文献自动化仍留待后续阶段。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
@@ -151,6 +163,18 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 - Environment Setup 可在 LanCarbon 根目录中独立安装和修复所需工具，并恢复 Tools 文件夹权限。
 - 具有 LanCarbon 视觉风格的 Light 和 Dark 主题。
 
+### AI Settings 与 Chat
+
+1. 打开 **Research → AI Settings**，选择 **SiliconFlow**、**OpenRouter** 或 **Others**。前两项预填官方 API 地址；Others 支持兼容 OpenAI Chat Completions 的服务，也可以添加多个命名配置。
+2. 粘贴对应平台的 **API Key**。点击 **Refresh models** 保存连接并获取聊天模型，或手动填写 **Model ID** 和 **Display name**，点击 **Add model**。预设快捷按钮可添加 DeepSeek V4 Pro 或 GPT-6 Luna。选择 **Default model** 后点击 **Save models**。
+3. 点击 **Test model** 保存并发送一次小型 API 请求，可能产生平台正常费用。连接跟随电脑网络与系统代理，LanCarbon 不提供单独的代理设置。
+4. 进入 **Chat**，选择标为 **服务 · 模型** 的模型并发送文字。**Enter** 发送，**Shift+Enter** 换行。可以 **Stop generating** 停止生成，或用 **Retry reply** 重试最后一条停止或失败的回复。回复支持 Markdown、代码和公式，模型提供的推理文字单独折叠显示；**Copy** 复制原始文本。
+5. 使用 **New chat**、**Rename chat** 和 **Delete chat** 管理会话。消息保存在实际 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，返回 Chat 或重启后恢复记录。关闭 LanCarbon 会停止生成并保存已有回复。
+
+SiliconFlow 的地址为 `https://api.siliconflow.cn/v1`，模型 ID 为 `deepseek-ai/DeepSeek-V4-Pro`；OpenRouter 的地址为 `https://openrouter.ai/api/v1`，模型 ID 为 `openai/gpt-6-luna`。平台目录变化时，以平台显示的准确 ID 为准。每个服务可以保存多个聊天模型；在同一会话切换服务后，下次发送会携带相关会话历史。
+
+API Key 使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，不会返回 Chat 界面。密钥栏留空会保留已有密钥，勾选删除项后保存会清除密钥；迁移到另一个 Windows 账户后需要重新输入。备份时同时保存 Config 和实际 Data。仅提交发送的会话文字，Notes、Books 和 Library 文件不会自动附加。PDF/EPUB 阅读、基于文档的问答、Embedding、Rerank 和文献任务留待后续阶段。
+
 ### 工作区与恢复
 
 四个工作区入口按 2×2 排列：上行为 **Notes / Books**，下行为 **Research / Library**，切换和重启后保留各自选择。Research 包含 **Run**、**Templates**、**Outputs**、**Chat** 和 **AI Settings**；标记为 **Coming soon** 的页面尚未启用 AI 或文献处理。Library 使用紧凑列表，选择文件后引用面板固定在独立滚动列表上方，**Save a copy** 位于文件名旁。点击引用可打开对应 Note 或 Book 页面并选中引用行，或进入对应 Book Settings/Citations。**Folder** 定位实际文件，**Rename** 修改显示与副本保存名称，保留 ID、扩展名和原有正文；系统教程资源不提供重命名；**Open Library folder** 打开原始资料文件夹。旧资源保留原有 ID、位置和 Markdown 引用。
@@ -167,7 +191,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.1.1-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.2.0-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 

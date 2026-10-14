@@ -32,9 +32,10 @@ test("four workspaces preserve writing, resources, selections and isolated direc
     await page.getByLabel("Note title").fill("Edited foundation writing");
     await page.getByRole("button", { name: "Research", exact: true }).click();
     for (const name of ["Run", "Templates", "Outputs", "Chat", "AI Settings"]) {
-      await page.getByRole("button", { name, exact: true }).click();
+      await page.getByRole("navigation", { name: "Research pages" }).getByRole("button", { name, exact: true }).click();
       await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();
-      await expect(page.getByText("Coming soon", { exact: true })).toBeVisible();
+      if (["Run", "Templates", "Outputs"].includes(name)) await expect(page.getByText("Coming soon", { exact: true })).toBeVisible();
+      else await expect(page.getByText("Coming soon", { exact: true })).toBeHidden();
     }
     await page.keyboard.press("Control+n");
     await expect(page.getByRole("button", { name: "Research", exact: true })).toHaveAttribute("aria-pressed", "true");

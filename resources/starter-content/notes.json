@@ -508,7 +508,7 @@
     {
       "id": "tutorial-note-s6-workspaces",
       "title": "Using the Research Workspace",
-      "content": "# Using the Research Workspace\n\nThe workspace buttons form a **2×2 grid**: **Notes / Books** above **Research / Library**. Select a workspace to open its main area. Switching and restarting retain the selected Note, Book page, Research page and Library resource.\n\nSelect Research, then choose a page from the sidebar:\n\n- **Run**: literature discovery, expansion and reading tasks.\n- **Templates**: reading questions and output structures.\n- **Outputs**: generated drafts and their archive destinations.\n- **Chat**: conversation and questions about selected materials.\n- **AI Settings**: AI connection and model configuration.\n\nA **Coming soon** page provides orientation and has no active task or model controls. Use enabled actions only when they are available.\n\n**Ctrl+Q** switches Notes and Books; from Research or Library it returns to the most recently used writing workspace. **Ctrl+N** creates writing pages and **Ctrl+E** switches Edit/Preview only in Notes or Books. Dialogs keep their keyboard handling while open.\n\n---\n\n# 使用 Research 工作区\n\n工作区入口按 **2×2** 排列：上行为 **Notes / Books**，下行为 **Research / Library**。选择入口后显示对应主区域。切换和重启后保留所选 Note、Book 页面、Research 子页和 Library 资源。\n\n选择 Research 后，从侧边栏进入：\n\n- **Run**：文献发现、资料扩展和阅读任务。\n- **Templates**：阅读问题与输出结构。\n- **Outputs**：生成稿及其归档去向。\n- **Chat**：对话与选定资料问答。\n- **AI Settings**：AI 连接与模型配置。\n\n标记 **Coming soon** 的页面用于了解功能位置，尚未提供任务或模型操作；请在操作可用时使用对应功能。\n\n**Ctrl+Q** 在 Notes 与 Books 之间切换，在 Research 或 Library 中按下时返回最近使用的写作工作区。**Ctrl+N** 创建写作页面、**Ctrl+E** 切换 Edit/Preview，均仅在 Notes 或 Books 中生效。对话框打开时保留其键盘操作。\n",
+      "content": "# Using the Research Workspace\n\nThe workspace buttons form a **2×2 grid**: **Notes / Books** above **Research / Library**. Select a workspace to open its main area. Switching and restarting retain the selected Note, Book page, Research page and Library resource.\n\nSelect Research, then choose a page from the sidebar:\n\n- **Run**: literature discovery, expansion and reading tasks.\n- **Templates**: reading questions and output structures.\n- **Outputs**: generated drafts and their archive destinations.\n- **Chat**: text conversation with configured models.\n- **AI Settings**: AI connection and model configuration.\n\nA **Coming soon** page provides orientation and has no active task or model controls. Use enabled actions only when they are available.\n\n**Ctrl+Q** switches Notes and Books; from Research or Library it returns to the most recently used writing workspace. **Ctrl+N** creates writing pages and **Ctrl+E** switches Edit/Preview only in Notes or Books. Dialogs keep their keyboard handling while open.\n\n---\n\n# 使用 Research 工作区\n\n工作区入口按 **2×2** 排列：上行为 **Notes / Books**，下行为 **Research / Library**。选择入口后显示对应主区域。切换和重启后保留所选 Note、Book 页面、Research 子页和 Library 资源。\n\n选择 Research 后，从侧边栏进入：\n\n- **Run**：文献发现、资料扩展和阅读任务。\n- **Templates**：阅读问题与输出结构。\n- **Outputs**：生成稿及其归档去向。\n- **Chat**：使用已配置模型进行文字对话。\n- **AI Settings**：AI 连接与模型配置。\n\n标记 **Coming soon** 的页面用于了解功能位置，尚未提供任务或模型操作；请在操作可用时使用对应功能。\n\n**Ctrl+Q** 在 Notes 与 Books 之间切换，在 Research 或 Library 中按下时返回最近使用的写作工作区。**Ctrl+N** 创建写作页面、**Ctrl+E** 切换 Edit/Preview，均仅在 Notes 或 Books 中生效。对话框打开时保留其键盘操作。\n",
       "tags": [
         "Tutorial",
         "Research",
@@ -543,6 +543,24 @@
       "pinned": false,
       "createdAt": "2026-09-07T07:42:55.570539Z",
       "updatedAt": "2026-09-07T12:00:00.000Z"
+    },
+    {
+      "id": "tutorial-note-s6-ai-settings",
+      "title": "AI Connections and Models",
+      "content": "# AI Connections and Models\n\n1. Open **Research → AI Settings** and choose **SiliconFlow**, **OpenRouter** or **Others**. Presets supply their official base addresses. Others supports an OpenAI-compatible Chat Completions service and additional named configurations.\n2. Paste that service's **API Key**. Use **Refresh models** to save the connection and fetch its chat models, or enter a **Model ID** and **Display name** manually and select **Add model**. The preset shortcut adds DeepSeek V4 Pro or GPT-6 Luna. Choose a **Default model**, then **Save models**.\n3. Select **Test model** to save and make a small API request; normal service charges may apply. Connections follow the computer's network and system proxy. LanCarbon has no separate proxy controls.\n4. Open **Chat**, choose a model labelled **service · model**, and send text. **Enter** sends; **Shift+Enter** inserts a line break. Use **Stop generating** or **Retry reply** for a stopped or failed reply. Replies support Markdown, code and mathematics; provided reasoning is shown separately. **Copy** copies the original text.\n5. Use **New chat**, **Rename chat** and **Delete chat** to manage conversations. Messages are saved locally in the active **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; reopening Chat or restarting restores conversations. Closing LanCarbon stops generation and saves partial replies.\n\nSiliconFlow: base address `https://api.siliconflow.cn/v1`, model ID `deepseek-ai/DeepSeek-V4-Pro`. OpenRouter: base address `https://openrouter.ai/api/v1`, model ID `openai/gpt-6-luna`. Use the exact ID shown by your platform if its catalogue changes. Each service can contain several saved chat models; changing service within a conversation sends its relevant conversation history with the next message.\n\nAPI keys are encrypted for the current Windows account in **Config/ai-settings.json** and are not returned to the Chat interface. A blank key field retains the existing key; the remove-key checkbox clears it when saving. Enter keys again after moving to another Windows account. Back up Config together with the active Data folder. Only conversation text you send is submitted; Notes, Books and Library files are not automatically attached. PDF/EPUB reading, document-based answers, Embedding, Rerank and literature tasks are reserved for later phases.\n\n---\n\n# AI 连接与模型\n\n1. 打开 **Research → AI Settings**，选择 **SiliconFlow**、**OpenRouter** 或 **Others**。前两项预填官方 API 地址；Others 支持兼容 OpenAI Chat Completions 的服务，也可以添加多个命名配置。\n2. 粘贴对应平台的 **API Key**。点击 **Refresh models** 保存连接并获取聊天模型，或手动填写 **Model ID** 和 **Display name**，点击 **Add model**。预设快捷按钮可添加 DeepSeek V4 Pro 或 GPT-6 Luna。选择 **Default model** 后点击 **Save models**。\n3. 点击 **Test model** 保存并发送一次小型 API 请求，可能产生平台正常费用。连接跟随电脑网络与系统代理，LanCarbon 不提供单独的代理设置。\n4. 进入 **Chat**，选择标为 **服务 · 模型** 的模型并发送文字。**Enter** 发送，**Shift+Enter** 换行。可以 **Stop generating** 停止生成，或用 **Retry reply** 重试最后一条停止或失败的回复。回复支持 Markdown、代码和公式，模型提供的推理文字单独折叠显示；**Copy** 复制原始文本。\n5. 使用 **New chat**、**Rename chat** 和 **Delete chat** 管理会话。消息保存在实际 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，返回 Chat 或重启后恢复记录。关闭 LanCarbon 会停止生成并保存已有回复。\n\nSiliconFlow 的地址为 `https://api.siliconflow.cn/v1`，模型 ID 为 `deepseek-ai/DeepSeek-V4-Pro`；OpenRouter 的地址为 `https://openrouter.ai/api/v1`，模型 ID 为 `openai/gpt-6-luna`。平台目录变化时，以平台显示的准确 ID 为准。每个服务可以保存多个聊天模型；在同一会话切换服务后，下次发送会携带相关会话历史。\n\nAPI Key 使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，不会返回 Chat 界面。密钥栏留空会保留已有密钥，勾选删除项后保存会清除密钥；迁移到另一个 Windows 账户后需要重新输入。备份时同时保存 Config 和实际 Data。仅提交发送的会话文字，Notes、Books 和 Library 文件不会自动附加。PDF/EPUB 阅读、基于文档的问答、Embedding、Rerank 和文献任务留待后续阶段。\n\n",
+      "tags": [],
+      "pinned": false,
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z"
+    },
+    {
+      "id": "tutorial-note-s6-chat",
+      "title": "Working with AI Chat",
+      "content": "# Working with AI Chat\n\nChoose a configured model, create a conversation and send text. Each assistant reply records its service and model. Use Copy to copy Markdown source, Stop generating to save a partial reply, or Retry reply to replace the last failed or stopped reply without duplicating your question. You can switch to Notes or Books while a reply is generating.\n\nConversation history is local. Choosing another service sends the relevant history to that service with your next message. Chat does not automatically read Library, Notes or Books. Delete chat asks for confirmation; this removes the local conversation. Your writing is separate.\n\nIf connection fails, check your computer network or system proxy. A rejected key needs a replacement from the correct platform. Balance and spending-limit errors require checking the service account. Model errors require checking the exact model ID and account permissions. Rate-limit errors can be retried later. An interrupted response retains partial text and can be retried.\n\n---\n\n# 使用 AI Chat\n\n选择已配置模型，创建会话并发送文字。每条 AI 回复会记录服务和模型。Copy 复制 Markdown 原文，Stop generating 停止生成并保存已有回复，Retry reply 替换最后一条失败或停止的回复，不重复添加问题。生成期间可以切到 Notes 或 Books 写作。\n\n会话历史保存在本机；切换服务后，下次发送会携带相关历史。Chat 不会自动读取 Library、Notes 或 Books。Delete chat 会要求确认并删除本地会话，写作内容单独保存。\n\n连接失败时检查电脑网络或系统代理；密钥错误需从对应平台重新获取；余额或额度错误需检查服务账户；模型错误需检查准确 ID 与账号权限；限流错误可以稍后重试。中断的回复保留已有文字并可重试。\n",
+      "tags": [],
+      "pinned": false,
+      "createdAt": "2026-10-14T00:00:00.000Z",
+      "updatedAt": "2026-10-14T00:00:00.000Z"
     }
   ],
   "books": [
@@ -1491,7 +1509,9 @@
           "children": [
             "tutorial-page-s6-workspaces",
             "tutorial-page-s6-library",
-            "tutorial-page-s6-recovery"
+            "tutorial-page-s6-recovery",
+            "tutorial-page-s6-ai-settings",
+            "tutorial-page-s6-chat"
           ]
         },
         "tutorial-page-s6-workspaces": {
@@ -1560,6 +1580,30 @@
               "Library"
             ],
             "label": "lc-s6-recovery"
+          },
+          "children": []
+        },
+        "tutorial-page-s6-ai-settings": {
+          "id": "tutorial-page-s6-ai-settings",
+          "noteId": "tutorial-note-s6-ai-settings",
+          "sourceType": "markdown",
+          "exportPath": "06-research-library/ai-settings.md",
+          "showInToc": true,
+          "metadata": {
+            "authors": [],
+            "keywords": []
+          },
+          "children": []
+        },
+        "tutorial-page-s6-chat": {
+          "id": "tutorial-page-s6-chat",
+          "noteId": "tutorial-note-s6-chat",
+          "sourceType": "markdown",
+          "exportPath": "06-research-library/chat.md",
+          "showInToc": true,
+          "metadata": {
+            "authors": [],
+            "keywords": []
           },
           "children": []
         }
