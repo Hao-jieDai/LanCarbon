@@ -43,7 +43,7 @@ export function PdfReader({ id, onClose, onOpenSidebar }: { id: string; onClose(
   const [passwordNeeded, setPasswordNeeded] = useState(false), [password, setPassword] = useState(""), passwordCallback = useRef<((value: string) => void) | null>(null);
   const persist = async () => { clearTimeout(saveTimer.current); const current = sessionRef.current, saved = position.current; if (current && saved) { const result = await api.savePosition(current.readingId, saved); if (!result.ok) throw Error(result.error); } };
   useEffect(() => {
-    let live = true, task: pdfjs.PDFDocumentLoadingTask | undefined, opened: PdfSession | undefined, viewer: PDFViewer | undefined;
+    let live = true, task: pdfjs.PDFDocumentLoadingTask | undefined, opened: PdfSession | undefined, viewer: PDFViewer | undefined, resize: ResizeObserver | undefined; let resizeFrame = 0;
     const abort = new AbortController();
     setReady(false); setError(""); setDocument(undefined); setOutline(null); setNewVersion(false); setPasswordNeeded(false); setQuery(""); setMatches(""); position.current = null;
     void (async () => {
@@ -92,10 +92,19 @@ export function PdfReader({ id, onClose, onOpenSidebar }: { id: string; onClose(
       bus.on("updatefindmatchescount", ({ matchesCount }: { matchesCount: { current: number; total: number } }) => { if (live) setMatches(`${matchesCount.current} / ${matchesCount.total}`); });
       bus.on("updatefindcontrolstate", ({ state, matchesCount }: { state: number; matchesCount: { current: number; total: number } }) => { if (live) setMatches(state === 1 ? "No matches" : state === 3 ? "Searching…" : `${matchesCount.current} / ${matchesCount.total}`); });
       bus.on("pagerendered", ({ error }: { error?: Error }) => { if (live && error) setNotice("A page could not be rendered. Open externally to check the document."); });
+      resize = new ResizeObserver(() => {
+        cancelAnimationFrame(resizeFrame);
+        resizeFrame = requestAnimationFrame(() => {
+          if (!live || !initialized || !viewer || !container.current?.clientWidth || !container.current.clientHeight) return;
+          const value = viewer.currentScaleValue;
+          if (["page-width", "page-fit", "auto"].includes(value)) viewer.currentScaleValue = value;
+        });
+      });
+      resize.observe(container.current);
       viewer.setDocument(pdf); link.setDocument(pdf); find.setDocument(pdf);
       const tree = await pdf.getOutline(); if (live) setOutline(tree);
     })().catch(error => { if (live) { setPasswordNeeded(false); setError(error.message ?? "Could not open this PDF."); } });
-    return () => { live = false; clearTimeout(saveTimer.current); void persist().catch(() => undefined); abort.abort(); viewer?.setDocument(null); engine.current = null; passwordCallback.current = null; void task?.destroy(); if (opened) void api.release(opened.token); sessionRef.current = null; };
+    return () => { live = false; clearTimeout(saveTimer.current); void persist().catch(() => undefined); resize?.disconnect(); cancelAnimationFrame(resizeFrame); abort.abort(); viewer?.setDocument(null); engine.current = null; passwordCallback.current = null; void task?.destroy(); if (opened) void api.release(opened.token); sessionRef.current = null; };
   }, [id, revision, api]);
   useEffect(() => window.notesDesktop.library?.onChanged?.(() => { void window.notesDesktop.library!.list().then(result => { const current = sessionRef.current; if (result.ok && current) { const latest = result.entries.find(entry => entry.id === current.readingId || entry.id === id || entry.assetId === id); if (latest) { setSession(previous => previous ? { ...previous, entry: { ...previous.entry, name: latest.name, location: latest.location } } : previous); if (latest.version !== current.entry.version) setNewVersion(true); } } }).catch(() => undefined); }), [id]);
   useEffect(() => { const key = (event: KeyboardEvent) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "f") { event.preventDefault(); event.stopImmediatePropagation(); searchInput.current?.focus(); searchInput.current?.select(); } }; window.addEventListener("keydown", key, true); return () => window.removeEventListener("keydown", key, true); }, []);

@@ -15,6 +15,8 @@ LanCarbon is a Windows desktop application for writing ordinary Markdown Notes a
 
 Version 2.4.0 adds offline PDF reading with search, outlines, thumbnails, saved progress and selection translation, plus manually calibrated API balance estimates by source. Notes and Books can open PDF attachments in the same reader. Existing writing, files, versions and AI configuration are preserved; EPUB reading follows separately.
 
+**PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
+
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
 **Resource-dialog fix:** Duplicate images and attachments now use an in-app choice dialog instead of a Windows message box, restoring focus after closing to address the reported disappearing mouse after duplicate-resource warnings.
@@ -191,6 +193,8 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
 2.4.0 新增离线 PDF 阅读、搜索、目录、缩略图、进度记忆及选词翻译，并按来源显示手动校准的 API 估算余额。Note／Book 的 PDF 附件使用同一阅读器；保留现有写作、文件版本和 AI 配置，EPUB 阅读另行提供。
+
+**PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
