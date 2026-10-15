@@ -4,7 +4,7 @@ export interface BalanceSource { providerId: string; baseUrl: string; providerNa
 export type BalanceMode = "limited" | "unlimited";
 export interface BalanceInput extends BalanceSource {
   amount: number; currency: AICurrency; mode?: BalanceMode;
-  accountId?: string; accountName?: string; sources?: BalanceSource[];
+  accountId?: string; accountName?: string; sources?: BalanceSource[]; preserveCheckpoint?: boolean;
 }
 export interface BalanceCheckpoint extends BalanceSource {
   amount: number; currency: AICurrency; mode?: BalanceMode;

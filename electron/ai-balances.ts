@@ -68,15 +68,24 @@ export class AIBalanceStore {
     return all.map(account => projectBalance(account, records, rate, sources));
   }); }
   save(input: BalanceInput, configured?: BalanceSource[]) { return this.serial(async () => {
-    const value = this.input(input), saved = await this.read(), key = balanceKey(value);
+    const source = this.source(input), saved = await this.read(), key = balanceKey(source);
     const previous = input.accountId ? saved.find(account => account.id === input.accountId) : saved.find(account => account.sources.some(source => balanceKey(source) === key));
-    const placeholder = (configured ?? input.sources ?? [value]).some(source => input.accountId === `source-${sourceId(source)}` && !saved.some(account => account.sources.some(member => balanceKey(member) === balanceKey(source))));
+    const placeholder = (configured ?? input.sources ?? [source]).some(source => input.accountId === `source-${sourceId(source)}` && !saved.some(account => account.sources.some(member => balanceKey(member) === balanceKey(source))));
     if (input.accountId && !previous && !placeholder) throw Error("This balance account changed. Refresh and try again.");
+    if (input.preserveCheckpoint !== undefined && typeof input.preserveCheckpoint !== "boolean") throw Error("Invalid balance update.");
+    const value = this.input(input.preserveCheckpoint && previous?.checkpoint ? { ...input, amount: previous.checkpoint.amount } : input);
     const sources = this.sources(input.sources ?? previous?.sources ?? [value]), keys = new Set(sources.map(balanceKey));
     if (!keys.has(key)) throw Error("The selected connection must belong to this account.");
     if (configured) {
       const allowed = new Set([...configured, ...(previous?.sources ?? [])].map(balanceKey));
       if (sources.some(source => !allowed.has(balanceKey(source))) || !sources.some(source => configured.some(known => balanceKey(known) === balanceKey(source)))) throw Error("Choose configured API connections. Refresh if a connection changed.");
+    }
+    if (input.preserveCheckpoint) {
+      const checkpoint = previous?.checkpoint;
+      if (!previous || !checkpoint || checkpoint.currency !== value.currency || (checkpoint.mode ?? "limited") !== (value.mode ?? "limited") || sources.length !== previous.sources.length || !previous.sources.every(source => keys.has(balanceKey(source)))) throw Error("Balance settings changed. Confirm the full current account balance.");
+      const name = this.name(input.accountName ?? previous.name);
+      if (name !== previous.name) await this.write(saved.map(account => account.id === previous.id ? { ...account, name } : account));
+      return checkpoint;
     }
     const records = await this.usage.allRecords();
     const checkpoint: BalanceCheckpoint = { ...value, calibratedAt: new Date().toISOString(), spent: sourceSpending(records, sources) };

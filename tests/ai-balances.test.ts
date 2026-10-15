@@ -61,3 +61,17 @@ it("rejects duplicate or unconfigured connections, stale account IDs and corrupt
  await expect(f.balances.save({...source,sources:[source,source],amount:1,currency:"CNY"})).rejects.toThrow();await expect(f.balances.save({...source,sources:[source,translation],amount:1,currency:"CNY"},[source])).rejects.toThrow();await expect(f.balances.save({...source,accountId:"account-stale",amount:1,currency:"CNY"})).rejects.toThrow();expect(await fs.readFile(file,"utf8")).toBe(before);
  const corrupt=JSON.parse(before);corrupt.balances.push({...corrupt.balances[0],id:"account-duplicate"});await fs.writeFile(file,JSON.stringify(corrupt));await expect(f.balances.list([source],7)).rejects.toThrow();expect(await fs.readFile(file,"utf8")).toBe(JSON.stringify(corrupt));
 });
+
+it("renaming preserves the original checkpoint and counts fees that arrive while the editor is open",async()=>{
+ const f=await fixture();await f.balances.save({...source,amount:9,currency:"CNY"});await f.finish(await f.start(),1);const opened=await f.current();expect(opened.remaining).toBe(8);const pending=await f.start();await f.finish(pending,1);
+ await f.balances.save({...source,accountId:opened.accountId,accountName:"Renamed account",amount:8,currency:"CNY",preserveCheckpoint:true});const current=await f.current();expect(current.providerName).toBe("Renamed account");expect(current.remaining).toBe(7);expect(current.checkpoint).toEqual(opened.checkpoint);
+ const file=path.join(f.root,"Research/Usage/balances.json"),before=await fs.readFile(file,"utf8");await f.balances.save({...source,accountId:current.accountId,accountName:current.providerName,amount:7,currency:"CNY",preserveCheckpoint:true});expect(await fs.readFile(file,"utf8")).toBe(before);expect((await f.usage.query()).summary.requests).toBe(2);
+});
+it("name-only edits work for negative estimates and Unlimited without changing the balance mode or calibration",async()=>{
+ const f=await fixture();await f.balances.save({...source,amount:1,currency:"CNY"});await f.finish(await f.start(),2);let opened=await f.current();await f.balances.save({...source,accountId:opened.accountId,accountName:"Negative account",amount:-1,currency:"CNY",preserveCheckpoint:true});expect((await f.current()).remaining).toBe(-1);expect((await f.current()).checkpoint).toEqual(opened.checkpoint);
+ await f.balances.save({...source,amount:0,currency:"CNY",mode:"unlimited"});opened=await f.current();await f.balances.save({...source,accountId:opened.accountId,accountName:"Free account",amount:0,currency:"CNY",mode:"unlimited",preserveCheckpoint:true});expect((await f.current()).checkpoint).toEqual(opened.checkpoint);expect((await f.current()).low).toBe(false);
+});
+it("requires a new checkpoint for membership, currency and mode changes",async()=>{
+ const f=await fixture();await f.balances.save({...source,amount:9,currency:"CNY"});const opened=await f.current(),file=path.join(f.root,"Research/Usage/balances.json"),before=await fs.readFile(file,"utf8");
+ for(const change of [{sources:[source,translation]},{currency:"USD" as const},{mode:"unlimited" as const}])await expect(f.balances.save({...source,accountId:opened.accountId,amount:9,currency:"CNY",preserveCheckpoint:true,...change})).rejects.toThrow("Confirm the full current account balance");expect(await fs.readFile(file,"utf8")).toBe(before);
+});
