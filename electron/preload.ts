@@ -2,6 +2,13 @@ import { contextBridge, ipcRenderer, webUtils } from "electron";
 import type { NotesDesktopApi } from "../src/shared/types";
 
 const api: NotesDesktopApi = {
+  epub: {
+    open: id => ipcRenderer.invoke("epub:open", id),
+    chapter: (token, index) => ipcRenderer.invoke("epub:chapter", token, index),
+    search: (token, query) => ipcRenderer.invoke("epub:search", token, query),
+    release: token => ipcRenderer.invoke("epub:release", token),
+    savePosition: (id, position) => ipcRenderer.invoke("epub:save-position", id, position)
+  },
   reader: {
     open: id => ipcRenderer.invoke("reader:open", id),
     range: (token, begin, end) => ipcRenderer.invoke("reader:range", token, begin, end),

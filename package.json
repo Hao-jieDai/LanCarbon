@@ -1,6 +1,6 @@
 {
   "name": "lancarbon",
-  "version": "2.3.5",
+  "version": "2.3.6",
   "description": "A focused offline notes and Jupyter Book desktop app",
   "main": "dist-electron/electron/main.js",
   "author": "LanCarbon",
@@ -22,6 +22,7 @@
     "@codemirror/state": "^6.7.2",
     "@codemirror/view": "^6.43.10",
     "@lezer/highlight": "^1.2.3",
+    "@xmldom/xmldom": "0.8.15",
     "codemirror": "^6.0.2",
     "dompurify": "^3.4.14",
     "katex": "^0.18.5",

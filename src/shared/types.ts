@@ -172,6 +172,7 @@ export interface WindowPreferences {
 
 export interface NotesDesktopApi {
   reader?: import("./pdfReader").PdfReaderApi;
+  epub?: import("./epubReader").EpubReaderApi;
   library?: import("./library").LibraryDesktopApi;
   translation?: import("./translation").TranslationDesktopApi;
   ai?: import("./ai").AIDesktopApi;

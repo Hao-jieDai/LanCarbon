@@ -1,0 +1,5 @@
+import { expect,it } from "vitest";
+import { addReaderTab,savedReaderTabs,MAX_READER_TABS,type ReaderTab } from "../src/shared/readerTabs";
+const tab=(i:number):ReaderTab=>({id:`import:${i.toString(16).padStart(64,"0")}.pdf`,name:`${i}.pdf`,format:"pdf"});
+it("keeps ten files, activates an existing identity without duplicating it, and rejects an eleventh",()=>{let tabs:ReaderTab[]=[];for(let i=0;i<MAX_READER_TABS;i++)tabs=addReaderTab(tabs,tab(i));expect(tabs).toHaveLength(10);tabs=addReaderTab(tabs,{...tab(0),name:"Renamed.pdf"});expect(tabs).toHaveLength(10);expect(tabs[0].name).toBe("Renamed.pdf");expect(()=>addReaderTab(tabs,tab(10))).toThrow("Close a tab");expect(addReaderTab(tabs.slice(1),tab(10))).toHaveLength(10);});
+it("bounds restored tabs, strips unknown fields, and rejects unsafe or duplicated identities",()=>{expect(savedReaderTabs([...Array.from({length:15},(_,i)=>tab(i)),tab(0),{id:"../escape",name:"bad",format:"pdf"}])).toHaveLength(10);expect(savedReaderTabs([{...tab(1),secret:"ignore"},tab(1)])).toEqual([tab(1)]);expect(savedReaderTabs({})).toEqual([]);});

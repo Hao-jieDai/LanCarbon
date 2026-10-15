@@ -63,7 +63,7 @@ export function MarkdownPreview(props: MarkdownPreviewProps) {
         if (!link) return;
         event.preventDefault();
         const resource = link.getAttribute("data-asset-id");
-        if (resource && window.notesDesktop?.assets) { void (async () => { const result = await window.notesDesktop.assets!.list(); if (!result.ok) throw Error(result.error); const asset = result.assets.find(asset => asset.id === resource); if (asset && /\.pdf$/i.test(asset.name) && window.notesDesktop.reader) { requestPdfReading(resource); return; } const saved = await window.notesDesktop.assets!.saveCopy(resource); if (!saved.ok) throw Error(saved.error); })().catch(error => setLinkMessage(error.message)); return; }
+        if (resource && window.notesDesktop?.assets) { void (async () => { const result = await window.notesDesktop.assets!.list(); if (!result.ok) throw Error(result.error); const asset = result.assets.find(asset => asset.id === resource); if (asset && /\.(pdf|epub)$/i.test(asset.name) && window.notesDesktop.reader) { requestPdfReading(resource); return; } const saved = await window.notesDesktop.assets!.saveCopy(resource); if (!saved.ok) throw Error(saved.error); })().catch(error => setLinkMessage(error.message)); return; }
         const noteId = link.getAttribute("data-preview-note");
         const anchor = link.getAttribute("data-preview-anchor") ?? "";
         if (noteId === (current?.id ?? "current")) { scrollTo(anchor); setLinkMessage(""); }

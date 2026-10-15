@@ -30,6 +30,7 @@ import { AISettingsStore, AIChatStore } from "./ai-storage";
 import { AIClient, redactAIError } from "./ai-client";
 import { AIService } from "./ai-service";
 import { PdfReaderStore } from "./pdf-reader";
+import { EpubReaderStore } from "./epub-reader";
 import { AIBalanceStore } from "./ai-balances";
 import type { BalanceInput, BalanceSource } from "../src/shared/aiBalances";
 import { AIPriceStore, AIUsageStore } from "./ai-usage";
@@ -264,12 +265,14 @@ app.whenReady().then(async () => {
     return libraryManager;
   };
   const readerStores = new Map<string, PdfReaderStore>();
+  const epubStores = new Map<string, EpubReaderStore>();
+  const epub = () => { let value = epubStores.get(dataDirectory); if (!value) { value = new EpubReaderStore(dataDirectory, libraryStore()); epubStores.set(dataDirectory, value); } return value; };
   const reader = () => { let value = readerStores.get(dataDirectory); if (!value) { value = new PdfReaderStore(dataDirectory, libraryStore()); readerStores.set(dataDirectory, value); } return value; };
   const editStores = new Map<string, ExternalEdits>();
   const edits = () => { let manager = editStores.get(dataDirectory); if (!manager) { manager = new ExternalEdits(dataDirectory, directories.library, libraryStore()); editStores.set(dataDirectory, manager); } return manager; };
   const libraryChanged = () => mainWindow?.webContents.send("library:changed");
   const syncEdits = async () => { const disk = await libraryStore().synchronize(); const edited = await edits().sync(); const result = { changed: disk.changed || edited.changed, errors: [...disk.errors, ...edited.errors] }; if (result.changed) libraryChanged(); return result; };
-  flushExternal = async () => { await syncEdits(); await reader().flush(); await balances().flush(); };
+  flushExternal = async () => { await syncEdits(); await reader().flush(); await epub().flush(); await balances().flush(); };
   let scanningExternal = false;
   externalTimer = setInterval(() => { if (scanningExternal) return; scanningExternal = true; void syncEdits().catch(() => undefined).finally(() => { scanningExternal = false; }); }, 3000);
   externalTimer.unref();
@@ -297,6 +300,11 @@ app.whenReady().then(async () => {
   };
   const assetError = (error: unknown) => ({ ok: false, canceled: error instanceof Error && error.message === "Import canceled", error: error instanceof Error ? error.message : "Resource operation failed", ...(error instanceof LibraryNameConflict ? { suggestedName: error.suggestedName } : {}) });
   aiHandler("reader:open", async (id: string) => { await syncEdits(); return { session: await reader().open(id) }; });
+  aiHandler("epub:open", async (id: string) => { await syncEdits(); return { session: await epub().open(id) }; });
+  aiHandler("epub:chapter", async (token: string, index: number) => ({ html: epub().chapter(token, index) }));
+  aiHandler("epub:search", async (token: string, query: string) => epub().search(token, query));
+  aiHandler("epub:release", async (token: string) => { epub().release(token); return {}; });
+  aiHandler("epub:save-position", async (id: string, position: import("../src/shared/epubReader").EpubPosition) => { await epub().savePosition(id, position); return {}; });
   aiHandler("reader:range", async (token: string, begin: number, end: number) => ({ bytes: reader().range(token, begin, end) }));
   aiHandler("reader:release", async (token: string) => { reader().release(token); return {}; });
   aiHandler("reader:save-position", async (id: string, position: import("../src/shared/pdfReader").ReadingPosition) => { await reader().savePosition(id, position); return {}; });
@@ -482,7 +490,7 @@ app.whenReady().then(async () => {
     try {
       await translationService.shutdown(); await aiService.shutdown();
       await syncEdits();
-      await usage().flush(); await balances().flush(); await reader().flush(); reader().release();
+      await usage().flush(); await balances().flush(); await reader().flush(); reader().release(); await epub().flush(); epub().release();
       await dataLocationManager.prepareTarget(dataDirectory, target);
       const current = await store.loadWorkspace();
       const targetStore = new NotesStore(target, bundledStarterContent, managedAssetDirectory);

@@ -586,14 +586,26 @@
     {
       "id": "tutorial-note-s6-pdf",
       "title": "Reading PDF Documents",
-      "content": "# Reading PDFs\n\nOpen a PDF from Library with **Open** or a double-click. In a Note or Book, click its attachment in **Preview**, or use **Resources → Read PDF**. **Back** returns to the original writing or Library view. **Open externally** retains default-app editing and file versions; EPUB and other ordinary files still use their default apps.\n\nUse page numbers, previous/next, **Fit width**, **Fit page**, zoom, or **Pages / Contents** for on-demand thumbnails and the document's own outline. **Find in PDF** (Ctrl+F) searches the document with previous/next matches. Reading position and zoom are saved by document ID in **Data/Library/reading.json**, so rename/move and linked writing attachments share progress. The currently open PDF is an immutable reading snapshot; a new externally saved version offers **Reload latest version**.\n\nEnable the existing **Translate** switch (Ctrl+Alt+T), then select short English text in the PDF. Existing translation settings, cache and usage accounting apply. PDFs need a selectable text layer for selection/search; image-only scans remain viewable. Reading is local and does not call AI or change the file. Password-protected files prompt locally without saving the password. PDF scripts and editing are disabled. Annotation creation, OCR and EPUB reading follow separately. The reader loads page data as needed and releases the open snapshot when closed; no PDF parsing or thumbnail disk cache is created.\n\n---\n\n# PDF 阅读\n\n在 Library 中点击 **Open** 或双击 PDF。在 Note／Book 的 **Preview** 点击 PDF 附件，或通过 **Resources → Read PDF** 打开；**Back** 返回原来的写作或文件列表。**Open externally** 保留默认程序编辑和文件版本功能，EPUB 及其他普通文件继续使用默认程序。\n\n使用页码、前后翻页、**Fit width**、**Fit page**、缩放，以及 **Pages / Contents** 中按需生成的缩略图和原文目录。**Find in PDF**（Ctrl+F）提供全文搜索与前后匹配。阅读位置和缩放按文档 ID 保存在 **Data/Library/reading.json**；改名、移动及写作附件共用进度。正在阅读的内容保持为打开时的版本，外部保存新版后，可选择 **Reload latest version**。\n\n开启现有 **Translate**（Ctrl+Alt+T），选取 PDF 中的短英文即可翻译，沿用翻译配置、缓存和用量统计。选词与搜索需要 PDF 自带文字层；纯扫描件仍可查看。阅读本身离线运行，不调用 AI、不修改原件。加密文件在本地输入密码，密码不保存；禁用 PDF 脚本和编辑。新建批注、OCR 和 EPUB 阅读另行提供。页面按需读取，关闭后释放打开快照，不建立 PDF 解析或缩略图磁盘缓存。\n\n",
+      "content": "# Reading PDFs\n\nOpen a PDF from Library with **Open** or a double-click. In a Note or Book, click its attachment in **Preview**, or use **Resources → Read PDF**. **Back** returns to the original writing or Library view. **Open externally** retains default-app editing and file versions; Other ordinary files use their default apps.\n\nUse page numbers, previous/next, **Fit width**, **Fit page**, zoom, or **Pages / Contents** for on-demand thumbnails and the document's own outline. **Find in PDF** (Ctrl+F) searches the document with previous/next matches. Reading position and zoom are saved by document ID in **Data/Library/reading.json**, so rename/move and linked writing attachments share progress. The currently open PDF is an immutable reading snapshot; a new externally saved version offers **Reload latest version**.\n\nEnable the existing **Translate** switch (Ctrl+Alt+T), then select short English text in the PDF. Existing translation settings, cache and usage accounting apply. PDFs need a selectable text layer for selection/search; image-only scans remain viewable. Reading is local and does not call AI or change the file. Password-protected files prompt locally without saving the password. PDF scripts and editing are disabled. Annotation creation and OCR follow separately. The reader loads page data as needed and releases the open snapshot when closed; no PDF parsing or thumbnail disk cache is created.\n\n---\n\n# PDF 阅读\n\n在 Library 中点击 **Open** 或双击 PDF。在 Note／Book 的 **Preview** 点击 PDF 附件，或通过 **Resources → Read PDF** 打开；**Back** 返回原来的写作或文件列表。**Open externally** 保留默认程序编辑和文件版本功能，其他普通文件继续使用默认程序。\n\n使用页码、前后翻页、**Fit width**、**Fit page**、缩放，以及 **Pages / Contents** 中按需生成的缩略图和原文目录。**Find in PDF**（Ctrl+F）提供全文搜索与前后匹配。阅读位置和缩放按文档 ID 保存在 **Data/Library/reading.json**；改名、移动及写作附件共用进度。正在阅读的内容保持为打开时的版本，外部保存新版后，可选择 **Reload latest version**。\n\n开启现有 **Translate**（Ctrl+Alt+T），选取 PDF 中的短英文即可翻译，沿用翻译配置、缓存和用量统计。选词与搜索需要 PDF 自带文字层；纯扫描件仍可查看。阅读本身离线运行，不调用 AI、不修改原件。加密文件在本地输入密码，密码不保存；禁用 PDF 脚本和编辑。新建批注与 OCR 另行提供。页面按需读取，关闭后释放打开快照，不建立 PDF 解析或缩略图磁盘缓存。\n\n",
       "tags": [
         "Tutorial",
         "Translation"
       ],
       "pinned": false,
       "createdAt": "2026-10-15T00:00:00.000Z",
-      "updatedAt": "2026-10-15T00:00:00.000Z"
+      "updatedAt": "2026-10-15T15:15:59.160Z"
+    },
+    {
+      "id": "tutorial-note-s6-epub",
+      "title": "Reading EPUB and Switching Files",
+      "content": "# EPUB Reading and File Tabs\n\nOpen an EPUB in Library with **Open** or a double-click, or open its attachment from Note/Book **Preview** or **Resources → Read EPUB**. The reader uses local EPUB 2/3 chapters and navigation, with selectable text, embedded images and tables. **Contents** jumps to chapters or headings; previous/next buttons switch chapters. **Find in EPUB** (Ctrl+F) searches the book and lists up to 250 matches. Font size, line spacing and reading width are adjustable. Reading follows LanCarbon's theme and common text layout; publisher-specific styles, scripts, audio/video, external resources, DRM and fixed-layout publications are not supported. Unsupported books can use **Open externally**.\n\nEnable **Translate** (Ctrl+Alt+T) to translate selected English using the existing translation configuration and Usage records. Reading itself is offline and does not call AI. Chapter, scroll position and typography are saved by stable document ID in **Data/Library/epub-reading.json**, shared by Library and linked Note/Book attachments. Rename/move and restart preserve progress. A newer external version offers **Reload latest version**. The file remains unchanged; no extracted-book cache is written to disk.\n\nPDFs and EPUBs share a top tab bar with up to **10 files**. Opening the same document from another location activates its existing tab. Select a tab to return to its saved position; the active tab scrolls into view. **Workspace** or **Back** returns to writing or Library without closing the tabs. The **×** on a tab closes only that file; closing the active tab selects a neighboring one. At the limit, close a tab before opening another. Arrow keys, Home and End switch tabs when a tab has keyboard focus. Tabs and the active file are restored after restart; only the active document body is loaded.\n\n---\n\n# EPUB 阅读与文件标签\n\n在 Library 中点击 **Open** 或双击 EPUB，或从 Note／Book 的 **Preview** 附件和 **Resources → Read EPUB** 打开。阅读器在本地读取 EPUB 2／3 的章节和目录，支持选取文字、内嵌图片与表格。**Contents** 跳转章节或标题，前后按钮切换章节；**Find in EPUB**（Ctrl+F）搜索全书并列出最多 250 条匹配。可调整字号、行距和阅读宽度。正文采用 LanCarbon 主题和统一文字排版；不支持出版物专用样式、脚本、音视频、外部资源、DRM 和固定版式书籍。无法内置阅读的书籍可使用 **Open externally**。\n\n开启 **Translate**（Ctrl+Alt+T）后，选取英文即可沿用翻译配置与 Usage 统计。阅读本身离线运行，不调用 AI。章节、滚动位置和文字样式按稳定文档 ID 保存在 **Data/Library/epub-reading.json**，Library 与 Note／Book 的关联附件共用；改名、移动或重启后保留进度。外部保存新版后提供 **Reload latest version**。阅读不修改原件，不在磁盘建立解压后的书籍缓存。\n\nPDF 与 EPUB 共用顶部标签栏，最多同时打开 **10 个文件**。从不同位置打开同一文献会切换到已有标签；切换后恢复各自位置，当前标签会自动滚动到可见处。**Workspace** 或 **Back** 返回写作／Library，同时保留文件标签；标签上的 **×** 只关闭该文件，关闭当前标签后切换到相邻文件。达到上限后需先关闭一个标签。标签获得键盘焦点时，可用方向键、Home、End 切换。重启后恢复标签和当前文件，正文只加载当前文件。\n",
+      "tags": [
+        "Tutorial",
+        "Reading"
+      ],
+      "pinned": false,
+      "createdAt": "2026-10-15T15:15:59.161Z",
+      "updatedAt": "2026-10-15T15:15:59.161Z"
     }
   ],
   "books": [
@@ -1543,6 +1555,7 @@
             "tutorial-page-s6-workspaces",
             "tutorial-page-s6-library",
             "tutorial-page-s6-pdf",
+            "tutorial-page-s6-epub",
             "tutorial-page-s6-recovery",
             "tutorial-page-s6-ai-settings",
             "tutorial-page-s6-chat",
@@ -1690,6 +1703,24 @@
             "keywords": [
               "PDF",
               "Reading"
+            ]
+          },
+          "children": []
+        },
+        "tutorial-page-s6-epub": {
+          "id": "tutorial-page-s6-epub",
+          "noteId": "tutorial-note-s6-epub",
+          "sourceType": "markdown",
+          "exportPath": "06-research-library/epub-reading.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "EPUB and File Tabs",
+            "label": "lc-s6-epub",
+            "authors": [],
+            "keywords": [
+              "EPUB",
+              "Reading",
+              "Tabs"
             ]
           },
           "children": []

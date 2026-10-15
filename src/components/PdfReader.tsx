@@ -114,7 +114,7 @@ export function PdfReader({ id, onClose, onOpenSidebar }: { id: string; onClose(
   const close = () => { void persist().catch(() => undefined).finally(onClose); };
   const zoomOptions = [{ value: "page-width", label: "Fit width" }, { value: "page-fit", label: "Fit page" }, ...[0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4].map(value => ({ value: String(value), label: `${Math.round(value * 100)}%` }))];
   if (!zoomOptions.some(option => option.value === zoom)) zoomOptions.push({ value: zoom, label: `${Math.round(Number(zoom) * 100)}%` });
-  return <section className="editor-panel pdf-reader" aria-label="PDF reader">
+  return <section className="editor-panel document-reader pdf-reader" aria-label="PDF reader">
     <header className="editor-toolbar pdf-reader-heading"><button className="icon-button mobile-menu" title="Show sidebar" aria-label="Open workspace list" onClick={onOpenSidebar}>☰</button><button className="toolbar-text-button" aria-label="Back from PDF reader" onClick={close}>← Back</button><h1 title={session?.entry.name}>{session?.entry.name ?? "PDF"}</h1><button className="toolbar-text-button" onClick={() => void window.notesDesktop.library!.open(id).then(result => { if (!result.ok) setNotice(result.error ?? "Could not open externally."); })}>Open externally</button></header>
     <div className="pdf-reader-controls" data-translation-exclude>
       <button className="toolbar-text-button" aria-pressed={sidebar !== "hidden"} onClick={() => setSidebar(value => value === "hidden" ? "pages" : "hidden")}>Pages / Contents</button>
