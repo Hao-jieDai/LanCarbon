@@ -4,19 +4,23 @@ import type { NotesDesktopApi } from "../src/shared/types";
 const api: NotesDesktopApi = {
   library: {
     list: () => ipcRenderer.invoke("library:list"),
-    choose: () => ipcRenderer.invoke("library:choose"),
-    importFiles: async files => {
+    choose: folderId => ipcRenderer.invoke("library:choose", folderId),
+    importFiles: async (files, folderId) => {
       try {
         if (!Array.isArray(files) || !files.length || files.length > 20) throw Error("Choose up to 20 local PDF or EPUB files at a time.");
         const paths = files.map(file => webUtils.getPathForFile(file));
         if (paths.some(file => !file)) throw Error("Drop files from your computer or use Import PDF / EPUB.");
-        return await ipcRenderer.invoke("library:import-files", paths);
+        return await ipcRenderer.invoke("library:import-files", paths, folderId);
       } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Unable to import files" }; }
     },
     rename: (id, name) => ipcRenderer.invoke("library:rename", id, name),
     reveal: id => ipcRenderer.invoke("library:reveal", id),
     open: id => ipcRenderer.invoke("library:open", id),
-    saveCopy: id => ipcRenderer.invoke("library:save-copy", id)
+    saveCopy: (id, version) => ipcRenderer.invoke("library:save-copy", id, version),
+    createFolder: (name, parentId) => ipcRenderer.invoke("library:create-folder", name, parentId),
+    move: (id, folderId, keepBoth) => ipcRenderer.invoke("library:move", id, folderId, keepBoth),
+    versions: id => ipcRenderer.invoke("library:versions", id),
+    onChanged: callback => { const listener = () => callback(); ipcRenderer.on("library:changed", listener); return () => ipcRenderer.removeListener("library:changed", listener); }
   },
   translation: {
     settings: () => ipcRenderer.invoke("translation:settings"),

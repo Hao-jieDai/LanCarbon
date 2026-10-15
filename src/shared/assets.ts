@@ -1,4 +1,7 @@
 export interface Asset {
+  documentId?: string;
+  version?: number;
+  versions?: import("./library").ResourceVersion[];
   id: string;
   file?: string;
   updatedAt?: string;

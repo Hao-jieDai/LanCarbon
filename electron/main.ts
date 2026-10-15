@@ -4,7 +4,8 @@ import { promises as fs } from "node:fs";
 import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { AssetStore, type ResolveConflict } from "./assets";
-import { LibraryStore } from "./library";
+import { LibraryStore, LibraryNameConflict } from "./library";
+import { ExternalEdits } from "./external-edits";
 import { MAX_ASSET_BYTES, resourceUsages, type AssetConflictChoice } from "../src/shared/assets";
 import { exportPagePdf, pdfFileName } from "./pdf-exporter";
 import { withoutResources } from "../src/shared/removeResourceReferences";
@@ -44,6 +45,8 @@ let saveWindowTimer: NodeJS.Timeout | undefined;
 let environmentManager: EnvironmentManager;
 let aiService: AIService;
 let translationService: TranslationService;
+let externalTimer: NodeJS.Timeout | undefined;
+let flushExternal: () => Promise<unknown> = async () => {};
 
 const directories = resolveLanCarbonDirectories({
   executable: process.execPath,
@@ -251,6 +254,14 @@ app.whenReady().then(async () => {
     }
     return libraryManager;
   };
+  const editStores = new Map<string, ExternalEdits>();
+  const edits = () => { let manager = editStores.get(dataDirectory); if (!manager) { manager = new ExternalEdits(dataDirectory, directories.library, libraryStore()); editStores.set(dataDirectory, manager); } return manager; };
+  const libraryChanged = () => mainWindow?.webContents.send("library:changed");
+  const syncEdits = async () => { const result = await edits().sync(); if (result.changed) libraryChanged(); return result; };
+  flushExternal = syncEdits;
+  let scanningExternal = false;
+  externalTimer = setInterval(() => { if (scanningExternal) return; scanningExternal = true; void syncEdits().catch(() => undefined).finally(() => { scanningExternal = false; }); }, 3000);
+  externalTimer.unref();
   const runManagedBuild = async (bookId: string, chooseLocation = false) => {
     if (!mainWindow) throw new Error("The main window is unavailable");
     const { workspace } = await store.loadWorkspace();
@@ -273,57 +284,54 @@ app.whenReady().then(async () => {
     await buildLocation.save(bookId, parent, result.destination);
     return result;
   };
-  const assetError = (error: unknown) => ({ ok: false, canceled: error instanceof Error && error.message === "Import canceled", error: error instanceof Error ? error.message : "Resource operation failed" });
+  const assetError = (error: unknown) => ({ ok: false, canceled: error instanceof Error && error.message === "Import canceled", error: error instanceof Error ? error.message : "Resource operation failed", ...(error instanceof LibraryNameConflict ? { suggestedName: error.suggestedName } : {}) });
   ipcMain.handle("library:list", async () => {
-    try { return { ok: true, entries: await libraryStore().list() }; } catch (error) { return assetError(error); }
+    try { const scan = await syncEdits(); return { ok: true, entries: await libraryStore().list(), folders: await libraryStore().folders(), editErrors: scan.errors }; } catch (error) { return assetError(error); }
   });
-  ipcMain.handle("library:choose", async () => {
+  ipcMain.handle("library:choose", async (_event, folderId: string | null = null) => {
     try {
       if (!mainWindow) throw Error("The Library window is closed.");
-      const choice = await dialog.showOpenDialog(mainWindow, { title: "Import PDF / EPUB", properties: ["openFile", "multiSelections"], filters: [{ name: "PDF and EPUB documents", extensions: ["pdf", "epub"] }] });
+      const choice = await dialog.showOpenDialog(mainWindow, { title: "Import PDF / EPUB", defaultPath: directories.library, properties: ["openFile", "multiSelections"], filters: [{ name: "PDF and EPUB documents", extensions: ["pdf", "epub"] }] });
       if (choice.canceled || !choice.filePaths.length) return { ok: false, canceled: true, error: "Import canceled" };
-      return { ok: true, batch: await libraryStore().importFiles(choice.filePaths) };
+      const batch = await libraryStore().importFiles(choice.filePaths, folderId); libraryChanged(); return { ok: true, batch };
     } catch (error) { return assetError(error); }
   });
-  ipcMain.handle("library:import-files", async (_event, files: string[]) => {
-    try { return { ok: true, batch: await libraryStore().importFiles(files) }; } catch (error) { return assetError(error); }
+  ipcMain.handle("library:import-files", async (_event, files: string[], folderId: string | null = null) => {
+    try { const batch = await libraryStore().importFiles(files, folderId); libraryChanged(); return { ok: true, batch }; } catch (error) { return assetError(error); }
   });
   ipcMain.handle("library:rename", async (_event, id: string, name: string) => {
-    try { return { ok: true, entry: await libraryStore().rename(id, name) }; } catch (error) { return assetError(error); }
+    try { const entry = await libraryStore().rename(id, name); libraryChanged(); return { ok: true, entry }; } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:create-folder", async (_event, name: string, parentId: string | null) => {
+    try { const folder = await libraryStore().createFolder(name, parentId); libraryChanged(); return { ok: true, folder }; } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:move", async (_event, id: string, folderId: string | null, keepBoth = false) => {
+    try { await syncEdits(); const entry = await libraryStore().move(id, folderId, keepBoth === true); libraryChanged(); return { ok: true, entry }; } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:versions", async (_event, id: string) => {
+    try { await syncEdits(); return { ok: true, versions: await libraryStore().versions(id) }; } catch (error) { return assetError(error); }
   });
   ipcMain.handle("library:reveal", async (_event, id: string) => {
     try { shell.showItemInFolder(await libraryStore().filePath(id)); return { ok: true }; } catch (error) { return assetError(error); }
   });
   ipcMain.handle("library:open", async (_event, id: string) => {
-    try {
-      const { entry } = await libraryStore().read(id);
-      if (entry.format !== "pdf" && entry.format !== "epub") throw Error("Open is available for PDF and EPUB documents.");
-      const error = await shell.openPath(await libraryStore().filePath(id));
-      if (error) throw Error(error);
-      return { ok: true };
-    } catch (error) { return assetError(error); }
+    try { const filename = await edits().prepare(id), error = await shell.openPath(filename); if (error) throw Error(error); return { ok: true }; } catch (error) { return assetError(error); }
   });
-  ipcMain.handle("library:save-copy", async (_event, id: string) => {
+  const saveLibraryCopy = async (id: string, version?: number) => {
     try {
       if (!mainWindow) throw Error("The Library window is closed.");
-      const { entry, bytes } = await libraryStore().read(id);
+      await syncEdits(); const { entry, bytes } = await libraryStore().read(id, version);
       const choice = await dialog.showSaveDialog(mainWindow, { title: "Save a copy", defaultPath: path.join(directories.exports, path.basename(entry.name)) });
       if (choice.canceled || !choice.filePath) return { ok: true };
-      const destination = path.resolve(choice.filePath);
-      const managed = await fs.realpath(directories.library);
-      const parent = await fs.realpath(path.dirname(destination));
-      const relative = path.relative(managed, parent);
-      if (!relative || !relative.startsWith(".." + path.sep) && relative !== ".." && !path.isAbsolute(relative)) throw Error("Save the copy outside the managed Library folder.");
-      // Refuse a destination link into Library as well as a direct managed path.
+      const destination = path.resolve(choice.filePath), managed = await fs.realpath(directories.library), parent = await fs.realpath(path.dirname(destination));
+      const inside = (file: string) => { const relative = path.relative(managed, file); return !relative || !relative.startsWith(".." + path.sep) && relative !== ".." && !path.isAbsolute(relative); };
+      if (inside(parent)) throw Error("Save the copy outside the managed Library folder.");
       const existing = await fs.realpath(destination).catch(error => { if (error.code === "ENOENT") return null; throw error; });
-      if (existing) {
-        const relativeFile = path.relative(managed, existing);
-        if (!relativeFile || !relativeFile.startsWith(".." + path.sep) && relativeFile !== ".." && !path.isAbsolute(relativeFile)) throw Error("Save the copy outside the managed Library folder.");
-      }
-      await fs.writeFile(destination, bytes);
-      return { ok: true };
+      if (existing && inside(existing)) throw Error("Save the copy outside the managed Library folder.");
+      await fs.writeFile(destination, bytes); return { ok: true };
     } catch (error) { return assetError(error); }
-  });
+  };
+  ipcMain.handle("library:save-copy", async (_event, id: string, version?: number) => saveLibraryCopy(id, version));
   const describeUses = async (ids: string[]) => {
     const {workspace} = await store.loadWorkspace();
     return resourceUsages(workspace.notes,workspace.books).filter(ref => ids.includes(ref.id));
@@ -359,7 +367,7 @@ app.whenReady().then(async () => {
         if (!mainWindow) return false;
         const refs = await describeUses(assets.map(a=>a.id));
         const result = await dialog.showMessageBox(mainWindow,{type:"warning",title:"Delete resources",message:`Permanently delete ${assets.length} resource${assets.length === 1 ? "" : "s"}?`,
-          detail:`${assets.map(a=>a.name).join("\n")}\n\n${refs.length ? `These ${refs.length} references across ALL Notes and Books will be removed together with the resource:\n` + refs.map(ref=>`${ref.location} / ${ref.title}${ref.line ? ` — line ${ref.line}` : ""}`).join("\n") : "No current references. This removes the managed copies from disk."}\n\nThis cannot be undone.`,buttons:["Delete permanently","Cancel"],defaultId:1,cancelId:1,noLink:true});
+          detail:`${assets.map(a=>a.name).join("\n")}\n\n${refs.length ? `These ${refs.length} references across ALL Notes and Books will be removed together with the resource:\n` + refs.map(ref=>`${ref.location} / ${ref.title}${ref.line ? ` — line ${ref.line}` : ""}`).join("\n") : "No current references. Ordinary resources and their versions are removed from disk. Linked originals stay in Library/Imports."}\n\nLinked Library originals remain in Imports when their writing resource is removed.\n\nThis cannot be undone.`,buttons:["Delete permanently","Cancel"],defaultId:1,cancelId:1,noLink:true});
         return result.response === 0;
       },async () => {
         const previous=(await store.loadWorkspace()).workspace;
@@ -374,7 +382,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("assets:choose-bibliography",async()=>{
     try{
       if(!mainWindow)throw new Error("The editor is closed");
-      const choice=await dialog.showOpenDialog(mainWindow,{title:"Import BibTeX bibliography",properties:["openFile"],filters:[{name:"BibTeX bibliography",extensions:["bib"]}]});
+      const choice=await dialog.showOpenDialog(mainWindow,{title:"Import BibTeX bibliography",defaultPath:directories.library,properties:["openFile"],filters:[{name:"BibTeX bibliography",extensions:["bib"]}]});
       if(choice.canceled||!choice.filePaths[0])return {ok:false,canceled:true,error:"Import canceled"};
       const file=choice.filePaths[0],stat=await fs.stat(file);if(!stat.isFile()||stat.size>MAX_BIB_BYTES)throw new Error("BibTeX files must be 5 MB or smaller");
       const bytes=await fs.readFile(file),source=new TextDecoder("utf-8",{fatal:true}).decode(bytes),entries=parseBibTeX(source);
@@ -385,19 +393,19 @@ app.whenReady().then(async () => {
   ipcMain.handle("assets:choose", async (_event, imageOnly: boolean) => {
     try {
       if (!mainWindow) throw new Error("The editor is closed");
-      const choice = await dialog.showOpenDialog(mainWindow, { title: imageOnly ? "Insert images" : "Insert attachments", properties: ["openFile", "multiSelections"], ...(imageOnly ? { filters: [{ name: "Images", extensions: ["png","jpg","jpeg","gif","webp"] }] } : {}) });
+      const choice = await dialog.showOpenDialog(mainWindow, { title: imageOnly ? "Insert images" : "Insert attachments", defaultPath: directories.library, properties: ["openFile", "multiSelections"], ...(imageOnly ? { filters: [{ name: "Images", extensions: ["png","jpg","jpeg","gif","webp"] }] } : {}) });
       if (choice.canceled) return { ok: false, canceled: true, error: "Import canceled" };
       if (choice.filePaths.length > 20) throw new Error("Import up to 20 files at a time");
       const manager = assetStore();
       const assets = [];
       for (const file of choice.filePaths) { try { assets.push(await manager.importFile(file, imageOnly,resolveConflict)); } catch (e) { if (!(e instanceof Error) || e.message !== "Import canceled") throw e; } }
-      return { ok: true, assets };
+      libraryChanged(); return { ok: true, assets };
     } catch (e) { return assetError(e); }
   });
   ipcMain.handle("assets:import", async (_event, name: string, base64: string, imageOnly: boolean) => {
     try {
       if (typeof name !== "string" || name.length > 500 || typeof base64 !== "string" || base64.length > Math.ceil(MAX_ASSET_BYTES / 3) * 4 || !/^[A-Za-z0-9+/]*={0,2}$/.test(base64)) throw new Error("Invalid file data");
-      return { ok: true, asset: await assetStore().importBytes(name, Buffer.from(base64,"base64"), imageOnly,resolveConflict) };
+      const asset = await assetStore().importBytes(name, Buffer.from(base64,"base64"), imageOnly,resolveConflict); libraryChanged(); return { ok: true, asset };
     } catch (e) { return assetError(e); }
   });
   ipcMain.handle("assets:image", async (_event, id: string) => {
@@ -407,22 +415,13 @@ app.whenReady().then(async () => {
       return { ok: true, url: `data:${asset.mime};base64,${bytes.toString("base64")}` };
     } catch (e) { return assetError(e); }
   });
-  ipcMain.handle("assets:save-copy", async (_event, id: string) => {
-    try {
-      if (!mainWindow) throw new Error("The editor is closed");
-      const { asset, bytes } = await assetStore().read(id);
-      const choice = await dialog.showSaveDialog(mainWindow, { title: "Save a copy", defaultPath: path.join(directories.exports, path.basename(asset.name)) });
-      if (choice.canceled || !choice.filePath) return { ok: true };
-      await fs.writeFile(choice.filePath, bytes);
-      return { ok: true };
-    } catch (e) { return assetError(e); }
-  });
+  ipcMain.handle("assets:save-copy", async (_event, id: string) => saveLibraryCopy(id));
   ipcMain.handle("assets:reveal", async (_event, id: string) => {
     try { shell.showItemInFolder(await assetStore().filePath(id)); return { ok: true }; }
     catch (error) { return assetError(error); }
   });
   ipcMain.handle("assets:rename", async (_event, id: string, name: string) => {
-    try { return { ok: true, asset: await assetStore().rename(id, name) }; }
+    try { const asset = await assetStore().rename(id, name); libraryChanged(); return { ok: true, asset }; }
     catch (error) { return assetError(error); }
   });
   ipcMain.handle("workspace:load", async () => {
@@ -461,6 +460,7 @@ app.whenReady().then(async () => {
     const target = path.resolve(selection.filePaths[0]);
     try {
       await translationService.shutdown(); await aiService.shutdown();
+      await syncEdits();
       await dataLocationManager.prepareTarget(dataDirectory, target);
       const current = await store.loadWorkspace();
       const targetStore = new NotesStore(target, bundledStarterContent, managedAssetDirectory);
@@ -473,6 +473,7 @@ app.whenReady().then(async () => {
       await dataLocationManager.save(target);
       store = targetStore;
       dataDirectory = target;
+      libraryStore();
       return { ok: true, path: target };
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : "Failed to change the data location" };
@@ -656,6 +657,7 @@ app.whenReady().then(async () => {
       await shell.openExternal(parsed.toString()); return { ok: true };
     } catch (error) { return { ok: false, error: error instanceof Error ? error.message : "Failed to open GitHub" }; }
   });
+  await syncEdits().catch(() => undefined);
   await createWindow();
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) void createWindow(); });
 }).catch(error => {
@@ -665,7 +667,7 @@ app.whenReady().then(async () => {
 
 let aiQuitFlushed = false;
 app.on("before-quit", event => {
-  environmentManager?.cancel(); websiteServers.closeAll();
-  if (aiService && !aiQuitFlushed) { event.preventDefault(); aiQuitFlushed = true; void Promise.all([aiService.shutdown(), translationService?.shutdown()]).finally(() => app.quit()); }
+  clearInterval(externalTimer); environmentManager?.cancel(); websiteServers.closeAll();
+  if (aiService && !aiQuitFlushed) { event.preventDefault(); aiQuitFlushed = true; void Promise.all([aiService.shutdown(), translationService?.shutdown(), flushExternal().catch(() => undefined)]).finally(() => app.quit()); }
 });
 app.on("window-all-closed", () => { if (process.platform !== "darwin") app.quit(); });

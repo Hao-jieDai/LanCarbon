@@ -1,4 +1,5 @@
 import { promises as fs } from "node:fs";
+import { withAssetCatalog } from "./asset-catalog-lock";
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { createEmptyWorkspace, MAX_BOOK_PAGES, MAX_BOOKS, normalizeBooks, validateWorkspace } from "../src/shared/books";
@@ -94,6 +95,10 @@ export class NotesStore {
   }
 
   private async syncStarterAssets(): Promise<void> {
+    return withAssetCatalog(this.dataDirectory, () => this.syncStarterAssetsUnlocked());
+  }
+
+  private async syncStarterAssetsUnlocked(): Promise<void> {
     if (!this.starterContentDirectory) return;
     const sourceManifest = path.join(this.starterContentDirectory, "assets.json");
     if (!(await fs.stat(sourceManifest).catch(() => null))?.isFile()) return;

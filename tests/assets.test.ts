@@ -94,12 +94,15 @@ it("supports cancel, numbered copies and shared replacement without rewriting re
   const destination=await temporary();
   await exportBookToDirectory({version:2,books:[book],notes:[homeNote]},book.id,destination,store);
   expect((await fs.readFile(path.join(destination,"assets",first.id))).toString()).toBe("replacement");
-  expect(await fs.stat(path.join(root,"assets",first.id)).catch(()=>null)).toBeNull();
+  expect((await store.readVersion(first.id,1)).bytes.toString()).toBe("old");
 });
 it("deletes selected records and files but preserves shared bytes until the final record is deleted",async()=>{
   const root=await temporary(),store=new AssetStore(root);
   const first=await store.importBytes("same.txt",Buffer.from("same"),false);
-  const second=await store.importBytes("same.txt",Buffer.from("same"),false,async()=>"keep");
+  const reused=await store.importBytes("same.txt",Buffer.from("same"),false,async()=>"keep");
+  expect(reused.id).toBe(first.id);
+  const second={...first,id:"f".repeat(64)+".txt",name:"same (2).txt"};
+  await fs.writeFile(path.join(root,"assets.json"),JSON.stringify({version:1,assets:[first,second]}));
   expect(second.name).toBe("same (2).txt");
   expect(await store.remove([first.id],async()=>false)).toBe(false);
   expect(await store.list()).toHaveLength(2);

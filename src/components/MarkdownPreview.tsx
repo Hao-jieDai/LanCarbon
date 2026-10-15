@@ -20,6 +20,8 @@ export function renderSafeMystHtml(content: string) {
 export function MarkdownPreview(props: MarkdownPreviewProps) {
   const { content, visible, document: current, documents, navigation, onNavigated } = props;
   const host = useRef<HTMLDivElement>(null);
+  const [resourceRevision, setResourceRevision] = useState(0);
+  useEffect(() => window.notesDesktop?.library?.onChanged?.(() => setResourceRevision(value => value + 1)), []);
   const [linkMessage, setLinkMessage] = useState("");
   const [assets, setAssets] = useState<PreviewAssets>({});
   useEffect(() => {
@@ -37,7 +39,7 @@ export function MarkdownPreview(props: MarkdownPreviewProps) {
       if (!canceled) setAssets(next);
     })().catch(error => { if (!canceled) setLinkMessage(String(error)); });
     return () => { canceled = true; };
-  }, [content, visible]);
+  }, [content, visible, resourceRevision]);
   // Do not parse or lay out mathematics on every keystroke while Edit is visible.
   const rendered = useMemo(() => visible ? renderMystPreview(current ?? { id: "current", title: "Note", content }, documents, assets) : null, [visible, current, documents, content, assets]);
   const scrollTo = (anchor: string) => {

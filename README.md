@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
 
-Version 2.3.0 adds offline PDF/EPUB import, Library collections, content-based reuse, safe renaming and default-app opening. Source and translated text scroll independently in a compact translation panel. In-app readers and literature automation follow in later steps. Existing Notes, Books, attachments and AI configuration remain available.
+Version 2.3.1 adds Library subfolders, explicit duplicate reports, stable moves and external-save version history. Ordinary resources open in their default apps; Attach file starts in Library and reuses imported originals. Existing personal writing and AI configuration are preserved. Internal PDF/EPUB readers follow separately.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -51,11 +51,12 @@ Keys remain encrypted for the current Windows account in **Config/ai-settings.js
 
 ### Library imports
 
-1. Open **Library → Imports** and select **Import PDF / EPUB**, or drop local PDF/EPUB files into the Library main area. Import up to **20 files**, **100 MB each**. LanCarbon saves verified local copies under **Library/Imports**; moving the external source later does not break the managed copy. Import is offline and does not upload documents or call AI.
-2. **All files** combines imported originals and **Source materials**. Source materials contains the existing managed images, attachments and bibliography files in **Library/assets**. Use **Find a resource**, **File type** and **Sort by** to narrow or order the list. Your selected collection and file are remembered across workspace switches and restarts.
-3. Identical originals are reused by content. If the document is already a writing attachment, Library selects it in Source materials without creating a second copy. Equal filenames with different contents receive numbered names. A batch reports each failed file and retains successful imports. Re-importing an unchanged original repairs its missing/damaged imported copy while preserving its ID and display name.
-4. Single-click a file to view its references in the fixed panel. **Open** or double-click opens PDF/EPUB documents with the system default app; in-app readers follow separately. **Folder** reveals the managed original, **Rename** changes its display/save-copy name while preserving identity and extension, and **Save a copy** exports outside the managed Library. Renaming a writing resource preserves existing links; tutorial resources remain managed.
-5. Imported-document records live in **Data/Library/documents.json**, separately from Workspace v2 and **Data/assets.json**. Changing Data Location carries the records; original files remain in root Library. Back up both. Names shown in Library are maintained by its catalog; do not rename hash-named managed files in Explorer. Importing into Library does not insert a link into a Note/Book.
+1. Open **Library → Imports**, choose a destination folder and use **Import PDF / EPUB** or drop local documents into the main area. Each batch accepts 20 files, 100 MB each. **New folder** creates an Imports subfolder; the sidebar shows the hierarchy. **All files** and filename search show file locations. Source materials remains the managed writing-resource collection.
+2. Duplicate checks use exact file contents across Library and its retained versions. Import details shows the incoming filename, existing/current name, location and matching version. Importing a.pdf, renaming it b.pdf, then importing the same a.pdf reuses b.pdf and retains its name. Re-importing an old revision does not roll back the current one. **Locate** opens the existing entry; **Move to…** can move an imported original into the chosen folder.
+3. Equal names with different contents receive numbered names in the same folder; the report shows the final name. Different folders can contain equal names. Renaming checks names in the same folder, ignores case and preserves extensions; conflicts show a suggested available name without overwriting or merging. **Move** preserves the document ID, writing links and versions; conflicts require **Keep both as…** or Cancel.
+4. **Open** or double-click uses the default app for documents, images, TXT, Word and other ordinary resources. Executables, scripts and shortcuts are excluded. The app opens a named working copy under **Library/.Editing**; saving that file registers a new current version within a few seconds while LanCarbon runs, or after its next launch. Unchanged saves add no version. **Versions** lists revisions and **Save version** exports an earlier one; old versions remain stored locally. Saving as another file/location requires a separate import. Keep managed hash-named originals intact; use Open for editing.
+5. Notes and Books **Attach file** starts in root **Library**. Selecting an imported original reuses it with its current display name and a stable writing reference, without copying its bytes into assets. Later rename/move/version changes keep the reference valid and use the current contents. Removing this linked resource in Resources removes its writing references while the Library original remains in Imports. Ordinary resource deletion still removes its files and versions after confirmation.
+6. **Folder** reveals the managed original and **Save a copy** exports outside Library. Importing itself is offline and inserts no writing link. Catalogs and edit-session records live in the active **Data/Library**; originals, retained versions and working copies stay in root **Library**. Moving Data carries the records. Back up both locations, including pending working copies. After using folders, linked attachments or new versions, application rollback needs a matching data snapshot; preserve newer writing separately before restoring it.
 
 ### Selection translation
 
@@ -88,7 +89,7 @@ Managed writing resources are stored in root **Library/assets**. Existing Data/a
 Before upgrading, close LanCarbon and back up the complete LanCarbon home folder and any separately selected Data location. Include Cache because its encryption state is needed to read previously saved API keys. Keep the stable installer alongside the backup. Reinstalling an older application may also require restoring matching data. A restored snapshot returns to the backup date; retain later edits separately. Developers can use the verified snapshot commands below. Restore accepts a new empty folder, verifies all files before copying and adjusts saved managed paths to that folder.
 
 ```powershell
-node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.3.0-x64-Setup.exe"
+node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.3.1-x64-Setup.exe"
 node scripts/workspace-recovery.cjs verify --backup "D:\Backups\LanCarbon-snapshot"
 node scripts/workspace-recovery.cjs restore --backup "D:\Backups\LanCarbon-snapshot" --target "D:\Recovered\LanCarbon"
 ```
@@ -99,7 +100,7 @@ Select **Export PDF** in the page header from Edit or Preview, choose a filename
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.3.0-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.3.1-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -175,7 +176,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-2.3.0 新增离线 PDF/EPUB 导入、Library 分类、按内容复用、安全重命名和默认程序打开；翻译原文与译文在紧凑浮窗中分别滚动。内置阅读器及文献自动化在后续步骤提供，现有 Notes、Books、附件与 AI 配置继续可用。
+2.3.1 新增 Library 子文件夹、明确的重复报告、稳定移动和外部保存版本历史；普通资料可用默认程序打开，Attach file 从 Library 开始并复用导入原件。保留现有个人写作与 AI 配置，内置 PDF/EPUB 阅读器另行更新。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
@@ -213,11 +214,12 @@ SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `ht
 
 ### Library 资料导入
 
-1. 打开 **Library → Imports**，点击 **Import PDF / EPUB**，或将本地 PDF/EPUB 拖入 Library 主区域。每批最多 **20 个文件**、每个 **100 MB**。软件将校验后的副本保存在 **Library/Imports**；此后移动外部原文件不影响受管理副本。导入可离线完成，不上传文档、不调用 AI。
-2. **All files** 合并导入原文与 **Source materials**。Source materials 显示 **Library/assets** 中现有的图片、附件和文献库。通过 **Find a resource**、**File type** 和 **Sort by** 搜索、筛选或排序；切换工作区及重启后保留所选分类与文件。
-3. 相同内容复用已有文档；如果已经是写作附件，会选中 Source materials 内的原条目，不额外复制。同名但内容不同的文件自动编号；批量失败逐项说明，成功文件保留。重新导入未改变的原文件可修复缺失或损坏的导入副本，并保留 ID 和显示名称。
-4. 单击文件在固定面板查看引用。**Open** 或双击 PDF/EPUB 使用系统默认程序打开，内置阅读器另行提供。**Folder** 定位受管理原件；**Rename** 修改显示及副本名称，保留身份与扩展名；**Save a copy** 将副本保存到受管理 Library 以外。写作资源重命名后原有引用仍有效，系统教程资源继续由软件管理。
-5. 导入记录位于 **Data/Library/documents.json**，与 Workspace v2 及 **Data/assets.json** 分开。更改 Data Location 会携带记录，原件仍在根目录 Library；两处都需备份。文件名由目录记录管理，请勿在资源管理器中自行改动带哈希的受管理文件。导入 Library 不会自动向 Note/Book 插入链接。
+1. 打开 **Library → Imports**，选择目标文件夹后 **Import PDF / EPUB** 或拖入本地文档。每批最多 20 个、每个 100 MB。**New folder** 创建 Imports 子文件夹，左侧显示目录树。**All files** 与文件名搜索显示所属位置；Source materials 仍用于受管理的写作资源。
+2. 在整个 Library 及保留版本中按文件字节去重。Import details 显示导入名称、已有文件当前名称、位置和匹配版本。导入 a.pdf、改名 b.pdf 后，再导入相同 a.pdf，会复用 b.pdf 并保留改名。重新导入旧版本不会回退当前版本。**Locate** 定位原条目；**Move to…** 可将导入原件移动到所选文件夹。
+3. 同文件夹内同名不同内容自动编号，报告显示最终名称；不同文件夹允许同名。重命名只检查同文件夹名称，忽略大小写并保留扩展名，冲突时提示可用名称，不覆盖或合并。**Move** 保留文档 ID、引用与全部版本；移动重名时明确选择 **Keep both as…** 或取消。
+4. **Open** 或双击通过系统默认程序打开文档、图片、TXT、Word 等普通资料，程序、脚本和快捷方式不直接打开。软件打开 **Library/.Editing** 中带名称的编辑副本；保存该文件后，LanCarbon 运行时会在几秒内登记新版本，关闭期间的保存会在下次启动后处理。内容未变不新增版本。**Versions** 查看历史，**Save version** 导出旧版本；历史原件保留在本地。另存其他文件或位置需另行导入。请保持带哈希的受管理原件完整，通过 Open 进行编辑。
+5. Notes 和 Books 的 **Attach file** 默认打开根目录 **Library**。选择导入原件时沿用当前显示名与稳定写作引用，不再把原件复制到 assets。之后改名、移动或产生新版本，引用保持有效并读取当前内容。在 Resources 删除此类关联资源时移除写作引用，原件仍在 Imports；普通资源删除仍会在确认后删除文件和历史版本。
+6. **Folder** 定位受管理原件，**Save a copy** 将副本导出到 Library 之外。导入本身可离线完成，不自动插入写作链接。目录及编辑会话记录在实际 **Data/Library**，原件、历史版本和编辑副本在根目录 **Library**；更改 Data 携带记录。两处都需备份，包括尚未登记的编辑副本。使用子目录、关联附件或新版本后，回滚程序需要匹配的数据快照；恢复前另行保留新增写作内容。
 
 ### 选词翻译
 
@@ -255,7 +257,7 @@ SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `ht
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.3.0-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.3.1-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 

@@ -39,7 +39,7 @@ test("Library imports originals, reuses attachments, handles drops and preserves
     await page.getByRole("button", { name: "Research.pdf", exact: true }).click();
     const catalog = JSON.parse(await fs.readFile(path.join(data, "Library/documents.json"), "utf8")); const record = catalog.documents.find((value: any) => value.title === "Research.pdf");
     const managed = await fs.realpath(path.join(root, "Library", record.relativePath));
-    await page.getByRole("button", { name: "Open Research.pdf", exact: true }).click(); await expect.poll(() => app.evaluate(() => (globalThis as any).lastOpened)).toBe(managed);
+    await page.getByRole("button", { name: "Open Research.pdf", exact: true }).click(); await expect.poll(() => app.evaluate(() => (globalThis as any).lastOpened).then(value => value ? path.basename(value) : "")).toBe("Research.pdf"); expect(await app.evaluate(() => (globalThis as any).lastOpened)).toContain(path.join("Library", ".Editing"));
     await page.getByRole("button", { name: "Open folder for Research.pdf", exact: true }).click(); await expect.poll(() => app.evaluate(() => (globalThis as any).lastRevealed)).toBe(managed);
     await app.evaluate(({ dialog }, destination) => { dialog.showSaveDialog = (async () => ({ canceled: false, filePath: destination })) as typeof dialog.showSaveDialog; }, managed);
     await page.getByRole("button", { name: "Save a copy", exact: true }).click(); await expect(page.locator(".foundation-error")).toContainText("outside the managed Library"); expect(await fs.readFile(managed)).toEqual(pdfFixture());

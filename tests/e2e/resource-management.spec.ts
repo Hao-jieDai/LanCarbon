@@ -65,7 +65,7 @@ test("image settings, duplicate choices and cross-Book deletion filters",async({
     await expect(page.getByLabel("Note content")).not.toHaveCSS("cursor","none");
     await page.mouse.move(700,400);await page.getByLabel("Note content").press("End");await page.keyboard.type(" after duplicate drop");
     await expect(page.getByLabel("Note content")).toContainText("after duplicate drop");
-    const differentImage=await fs.readFile("resources/starter-content/assets/32a3e216430183b9d8a8b7f239b26b4b0fb164fff5b42f399d119d880c23eb77.png");
+    const differentImage=Buffer.concat([await fs.readFile("resources/starter-content/assets/32a3e216430183b9d8a8b7f239b26b4b0fb164fff5b42f399d119d880c23eb77.png"),Buffer.from("different-resource-fixture")]);
     await page.getByLabel("Note content").evaluate((element,base64)=>{
       const bytes=Uint8Array.from(atob(base64),c=>c.charCodeAt(0)),transfer=new DataTransfer();transfer.items.add(new File([bytes],"image.png",{type:"image/png"}));
       element.dispatchEvent(new DragEvent("drop",{dataTransfer:transfer,bubbles:true,cancelable:true}));

@@ -7,7 +7,7 @@ export function AssetPanel({notes,books,onInsert,onClose,beforeChange,onResource
   const [assets,setAssets]=useState<Asset[]>([]),[query,setQuery]=useState(""),[scope,setScope]=useState("all"),[error,setError]=useState("");
   const [selected,setSelected]=useState<string[]>([]),[busy,setBusy]=useState(false);
   const refresh=async()=>{const result=await window.notesDesktop.assets!.list();if(result.ok)setAssets(result.assets);else setError(result.error);};
-  useEffect(()=>{void refresh().catch(e=>setError(String(e)));},[]);
+  useEffect(()=>{const update=()=>{void refresh().catch(e=>setError(String(e)));};update();return window.notesDesktop.library?.onChanged?.(update);},[]);
   const refs=resourceUsages(notes,books);
   const bookNoteIds=new Set(books.flatMap(b=>Object.values(b.pages).map(p=>p.noteId)));
   const visible=assets.filter(a=>{
@@ -31,13 +31,13 @@ export function AssetPanel({notes,books,onInsert,onClose,beforeChange,onResource
       <optgroup label="Books"><option value="books">All Books</option>{books.map(b=><option key={b.id} value={`book:${b.id}`}>{b.settings.title}</option>)}</optgroup>
     </select></label>
     <div className="asset-actions"><label className="asset-select-all"><input type="checkbox" aria-label="Select all visible resources" disabled={busy||!visible.length} checked={!!visible.length&&visible.every(a=>selected.includes(a.id))} onChange={e=>setSelected(e.target.checked?visible.map(a=>a.id):[])}/>Select visible ({visible.length})</label><button disabled={busy||!selected.length} onClick={()=>void remove(selected)}>Delete selected ({selected.length})</button></div>
-    <p className="modal-help">Deleting removes the managed copy and its references from all Notes and Books. Confirmation lists references across ALL Notes and Books, including those outside this filter. Removing a Markdown link alone keeps the file.</p>
+    <p className="modal-help">Deleting removes the managed resource and its references from all Notes and Books. Linked Library originals stay in Imports. Confirmation lists references across ALL Notes and Books, including those outside this filter. Removing a Markdown link alone keeps the file.</p>
     {error&&<p role="alert">{error}</p>}
     <div className="asset-list">{visible.map(asset=>{
       const uses=refs.filter(r=>r.id===asset.id);
       return <article className="asset-row" key={asset.id}>
         <label className="asset-select-all"><input type="checkbox" aria-label={`Select ${asset.name}`} disabled={busy} checked={selected.includes(asset.id)} onChange={e=>setSelected(e.target.checked?[...selected,asset.id]:selected.filter(id=>id!==asset.id))}/><strong>{asset.name}</strong></label>
-        <small>{asset.mime.startsWith("image/")?"Image":"Attachment"} · {(asset.size/1024).toFixed(1)} KB{asset.missing?" · Missing file":""}</small>
+        <small>{asset.documentId ? "Library original · " : ""}{asset.mime.startsWith("image/")?"Image":"Attachment"} · {(asset.size/1024).toFixed(1)} KB{asset.missing?" · Missing file":""}</small>
         <div className="asset-actions"><button disabled={busy||asset.missing} onClick={()=>onInsert(asset)}>Insert</button><button disabled={busy||asset.missing} onClick={()=>void window.notesDesktop.assets!.saveCopy(asset.id).then(r=>{if(!r.ok)setError(r.error);})}>Save a copy</button><button className="danger-text" disabled={busy} onClick={()=>void remove([asset.id])}>Delete</button></div>
         <details><summary>{uses.length?`${uses.length} reference${uses.length===1?"":"s"} (all locations)`:"Not referenced"}</summary><ul>{uses.map((ref,i)=><li key={i}>{ref.location} / {ref.title}{ref.line?` — line ${ref.line}`:""}</li>)}</ul></details>
       </article>;
