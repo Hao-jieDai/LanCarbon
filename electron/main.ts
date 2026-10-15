@@ -4,6 +4,7 @@ import { promises as fs } from "node:fs";
 import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { AssetStore, type ResolveConflict } from "./assets";
+import { LibraryStore } from "./library";
 import { MAX_ASSET_BYTES, resourceUsages, type AssetConflictChoice } from "../src/shared/assets";
 import { exportPagePdf, pdfFileName } from "./pdf-exporter";
 import { withoutResources } from "../src/shared/removeResourceReferences";
@@ -241,6 +242,15 @@ app.whenReady().then(async () => {
     if (assetsDirectory !== dataDirectory) { assetsDirectory = dataDirectory; assetsManager = new AssetStore(dataDirectory, managedAssetDirectory, systemAssetIds); }
     return assetsManager;
   };
+  let libraryDataDirectory = dataDirectory;
+  let libraryManager = new LibraryStore(dataDirectory, directories.library, assetStore());
+  const libraryStore = () => {
+    if (libraryDataDirectory !== dataDirectory) {
+      libraryDataDirectory = dataDirectory;
+      libraryManager = new LibraryStore(dataDirectory, directories.library, assetStore());
+    }
+    return libraryManager;
+  };
   const runManagedBuild = async (bookId: string, chooseLocation = false) => {
     if (!mainWindow) throw new Error("The main window is unavailable");
     const { workspace } = await store.loadWorkspace();
@@ -264,6 +274,56 @@ app.whenReady().then(async () => {
     return result;
   };
   const assetError = (error: unknown) => ({ ok: false, canceled: error instanceof Error && error.message === "Import canceled", error: error instanceof Error ? error.message : "Resource operation failed" });
+  ipcMain.handle("library:list", async () => {
+    try { return { ok: true, entries: await libraryStore().list() }; } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:choose", async () => {
+    try {
+      if (!mainWindow) throw Error("The Library window is closed.");
+      const choice = await dialog.showOpenDialog(mainWindow, { title: "Import PDF / EPUB", properties: ["openFile", "multiSelections"], filters: [{ name: "PDF and EPUB documents", extensions: ["pdf", "epub"] }] });
+      if (choice.canceled || !choice.filePaths.length) return { ok: false, canceled: true, error: "Import canceled" };
+      return { ok: true, batch: await libraryStore().importFiles(choice.filePaths) };
+    } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:import-files", async (_event, files: string[]) => {
+    try { return { ok: true, batch: await libraryStore().importFiles(files) }; } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:rename", async (_event, id: string, name: string) => {
+    try { return { ok: true, entry: await libraryStore().rename(id, name) }; } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:reveal", async (_event, id: string) => {
+    try { shell.showItemInFolder(await libraryStore().filePath(id)); return { ok: true }; } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:open", async (_event, id: string) => {
+    try {
+      const { entry } = await libraryStore().read(id);
+      if (entry.format !== "pdf" && entry.format !== "epub") throw Error("Open is available for PDF and EPUB documents.");
+      const error = await shell.openPath(await libraryStore().filePath(id));
+      if (error) throw Error(error);
+      return { ok: true };
+    } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:save-copy", async (_event, id: string) => {
+    try {
+      if (!mainWindow) throw Error("The Library window is closed.");
+      const { entry, bytes } = await libraryStore().read(id);
+      const choice = await dialog.showSaveDialog(mainWindow, { title: "Save a copy", defaultPath: path.join(directories.exports, path.basename(entry.name)) });
+      if (choice.canceled || !choice.filePath) return { ok: true };
+      const destination = path.resolve(choice.filePath);
+      const managed = await fs.realpath(directories.library);
+      const parent = await fs.realpath(path.dirname(destination));
+      const relative = path.relative(managed, parent);
+      if (!relative || !relative.startsWith(".." + path.sep) && relative !== ".." && !path.isAbsolute(relative)) throw Error("Save the copy outside the managed Library folder.");
+      // Refuse a destination link into Library as well as a direct managed path.
+      const existing = await fs.realpath(destination).catch(error => { if (error.code === "ENOENT") return null; throw error; });
+      if (existing) {
+        const relativeFile = path.relative(managed, existing);
+        if (!relativeFile || !relativeFile.startsWith(".." + path.sep) && relativeFile !== ".." && !path.isAbsolute(relativeFile)) throw Error("Save the copy outside the managed Library folder.");
+      }
+      await fs.writeFile(destination, bytes);
+      return { ok: true };
+    } catch (error) { return assetError(error); }
+  });
   const describeUses = async (ids: string[]) => {
     const {workspace} = await store.loadWorkspace();
     return resourceUsages(workspace.notes,workspace.books).filter(ref => ids.includes(ref.id));

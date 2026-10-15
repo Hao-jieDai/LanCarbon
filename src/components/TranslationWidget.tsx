@@ -80,6 +80,7 @@ export function TranslationWidget({ scope, onSettings }: { scope: string; onSett
     return () => { document.removeEventListener("pointerdown", down); document.removeEventListener("mouseup", up); document.removeEventListener("selectionchange", selection); document.removeEventListener("keyup", keyup); origin = null; interrupt(); };
   }, [enabled, api, interrupt]);
   useEffect(() => { const resize = () => setPosition(value => value ? clamp(value) : value); window.addEventListener("resize", resize); if (enabled) resize(); return () => window.removeEventListener("resize", resize); }, [enabled, clamp]);
+  useEffect(() => { if (enabled) setPosition(value => value ? clamp(value) : value); }, [enabled, source, result, error, busy, clamp]);
   if (!api) return null;
   const drag = (event: React.PointerEvent<HTMLElement>) => {
     if ((event.target as Element).closest("button") || event.button !== 0 || !panel.current) return;
@@ -92,8 +93,8 @@ export function TranslationWidget({ scope, onSettings }: { scope: string; onSett
     {enabled && <section ref={panel} className="translation-window" role="region" aria-label="Selection translation" data-translation-exclude style={position ? { left: position.x, top: position.y, right: "auto", bottom: "auto" } : undefined}>
       <header onPointerDown={drag}><strong>Translation</strong><div><button className="text-button" onClick={onSettings}>Settings</button><button className="icon-button" aria-label="Turn off translation" onClick={() => void toggle()}>×</button></div></header>
       {!source && !error && <p className="translation-empty">Select an English word, phrase or short passage.</p>}
-      {source && <div className="translation-source" aria-label="Selected English">{source}</div>}
-      {busy && <p role="status">Translating…</p>}{result && <><div className="translation-result" aria-label="Chinese translation">{result.text}</div><p className="translation-model">{result.cached ? "Saved result · " : ""}{result.providerName} · {result.modelName}</p></>}
+      {source && <div key={source} className="translation-source" tabIndex={0} aria-label="Selected English">{source}</div>}
+      {busy && <p role="status">Translating…</p>}{result && <><div className="translation-result" tabIndex={0} aria-label="Chinese translation">{result.text}</div><p className="translation-model">{result.cached ? "Saved result · " : ""}{result.providerName} · {result.modelName}</p></>}
       {error && <p role="alert" className="translation-error">{error}</p>}
     </section>}
     {!enabled && error && <div className="translation-toggle-error" role="alert">{error}</div>}

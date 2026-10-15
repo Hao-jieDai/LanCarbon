@@ -1,6 +1,6 @@
 # AI 配置与 Chat 验收
 
-当前安装包：**LanCarbon 2.2.5**。使用原有 LanCarbon 快捷方式。SiliconFlow、OpenRouter 和 Others（BigModel）接入已验收；本次简化翻译配置与测试说明，调整为正方形小时格、独立全年日度热力图和统一风格日历。第一阶段仍等待用户验收翻译。自动化验证使用隔离目录与本地模拟接口，不调用真实账号。
+第一阶段已验收完成：SiliconFlow、OpenRouter、Others（BigModel）、Chat、用量统计，以及复用和独立翻译配置；Notes／Books 选词翻译已经用户确认。翻译浮窗滚动微调并入第二阶段，阶段验收不再等待独立翻译测试。以下保留功能回归检查方法与已完成的安装验证记录。
 
 ## 翻译配置与验收
 
@@ -49,7 +49,7 @@ Open **Research → Translation Settings** and reuse a saved service/model (with
 
 Enable **Translate** in the sidebar or press **Ctrl+Alt+T**. Select a short English passage in Notes/Books Edit or Preview and selectable Research/Library/interface text. The floating panel shows source and Chinese, can be dragged, and remembers its position. Disable it to restore selection without model requests; it starts off at each launch. Keys/passwords/API addresses are excluded. Selections are limited to 1,600 characters / 250 words; only selected text and translation instructions are sent. Superseded requests are canceled, without reversing upstream charges.
 
-Repeated selections use a bounded local cache (1,000 results / 5 MB), with an independent clear action. Translation and manual tests appear under **Usage → Purpose: Translation**; cache reuse adds no requests or tokens. Translation-only models can have prices in Model prices. Separate keys stay encrypted with masked previews and a local removal action, without changing Chat configuration. User acceptance of translation is still pending.
+Repeated selections use a bounded local cache (1,000 results / 5 MB), with an independent clear action. Translation and manual tests appear under **Usage → Purpose: Translation**; cache reuse adds no requests or tokens. Translation-only models can have prices in Model prices. Separate keys stay encrypted with masked previews and a local removal action, without changing Chat configuration. The user has accepted both reused and dedicated translation connections, including selection translation in Notes and Books.
 
 Use the existing shortcut. Usage defaults to Today, offers seven/thirty-day presets and custom dates, and retains source/model/purpose filters. Three compact cards place titles and values on one line. The single request table shows total tokens and CNY costs, ten requests per page.
 

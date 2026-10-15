@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
 
-Version 2.2.5 refines activity views with centered square hourly cells, an independent full-year daily calendar and themed date pickers. Translation reuses saved models without editing, automatically adapts prompts, supports selecting prompt text and clearly displays test source/results. AI Settings and Chat support SiliconFlow, OpenRouter and named Others configurations, system-network connections, encrypted API keys, model selection, streaming, cancellation, retry and locally saved conversations. PDF/EPUB reading and literature automation remain reserved. A new installation includes a pinned **ReadMe** Note and the complete bilingual **LanCarbon: From 0 to 1** tutorial Book. This system-managed tutorial is synchronized from the installed release on every upgrade; users should not edit it because changes are overwritten without a backup.
+Version 2.3.0 adds offline PDF/EPUB import, Library collections, content-based reuse, safe renaming and default-app opening. Source and translated text scroll independently in a compact translation panel. In-app readers and literature automation follow in later steps. Existing Notes, Books, attachments and AI configuration remain available.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -49,11 +49,19 @@ SiliconFlow uses base address `https://api.siliconflow.cn/v1`; OpenRouter uses `
 
 Keys remain encrypted for the current Windows account in **Config/ai-settings.json**; only masked previews reach the interface. Moving to another Windows account may require re-entry. Back up the complete LanCarbon home folder, including Config, Cache and Library, together with any separately selected Data location. Conversations are local in **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; closing LanCarbon stops it and preserves partial replies. Chat submits your conversation text and response guidelines; Notes, Books and Library files are not automatically attached. PDF/EPUB reading, retrieval and literature workflows remain reserved.
 
+### Library imports
+
+1. Open **Library → Imports** and select **Import PDF / EPUB**, or drop local PDF/EPUB files into the Library main area. Import up to **20 files**, **100 MB each**. LanCarbon saves verified local copies under **Library/Imports**; moving the external source later does not break the managed copy. Import is offline and does not upload documents or call AI.
+2. **All files** combines imported originals and **Source materials**. Source materials contains the existing managed images, attachments and bibliography files in **Library/assets**. Use **Find a resource**, **File type** and **Sort by** to narrow or order the list. Your selected collection and file are remembered across workspace switches and restarts.
+3. Identical originals are reused by content. If the document is already a writing attachment, Library selects it in Source materials without creating a second copy. Equal filenames with different contents receive numbered names. A batch reports each failed file and retains successful imports. Re-importing an unchanged original repairs its missing/damaged imported copy while preserving its ID and display name.
+4. Single-click a file to view its references in the fixed panel. **Open** or double-click opens PDF/EPUB documents with the system default app; in-app readers follow separately. **Folder** reveals the managed original, **Rename** changes its display/save-copy name while preserving identity and extension, and **Save a copy** exports outside the managed Library. Renaming a writing resource preserves existing links; tutorial resources remain managed.
+5. Imported-document records live in **Data/Library/documents.json**, separately from Workspace v2 and **Data/assets.json**. Changing Data Location carries the records; original files remain in root Library. Back up both. Names shown in Library are maintained by its catalog; do not rename hash-named managed files in Explorer. Importing into Library does not insert a link into a Note/Book.
+
 ### Selection translation
 
 1. Open **Research → Translation Settings**. With **Use an existing AI connection**, select a service and a model already saved in AI Settings. The saved key and model display name are reused; this mode has no model catalogue refresh or editable model fields. To add a dedicated translation service/model, choose **Separate translation connection**, configure SiliconFlow, OpenRouter or Others, then use **Refresh translation models** or enter its exact Model ID and display name. Refresh reads a platform catalogue; account access and pricing still need checking.
 2. **Save translation settings**, then **Test translation**. The result beside the buttons shows **Translation test succeeded**, the selected service/model, the fixed English sentence **Climate change affects investment.**, and its Chinese translation. **Stop translation test** cancels a running test. Testing makes a real request even with automatic translation off. The editable **Translation prompt** applies only to translation; model format adaptation is automatic. The default asks for accurate academic Chinese without explanations or emoji. English within this prompt field can also be selected for translation without changing its contents.
-3. Translation starts **off** each time LanCarbon opens. Enable the sidebar **Translate** switch or press **Ctrl+Alt+T**. Select an English word, phrase or short passage in Notes/Books **Edit** or **Preview**, Research, Library or selectable interface text. After selection settles, the floating panel shows the selected English and Chinese translation. Drag its header to move it; the position is remembered. Close the panel or use the switch/shortcut to disable automatic requests. Passwords, API keys and connection addresses are excluded.
+3. Translation starts **off** each time LanCarbon opens. Enable the sidebar **Translate** switch or press **Ctrl+Alt+T**. Select an English word, phrase or short passage in Notes/Books **Edit** or **Preview**, Research, Library or selectable interface text. After selection settles, the floating panel shows the selected English and Chinese translation. Drag its header to move it; the position is remembered. Long source and translated text scroll independently inside the compact panel. Close the panel or use the switch/shortcut to disable automatic requests. Passwords, API keys and connection addresses are excluded.
 4. Select at most **1,600 characters / 250 words**. Only the selection and translation instructions are sent, without the whole Note, Book or Chat. New selections cancel earlier translation requests. Cancellation cannot undo charges already incurred upstream.
 5. Repeated selections with the same saved service/model/prompt reuse local results without another API call. **Saved translations → Clear translation cache** clears only the translation cache, limited to **1,000 results / 5 MB**, stored under **Data/Research/Translation**. Translation and manual tests appear in **Usage → Purpose: Translation**; locally reused results do not add tokens or requests. Configure the translation model's price in **Model prices** when the service does not report costs. Dedicated keys have masked previews and **Remove translation key**; blank key inputs retain the saved key.
 
@@ -80,7 +88,7 @@ Managed writing resources are stored in root **Library/assets**. Existing Data/a
 Before upgrading, close LanCarbon and back up the complete LanCarbon home folder and any separately selected Data location. Include Cache because its encryption state is needed to read previously saved API keys. Keep the stable installer alongside the backup. Reinstalling an older application may also require restoring matching data. A restored snapshot returns to the backup date; retain later edits separately. Developers can use the verified snapshot commands below. Restore accepts a new empty folder, verifies all files before copying and adjusts saved managed paths to that folder.
 
 ```powershell
-node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.2.5-x64-Setup.exe"
+node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.3.0-x64-Setup.exe"
 node scripts/workspace-recovery.cjs verify --backup "D:\Backups\LanCarbon-snapshot"
 node scripts/workspace-recovery.cjs restore --backup "D:\Backups\LanCarbon-snapshot" --target "D:\Recovered\LanCarbon"
 ```
@@ -91,7 +99,7 @@ Select **Export PDF** in the page header from Edit or Preview, choose a filename
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.2.5-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.3.0-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -167,7 +175,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-2.2.5 调整为居中的正方形小时格、独立全年日度热力图和统一风格日历；翻译复用模式仅选择已保存模型，提示词自动适配并支持选取翻译，测试明确展示原文与译文。AI Settings 与 Chat 支持 SiliconFlow、OpenRouter 和命名 Others 配置、系统网络连接、加密 API Key、模型选择、流式回复、停止、重试和本地会话保存。PDF/EPUB 阅读与文献自动化仍留待后续阶段。全新安装会自带一篇置顶的 **ReadMe** 笔记，以及完整的中英文双语教程 Book **LanCarbon: From 0 to 1**。这本系统管理教程会在每次软件升级时同步为当前安装版本；用户不应编辑，因为修改会被覆盖且不会创建备份。
+2.3.0 新增离线 PDF/EPUB 导入、Library 分类、按内容复用、安全重命名和默认程序打开；翻译原文与译文在紧凑浮窗中分别滚动。内置阅读器及文献自动化在后续步骤提供，现有 Notes、Books、附件与 AI 配置继续可用。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
@@ -203,11 +211,19 @@ SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `ht
 
 密钥仍使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，界面只接收掩码。迁移 Windows 账户后可能需要重填；备份时保留完整 LanCarbon 文件夹（包括 Config、Cache 和 Library），另选的数据目录也需同时备份。会话位于 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，关闭软件会停止生成并保存已有回复。Chat 提交会话文字与回答规范，Notes、Books 和 Library 文件不会自动附加。PDF/EPUB 阅读、检索与文献工作流仍留待后续阶段。
 
+### Library 资料导入
+
+1. 打开 **Library → Imports**，点击 **Import PDF / EPUB**，或将本地 PDF/EPUB 拖入 Library 主区域。每批最多 **20 个文件**、每个 **100 MB**。软件将校验后的副本保存在 **Library/Imports**；此后移动外部原文件不影响受管理副本。导入可离线完成，不上传文档、不调用 AI。
+2. **All files** 合并导入原文与 **Source materials**。Source materials 显示 **Library/assets** 中现有的图片、附件和文献库。通过 **Find a resource**、**File type** 和 **Sort by** 搜索、筛选或排序；切换工作区及重启后保留所选分类与文件。
+3. 相同内容复用已有文档；如果已经是写作附件，会选中 Source materials 内的原条目，不额外复制。同名但内容不同的文件自动编号；批量失败逐项说明，成功文件保留。重新导入未改变的原文件可修复缺失或损坏的导入副本，并保留 ID 和显示名称。
+4. 单击文件在固定面板查看引用。**Open** 或双击 PDF/EPUB 使用系统默认程序打开，内置阅读器另行提供。**Folder** 定位受管理原件；**Rename** 修改显示及副本名称，保留身份与扩展名；**Save a copy** 将副本保存到受管理 Library 以外。写作资源重命名后原有引用仍有效，系统教程资源继续由软件管理。
+5. 导入记录位于 **Data/Library/documents.json**，与 Workspace v2 及 **Data/assets.json** 分开。更改 Data Location 会携带记录，原件仍在根目录 Library；两处都需备份。文件名由目录记录管理，请勿在资源管理器中自行改动带哈希的受管理文件。导入 Library 不会自动向 Note/Book 插入链接。
+
 ### 选词翻译
 
 1. 打开 **Research → Translation Settings**。选择 **Use an existing AI connection** 时，仅选择服务与 AI Settings 已保存的模型，密钥和显示名称沿用原配置；该模式不提供目录刷新或模型字段编辑。新增独立的翻译服务／模型时，选择 **Separate translation connection** 配置 SiliconFlow、OpenRouter 或 Others，再 **Refresh translation models** 或手填准确的 Model ID 与显示名称。刷新读取平台目录，可调用权限与价格仍需核对。
 2. **Save translation settings → Test translation**。按钮附近的结果明确展示 **Translation test succeeded**、服务／模型、固定原句 **Climate change affects investment.** 与中文译文。**Stop translation test** 取消正在进行的测试；自动翻译关闭时也可手动测试，会产生真实请求。可编辑的 **Translation prompt** 仅用于翻译，所需模型格式自动适配；默认要求准确、专业、只输出简体中文且不用 emoji。提示词输入框中的英文也可选取翻译，原内容不受修改。
-3. 每次启动默认**关闭**。点击侧栏 **Translate** 或按 **Ctrl+Alt+T** 开启后，在 Notes／Books 的 **Edit** 或 **Preview**、Research、Library 及可选取的界面文字中选择英文单词、词组或短句。选取稳定后浮窗显示原文与中文；拖动标题栏可移动并记住位置。关闭浮窗或使用开关／快捷键停止自动调用。密码、API Key 与接口地址不参与翻译。
+3. 每次启动默认**关闭**。点击侧栏 **Translate** 或按 **Ctrl+Alt+T** 开启后，在 Notes／Books 的 **Edit** 或 **Preview**、Research、Library 及可选取的界面文字中选择英文单词、词组或短句。选取稳定后浮窗显示原文与中文；原文与长译文分别在内部滚动，保持窗口紧凑。拖动标题栏可移动并记住位置。关闭浮窗或使用开关／快捷键停止自动调用。密码、API Key 与接口地址不参与翻译。
 4. 单次最多 **1,600 字符／250 词**，仅发送选取内容与翻译要求，不附带整篇 Note、Book 或聊天。新的选取取消旧翻译请求；取消不能撤销上游已经发生的费用。
 5. 相同来源、模型、提示词的重复选取复用本地结果，不再次请求 API。**Saved translations → Clear translation cache** 仅清除翻译缓存，位于 **Data/Research/Translation**，上限 **1,000 条／5 MB**。翻译及手动测试在 **Usage → Purpose: Translation** 中统计；本地复用不增加请求与 Token。服务不返回费用时，在 **Model prices** 配置翻译模型价格。独立密钥显示掩码，可用 **Remove translation key** 清除本地保存；输入框留空保留原密钥。
 
@@ -239,7 +255,7 @@ SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `ht
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.2.5-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.3.0-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 

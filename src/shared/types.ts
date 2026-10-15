@@ -171,6 +171,7 @@ export interface WindowPreferences {
 }
 
 export interface NotesDesktopApi {
+  library?: import("./library").LibraryDesktopApi;
   translation?: import("./translation").TranslationDesktopApi;
   ai?: import("./ai").AIDesktopApi;
   foundation?: {

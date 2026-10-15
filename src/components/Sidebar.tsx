@@ -6,8 +6,10 @@ import type { Book, Note, NoteFilter, Theme, WorkspaceSortOrder } from "../share
 import { BookTree } from "./BookTree";
 import { SearchIcon } from "./Icons";
 import { RESEARCH_PAGES, type ResearchPage, type WorkspaceMode } from "../shared/research";
+import type { LibraryCollection } from "../shared/library";
 
 interface SidebarProps {
+  libraryCollection?: LibraryCollection; onLibraryCollectionChange?(value: LibraryCollection): void;
   notes: Note[]; books: Book[]; mode: WorkspaceMode; activeBookId: string | null; activePageId: string | null; activeId: string | null;
   researchPage: ResearchPage; onResearchPageChange(value: ResearchPage): void;
   query: string; filter: NoteFilter; theme: Theme; searchRef: RefObject<HTMLInputElement | null>;
@@ -55,7 +57,7 @@ export function Sidebar(props: SidebarProps) {
       {activeBook ? <><div className="book-actions"><button onClick={() => props.onNewPage(true)}>＋ Section</button><button onClick={() => props.onNewPage(false)}>＋ Child Page</button></div><div className="book-secondary-actions"><button onClick={props.onBookSettings}>Settings</button><button onClick={props.onExportBook}>Export</button><button onClick={props.onBuildBook}>Build</button><button onClick={props.onPublishBook}>Publish</button><button className="danger-text" onClick={props.onDeleteBook}>Delete</button></div><div className="note-list"><BookTree book={activeBook} notes={props.notes} activePageId={props.activePageId} onSelect={props.onSelectPage} onMove={props.onMovePage} /></div></> : <div className="list-empty">No Books yet<br /><button className="text-button" onClick={props.onNewBook}>Create your first Book</button></div>}
     </> : props.mode === "research" ? <nav className="research-navigation" aria-label="Research pages">
       {RESEARCH_PAGES.map(page => <button key={page.id} className={props.researchPage === page.id ? "active" : ""} aria-current={props.researchPage === page.id ? "page" : undefined} onClick={() => props.onResearchPageChange(page.id)}>{page.label}</button>)}
-    </nav> : <div className="library-sidebar"><strong>Source materials</strong><p>Original documents and existing attachments in one workspace.</p><span>PDF / EPUB reading is coming soon.</span></div>}
+    </nav> : <div className="library-sidebar"><nav className="research-navigation library-navigation" aria-label="Library collections">{([{ id: "all", label: "All files" }, { id: "imports", label: "Imports" }, { id: "materials", label: "Source materials" }] as const).map(item => <button key={item.id} className={(props.libraryCollection ?? "all") === item.id ? "active" : ""} aria-current={(props.libraryCollection ?? "all") === item.id ? "page" : undefined} onClick={() => { props.onLibraryCollectionChange?.(item.id); props.onClose(); }}>{item.label}</button>)}</nav><p>Keep original documents together with the images and attachments used in your writing.</p></div>}
     <footer className="sidebar-footer"><div id="translation-toggle-slot"/><div className="theme-row"><span className="theme-label">Theme</span><div className="theme-switch" role="group" aria-label="Choose theme"><button className="theme-option" aria-pressed={props.theme === "light"} onClick={() => props.onThemeChange("light")}><span>☀</span> Light</button><button className="theme-option" aria-pressed={props.theme === "dark"} onClick={() => props.onThemeChange("dark")}><span>☾</span> Dark</button></div></div><div className="storage-row"><button className="text-button" onClick={props.onEnvironmentSetup}>Environment Setup</button><button className="text-button" onClick={props.onDataLocation}>Data Location</button>{props.mode === "notes" && <button className="text-button" onClick={props.onClear}>Clear Notes</button>}</div></footer>
   </aside>;
 }

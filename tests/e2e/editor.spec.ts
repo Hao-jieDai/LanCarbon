@@ -40,7 +40,7 @@ test("Edit layout, keyboard, composition, mode navigation and restart recovery",
     await page.getByRole("button", { name: /ReadMe/ }).click();
     await expectEditorLayout(page);
     await page.screenshot({ path: testInfo.outputPath("readme-fixed.png") });
-    await page.getByRole("button", { name: /Long source/ }).click();
+    await page.getByRole("button", { name: /^Long source/ }).click();
     await expectEditorLayout(page);
     await page.getByLabel("Note content").click();
     await page.getByLabel("Note content").press("Control+End");
