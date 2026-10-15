@@ -10,3 +10,6 @@ playwright-report/
 backups/
 acceptance/
 .dev-workspace/
+
+public/pdfjs/
+src/generated/

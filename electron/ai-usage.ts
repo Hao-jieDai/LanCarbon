@@ -117,7 +117,8 @@ export class AIUsageStore extends SerializedUsage {
       }
     });
   }
-  async query(input: AIUsageQuery = {}): Promise<AIUsagePage> {
+  async allRecords(): Promise<AIUsageRecord[]> { return (await this.query({}, true)).records; }
+  async query(input: AIUsageQuery = {}, includeAll = false): Promise<AIUsagePage> {
     if (!input || typeof input !== "object" || (input.from !== undefined && !validDay(input.from)) || (input.to !== undefined && !validDay(input.to)) || (input.from && input.to && input.from > input.to)) throw new Error("Choose a valid date range.");
     if (input.purpose !== undefined && !["chat", "test", "translation"].includes(input.purpose)) throw new Error("Invalid usage purpose.");
     if (input.page !== undefined && (!Number.isSafeInteger(input.page) || input.page < 1 || input.page > 1_000_000)) throw new Error("Invalid usage page.");
@@ -148,7 +149,7 @@ export class AIUsageStore extends SerializedUsage {
       const sources = [...new Map(all.map(record => [record.providerId, { id: record.providerId, name: record.providerName }])).values()];
       const models = [...new Map(all.filter(record => !input.providerId || record.providerId === input.providerId).map(record => [record.modelId, { id: record.modelId, name: record.modelName }])).values()];
       const filtered = all.filter(record => (!input.providerId || record.providerId === input.providerId) && (!input.modelId || record.modelId === input.modelId) && (!input.purpose || record.purpose === input.purpose));
-      const pageSize = 10, page = Math.min(input.page ?? 1, Math.max(1, Math.ceil(filtered.length / pageSize)));
+      const pageSize = includeAll ? Math.max(1, filtered.length) : 10, page = Math.min(input.page ?? 1, Math.max(1, Math.ceil(filtered.length / pageSize)));
       return { ...summarizeUsage(filtered), activity: usageActivity(filtered), usdToCny: await this.prices.exchangeRate(), records: filtered.slice((page - 1) * pageSize, page * pageSize), totalRecords: filtered.length, page, pageSize, sources, models, ...(warning ? { warning } : {}) };
     });
   }

@@ -116,3 +116,11 @@ it("serializes tutorial asset synchronization with version writes and supports n
   expect((await assets.read(asset.id)).bytes.toString()).toBe("Nested replacement");
   expect((await assets.list()).filter(value => value.id !== asset.id).map(value => value.id)).toEqual(official);
 });
+
+it("shares the external editing session between imported PDFs and linked writing attachments", async () => {
+  const { store, edits, assets, importPdf } = await fixture(), original = await importPdf("linked.pdf");
+  const attached = await assets.importFile(await store.filePath(original.id), false);
+  const opened = await edits.prepare(attached.id); expect(await edits.prepare(original.id)).toBe(opened);
+  await saveExternal(opened, pdfFixture("Edited linked original")); expect((await edits.sync()).errors).toEqual([]);
+  expect((await store.read(original.id)).entry.version).toBe(2); expect((await assets.read(attached.id)).bytes).toEqual(pdfFixture("Edited linked original"));
+});

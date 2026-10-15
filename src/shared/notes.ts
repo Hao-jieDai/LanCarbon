@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.3.1";
+export const RELEASE_VERSION = "2.4.0";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.3.1 adds Library subfolders, explicit duplicate reports, stable moves and external-save version history. Ordinary resources open in their default apps; Attach file starts in Library and reuses imported originals. Existing personal writing and AI configuration are preserved. Internal PDF/EPUB readers follow separately.
+Version 2.4.0 adds offline PDF reading with search, outlines, thumbnails, saved progress and selection translation, plus manually calibrated API balance estimates by source. Notes and Books can open PDF attachments in the same reader. Existing writing, files, versions and AI configuration are preserved; EPUB reading follows separately.
 
 **Important publishing fix:** LanCarbon now preserves the system tutorial's GitHub repository binding when synchronizing official tutorial content. Earlier builds could show the repository as connected in the interface while the publishing backend had already lost that connection, preventing Publish from continuing. If an earlier build has already removed the binding, reconnect the existing repository once after upgrading; subsequent tutorial synchronization will retain it.
 
@@ -36,16 +36,30 @@ LanCarbon now uses the new Logo consistently across the application, installer, 
 
 SiliconFlow uses base address \`https://api.siliconflow.cn/v1\`; OpenRouter uses \`https://openrouter.ai/api/v1\`. Use **Refresh models** or your platform's catalogue for current IDs. The OpenRouter model \`meta-llama/llama-4-maverick\` can be added manually when available to your account.
 
-Keys remain encrypted for the current Windows account in **Config/ai-settings.json**; only masked previews reach the interface. Moving to another Windows account may require re-entry. Back up the complete LanCarbon home folder, including Config, Cache and Library, together with any separately selected Data location. Conversations are local in **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; closing LanCarbon stops it and preserves partial replies. Chat submits your conversation text and response guidelines; Notes, Books and Library files are not automatically attached. PDF/EPUB reading, retrieval and literature workflows remain reserved.
+Keys remain encrypted for the current Windows account in **Config/ai-settings.json**; only masked previews reach the interface. Moving to another Windows account may require re-entry. Back up the complete LanCarbon home folder, including Config, Cache and Library, together with any separately selected Data location. Conversations are local in **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; closing LanCarbon stops it and preserves partial replies. Chat submits your conversation text and response guidelines; Notes, Books and Library files are not automatically attached. PDF reading is available in Library; EPUB reading, retrieval and literature workflows follow separately.
 
 ### Library imports
 
 1. Open **Library → Imports**, choose a destination folder and use **Import PDF / EPUB** or drop local documents into the main area. Each batch accepts 20 files, 100 MB each. **New folder** creates an Imports subfolder; the sidebar shows the hierarchy. **All files** and filename search show file locations. Source materials remains the managed writing-resource collection.
 2. Duplicate checks use exact file contents across Library and its retained versions. Import details shows the incoming filename, existing/current name, location and matching version. Importing a.pdf, renaming it b.pdf, then importing the same a.pdf reuses b.pdf and retains its name. Re-importing an old revision does not roll back the current one. **Locate** opens the existing entry; **Move to…** can move an imported original into the chosen folder.
 3. Equal names with different contents receive numbered names in the same folder; the report shows the final name. Different folders can contain equal names. Renaming checks names in the same folder, ignores case and preserves extensions; conflicts show a suggested available name without overwriting or merging. **Move** preserves the document ID, writing links and versions; conflicts require **Keep both as…** or Cancel.
-4. **Open** or double-click uses the default app for documents, images, TXT, Word and other ordinary resources. Executables, scripts and shortcuts are excluded. The app opens a named working copy under **Library/.Editing**; saving that file registers a new current version within a few seconds while LanCarbon runs, or after its next launch. Unchanged saves add no version. **Versions** lists revisions and **Save version** exports an earlier one; old versions remain stored locally. Saving as another file/location requires a separate import. Keep managed hash-named originals intact; use Open for editing.
+4. **Open** or double-click reads PDFs in LanCarbon; **Open externally** uses the default app. Images, TXT, Word and other ordinary resources use the default app. Executables, scripts and shortcuts are excluded. The app opens a named working copy under **Library/.Editing**; saving that file registers a new current version within a few seconds while LanCarbon runs, or after its next launch. Unchanged saves add no version. **Versions** lists revisions and **Save version** exports an earlier one; old versions remain stored locally. Saving as another file/location requires a separate import. Keep managed hash-named originals intact; use Open for editing.
 5. Notes and Books **Attach file** starts in root **Library**. Selecting an imported original reuses it with its current display name and a stable writing reference, without copying its bytes into assets. Later rename/move/version changes keep the reference valid and use the current contents. Removing this linked resource in Resources removes its writing references while the Library original remains in Imports. Ordinary resource deletion still removes its files and versions after confirmation.
 6. **Folder** reveals the managed original and **Save a copy** exports outside Library. Importing itself is offline and inserts no writing link. Catalogs and edit-session records live in the active **Data/Library**; originals, retained versions and working copies stay in root **Library**. Moving Data carries the records. Back up both locations, including pending working copies. After using folders, linked attachments or new versions, application rollback needs a matching data snapshot; preserve newer writing separately before restoring it.
+
+### Reading PDFs
+
+Open a PDF from Library with **Open** or a double-click. In a Note or Book, click its attachment in **Preview**, or use **Resources → Read PDF**. **Back** returns to the original writing or Library view. **Open externally** retains default-app editing and file versions; EPUB and other ordinary files still use their default apps.
+
+Use page numbers, previous/next, **Fit width**, **Fit page**, zoom, or **Pages / Contents** for on-demand thumbnails and the document's own outline. **Find in PDF** (Ctrl+F) searches the document with previous/next matches. Reading position and zoom are saved by document ID in **Data/Library/reading.json**, so rename/move and linked writing attachments share progress. The currently open PDF is an immutable reading snapshot; a new externally saved version offers **Reload latest version**.
+
+Enable the existing **Translate** switch (Ctrl+Alt+T), then select short English text in the PDF. Existing translation settings, cache and usage accounting apply. PDFs need a selectable text layer for selection/search; image-only scans remain viewable. Reading is local and does not call AI or change the file. Password-protected files prompt locally without saving the password. PDF scripts and editing are disabled. Annotation creation, OCR and EPUB reading follow separately. The reader loads page data as needed and releases the open snapshot when closed; no PDF parsing or thumbnail disk cache is created.
+
+### Estimated API balances
+
+At the top of **Research → Usage**, each configured source has **Set balance / Update balance**. Enter the platform's full current balance and choose CNY or USD. Saving records the calibration time and cumulative charges. Only subsequent recorded fees are deducted, combining all models, chat, connection tests and translation using that connection. Requests already running at calibration are counted when their fees arrive. Reported charges take priority; otherwise the request's saved price estimate is used. Unknown fees stay unknown.
+
+After a top-up, enter the new full platform balance; this resets the starting point without deleting historical usage. Cards show the estimate and calibration time independently of Usage date filters. Low estimates (approximately CNY 10 or less, including zero/negative) are highlighted. **Stop tracking** removes only that balance checkpoint. Reused translation connections share their original source; dedicated connections have their own entries. Source identities include the API address. Local balance checkpoints live with the usage ledger in **Data/Research/Usage/balances.json**. Other apps' charges or platform credits require manual recalibration; no balance API is called. Cross-currency deductions use the exchange rate saved in Model prices.
 
 ### Selection translation
 
@@ -72,9 +86,23 @@ Viewing Usage works offline and does not call a model. Local logs are in **Data/
 1. 打开 **Library → Imports**，选择目标文件夹后 **Import PDF / EPUB** 或拖入本地文档。每批最多 20 个、每个 100 MB。**New folder** 创建 Imports 子文件夹，左侧显示目录树。**All files** 与文件名搜索显示所属位置；Source materials 仍用于受管理的写作资源。
 2. 在整个 Library 及保留版本中按文件字节去重。Import details 显示导入名称、已有文件当前名称、位置和匹配版本。导入 a.pdf、改名 b.pdf 后，再导入相同 a.pdf，会复用 b.pdf 并保留改名。重新导入旧版本不会回退当前版本。**Locate** 定位原条目；**Move to…** 可将导入原件移动到所选文件夹。
 3. 同文件夹内同名不同内容自动编号，报告显示最终名称；不同文件夹允许同名。重命名只检查同文件夹名称，忽略大小写并保留扩展名，冲突时提示可用名称，不覆盖或合并。**Move** 保留文档 ID、引用与全部版本；移动重名时明确选择 **Keep both as…** 或取消。
-4. **Open** 或双击通过系统默认程序打开文档、图片、TXT、Word 等普通资料，程序、脚本和快捷方式不直接打开。软件打开 **Library/.Editing** 中带名称的编辑副本；保存该文件后，LanCarbon 运行时会在几秒内登记新版本，关闭期间的保存会在下次启动后处理。内容未变不新增版本。**Versions** 查看历史，**Save version** 导出旧版本；历史原件保留在本地。另存其他文件或位置需另行导入。请保持带哈希的受管理原件完整，通过 Open 进行编辑。
+4. **Open** 或双击在 LanCarbon 阅读 PDF，**Open externally** 使用默认程序；图片、TXT、Word 等普通资料使用默认程序，程序、脚本和快捷方式不直接打开。软件打开 **Library/.Editing** 中带名称的编辑副本；保存该文件后，LanCarbon 运行时会在几秒内登记新版本，关闭期间的保存会在下次启动后处理。内容未变不新增版本。**Versions** 查看历史，**Save version** 导出旧版本；历史原件保留在本地。另存其他文件或位置需另行导入。请保持带哈希的受管理原件完整，通过 Open 进行编辑。
 5. Notes 和 Books 的 **Attach file** 默认打开根目录 **Library**。选择导入原件时沿用当前显示名与稳定写作引用，不再把原件复制到 assets。之后改名、移动或产生新版本，引用保持有效并读取当前内容。在 Resources 删除此类关联资源时移除写作引用，原件仍在 Imports；普通资源删除仍会在确认后删除文件和历史版本。
 6. **Folder** 定位受管理原件，**Save a copy** 将副本导出到 Library 之外。导入本身可离线完成，不自动插入写作链接。目录及编辑会话记录在实际 **Data/Library**，原件、历史版本和编辑副本在根目录 **Library**；更改 Data 携带记录。两处都需备份，包括尚未登记的编辑副本。使用子目录、关联附件或新版本后，回滚程序需要匹配的数据快照；恢复前另行保留新增写作内容。
+
+### PDF 阅读
+
+在 Library 中点击 **Open** 或双击 PDF。在 Note／Book 的 **Preview** 点击 PDF 附件，或通过 **Resources → Read PDF** 打开；**Back** 返回原来的写作或文件列表。**Open externally** 保留默认程序编辑和文件版本功能，EPUB 及其他普通文件继续使用默认程序。
+
+使用页码、前后翻页、**Fit width**、**Fit page**、缩放，以及 **Pages / Contents** 中按需生成的缩略图和原文目录。**Find in PDF**（Ctrl+F）提供全文搜索与前后匹配。阅读位置和缩放按文档 ID 保存在 **Data/Library/reading.json**；改名、移动及写作附件共用进度。正在阅读的内容保持为打开时的版本，外部保存新版后，可选择 **Reload latest version**。
+
+开启现有 **Translate**（Ctrl+Alt+T），选取 PDF 中的短英文即可翻译，沿用翻译配置、缓存和用量统计。选词与搜索需要 PDF 自带文字层；纯扫描件仍可查看。阅读本身离线运行，不调用 AI、不修改原件。加密文件在本地输入密码，密码不保存；禁用 PDF 脚本和编辑。新建批注、OCR 和 EPUB 阅读另行提供。页面按需读取，关闭后释放打开快照，不建立 PDF 解析或缩略图磁盘缓存。
+
+### API 估算余额
+
+在 **Research → Usage** 顶部，已配置来源可通过 **Set balance / Update balance** 填写平台当前的完整余额，并选择 CNY 或 USD。保存时记录校准时间和累计费用，只扣减此后记录到的费用；同一连接下的所有模型、聊天、连接测试和翻译合并计算，校准时尚未结束的请求在费用结算后计入。优先使用接口返回费用，否则采用请求当时保存的价格估算；未知费用保持未知。
+
+充值后重新输入平台新的完整余额，重新设置起点，不清空历史用量。卡片展示估算余额和校准时间，独立于 Usage 日期筛选。折合约人民币 10 元及以下（含零、负值）突出提醒。**Stop tracking** 只移除余额起点。复用翻译连接计入原来源；独立连接单独显示，来源身份包含 API 地址。校准记录与用量账本一起保存在 **Data/Research/Usage/balances.json**；其他软件消费或平台赠额需手动重新校准，不调用平台余额接口。跨币种扣减沿用 Model prices 中的手动汇率。
 
 ### 选词翻译
 
@@ -152,7 +180,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.3.1 新增 Library 子文件夹、明确的重复报告、稳定移动和外部保存版本历史；普通资料可用默认程序打开，Attach file 从 Library 开始并复用导入原件。保留现有个人写作与 AI 配置，内置 PDF/EPUB 阅读器另行更新。
+2.4.0 新增离线 PDF 阅读、搜索、目录、缩略图、进度记忆及选词翻译，并按来源显示手动校准的 API 估算余额。Note／Book 的 PDF 附件使用同一阅读器；保留现有写作、文件版本和 AI 配置，EPUB 阅读另行提供。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
@@ -174,7 +202,7 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 
 SiliconFlow 地址为 \`https://api.siliconflow.cn/v1\`，OpenRouter 地址为 \`https://openrouter.ai/api/v1\`。通过 **Refresh models** 或平台目录获取当前准确 ID；账号可用时可以手动添加 OpenRouter 模型 \`meta-llama/llama-4-maverick\`。
 
-密钥仍使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，界面只接收掩码。迁移 Windows 账户后可能需要重填；备份时保留完整 LanCarbon 文件夹（包括 Config、Cache 和 Library），另选的数据目录也需同时备份。会话位于 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，关闭软件会停止生成并保存已有回复。Chat 提交会话文字与回答规范，Notes、Books 和 Library 文件不会自动附加。PDF/EPUB 阅读、检索与文献工作流仍留待后续阶段。
+密钥仍使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，界面只接收掩码。迁移 Windows 账户后可能需要重填；备份时保留完整 LanCarbon 文件夹（包括 Config、Cache 和 Library），另选的数据目录也需同时备份。会话位于 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，关闭软件会停止生成并保存已有回复。Chat 提交会话文字与回答规范，Notes、Books 和 Library 文件不会自动附加。PDF 可在 Library 内阅读；EPUB 阅读、检索与文献工作流另行提供。
 
 ### 工作区
 

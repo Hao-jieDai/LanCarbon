@@ -35,7 +35,7 @@ test("Edit layout, keyboard, composition, mode navigation and restart recovery",
     let page = await app.firstWindow();
     await expectEditorLayout(page);
     const securityPolicy = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute("content");
-    expect(securityPolicy).toMatch(/script-src 'self';/);
+    expect(securityPolicy).toMatch(/script-src 'self' 'wasm-unsafe-eval';/);
     expect(securityPolicy).not.toContain("'unsafe-eval'");
     await page.getByRole("button", { name: /ReadMe/ }).click();
     await expectEditorLayout(page);

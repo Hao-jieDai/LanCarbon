@@ -56,6 +56,7 @@ export class ExternalEdits {
     const action = this.queue.then(async () => {
       const sessions = await this.load(); await this.syncSessions(sessions);
       const current = await this.store.read(id);
+      id = current.entry.documentId ?? id;
       if (!canOpenResource(current.entry.name)) throw Error("Programs, scripts and shortcuts are not opened as Library documents. Use Folder to inspect the file.");
       let session = sessions.find(session => session.id === id);
       if (session) {

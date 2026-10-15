@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { AIProvider } from "../shared/ai";
 import { cnyUsageCost, formatCnyCost, formatUsageCost, localUsageDay, priceKey, type AICurrency, type AIModelPrice, type AIUsagePage, type AIUsageQuery, type AIUsageTotals } from "../shared/aiUsage";
 import { ThemedSelect } from "./ThemedSelect";
+import { AIBalances } from "./AIBalances";
 import { AIUsageHeatmap } from "./AIUsageHeatmap";
 import { DatePicker } from "./DatePicker";
 
@@ -88,6 +89,7 @@ export function AIUsage({ providers, visible }: { providers: AIProvider[]; visib
   const filter = (patch: Partial<AIUsageQuery>) => setQuery(previous => ({ ...previous, ...patch, page: 1 }));
   return <div className="ai-usage-content">
     <div className="usage-heading"><div><h1>Usage</h1><p>Token usage and costs recorded by LanCarbon. History is available offline.</p></div><button className="quiet-button" disabled={busy} onClick={() => void reload()}>Refresh</button></div>
+    <AIBalances visible={visible}/>
     <div className="usage-filters">
       <label>From<DatePicker label="Usage from" value={query.from ?? ""} onChange={from => filter({ from: from || undefined })}/></label>
       <label>To<DatePicker label="Usage to" value={query.to ?? ""} onChange={to => filter({ to: to || undefined })}/></label>

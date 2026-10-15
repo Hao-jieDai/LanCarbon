@@ -2,6 +2,12 @@ import { contextBridge, ipcRenderer, webUtils } from "electron";
 import type { NotesDesktopApi } from "../src/shared/types";
 
 const api: NotesDesktopApi = {
+  reader: {
+    open: id => ipcRenderer.invoke("reader:open", id),
+    range: (token, begin, end) => ipcRenderer.invoke("reader:range", token, begin, end),
+    release: token => ipcRenderer.invoke("reader:release", token),
+    savePosition: (id, position) => ipcRenderer.invoke("reader:save-position", id, position)
+  },
   library: {
     list: () => ipcRenderer.invoke("library:list"),
     choose: folderId => ipcRenderer.invoke("library:choose", folderId),
@@ -54,6 +60,9 @@ const api: NotesDesktopApi = {
     send: (id, providerId, modelId, text, retry) => ipcRenderer.invoke("ai:send", id, providerId, modelId, text, retry),
     stop: id => ipcRenderer.invoke("ai:stop", id),
     onChat: callback => { const listener = (_event: Electron.IpcRendererEvent, chat: Parameters<typeof callback>[0]) => callback(chat); ipcRenderer.on("ai:chat", listener); return () => ipcRenderer.removeListener("ai:chat", listener); },
+    balances: () => ipcRenderer.invoke("ai:balances"),
+    saveBalance: input => ipcRenderer.invoke("ai:save-balance", input),
+    removeBalance: source => ipcRenderer.invoke("ai:remove-balance", source),
     usage: query => ipcRenderer.invoke("ai:usage", query),
     prices: () => ipcRenderer.invoke("ai:prices"),
     savePrice: price => ipcRenderer.invoke("ai:save-price", price),

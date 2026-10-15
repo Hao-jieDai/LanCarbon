@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import "katex/dist/katex.min.css";
 import { renderMystPreview, type PreviewDocument, type PreviewAssets } from "../preview/mystPreview";
+import { requestPdfReading } from "../shared/pdfReader";
 import { assetReferences } from "../shared/assets";
 
 interface MarkdownPreviewProps {
@@ -62,7 +63,7 @@ export function MarkdownPreview(props: MarkdownPreviewProps) {
         if (!link) return;
         event.preventDefault();
         const resource = link.getAttribute("data-asset-id");
-        if (resource && window.notesDesktop?.assets) { void window.notesDesktop.assets.saveCopy(resource).then(result => { if (!result.ok) setLinkMessage(result.error); }); return; }
+        if (resource && window.notesDesktop?.assets) { void (async () => { const result = await window.notesDesktop.assets!.list(); if (!result.ok) throw Error(result.error); const asset = result.assets.find(asset => asset.id === resource); if (asset && /\.pdf$/i.test(asset.name) && window.notesDesktop.reader) { requestPdfReading(resource); return; } const saved = await window.notesDesktop.assets!.saveCopy(resource); if (!saved.ok) throw Error(saved.error); })().catch(error => setLinkMessage(error.message)); return; }
         const noteId = link.getAttribute("data-preview-note");
         const anchor = link.getAttribute("data-preview-anchor") ?? "";
         if (noteId === (current?.id ?? "current")) { scrollTo(anchor); setLinkMessage(""); }

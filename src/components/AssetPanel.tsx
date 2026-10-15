@@ -1,3 +1,4 @@
+import { requestPdfReading } from "../shared/pdfReader";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { resourceUsages, type Asset } from "../shared/assets";
@@ -38,7 +39,7 @@ export function AssetPanel({notes,books,onInsert,onClose,beforeChange,onResource
       return <article className="asset-row" key={asset.id}>
         <label className="asset-select-all"><input type="checkbox" aria-label={`Select ${asset.name}`} disabled={busy} checked={selected.includes(asset.id)} onChange={e=>setSelected(e.target.checked?[...selected,asset.id]:selected.filter(id=>id!==asset.id))}/><strong>{asset.name}</strong></label>
         <small>{asset.documentId ? "Library original · " : ""}{asset.mime.startsWith("image/")?"Image":"Attachment"} · {(asset.size/1024).toFixed(1)} KB{asset.missing?" · Missing file":""}</small>
-        <div className="asset-actions"><button disabled={busy||asset.missing} onClick={()=>onInsert(asset)}>Insert</button><button disabled={busy||asset.missing} onClick={()=>void window.notesDesktop.assets!.saveCopy(asset.id).then(r=>{if(!r.ok)setError(r.error);})}>Save a copy</button><button className="danger-text" disabled={busy} onClick={()=>void remove([asset.id])}>Delete</button></div>
+        <div className="asset-actions">{/\.pdf$/i.test(asset.name)&&window.notesDesktop.reader&&<button disabled={busy||asset.missing} onClick={()=>{onClose();requestPdfReading(asset.id);}}>Read PDF</button>}<button disabled={busy||asset.missing} onClick={()=>onInsert(asset)}>Insert</button><button disabled={busy||asset.missing} onClick={()=>void window.notesDesktop.assets!.saveCopy(asset.id).then(r=>{if(!r.ok)setError(r.error);})}>Save a copy</button><button className="danger-text" disabled={busy} onClick={()=>void remove([asset.id])}>Delete</button></div>
         <details><summary>{uses.length?`${uses.length} reference${uses.length===1?"":"s"} (all locations)`:"Not referenced"}</summary><ul>{uses.map((ref,i)=><li key={i}>{ref.location} / {ref.title}{ref.line?` — line ${ref.line}`:""}</li>)}</ul></details>
       </article>;
     })}{!visible.length&&<p>No matching resources.</p>}</div>

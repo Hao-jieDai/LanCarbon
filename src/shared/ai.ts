@@ -27,6 +27,9 @@ export interface AIDesktopApi {
   send(id: string, providerId: string, modelId: string, text: string, retry?: boolean): Promise<AIResult<{ chat: AIChat }>>;
   stop(id: string): Promise<AIResult<object>>;
   onChat(callback: (chat: AIChat) => void): () => void;
+  balances(): Promise<AIResult<{ balances: import("./aiBalances").SourceBalance[]; usdToCny: number }>>;
+  saveBalance(input: import("./aiBalances").BalanceInput): Promise<AIResult<object>>;
+  removeBalance(source: import("./aiBalances").BalanceSource): Promise<AIResult<object>>;
   usage(query?: AIUsageQuery): Promise<AIResult<{ usage: AIUsagePage }>>;
   prices(): Promise<AIResult<{ prices: AIModelPrice[]; usdToCny: number }>>;
   savePrice(price: AIModelPriceInput): Promise<AIResult<{ prices: AIModelPrice[] }>>;

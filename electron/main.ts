@@ -29,6 +29,9 @@ import { migrateAssetsToLibrary } from "./asset-migration";
 import { AISettingsStore, AIChatStore } from "./ai-storage";
 import { AIClient, redactAIError } from "./ai-client";
 import { AIService } from "./ai-service";
+import { PdfReaderStore } from "./pdf-reader";
+import { AIBalanceStore } from "./ai-balances";
+import type { BalanceInput, BalanceSource } from "../src/shared/aiBalances";
 import { AIPriceStore, AIUsageStore } from "./ai-usage";
 import { TranslationCache, TranslationService, TranslationSettingsStore } from "./translation";
 import { translationPriceProviders, TRANSLATION_TEST_TEXT, type TranslationSettings } from "../src/shared/translation";
@@ -174,6 +177,9 @@ app.whenReady().then(async () => {
   const priceProviders = async () => translationPriceProviders(await aiSettings.list(), await translationConnections.list(), await translationSettings.get());
   const usageStores = new Map<string, AIUsageStore>();
   const usage = () => { let value = usageStores.get(dataDirectory); if (!value) { value = new AIUsageStore(dataDirectory, aiPrices); usageStores.set(dataDirectory, value); } return value; };
+  const balanceStores = new Map<string, AIBalanceStore>();
+  const balances = () => { let value = balanceStores.get(dataDirectory); if (!value) { value = new AIBalanceStore(dataDirectory, usage()); balanceStores.set(dataDirectory, value); } return value; };
+  const balanceSources = async () => (await priceProviders()).filter(provider => provider.hasKey || provider.models.length > 0).map(provider => ({ providerId: provider.id, providerName: provider.name, baseUrl: provider.baseUrl }));
   const syncPrices = async () => {
     try { const providers = await priceProviders(); await aiPrices.retain(providers.flatMap(provider => provider.models.map(model => ({ providerId: provider.id, baseUrl: provider.baseUrl, modelId: model.id })))); }
     catch { usage().reportFailure("Saved model prices could not be cleaned. Historical usage is preserved; check your configuration folder."); }
@@ -194,6 +200,9 @@ app.whenReady().then(async () => {
     if (event.sender !== mainWindow?.webContents) return { ok: false, error: "The AI workspace is unavailable" };
     try { return { ok: true, ...await action(...args) }; } catch (error) { return { ok: false, error: redactAIError(error) }; }
   });
+  aiHandler("ai:balances", async () => { const usdToCny = await aiPrices.exchangeRate(); return { balances: await balances().list(await balanceSources(), usdToCny), usdToCny }; });
+  aiHandler("ai:save-balance", async (input: BalanceInput) => { const source = (await balanceSources()).find(source => source.providerId === input.providerId && source.baseUrl === input.baseUrl); if (!source) throw Error("Choose a configured API source."); await balances().save({ ...input, providerName: source.providerName }); mainWindow?.webContents.send("ai:usage-changed"); return {}; });
+  aiHandler("ai:remove-balance", async (source: BalanceSource) => { await balances().remove(source); mainWindow?.webContents.send("ai:usage-changed"); return {}; });
   aiHandler("ai:providers", async () => ({ providers: await aiSettings.list() }));
   aiHandler("ai:price-providers", async () => ({ providers: await priceProviders() }));
   aiHandler("ai:save-provider", async (input: AIProviderInput) => { const providers = await aiSettings.save(input); await syncPrices(); translationChanged(); return { providers }; });
@@ -254,11 +263,13 @@ app.whenReady().then(async () => {
     }
     return libraryManager;
   };
+  const readerStores = new Map<string, PdfReaderStore>();
+  const reader = () => { let value = readerStores.get(dataDirectory); if (!value) { value = new PdfReaderStore(dataDirectory, libraryStore()); readerStores.set(dataDirectory, value); } return value; };
   const editStores = new Map<string, ExternalEdits>();
   const edits = () => { let manager = editStores.get(dataDirectory); if (!manager) { manager = new ExternalEdits(dataDirectory, directories.library, libraryStore()); editStores.set(dataDirectory, manager); } return manager; };
   const libraryChanged = () => mainWindow?.webContents.send("library:changed");
   const syncEdits = async () => { const result = await edits().sync(); if (result.changed) libraryChanged(); return result; };
-  flushExternal = syncEdits;
+  flushExternal = async () => { await syncEdits(); await reader().flush(); await balances().flush(); };
   let scanningExternal = false;
   externalTimer = setInterval(() => { if (scanningExternal) return; scanningExternal = true; void syncEdits().catch(() => undefined).finally(() => { scanningExternal = false; }); }, 3000);
   externalTimer.unref();
@@ -285,6 +296,10 @@ app.whenReady().then(async () => {
     return result;
   };
   const assetError = (error: unknown) => ({ ok: false, canceled: error instanceof Error && error.message === "Import canceled", error: error instanceof Error ? error.message : "Resource operation failed", ...(error instanceof LibraryNameConflict ? { suggestedName: error.suggestedName } : {}) });
+  aiHandler("reader:open", async (id: string) => { await syncEdits(); return { session: await reader().open(id) }; });
+  aiHandler("reader:range", async (token: string, begin: number, end: number) => ({ bytes: reader().range(token, begin, end) }));
+  aiHandler("reader:release", async (token: string) => { reader().release(token); return {}; });
+  aiHandler("reader:save-position", async (id: string, position: import("../src/shared/pdfReader").ReadingPosition) => { await reader().savePosition(id, position); return {}; });
   ipcMain.handle("library:list", async () => {
     try { const scan = await syncEdits(); return { ok: true, entries: await libraryStore().list(), folders: await libraryStore().folders(), editErrors: scan.errors }; } catch (error) { return assetError(error); }
   });
@@ -461,6 +476,7 @@ app.whenReady().then(async () => {
     try {
       await translationService.shutdown(); await aiService.shutdown();
       await syncEdits();
+      await usage().flush(); await balances().flush(); await reader().flush(); reader().release();
       await dataLocationManager.prepareTarget(dataDirectory, target);
       const current = await store.loadWorkspace();
       const targetStore = new NotesStore(target, bundledStarterContent, managedAssetDirectory);
@@ -472,6 +488,7 @@ app.whenReady().then(async () => {
       }
       await dataLocationManager.save(target);
       store = targetStore;
+
       dataDirectory = target;
       libraryStore();
       return { ok: true, path: target };
