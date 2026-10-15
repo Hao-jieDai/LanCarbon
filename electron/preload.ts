@@ -24,6 +24,8 @@ const api: NotesDesktopApi = {
     open: id => ipcRenderer.invoke("library:open", id),
     saveCopy: (id, version) => ipcRenderer.invoke("library:save-copy", id, version),
     createFolder: (name, parentId) => ipcRenderer.invoke("library:create-folder", name, parentId),
+    renameFolder: (id, name) => ipcRenderer.invoke("library:rename-folder", id, name),
+    deleteFolder: id => ipcRenderer.invoke("library:delete-folder", id),
     move: (id, folderId, keepBoth) => ipcRenderer.invoke("library:move", id, folderId, keepBoth),
     versions: id => ipcRenderer.invoke("library:versions", id),
     onChanged: callback => { const listener = () => callback(); ipcRenderer.on("library:changed", listener); return () => ipcRenderer.removeListener("library:changed", listener); }

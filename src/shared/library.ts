@@ -4,8 +4,9 @@ import type { LibraryDocument } from "./research";
 export type LibraryCollection = "all" | "imports" | "materials";
 export type LibraryFormat = "pdf" | "epub" | "image" | "attachment";
 export interface ResourceVersion { version: number; file: string; sha256: string; size: number; mime: string; createdAt: string }
-export interface LibraryFolder { id: string; parentId: string | null; name: string }
+export interface LibraryFolder { id: string; parentId: string | null; name: string; diskId?: string; missing?: boolean }
 export interface LibraryEntry extends Asset {
+  syncError?: string;
   source: "import" | "existing-resource";
   format: LibraryFormat;
   folderId?: string | null;
@@ -14,6 +15,7 @@ export interface LibraryEntry extends Asset {
   sha256?: string;
 }
 export interface LibraryImportRecord extends LibraryDocument {
+  diskId?: string;
   format: "pdf" | "epub";
   source: "import";
   size: number;
@@ -38,6 +40,8 @@ export interface LibraryDesktopApi {
   importFiles(files: File[], folderId?: string | null): Promise<LibraryImportResult>;
   rename(id: string, name: string): Promise<{ ok: true; entry: LibraryEntry } | { ok: false; error: string }>;
   createFolder(name: string, parentId: string | null): Promise<{ ok: true; folder: LibraryFolder } | { ok: false; error: string }>;
+  renameFolder(id: string, name: string): Promise<{ ok: true; folder: LibraryFolder } | { ok: false; error: string }>;
+  deleteFolder(id: string): Promise<{ ok: true; parentId: string | null } | { ok: false; error: string }>;
   move(id: string, folderId: string | null, keepBoth?: boolean): Promise<{ ok: true; entry: LibraryEntry } | { ok: false; error: string; suggestedName?: string }>;
   versions(id: string): Promise<{ ok: true; versions: ResourceVersion[] } | { ok: false; error: string }>;
   reveal(id: string): Promise<{ ok: boolean; error?: string }>;

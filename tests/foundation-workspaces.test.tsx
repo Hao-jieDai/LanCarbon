@@ -32,8 +32,8 @@ describe("foundation workspaces", () => {
     expect(window.notesDesktop.assets!.rename).toHaveBeenCalledWith(asset.id, "Renamed.pdf");
     fireEvent.click(screen.getByRole("button", { name: /Notes \/ Personal writing · line 2/ }));
     await screen.findByDisplayValue(note.title);
-    expect(screen.getByLabelText("Note content")).toHaveTextContent("Original label");
-    expect(document.querySelector(".cm-activeLine")).toHaveTextContent(asset.id);
+    expect(await screen.findByLabelText("Note content")).toHaveTextContent("Original label");
+    await waitFor(() => expect(document.querySelector(".cm-activeLine")).toHaveTextContent(asset.id));
     expect(window.notesDesktop.saveWorkspace).toHaveBeenCalledWith(expect.objectContaining({ notes: expect.arrayContaining([expect.objectContaining({ id: note.id, content: linked.content })]) }));
   });
   it("keeps edited writing across all workspaces and restores Research selection after restarting", async () => {

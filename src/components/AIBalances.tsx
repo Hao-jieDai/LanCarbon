@@ -21,7 +21,7 @@ export function AIBalances({ visible }: { visible: boolean }) {
   useEffect(() => { if (!visible || !api?.balances) return; void load().catch(error => setError(String(error))); let timer: ReturnType<typeof setTimeout> | undefined; const unsubscribe = api.onUsageChanged(() => { clearTimeout(timer); timer = setTimeout(() => void load().catch(error => setError(String(error))), 150); }); return () => { version.current++; clearTimeout(timer); unsubscribe(); }; }, [visible, api, load]);
   if (!api?.balances) return null;
   const connections = balances.flatMap(balance => balance.sources.map(source => ({ ...source, ownerId: balance.accountId, ownerName: balance.providerName, tracked: !!balance.checkpoint })));
-  const money = (balance: SourceBalance) => new Intl.NumberFormat("en-US", { style: "currency", currency: balance.checkpoint!.currency, maximumFractionDigits: 4 }).format(balance.remaining!);
+  const money = (balance: SourceBalance) => new Intl.NumberFormat("en-US", { style: "currency", currency: balance.checkpoint!.currency, currencyDisplay: "narrowSymbol", maximumFractionDigits: 4 }).format(balance.remaining!);
   const edit = (balance: SourceBalance) => {
     setEditing(balance); setName(balance.providerName); setAmount(balance.remaining === undefined ? "" : String(balance.remaining)); setAmountChanged(false); setMode(balance.checkpoint?.mode ?? "limited");
     setSelected(balance.sources.map(balanceKey)); setCurrency(balance.checkpoint?.currency ?? (new URL(balance.baseUrl).hostname === "openrouter.ai" ? "USD" : "CNY")); setError("");

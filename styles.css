@@ -989,3 +989,6 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
   .app-shell.sidebar-collapsed .editor-toolbar .mobile-menu { display: grid; }
 }
 @media (max-width: 760px) { .sidebar-collapse { display: none; } }
+
+.library-folder-actions { display: flex; flex-shrink: 0; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0 0; }
+.library-folder-actions span { font-size: 11px; color: var(--muted); }

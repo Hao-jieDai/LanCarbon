@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.3.4";
+export const RELEASE_VERSION = "2.3.5";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.3.4 prefills the current estimated balance when editing, preserves calibration during name-only edits, and removes repeated Translation wording from connection labels. Existing shared accounts and historical fees are preserved.
+Version 2.3.5 adds Library folder rename/delete actions and filesystem synchronization for Imports. It fixes renamed folders reappearing at their old paths, reports missing or directly changed originals, preserves document identity and history, and simplifies the yuan balance symbol.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -43,6 +43,8 @@ Keys remain encrypted for the current Windows account in **Config/ai-settings.js
 ### Library imports
 
 1. Open **Library → Imports**, choose a destination folder and use **Import PDF / EPUB** or drop local documents into the main area. Each batch accepts 20 files, 100 MB each. **New folder** creates an Imports subfolder; the sidebar shows the hierarchy. **All files** and filename search show file locations. Source materials remains the managed writing-resource collection.
+
+Select an Imports folder to use **Rename folder** or **Delete folder**. Deleting a folder moves its files and subfolders to the parent, numbers conflicting names, and retains document IDs, writing links and versions. It does not delete the contents. Changes made in File Explorer within Imports are checked on startup, when returning to Library, and every few seconds: folder and document renames/moves retain identity where the original can be identified; new PDF/EPUB files are indexed locally. Deleted documents remain marked missing so references are preserved. Use **Open externally** to edit file contents with version history; directly overwriting managed originals is reported and requires restoration or re-import.
 2. Duplicate checks use exact file contents across Library and its retained versions. Import details shows the incoming filename, existing/current name, location and matching version. Importing a.pdf, renaming it b.pdf, then importing the same a.pdf reuses b.pdf and retains its name. Re-importing an old revision does not roll back the current one. **Locate** opens the existing entry; **Move to…** can move an imported original into the chosen folder.
 3. Equal names with different contents receive numbered names in the same folder; the report shows the final name. Different folders can contain equal names. Renaming checks names in the same folder, ignores case and preserves extensions; conflicts show a suggested available name without overwriting or merging. **Move** preserves the document ID, writing links and versions; conflicts require **Keep both as…** or Cancel.
 4. **Open** or double-click reads PDFs in LanCarbon; **Open externally** uses the default app. Images, TXT, Word and other ordinary resources use the default app. Executables, scripts and shortcuts are excluded. The app opens a named working copy under **Library/.Editing**; saving that file registers a new current version within a few seconds while LanCarbon runs, or after its next launch. Unchanged saves add no version. **Versions** lists revisions and **Save version** exports an earlier one; old versions remain stored locally. Saving as another file/location requires a separate import. Keep managed hash-named originals intact; use Open for editing.
@@ -88,6 +90,8 @@ Viewing Usage works offline and does not call a model. Local logs are in **Data/
 ### Library 资料导入
 
 1. 打开 **Library → Imports**，选择目标文件夹后 **Import PDF / EPUB** 或拖入本地文档。每批最多 20 个、每个 100 MB。**New folder** 创建 Imports 子文件夹，左侧显示目录树。**All files** 与文件名搜索显示所属位置；Source materials 仍用于受管理的写作资源。
+
+选中 Imports 子文件夹后，使用 **Rename folder** 或 **Delete folder**。删除文件夹会把文件和子目录移到上一级，重名自动编号，保留文档 ID、写作引用与历史版本，不删除内容。在文件资源管理器中修改 Imports 后，软件会在启动、返回 Library 及运行期间每隔几秒检查：能够识别原件的文件夹或文档改名、移动会保持身份，新放入的 PDF／EPUB 会自动登记。被删除的文档保留记录并标为缺失，以保留引用。修改文件内容请使用 **Open externally** 以保留版本历史；直接覆盖受管理原件会提示异常，需要恢复或重新导入。
 2. 在整个 Library 及保留版本中按文件字节去重。Import details 显示导入名称、已有文件当前名称、位置和匹配版本。导入 a.pdf、改名 b.pdf 后，再导入相同 a.pdf，会复用 b.pdf 并保留改名。重新导入旧版本不会回退当前版本。**Locate** 定位原条目；**Move to…** 可将导入原件移动到所选文件夹。
 3. 同文件夹内同名不同内容自动编号，报告显示最终名称；不同文件夹允许同名。重命名只检查同文件夹名称，忽略大小写并保留扩展名，冲突时提示可用名称，不覆盖或合并。**Move** 保留文档 ID、引用与全部版本；移动重名时明确选择 **Keep both as…** 或取消。
 4. **Open** 或双击在 LanCarbon 阅读 PDF，**Open externally** 使用默认程序；图片、TXT、Word 等普通资料使用默认程序，程序、脚本和快捷方式不直接打开。软件打开 **Library/.Editing** 中带名称的编辑副本；保存该文件后，LanCarbon 运行时会在几秒内登记新版本，关闭期间的保存会在下次启动后处理。内容未变不新增版本。**Versions** 查看历史，**Save version** 导出旧版本；历史原件保留在本地。另存其他文件或位置需另行导入。请保持带哈希的受管理原件完整，通过 Open 进行编辑。
@@ -186,7 +190,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.3.4 修正余额编辑框，默认填入当前估算余额，仅更名时保留原校准起点，并简化翻译连接的重复名称；保留已有共享账户与历史费用。
+2.3.5 新增 Library 文件夹重命名、删除及 Imports 外部改动同步，修复外部改名后旧目录被重新创建的问题，提示原件缺失或被直接修改的异常，保留文档身份与历史，并简化人民币余额符号。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

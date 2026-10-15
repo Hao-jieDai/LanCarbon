@@ -1,4 +1,5 @@
 export interface Asset {
+  syncError?: string;
   documentId?: string;
   version?: number;
   versions?: import("./library").ResourceVersion[];

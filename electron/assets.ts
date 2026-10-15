@@ -24,6 +24,8 @@ export function assetVersions(asset: Asset): ResourceVersion[] {
 }
 const filesOf = (asset: Asset) => asset.documentId ? [] : assetVersions(asset).map(version => version.file);
 export class AssetStore {
+  private integrity = new Map<string,string>();
+  private checked = new Map<string,{signature:string;hash:string}>();
 
   private library?: LibraryAssetBridge;
   constructor(private readonly root: string, private readonly filesDirectory = path.join(root, "assets"), private readonly systemIds: ReadonlySet<string> = new Set()) {}
@@ -39,14 +41,28 @@ export class AssetStore {
     if (!asset.documentId) return asset;
     if (!this.library) throw Error("The linked Library document is unavailable.");
     const current = await this.library.metadata(asset.documentId);
-    return { ...asset, name: current.name, size: current.size, mime: current.mime, version: current.version, updatedAt: current.updatedAt, missing: current.missing };
+    return { ...asset, name: current.name, size: current.size, mime: current.mime, version: current.version, updatedAt: current.updatedAt, missing: current.missing, syncError: current.syncError };
   }
   async list(): Promise<Asset[]> {
     return Promise.all((await this.manifest()).map(async asset => {
       if (asset.documentId) { try { return await this.resolved(asset); } catch { return { ...asset, missing: true }; } }
       const stat = await fs.lstat(path.join(this.filesDirectory, asset.file ?? asset.id)).catch(error => { if (error.code === "ENOENT") return null; throw error; });
-      return { ...asset, ...(this.systemIds.has(asset.id) ? { systemManaged: true } : {}), version: asset.version ?? 1, missing: !stat?.isFile() || stat.isSymbolicLink() };
+      return { ...asset, syncError: this.integrity.get(asset.id), ...(this.systemIds.has(asset.id) ? { systemManaged: true } : {}), version: asset.version ?? 1, missing: !stat?.isFile() || stat.isSymbolicLink() };
     }));
+  }
+  async audit(): Promise<{ signature: string; errors: string[] }> {
+    const issues=new Map<string,string>(),signatures:string[]=[];
+    for(const asset of (await this.manifest()).filter(asset=>!asset.documentId)){
+      try{
+        const version=assetVersions(asset).at(-1)!,file=await managedFile(this.filesDirectory,version.file),stat=await fs.stat(file);
+        const signature=`${stat.dev}:${stat.ino}:${stat.size}:${stat.mtimeMs}:${stat.ctimeMs}`;signatures.push(`${asset.id}:${signature}`);
+        if(stat.size>MAX_ASSET_BYTES)throw Error("File exceeds 100 MB.");
+        let hash=this.checked.get(file)?.signature===signature?this.checked.get(file)!.hash:undefined;
+        if(!hash){const bytes=await fs.readFile(file);hash=digest(bytes);this.checked.set(file,{signature,hash});}
+        if(hash!==version.sha256)throw Error("Changed outside LanCarbon. The file is preserved. Use Open externally for versioned edits.");
+      }catch(error){const reason=(error as NodeJS.ErrnoException).code==="ENOENT"?"File is missing or was renamed/moved outside LanCarbon.":error instanceof Error?error.message:String(error);issues.set(asset.id,`${asset.name}: ${reason}`);}
+    }
+    this.integrity=issues;return{signature:JSON.stringify([signatures,[...issues]]),errors:[...issues.values()]};
   }
   async findContent(hash: string, extension: string): Promise<{ asset: Asset; version: number } | undefined> {
     const found = (await this.manifest()).filter(asset => !asset.documentId).map(asset => ({ asset, found: assetVersions(asset).find(version => version.file === `${hash}.${extension}`) })).find(value => value.found);

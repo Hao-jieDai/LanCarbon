@@ -27,10 +27,26 @@ export async function managedDirectory(root: string, relative?: string): Promise
 }
 export async function managedFile(root: string, relative: string): Promise<string> {
   const parts = relativeParts(relative), name = parts.pop()!;
-  const directory = await managedDirectory(root, parts.length ? parts.join("/") : undefined), filename = path.join(directory, name);
+  const directory = await existingDirectory(root, parts.length ? parts.join("/") : undefined), filename = path.join(directory, name);
   const stat = await fs.lstat(filename);
   if (!stat.isFile() || stat.isSymbolicLink() || path.dirname(await fs.realpath(filename)) !== directory) throw Error("File leaves its managed folder.");
   return fs.realpath(filename);
+}
+/** Read-side resolution must never recreate a deleted or externally renamed directory. */
+export async function existingDirectory(root: string, relative?: string): Promise<string> {
+  const initial = await fs.lstat(root);
+  if (!initial.isDirectory() || initial.isSymbolicLink()) throw Error("Folder leaves its managed location.");
+  let current = await fs.realpath(root);
+  for (const part of relative ? relativeParts(relative) : []) {
+    const next = path.join(current, part), stat = await fs.lstat(next);
+    if (!stat.isDirectory() || stat.isSymbolicLink() || path.dirname(await fs.realpath(next)) !== current) throw Error("Folder leaves its managed location.");
+    current = await fs.realpath(next);
+  }
+  return current;
+}
+export async function diskIdentity(filename: string): Promise<string> {
+  const stat = await fs.lstat(filename, { bigint: true });
+  return `${stat.dev}:${stat.ino}:${stat.birthtimeNs}`;
 }
 export async function writeManaged(root: string, relative: string, bytes: Buffer, repair = false): Promise<void> {
   const parts = relativeParts(relative), name = parts.pop()!;

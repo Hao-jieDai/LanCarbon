@@ -268,7 +268,7 @@ app.whenReady().then(async () => {
   const editStores = new Map<string, ExternalEdits>();
   const edits = () => { let manager = editStores.get(dataDirectory); if (!manager) { manager = new ExternalEdits(dataDirectory, directories.library, libraryStore()); editStores.set(dataDirectory, manager); } return manager; };
   const libraryChanged = () => mainWindow?.webContents.send("library:changed");
-  const syncEdits = async () => { const result = await edits().sync(); if (result.changed) libraryChanged(); return result; };
+  const syncEdits = async () => { const disk = await libraryStore().synchronize(); const edited = await edits().sync(); const result = { changed: disk.changed || edited.changed, errors: [...disk.errors, ...edited.errors] }; if (result.changed) libraryChanged(); return result; };
   flushExternal = async () => { await syncEdits(); await reader().flush(); await balances().flush(); };
   let scanningExternal = false;
   externalTimer = setInterval(() => { if (scanningExternal) return; scanningExternal = true; void syncEdits().catch(() => undefined).finally(() => { scanningExternal = false; }); }, 3000);
@@ -308,17 +308,23 @@ app.whenReady().then(async () => {
       if (!mainWindow) throw Error("The Library window is closed.");
       const choice = await dialog.showOpenDialog(mainWindow, { title: "Import PDF / EPUB", defaultPath: directories.library, properties: ["openFile", "multiSelections"], filters: [{ name: "PDF and EPUB documents", extensions: ["pdf", "epub"] }] });
       if (choice.canceled || !choice.filePaths.length) return { ok: false, canceled: true, error: "Import canceled" };
-      const batch = await libraryStore().importFiles(choice.filePaths, folderId); libraryChanged(); return { ok: true, batch };
+      await syncEdits(); const batch = await libraryStore().importFiles(choice.filePaths, folderId); libraryChanged(); return { ok: true, batch };
     } catch (error) { return assetError(error); }
   });
   ipcMain.handle("library:import-files", async (_event, files: string[], folderId: string | null = null) => {
-    try { const batch = await libraryStore().importFiles(files, folderId); libraryChanged(); return { ok: true, batch }; } catch (error) { return assetError(error); }
+    try { await syncEdits(); const batch = await libraryStore().importFiles(files, folderId); libraryChanged(); return { ok: true, batch }; } catch (error) { return assetError(error); }
   });
   ipcMain.handle("library:rename", async (_event, id: string, name: string) => {
-    try { const entry = await libraryStore().rename(id, name); libraryChanged(); return { ok: true, entry }; } catch (error) { return assetError(error); }
+    try { await syncEdits(); const entry = await libraryStore().rename(id, name); libraryChanged(); return { ok: true, entry }; } catch (error) { return assetError(error); }
   });
   ipcMain.handle("library:create-folder", async (_event, name: string, parentId: string | null) => {
-    try { const folder = await libraryStore().createFolder(name, parentId); libraryChanged(); return { ok: true, folder }; } catch (error) { return assetError(error); }
+    try { await syncEdits(); const folder = await libraryStore().createFolder(name, parentId); libraryChanged(); return { ok: true, folder }; } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:rename-folder", async (_event, id: string, name: string) => {
+    try { await syncEdits(); const folder = await libraryStore().renameFolder(id, name); libraryChanged(); return { ok: true, folder }; } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:delete-folder", async (_event, id: string) => {
+    try { await syncEdits(); const parentId = await libraryStore().deleteFolder(id); libraryChanged(); return { ok: true, parentId }; } catch (error) { return assetError(error); }
   });
   ipcMain.handle("library:move", async (_event, id: string, folderId: string | null, keepBoth = false) => {
     try { await syncEdits(); const entry = await libraryStore().move(id, folderId, keepBoth === true); libraryChanged(); return { ok: true, entry }; } catch (error) { return assetError(error); }
@@ -327,10 +333,10 @@ app.whenReady().then(async () => {
     try { await syncEdits(); return { ok: true, versions: await libraryStore().versions(id) }; } catch (error) { return assetError(error); }
   });
   ipcMain.handle("library:reveal", async (_event, id: string) => {
-    try { shell.showItemInFolder(await libraryStore().filePath(id)); return { ok: true }; } catch (error) { return assetError(error); }
+    try { await syncEdits(); shell.showItemInFolder(await libraryStore().filePath(id)); return { ok: true }; } catch (error) { return assetError(error); }
   });
   ipcMain.handle("library:open", async (_event, id: string) => {
-    try { const filename = await edits().prepare(id), error = await shell.openPath(filename); if (error) throw Error(error); return { ok: true }; } catch (error) { return assetError(error); }
+    try { await syncEdits(); const filename = await edits().prepare(id), error = await shell.openPath(filename); if (error) throw Error(error); return { ok: true }; } catch (error) { return assetError(error); }
   });
   const saveLibraryCopy = async (id: string, version?: number) => {
     try {

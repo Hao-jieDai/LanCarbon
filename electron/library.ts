@@ -4,8 +4,8 @@ import { randomUUID } from "node:crypto";
 import { AssetStore } from "./assets";
 import { MAX_ASSET_BYTES } from "../src/shared/assets";
 import { folderLocation, materialEntry, type LibraryEntry, type LibraryFolder, type LibraryImportBatch, type LibraryImportItem, type LibraryImportRecord, type ResourceVersion } from "../src/shared/library";
-import { digest, managedDirectory, managedFile, numberedName, validName, writeManaged } from "./resource-files";
-interface Catalog { version: 2; folders: LibraryFolder[]; documents: LibraryImportRecord[] }
+import { digest, diskIdentity, existingDirectory, managedDirectory, managedFile, numberedName, validName, writeManaged } from "./resource-files";
+import { importPath, LibraryDiskSync, type LibraryCatalog as Catalog } from "./library-sync";
 const IMPORT_ID = /^import:([a-f0-9]{64})\.(pdf|epub)$/;
 const mime = (format: "pdf" | "epub") => format === "pdf" ? "application/pdf" : "application/epub+zip";
 const history = (record: LibraryImportRecord): ResourceVersion[] => record.versions ?? [{ version: 1, file: record.relativePath, sha256: record.sha256, size: record.size, mime: mime(record.format), createdAt: record.updatedAt ?? record.createdAt }];
@@ -24,7 +24,11 @@ export class LibraryNameConflict extends Error { constructor(public readonly sug
 
 export class LibraryStore {
   private queue: Promise<unknown> = Promise.resolve();
+  private disk: LibraryDiskSync;
+  private state = "";
+  private diskErrors = new Map<string,string>();
   constructor(private readonly data: string, private readonly library: string, private readonly assets: AssetStore) {
+    this.disk = new LibraryDiskSync(library);
     assets.bindLibrary({
       find: async (hash, extension) => { const catalog = await this.catalog(); const record = catalog.documents.find(record => history(record).some(version => version.sha256 === hash && record.format === extension)); return record ? entry(record, catalog.folders) : undefined; },
       metadata: async id => this.metadata(id),
@@ -53,8 +57,8 @@ export class LibraryStore {
         const match = record && typeof record.id === "string" && IMPORT_ID.exec(record.id);
         if (!match || ids.has(record.id) || record.format !== match[2] || record.source !== "import" || typeof record.title !== "string" || path.extname(record.title).toLowerCase() !== `.${record.format}` || !Number.isFinite(Date.parse(record.createdAt))) throw Error("Invalid Library catalog. Your original files have been preserved.");
         const folderId = record.folderId ?? null; if (folderId && !folders.some(folder => folder.id === folderId)) throw Error("Unknown document folder.");
-        const versions = history(record), directory = folderLocation(folders, folderId);
-        if (!Array.isArray(versions) || !versions.length || versions[0].sha256 !== match[1] || versions.some((version, index) => version.version !== index + 1 || !/^[a-f0-9]{64}$/.test(version.sha256) || version.file !== `${directory}/${version.sha256}.${record.format}` || !Number.isSafeInteger(version.size) || version.size <= 0 || version.size > MAX_ASSET_BYTES || version.mime !== mime(record.format) || !Number.isFinite(Date.parse(version.createdAt)))) throw Error("Invalid Library catalog: versions or paths.");
+        const versions = history(record);
+        if (!Array.isArray(versions) || !versions.length || versions[0].sha256 !== match[1] || versions.some((version, index) => version.version !== index + 1 || !/^[a-f0-9]{64}$/.test(version.sha256) || !importPath(version.file) || path.posix.extname(version.file).toLowerCase() !== `.${record.format}` || !Number.isSafeInteger(version.size) || version.size <= 0 || version.size > MAX_ASSET_BYTES || version.mime !== mime(record.format) || !Number.isFinite(Date.parse(version.createdAt)))) throw Error("Invalid Library catalog: versions or paths.");
         const current = versions.at(-1)!;
         if (record.relativePath !== current.file || record.sha256 !== current.sha256 || record.size !== current.size || record.version !== undefined && record.version !== current.version) throw Error("Invalid Library catalog: current version.");
         ids.add(record.id); return { ...record, folderId, version: current.version, versions };
@@ -70,16 +74,68 @@ export class LibraryStore {
     if (folderId !== null && !catalog.folders.some(folder => folder.id === folderId)) throw Error("The destination folder no longer exists.");
     return folderLocation(catalog.folders, folderId);
   }
+  synchronize(): Promise<{ changed: boolean; errors: string[] }> {
+    const action=this.queue.then(async()=>{
+      const original=await this.catalog(),result=await this.disk.scan(original,validateDocument);
+      if(result.changed)await this.writeCatalog(result.catalog);
+      this.diskErrors=result.errors;
+      const assets=await this.assets.audit();
+      const state=JSON.stringify([result.catalog.folders,result.catalog.documents.map(record=>[record.id,record.relativePath]),result.issues,assets.signature]);
+      const changed=result.changed||state!==this.state;this.state=state;
+      return {changed,errors:[...result.issues,...assets.errors]};
+    });this.queue=action.catch(()=>undefined);return action;
+  }
+  renameFolder(id: string, value: string): Promise<LibraryFolder> {
+    const action=this.queue.then(async()=>{
+      const catalog=await this.catalog(),folder=catalog.folders.find(folder=>folder.id===id);if(!folder)throw Error("Folder no longer exists.");
+      const name=validName(value,80);if(catalog.folders.some(other=>other.id!==id&&other.parentId===folder.parentId&&other.name.toLocaleLowerCase()===name.toLocaleLowerCase()))throw Error("A folder with this name already exists here.");
+      if(name===folder.name)return folder;
+      const old=folderLocation(catalog.folders,id),parent=await existingDirectory(this.library,folderLocation(catalog.folders,folder.parentId)),source=await existingDirectory(this.library,old),target=path.join(parent,name);
+      if(target.length+70>240)throw Error("Use a shorter folder name.");
+      if(source.toLocaleLowerCase()!==target.toLocaleLowerCase()&&await fs.lstat(target).catch(error=>{if(error.code==="ENOENT")return null;throw error;}))throw Error("A folder or file with this name already exists here.");
+      const nextFolder={...folder,name,missing:false},folders=catalog.folders.map(item=>item.id===id?nextFolder:item),destination=folderLocation(folders,id);
+      const remap=(file:string)=>file.startsWith(old+"/")?destination+file.slice(old.length):file;
+      const documents=catalog.documents.map(record=>({...record,relativePath:remap(record.relativePath),versions:history(record).map(version=>({...version,file:remap(version.file)}))}));
+      await fs.rename(source,target);
+      try{await this.writeCatalog({...catalog,folders,documents});}catch(error){await fs.rename(target,source);throw error;}
+      return nextFolder;
+    });this.queue=action.catch(()=>undefined);return action;
+  }
+  /** Delete the container only. Every child, including files not indexed by LanCarbon, moves to its parent. */
+  deleteFolder(id: string): Promise<string|null> {
+    const action=this.queue.then(async()=>{
+      const catalog=await this.catalog(),folder=catalog.folders.find(folder=>folder.id===id);if(!folder)throw Error("Folder no longer exists.");
+      const relative=folderLocation(catalog.folders,id),parentRelative=folderLocation(catalog.folders,folder.parentId),parent=await existingDirectory(this.library,parentRelative);
+      const source=await existingDirectory(this.library,relative),occupied=await fs.readdir(parent),moves:Array<{from:string;to:string;source:string;target:string}>=[];
+      for(const item of await fs.readdir(source,{withFileTypes:true})){
+        if(item.isSymbolicLink()||!item.isFile()&&!item.isDirectory())throw Error("Move linked or special items out of this folder before deleting it.");
+        const name=numberedName(item.name,occupied);validName(name,item.isDirectory()?80:200);occupied.push(name);
+        const from=`${relative}/${item.name}`,to=`${parentRelative}/${name}`;
+        const filename=item.isDirectory()?await existingDirectory(this.library,from):await managedFile(this.library,from);
+        moves.push({from,to,source:filename,target:path.join(parent,name)});
+      }
+      const remap=(file:string)=>{const move=moves.find(move=>file===move.from||file.startsWith(move.from+"/"));return move?move.to+file.slice(move.from.length):file;};
+      const folders=catalog.folders.filter(item=>item.id!==id).map(item=>item.parentId===id?{...item,parentId:folder.parentId,name:path.posix.basename(remap(folderLocation(catalog.folders,item.id)))}:item);
+      const names=catalog.documents.filter(record=>record.folderId===folder.parentId).map(record=>record.title);
+      const documents=catalog.documents.map(record=>{let title=record.title;if(record.folderId===id){title=numberedName(title,names);names.push(title);}return {...record,title,folderId:record.folderId===id?folder.parentId:record.folderId,relativePath:remap(record.relativePath),versions:history(record).map(version=>({...version,file:remap(version.file)}))};});
+      const completed:typeof moves=[];let removed=false;
+      try{
+        for(const move of moves){if(await fs.lstat(move.target).catch(error=>{if(error.code==="ENOENT")return null;throw error;}))throw Error("The destination changed. Refresh Library and try again.");await fs.rename(move.source,move.target);completed.push(move);}
+        await fs.rmdir(source);removed=true;await this.writeCatalog({...catalog,folders,documents});
+      }catch(error){if(removed)await fs.mkdir(source);for(const move of completed.reverse())await fs.rename(move.target,move.source);throw error;}
+      return folder.parentId;
+    });this.queue=action.catch(()=>undefined);return action;
+  }
   async folders(): Promise<LibraryFolder[]> { return (await this.catalog()).folders; }
   async metadata(id: string): Promise<LibraryEntry> {
-    const catalog = await this.catalog(), record = catalog.documents.find(record => record.id === id); if (!record) throw Error("The document is no longer in Library."); let missing = false; try { missing = (await fs.stat(await managedFile(this.library, record.relativePath))).size !== record.size; } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") missing = true; else throw error; } return entry(record, catalog.folders, missing);
+    const catalog = await this.catalog(), record = catalog.documents.find(record => record.id === id); if (!record) throw Error("The document is no longer in Library."); let missing = false; try { missing = (await fs.stat(await managedFile(this.library, record.relativePath))).size !== record.size; } catch (error) { missing = true; if ((error as NodeJS.ErrnoException).code !== "ENOENT") this.diskErrors.set(record.id, `${record.title}: ${error instanceof Error ? error.message : String(error)}`); } return { ...entry(record, catalog.folders, missing), syncError: this.diskErrors.get(id) };
   }
   async list(): Promise<LibraryEntry[]> {
     const [catalog, assets] = await Promise.all([this.catalog(), this.assets.list()]); await managedDirectory(this.library, "Imports");
     const imported = await Promise.all(catalog.documents.map(async record => {
       let missing = false;
-      try { const file = await managedFile(this.library, record.relativePath), stat = await fs.stat(file); missing = stat.size !== record.size; } catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") missing = true; else throw error; }
-      return { ...entry(record, catalog.folders, missing), assetId: assets.find(asset => asset.documentId === record.id)?.id };
+      try { const file = await managedFile(this.library, record.relativePath), stat = await fs.stat(file); missing = stat.size !== record.size; } catch (error) { missing = true; if ((error as NodeJS.ErrnoException).code !== "ENOENT") this.diskErrors.set(record.id, `${record.title}: ${error instanceof Error ? error.message : String(error)}`); }
+      return { ...entry(record, catalog.folders, missing), syncError: this.diskErrors.get(record.id), assetId: assets.find(asset => asset.documentId === record.id)?.id };
     }));
     return [...imported, ...assets.filter(asset => !asset.documentId).map(materialEntry)];
   }
@@ -129,8 +185,9 @@ export class LibraryStore {
       const catalog = await this.catalog(), parent = this.folderPath(catalog, parentId); name = validName(name, 80);
       if (catalog.folders.some(folder => folder.parentId === parentId && folder.name.toLocaleLowerCase() === name.toLocaleLowerCase())) throw Error("A folder with this name already exists here.");
       if (parent.split("/").length >= 8 || path.join(this.library, parent, name).length + 70 > 240) throw Error("Use a shorter folder name or a shallower folder.");
-      const folder = { id: `folder_${randomUUID().replace(/-/g, "")}`, name, parentId };
-      await managedDirectory(this.library, `${parent}/${name}`); await this.writeCatalog({ ...catalog, folders: [...catalog.folders, folder] }); return folder;
+      const directory = await managedDirectory(this.library, `${parent}/${name}`);
+      const folder = { id: `folder_${randomUUID().replace(/-/g, "")}`, name, parentId, diskId: await diskIdentity(directory) };
+      await this.writeCatalog({ ...catalog, folders: [...catalog.folders, folder] }); return folder;
     }); this.queue = action.catch(() => undefined); return action;
   }
   move(id: string, folderId: string | null, keepBoth = false): Promise<LibraryEntry> {
