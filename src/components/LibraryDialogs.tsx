@@ -1,8 +1,20 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { folderLocation, orderedFolders, type LibraryEntry, type LibraryFolder, type ResourceVersion } from "../shared/library";
+import { folderLocation, orderedFolders, type LibraryBatchResult, type LibraryEntry, type LibraryFolder, type ResourceVersion } from "../shared/library";
 import { ThemedSelect } from "./ThemedSelect";
 const folderOptions = (folders: LibraryFolder[]) => [{ value: "", label: "Imports" }, ...orderedFolders(folders).map(folder => ({ value: folder.id, label: folderLocation(folders, folder.id) }))];
+export function LibraryBatchMoveDialog({ entries, folders, onClose, onMoved }: { entries: LibraryEntry[]; folders: LibraryFolder[]; onClose(): void; onMoved(batch: LibraryBatchResult): Promise<void> }) {
+  const [target, setTarget] = useState(""), [keepBoth, setKeepBoth] = useState(true), [busy, setBusy] = useState(false), [error, setError] = useState("");
+  return createPortal(<div className="modal-backdrop"><form className="settings-modal compact-modal" role="dialog" aria-modal="true" aria-label="Move selected Library files" onKeyDown={event => { if (event.key === "Escape" && !busy) onClose(); }} onSubmit={event => {
+    event.preventDefault(); setBusy(true); setError("");
+    void window.notesDesktop.library!.moveMany(entries.map(entry => entry.id), target || null, keepBoth).then(async result => { if (!result.ok) throw Error(result.error); await onMoved(result.batch); }).catch(error => setError(error.message)).finally(() => setBusy(false));
+  }}><header><h2>Move {entries.length} files</h2><button type="button" disabled={busy} className="icon-button" aria-label="Close batch move" onClick={onClose}>×</button></header>
+    <label>Destination<ThemedSelect label="Batch move destination" value={target} disabled={busy} options={folderOptions(folders.filter(folder => !folder.missing))} onChange={setTarget}/></label>
+    <label className="library-keep-both"><input type="checkbox" checked={keepBoth} disabled={busy} onChange={event => setKeepBoth(event.target.checked)}/>Keep both when names match</label>
+    <p className="modal-help">Files with matching names are numbered. All versions, writing references and reading positions are retained.</p>
+    {error && <p role="alert">{error}</p>}<footer><button autoFocus type="button" className="text-button modal-button" disabled={busy} onClick={onClose}>Cancel</button><button className="new-note compact" disabled={busy} type="submit">{busy ? "Moving…" : "Move selected files"}</button></footer>
+  </form></div>, document.body);
+}
 export function LibraryFolderDialog({ folders, parentId, folder, onClose, onCreated }: { folders: LibraryFolder[]; parentId: string | null; folder?: LibraryFolder; onClose(): void; onCreated(folder: LibraryFolder): Promise<void> }) {
   const [name, setName] = useState(folder?.name ?? ""), [parent, setParent] = useState(parentId ?? ""), [busy, setBusy] = useState(false), [error, setError] = useState("");
   return createPortal(<div className="modal-backdrop"><form className="settings-modal compact-modal" role="dialog" aria-modal="true" aria-label={folder ? "Rename Library folder" : "New Library folder"} onKeyDown={event => { if (event.key === "Escape" && !busy) onClose(); }} onSubmit={event => { event.preventDefault(); setBusy(true); setError(""); void (async () => { const result = folder ? await window.notesDesktop.library!.renameFolder(folder.id, name) : await window.notesDesktop.library!.createFolder(name, parent || null); if (!result.ok) throw Error(result.error); await onCreated(result.folder); })().catch(error => setError(String(error.message ?? error))).finally(() => setBusy(false)); }}>

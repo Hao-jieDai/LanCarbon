@@ -181,6 +181,7 @@ export class AssetStore {
       if (!Array.isArray(ids) || !ids.length || !ids.every(id => typeof id === "string" && ASSET_ID.test(id))) throw Error("Invalid resource selection");
       const catalog = await this.manifest(), selected = catalog.filter(asset => ids.includes(asset.id));
       if (selected.length !== new Set(ids).size) throw Error("Resources changed. Refresh the list before deleting.");
+      if (selected.some(asset => this.systemIds.has(asset.id))) throw Error("Built-in tutorial resources are managed by LanCarbon and cannot be deleted.");
       if (!await confirm(await Promise.all(selected.map(asset => this.resolved(asset))))) return false;
       const remaining = catalog.filter(asset => !ids.includes(asset.id));
       const files = [...new Set(selected.flatMap(filesOf))].filter(file => !remaining.some(asset => filesOf(asset).includes(file)));
@@ -192,7 +193,7 @@ export class AssetStore {
         }
         rollbackReferences = await updateReferences?.(); await this.writeCatalog(remaining);
       } catch (error) { for (const [source, temporary] of staged.reverse()) await fs.rename(temporary, source); await rollbackReferences?.(); throw error; }
-      for (const [, temporary] of staged) await fs.unlink(temporary);
+      for (const [, temporary] of staged) await fs.unlink(temporary).catch(() => undefined);
       return true;
     });
     return action;

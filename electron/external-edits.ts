@@ -52,6 +52,18 @@ export class ExternalEdits {
   sync(): Promise<{ changed: boolean; errors: string[] }> {
     const action = this.queue.then(async () => this.syncSessions(await this.load())); this.queue = action.catch(() => undefined); return action;
   }
+  forget(ids: string[]): Promise<void> {
+    const action = this.queue.then(async () => {
+      const sessions = await this.load(), removed = sessions.filter(session => ids.includes(session.id));
+      if (!removed.length) return;
+      await this.save(sessions.filter(session => !ids.includes(session.id)));
+      for (const session of removed) {
+        this.seen.delete(session.id);
+        // External applications may still hold a working copy open. Never resume its deleted record.
+        try { await fs.unlink(await managedFile(this.library, session.file)); } catch { /* Keep locked working copies outside the indexed Imports directory. */ }
+      }
+    }); this.queue = action.catch(() => undefined); return action;
+  }
   prepare(id: string): Promise<string> {
     const action = this.queue.then(async () => {
       const sessions = await this.load(); await this.syncSessions(sessions);

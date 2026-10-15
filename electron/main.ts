@@ -5,6 +5,7 @@ import { mkdirSync } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { AssetStore, type ResolveConflict } from "./assets";
 import { LibraryStore, LibraryNameConflict } from "./library";
+import { exportLibraryFiles } from "./library-export";
 import { ExternalEdits } from "./external-edits";
 import { MAX_ASSET_BYTES, resourceUsages, type AssetConflictChoice } from "../src/shared/assets";
 import { exportPagePdf, pdfFileName } from "./pdf-exporter";
@@ -336,6 +337,41 @@ app.whenReady().then(async () => {
   });
   ipcMain.handle("library:move", async (_event, id: string, folderId: string | null, keepBoth = false) => {
     try { await syncEdits(); const entry = await libraryStore().move(id, folderId, keepBoth === true); libraryChanged(); return { ok: true, entry }; } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:move-many", async (_event, ids: string[], folderId: string | null, keepBoth: boolean) => {
+    try { await syncEdits(); const batch = await libraryStore().moveMany(ids, folderId, keepBoth === true); libraryChanged(); return { ok: true, batch }; } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:export-many", async (_event, ids: string[]) => {
+    try {
+      if (!mainWindow) throw Error("The Library window is closed.");
+      const choice = await dialog.showOpenDialog(mainWindow, { title: "Export Library files", defaultPath: directories.exports, properties: ["openDirectory", "createDirectory"] });
+      if (choice.canceled || !choice.filePaths[0]) return { ok: true, canceled: true, batch: { items: [], failures: [] } };
+      await syncEdits(); const batch = await exportLibraryFiles(libraryStore(), directories.library, choice.filePaths[0], ids);
+      return { ok: true, batch };
+    } catch (error) { return assetError(error); }
+  });
+  ipcMain.handle("library:remove", async (_event, ids: string[]) => {
+    try {
+      await syncEdits(); let workspace: WorkspaceFile | undefined, warning: string | undefined;
+      const result = await libraryStore().remove(ids, async (entries, resourceIds) => {
+        if (!mainWindow) return false;
+        const refs = await describeUses(resourceIds), versions = entries.reduce((total, entry) => total + (entry.versions?.length ?? entry.version ?? 1), 0);
+        const choice = await dialog.showMessageBox(mainWindow, { type: "warning", title: "Delete Library files", message: `Permanently delete ${entries.length} file${entries.length === 1 ? "" : "s"}?`,
+          detail: `${entries.map(entry => entry.name).join("\n")}\n\nAll ${versions} stored versions will be deleted.\n\n${refs.length ? `These ${refs.length} references across ALL Notes and Books will also be removed:\n${refs.map(ref => `${ref.location} / ${ref.title}${ref.line ? ` · line ${ref.line}` : ""}`).join("\n")}` : "No current references."}\n\nFiles shared by other resources are kept. Open file tabs will close. This cannot be undone.`, buttons: ["Delete permanently", "Cancel"], defaultId: 1, cancelId: 1, noLink: true });
+        return choice.response === 0;
+      }, async resourceIds => {
+        const previous = (await store.loadWorkspace()).workspace;
+        workspace = withoutResources(previous, resourceIds); await store.saveWorkspace(workspace);
+        return async () => { await store.saveWorkspace(previous); workspace = undefined; };
+      });
+      if (result.removed) {
+        // Forget sessions after releasing Library's queue, because edit sync may await that queue.
+        try { await edits().forget([...result.ids, ...result.resourceIds]); }
+        catch { warning = "Files were deleted, but external-edit records could not be cleared. Close external editors and restart LanCarbon."; }
+        libraryChanged();
+      }
+      return { ok: true, ...result, workspace, warning };
+    } catch (error) { libraryChanged(); return assetError(error); }
   });
   ipcMain.handle("library:versions", async (_event, id: string) => {
     try { await syncEdits(); return { ok: true, versions: await libraryStore().versions(id) }; } catch (error) { return assetError(error); }

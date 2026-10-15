@@ -34,6 +34,7 @@ export interface LibraryImportItem {
 }
 export interface LibraryImportBatch { items: LibraryImportItem[]; failures: Array<{ name: string; error: string }> }
 export type LibraryImportResult = { ok: true; batch: LibraryImportBatch } | { ok: false; canceled?: boolean; error: string };
+export interface LibraryBatchResult { items: Array<{ id: string; name: string }>; failures: Array<{ id: string; name: string; error: string }> }
 export interface LibraryDesktopApi {
   list(): Promise<{ ok: true; entries: LibraryEntry[]; folders?: LibraryFolder[]; editErrors?: string[] } | { ok: false; error: string }>;
   choose(folderId?: string | null): Promise<LibraryImportResult>;
@@ -43,6 +44,9 @@ export interface LibraryDesktopApi {
   renameFolder(id: string, name: string): Promise<{ ok: true; folder: LibraryFolder } | { ok: false; error: string }>;
   deleteFolder(id: string): Promise<{ ok: true; parentId: string | null } | { ok: false; error: string }>;
   move(id: string, folderId: string | null, keepBoth?: boolean): Promise<{ ok: true; entry: LibraryEntry } | { ok: false; error: string; suggestedName?: string }>;
+  moveMany(ids: string[], folderId: string | null, keepBoth: boolean): Promise<{ ok: true; batch: LibraryBatchResult } | { ok: false; error: string }>;
+  exportMany(ids: string[]): Promise<{ ok: true; batch: LibraryBatchResult; canceled?: boolean } | { ok: false; error: string }>;
+  remove(ids: string[]): Promise<{ ok: true; removed: boolean; ids: string[]; workspace?: import("./types").WorkspaceFile; warning?: string } | { ok: false; error: string }>;
   versions(id: string): Promise<{ ok: true; versions: ResourceVersion[] } | { ok: false; error: string }>;
   reveal(id: string): Promise<{ ok: boolean; error?: string }>;
   open(id: string): Promise<{ ok: boolean; error?: string }>;

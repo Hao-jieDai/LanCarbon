@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.3.7";
+export const RELEASE_VERSION = "2.3.8";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.3.7 simplifies PDF/EPUB reading to two toolbar rows, moves external opening beside search, and renames the AI and literature workspace to Workshop. Existing files, reading positions and saved AI data are preserved.
+Version 2.3.8 adds Library file deletion and batch selection, movement and export. Deletion confirms writing references and stored versions; moving retains document identity, and export keeps existing destination files.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -50,6 +50,10 @@ Select an Imports folder to use **Rename folder** or **Delete folder**. Deleting
 4. **Open** or double-click reads PDFs in LanCarbon; **Open externally** uses the default app. Images, TXT, Word and other ordinary resources use the default app. Executables, scripts and shortcuts are excluded. The app opens a named working copy under **Library/.Editing**; saving that file registers a new current version within a few seconds while LanCarbon runs, or after its next launch. Unchanged saves add no version. **Versions** lists revisions and **Save version** exports an earlier one; old versions remain stored locally. Saving as another file/location requires a separate import. Keep managed hash-named originals intact; use Open for editing.
 5. Notes and Books **Attach file** starts in root **Library**. Selecting an imported original reuses it with its current display name and a stable writing reference, without copying its bytes into assets. Later rename/move/version changes keep the reference valid and use the current contents. Removing this linked resource in Resources removes its writing references while the Library original remains in Imports. Ordinary resource deletion still removes its files and versions after confirmation.
 6. **Folder** reveals the managed original and **Save a copy** exports outside Library. Importing itself is offline and inserts no writing link. Catalogs and edit-session records live in the active **Data/Library**; originals, retained versions and working copies stay in root **Library**. Moving Data carries the records. Back up both locations, including pending working copies. After using folders, linked attachments or new versions, application rollback needs a matching data snapshot; preserve newer writing separately before restoring it.
+
+**Batch operations:** Use the checkboxes or **Select visible** to select files in the current list or search results. The toolbar shows the count and offers **Clear selection**, **Move selected**, **Export selected** and **Delete selected**. Changing a folder or filter clears the selection. Built-in tutorial resources are protected and excluded from selection. Move applies to imported originals and keeps IDs, versions, references and reading positions; choose an Imports destination and whether to **Keep both when names match**. Export copies current versions into a chosen folder outside Library, numbering matching names without overwriting. Originals stay unchanged; per-file failures are listed and successful items are retained.
+
+**Delete** on a row or **Delete selected** permanently removes the selected managed files and their stored versions, including missing entries. Confirmation lists all affected Note/Book references; confirming removes those links and resource settings while retaining surrounding writing. Shared files needed by unselected resources are kept. Open tabs close and external-edit tracking stops. Cancel leaves files and references untouched. Deleting an imported original in Library also removes its linked writing resource; deleting only that link in Resources continues to keep the Imports original. To remove a file completely, use Library deletion rather than deleting it in File Explorer.
 
 ### Reading PDFs
 
@@ -107,6 +111,10 @@ Viewing Usage works offline and does not call a model. Local logs are in **Data/
 4. **Open** 或双击在 LanCarbon 阅读 PDF，**Open externally** 使用默认程序；图片、TXT、Word 等普通资料使用默认程序，程序、脚本和快捷方式不直接打开。软件打开 **Library/.Editing** 中带名称的编辑副本；保存该文件后，LanCarbon 运行时会在几秒内登记新版本，关闭期间的保存会在下次启动后处理。内容未变不新增版本。**Versions** 查看历史，**Save version** 导出旧版本；历史原件保留在本地。另存其他文件或位置需另行导入。请保持带哈希的受管理原件完整，通过 Open 进行编辑。
 5. Notes 和 Books 的 **Attach file** 默认打开根目录 **Library**。选择导入原件时沿用当前显示名与稳定写作引用，不再把原件复制到 assets。之后改名、移动或产生新版本，引用保持有效并读取当前内容。在 Resources 删除此类关联资源时移除写作引用，原件仍在 Imports；普通资源删除仍会在确认后删除文件和历史版本。
 6. **Folder** 定位受管理原件，**Save a copy** 将副本导出到 Library 之外。导入本身可离线完成，不自动插入写作链接。目录及编辑会话记录在实际 **Data/Library**，原件、历史版本和编辑副本在根目录 **Library**；更改 Data 携带记录。两处都需备份，包括尚未登记的编辑副本。使用子目录、关联附件或新版本后，回滚程序需要匹配的数据快照；恢复前另行保留新增写作内容。
+
+**批量操作：** 通过复选框或 **Select visible** 选取当前列表或搜索结果中的文件。操作栏显示数量，并提供 **Clear selection**、**Move selected**、**Export selected** 和 **Delete selected**。切换文件夹或筛选会清空勾选；内置教程资源受到保护，不参与选取。移动仅适用于导入原件，保留 ID、版本、引用和阅读进度；选择 Imports 目标文件夹，并决定是否 **Keep both when names match**。导出将当前版本复制到 Library 之外的目标文件夹，重名自动编号，不覆盖已有内容，原件保持不变。逐项列出失败原因，成功结果保留。
+
+文件行的 **Delete** 或 **Delete selected** 会永久删除选中的受管理文件及其历史版本，也可清理缺失条目。确认框列出全部 Note／Book 引用；确认后移除对应链接和资源设置，保留周围正文。其他未选资源仍需使用的共享文件会保留。相关阅读标签关闭，外部编辑跟踪停止；取消不改变文件和引用。在 Library 删除导入原件，也会移除关联的写作资源；仅在 Resources 删除关联资源，仍保留 Imports 原件。需要完整删除文件时，请使用 Library 删除功能，不要直接在文件资源管理器中删除。
 
 ### PDF 阅读
 
@@ -210,7 +218,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.3.7 将 PDF／EPUB 阅读区精简为两行工具栏，外部打开移至搜索框左侧，并将 AI 与文献工作区更名为 Workshop；保留原文件、阅读进度和已保存的 AI 数据。
+2.3.8 增加 Library 文件删除，以及批量选取、移动和导出。删除前确认写作引用与历史版本；移动保留文档身份，导出不覆盖目标位置已有的文件。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

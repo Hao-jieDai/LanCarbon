@@ -2,11 +2,15 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { AssetStore } from "./assets";
-import { MAX_ASSET_BYTES } from "../src/shared/assets";
-import { folderLocation, materialEntry, type LibraryEntry, type LibraryFolder, type LibraryImportBatch, type LibraryImportItem, type LibraryImportRecord, type ResourceVersion } from "../src/shared/library";
+import { ASSET_ID, MAX_ASSET_BYTES } from "../src/shared/assets";
+import { folderLocation, materialEntry, type LibraryBatchResult, type LibraryEntry, type LibraryFolder, type LibraryImportBatch, type LibraryImportItem, type LibraryImportRecord, type ResourceVersion } from "../src/shared/library";
 import { digest, diskIdentity, existingDirectory, managedDirectory, managedFile, numberedName, validName, writeManaged } from "./resource-files";
 import { importPath, LibraryDiskSync, type LibraryCatalog as Catalog } from "./library-sync";
 const IMPORT_ID = /^import:([a-f0-9]{64})\.(pdf|epub)$/;
+export function librarySelection(ids: unknown): string[] {
+  if (!Array.isArray(ids) || !ids.length || ids.length > 10000 || !ids.every(id => typeof id === "string" && (IMPORT_ID.test(id) || ASSET_ID.test(id)))) throw Error("Select valid Library files.");
+  return [...new Set(ids)];
+}
 const mime = (format: "pdf" | "epub") => format === "pdf" ? "application/pdf" : "application/epub+zip";
 const history = (record: LibraryImportRecord): ResourceVersion[] => record.versions ?? [{ version: 1, file: record.relativePath, sha256: record.sha256, size: record.size, mime: mime(record.format), createdAt: record.updatedAt ?? record.createdAt }];
 function entry(record: LibraryImportRecord, folders: LibraryFolder[], missing = false): LibraryEntry {
@@ -206,6 +210,65 @@ export class LibraryStore {
         }
       }
       return entry(record, catalog.folders);
+    }); this.queue = action.catch(() => undefined); return action;
+  }
+  async moveMany(input: string[], folderId: string | null, keepBoth: boolean): Promise<LibraryBatchResult> {
+    const ids = librarySelection(input), catalog = await this.catalog();
+    const records = ids.map(id => catalog.documents.find(record => record.id === id));
+    if (records.some(record => !record)) throw Error("Only imported originals can be moved. Refresh the selection.");
+    const directory = this.folderPath(catalog, folderId);
+    await existingDirectory(this.library, directory);
+    if (!keepBoth) {
+      const occupied = catalog.documents.filter(record => record.folderId === folderId).map(record => record.title.toLocaleLowerCase());
+      for (const record of records) {
+        if (record!.folderId === folderId) continue;
+        if (occupied.includes(record!.title.toLocaleLowerCase())) throw Error("Some names already exist in the destination. Choose Keep both, or use another folder.");
+        occupied.push(record!.title.toLocaleLowerCase());
+      }
+    }
+    const batch: LibraryBatchResult = { items: [], failures: [] };
+    for (const record of records) {
+      try { const moved = await this.move(record!.id, folderId, keepBoth); batch.items.push({ id: moved.id, name: moved.name }); }
+      catch (error) { batch.failures.push({ id: record!.id, name: record!.title, error: error instanceof Error ? error.message : "Could not move file." }); }
+    }
+    return batch;
+  }
+  remove(input: string[], confirm: (entries: LibraryEntry[], resourceIds: string[]) => Promise<boolean>, updateReferences: (resourceIds: string[]) => Promise<() => Promise<void>>): Promise<{ removed: boolean; ids: string[]; resourceIds: string[] }> {
+    const action = this.queue.then(async () => {
+      const ids = librarySelection(input), catalog = await this.catalog(), all = await this.list();
+      const selected = ids.map(id => all.find(entry => entry.id === id));
+      if (selected.some(entry => !entry)) throw Error("Files changed. Refresh the list before deleting.");
+      if (selected.some(entry => entry!.systemManaged)) throw Error("Built-in tutorial resources cannot be deleted.");
+      const imported = new Set(selected.filter(entry => entry!.source === "import").map(entry => entry!.id));
+      const assets = await this.assets.list();
+      const resourceIds = assets.filter(asset => ids.includes(asset.id) || !!asset.documentId && imported.has(asset.documentId)).map(asset => asset.id);
+      if (!await confirm(selected as LibraryEntry[], resourceIds)) return { removed: false, ids: [], resourceIds: [] };
+      const next = { ...catalog, documents: catalog.documents.filter(record => !imported.has(record.id)) };
+      const retained = new Set(next.documents.flatMap(record => history(record).map(version => version.file.toLocaleLowerCase())));
+      const files = [...new Set(catalog.documents.filter(record => imported.has(record.id)).flatMap(record => history(record).map(version => version.file)))].filter(file => !retained.has(file.toLocaleLowerCase()));
+      const staged: Array<[string, string]> = [];
+      const commit = async () => {
+        const rollback = await updateReferences(resourceIds);
+        try { if (imported.size) await this.writeCatalog(next); }
+        catch (error) { await rollback(); throw error; }
+        return async () => { if (imported.size) await this.writeCatalog(catalog); await rollback(); };
+      };
+      try {
+        for (const file of files) {
+          try {
+            const source = await managedFile(this.library, file), temporary = `${source}.${randomUUID()}.deleting`;
+            await fs.rename(source, temporary); staged.push([source, temporary]);
+          } catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+        }
+        if (resourceIds.length) await this.assets.remove(resourceIds, async () => true, commit);
+        else await commit();
+      } catch (error) {
+        for (const [source, temporary] of staged.reverse()) await fs.rename(temporary, source);
+        throw error;
+      }
+      // Catalogs and writing are committed. A locked staging file is no longer an indexed original.
+      for (const [, temporary] of staged) await fs.unlink(temporary).catch(() => undefined);
+      return { removed: true, ids, resourceIds };
     }); this.queue = action.catch(() => undefined); return action;
   }
   async versions(id: string): Promise<ResourceVersion[]> { return id.startsWith("import:") ? history((await this.catalog()).documents.find(record => record.id === id) ?? (() => { throw Error("Document is unavailable."); })()) : this.assets.versions(id); }
