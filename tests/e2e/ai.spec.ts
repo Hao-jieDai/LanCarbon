@@ -34,7 +34,7 @@ test("configures both providers and Others, streams, switches models, preserves 
   try {
     let page = await app.firstWindow(); await page.getByRole("main").waitFor();
     const writing = await page.getByLabel("Note title").inputValue();
-    await page.getByRole("button", { name: "Research", exact: true }).click(); await page.getByRole("button", { name: "AI Settings", exact: true }).click();
+    await page.getByRole("button", { name:"Workshop", exact: true }).click(); await page.getByRole("button", { name: "AI Settings", exact: true }).click();
     await expect(page.getByLabel("API base address")).toHaveValue("https://api.siliconflow.cn/v1");
     await page.getByLabel("API Key", { exact: true }).fill("fixture-api-key-private");
     await page.getByRole("button", { name: "Refresh models", exact: true }).click(); await expect(page.getByText(/models found/)).toBeVisible();
@@ -51,7 +51,7 @@ test("configures both providers and Others, streams, switches models, preserves 
     await page.getByRole("button", { name: "Chat", exact: true }).click(); await page.getByRole("combobox", { name: "Chat model", exact: true }).click(); await page.getByRole("option", { name: "SiliconFlow · DeepSeek V4 Pro", exact: true }).click();
     await page.getByLabel("Chat message").fill("Remember 42"); await page.getByRole("button", { name: "Send", exact: true }).click(); await expect(page.getByRole("button", { name: "Stop generating", exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Notes", exact: true }).click(); await expect(page.getByLabel("Note title")).toHaveValue(writing);
-    await page.getByRole("button", { name: "Research", exact: true }).click(); await expect(page.locator(".ai-markdown strong")).toHaveText("Hello"); await expect(page.locator(".ai-markdown .katex")).toBeVisible(); await expect(page.locator(".ai-markdown pre")).toContainText("print(42)");
+    await page.getByRole("button", { name:"Workshop", exact: true }).click(); await expect(page.locator(".ai-markdown strong")).toHaveText("Hello"); await expect(page.locator(".ai-markdown .katex")).toBeVisible(); await expect(page.locator(".ai-markdown pre")).toContainText("print(42)");
     await page.getByRole("combobox", { name: "Chat model", exact: true }).click(); await page.getByRole("option", { name: "OpenRouter · GPT-6 Luna", exact: true }).click();
     await expect(page.getByText(/history will be sent/)).toBeVisible(); await page.getByLabel("Chat message").fill("What number?"); await page.getByRole("button", { name: "Send", exact: true }).click(); await expect(page.getByText("The number was 42.", { exact: true })).toBeVisible();
     const request = bodies.find(body => body.messages.at(-1)?.content === "What number?")!; expect(request.model).toBe("openai/gpt-6-luna"); expect(request.messages).toHaveLength(4); expect(request.messages[0].role).toBe("system"); expect(request.messages[0].content).toContain("professional academic prose"); expect(request.messages[1].content).toBe("Remember 42"); expect(request.messages[2]).toMatchObject({ role: "user" }); expect(request.messages[2].content).toContain("Historical response from another model");

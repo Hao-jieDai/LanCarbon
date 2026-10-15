@@ -908,8 +908,6 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .app-shell.reader-active > .editor-panel { grid-column: 2; grid-row: 1; }
 .app-shell.reader-active > .editor-panel:not(.document-reader) { visibility: hidden; pointer-events: none; }
 .pdf-reader { position: relative; z-index: 2; height: 100vh; min-width: 0; display: flex; flex-direction: column; background: var(--paper); }
-.pdf-reader-heading { gap: 12px; flex-shrink: 0; }
-.pdf-reader-heading h1 { flex: 1; min-width: 0; margin: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 600 15px var(--sans); }
 .pdf-reader-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; padding: 10px 15px; border-bottom: 1px solid var(--line); font-size: 11px; flex-shrink: 0; }
 .pdf-reader-controls .themed-select { width: 105px; }
 .pdf-reader-controls .themed-select-trigger { min-height: 32px; padding: 5px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--ink); font: 11px var(--sans); }
@@ -997,7 +995,13 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .app-shell.has-reader-tabs { grid-template-rows: 40px minmax(0, 1fr); }
 .app-shell.has-reader-tabs > .sidebar { grid-row: 1 / span 2; }
 .app-shell.has-reader-tabs > .editor-panel { grid-column: 2; grid-row: 2; height: calc(100vh - 40px); min-height: 0; }
-.reader-tab-bar { grid-column: 2; grid-row: 1; display: flex; align-items: stretch; gap: 4px; padding: 4px 7px 0; overflow-x: auto; overflow-y: hidden; min-width: 0; border-bottom: 1px solid var(--line); background: var(--sidebar); scrollbar-width: thin; }
+.reader-tab-bar { grid-column: 2; grid-row: 1; display: flex; align-items: stretch; gap: 4px; padding: 4px 7px 0; overflow: hidden; min-width: 0; border-bottom: 1px solid var(--line); background: var(--sidebar); }
+.reader-tabs-scroll { display: flex; flex: 1; gap: 4px; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: thin; }
+.reader-tab-bar .reader-sidebar-toggle { display: none; flex: none; width: 31px; height: 31px; font-size: 19px; }
+.reader-tools-end { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-left: auto; max-width: 100%; }
+.reader-tools-end .pdf-find { margin-left: 0; }
+.app-shell.has-reader-tabs > .editor-panel .mobile-menu { display: none; }
+.app-shell.sidebar-collapsed .reader-sidebar-toggle { display: grid; }
 .reader-tab-bar button { border: 0; background: transparent; color: var(--muted); font: 11px var(--sans); }
 .reader-workspace-tab { flex: none; padding: 0 12px; border-radius: 7px 7px 0 0; }
 .reader-workspace-tab[aria-selected="true"], .reader-tab.selected { background: var(--paper); box-shadow: inset 0 2px var(--accent); }
@@ -1027,3 +1031,4 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .epub-error p { color: var(--muted); line-height: 1.7; }
 .app-shell.has-reader-tabs.sidebar-collapsed > .editor-panel, .app-shell.sidebar-collapsed > .reader-tab-bar { grid-column: 1; }
 @media (max-width: 760px) { .reader-tab-bar, .app-shell.has-reader-tabs > .editor-panel { grid-column: 1; } .epub-sidebar { width: 155px; } .epub-scroll { padding: 16px; } .epub-controls { gap: 6px; } }
+@media (max-width: 760px) { .reader-tab-bar .reader-sidebar-toggle { display: grid; } .reader-tools-end { gap: 8px; } }

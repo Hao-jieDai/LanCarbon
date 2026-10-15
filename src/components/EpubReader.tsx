@@ -3,7 +3,7 @@ import DOMPurify from "dompurify";
 import type { EpubPosition, EpubSession, EpubMatch } from "../shared/epubReader";
 import { ThemedSelect } from "./ThemedSelect";
 
-export function EpubReader({id,onClose,onOpenSidebar}:{id:string;onClose():void;onOpenSidebar():void}) {
+export function EpubReader({id}:{id:string}) {
   const api=window.notesDesktop.epub!,viewport=useRef<HTMLDivElement>(null),prose=useRef<HTMLDivElement>(null),searchInput=useRef<HTMLInputElement>(null);
   const current=useRef<EpubSession|null>(null),position=useRef<EpubPosition|null>(null),timer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined),restoring=useRef(true),pendingAnchor=useRef(""),pendingMatch=useRef<number|null>(null);
   const [session,setSession]=useState<EpubSession>(),[chapter,setChapter]=useState(0),[html,setHtml]=useState(""),[busy,setBusy]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
@@ -42,15 +42,14 @@ export function EpubReader({id,onClose,onOpenSidebar}:{id:string;onClose():void;
     if(next===chapter&&prose.current&&viewport.current){viewport.current.scrollTop=0;if(anchor)prose.current.querySelector<HTMLElement>(`#${CSS.escape("epub-content-"+anchor)}`)?.scrollIntoView({block:"start"});if(match!==null)highlight(prose.current,query)[match]?.scrollIntoView({block:"center"});pendingAnchor.current="";pendingMatch.current=null;}else setChapter(next);
   };
   const scroll=()=>{if(restoring.current||!position.current||!viewport.current)return;const view=viewport.current;position.current={...position.current,progress:Math.max(0,Math.min(1,view.scrollTop/Math.max(1,view.scrollHeight-view.clientHeight)))};clearTimeout(timer.current);timer.current=setTimeout(()=>void persist().catch(error=>setNotice(error.message)),500);};
-  const close=()=>void persist().catch(()=>undefined).finally(onClose);
   return <section className="editor-panel document-reader epub-reader" aria-label="EPUB reader">
-    <header className="editor-toolbar pdf-reader-heading"><button className="icon-button mobile-menu" aria-label="Open workspace list" onClick={onOpenSidebar}>☰</button><button className="toolbar-text-button" aria-label="Back from EPUB reader" onClick={close}>← Back</button><h1 title={session?.entry.name}>{session?.entry.name??"EPUB"}</h1><button className="toolbar-text-button" onClick={()=>void window.notesDesktop.library!.open(id).then(result=>{if(!result.ok)setNotice(result.error??"Could not open externally.");})}>Open externally</button></header>
+
     <div className="pdf-reader-controls epub-controls" data-translation-exclude>
       <button className="toolbar-text-button" aria-pressed={sidebar} onClick={()=>setSidebar(value=>!value)}>Contents</button><button className="toolbar-text-button" aria-label="Previous EPUB chapter" disabled={!session||chapter===0||busy} onClick={()=>move(chapter-1)}>‹</button><span>{session?`${chapter+1} / ${session.chapters.length}`:"—"}</span><button className="toolbar-text-button" aria-label="Next EPUB chapter" disabled={!session||chapter>=session.chapters.length-1||busy} onClick={()=>move(chapter+1)}>›</button>
       <ThemedSelect label="EPUB font size" value={String(fontSize)} options={[14,16,18,20,24,28,32].map(value=>({value:String(value),label:`${value} px`}))} onChange={value=>setFontSize(Number(value))}/>
       <ThemedSelect label="EPUB line spacing" value={String(lineHeight)} options={[1.4,1.7,2].map(value=>({value:String(value),label:`Spacing ${value}`}))} onChange={value=>setLineHeight(Number(value))}/>
       <ThemedSelect label="EPUB reading width" value={String(width)} options={[{value:"640",label:"Narrow"},{value:"800",label:"Medium"},{value:"1000",label:"Wide"}]} onChange={value=>setWidth(Number(value))}/>
-      <label className="pdf-find"><input ref={searchInput} aria-label="Find in EPUB" placeholder="Find in EPUB" maxLength={120} disabled={!session} value={query} onChange={event=>{setQuery(event.target.value);setSidebar(true);}}/><span role="status">{query?(searching?"Searching…":`${matches.length}${truncated?"+":""} matches`):""}</span></label>
+      <div className="reader-tools-end"><button className="toolbar-text-button" onClick={()=>void window.notesDesktop.library!.open(id).then(result=>{if(!result.ok)setNotice(result.error??"Could not open externally.");})}>Open externally</button><label className="pdf-find"><input ref={searchInput} aria-label="Find in EPUB" placeholder="Find in EPUB" maxLength={120} disabled={!session} value={query} onChange={event=>{setQuery(event.target.value);setSidebar(true);}}/><span role="status">{query?(searching?"Searching…":`${matches.length}${truncated?"+":""} matches`):""}</span></label></div>
     </div>
     {newVersion&&<div className="pdf-reader-notice" role="status">A newer file version is available.<button className="text-button" onClick={()=>void persist().catch(()=>undefined).finally(()=>setRevision(value=>value+1))}>Reload latest version</button></div>}
     {notice&&<p className="pdf-reader-notice" role="status">{notice}</p>}

@@ -26,19 +26,19 @@ test("four workspaces preserve writing, resources, selections and isolated direc
   try {
     let page = await app.firstWindow();
     await expect(page.getByLabel("Note title")).toHaveValue(note.title);
-    const bounds = await Promise.all(["Notes", "Books", "Research", "Library"].map(name => page.getByRole("button", { name, exact: true }).boundingBox()));
+    const bounds = await Promise.all(["Notes", "Books", "Workshop", "Library"].map(name => page.getByRole("button", { name, exact: true }).boundingBox()));
     expect(bounds[0]!.y).toBe(bounds[1]!.y); expect(bounds[2]!.y).toBe(bounds[3]!.y);
     expect(bounds[2]!.y).toBeGreaterThan(bounds[0]!.y); expect(bounds[0]!.x).toBe(bounds[2]!.x);
     await page.getByLabel("Note title").fill("Edited foundation writing");
-    await page.getByRole("button", { name: "Research", exact: true }).click();
+    await page.getByRole("button", { name:"Workshop", exact: true }).click();
     for (const name of ["Run", "Templates", "Outputs", "Chat", "Usage", "AI Settings", "Translation Settings"]) {
-      await page.getByRole("navigation", { name: "Research pages" }).getByRole("button", { name, exact: true }).click();
+      await page.getByRole("navigation", { name:"Workshop pages" }).getByRole("button", { name, exact: true }).click();
       await expect(page.getByRole("heading", { name: name === "Chat" ? "Start a conversation" : name, exact: true })).toBeVisible();
       if (["Run", "Templates", "Outputs"].includes(name)) await expect(page.getByText("Coming soon", { exact: true })).toBeVisible();
       else await expect(page.getByText("Coming soon", { exact: true })).toBeHidden();
     }
     await page.keyboard.press("Control+n");
-    await expect(page.getByRole("button", { name: "Research", exact: true })).toHaveAttribute("aria-pressed", "true");
+    await expect(page.getByRole("button", { name:"Workshop", exact: true })).toHaveAttribute("aria-pressed", "true");
     await page.getByRole("button", { name: "Library", exact: true }).click();
     await page.getByLabel("Find Library resource").fill("Original.pdf");
     await page.getByRole("button", { name: "Original.pdf", exact: true }).click();
@@ -51,12 +51,12 @@ test("four workspaces preserve writing, resources, selections and isolated direc
     }
     await page.getByRole("button", { name: "Books", exact: true }).click();
     await page.getByLabel("Select Book").selectOption(book.id);
-    await page.getByRole("button", { name: "Research", exact: true }).click();
+    await page.getByRole("button", { name:"Workshop", exact: true }).click();
     await page.keyboard.press("Control+q");
     await expect(page.getByLabel("Select Book")).toHaveValue(book.id);
     await page.getByRole("button", { name: "Notes", exact: true }).click();
     await expect(page.getByLabel("Note title")).toHaveValue("Edited foundation writing");
-    await page.getByRole("button", { name: "Research", exact: true }).click();
+    await page.getByRole("button", { name:"Workshop", exact: true }).click();
     await page.getByRole("button", { name: "Chat", exact: true }).click();
     await page.screenshot({ path: info.outputPath("research-chat.png") });
     await app.close(); app = await launch(); page = await app.firstWindow();

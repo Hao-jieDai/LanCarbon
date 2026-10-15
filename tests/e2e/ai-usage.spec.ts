@@ -40,7 +40,7 @@ test("records native usage, snapshots prices, separates retries and survives off
       ] as const) { const result = await api.saveProvider({ id, kind, name, baseUrl, models: [{ id: modelId, name: modelName, purpose: "chat" }], defaultModel: modelId, apiKey: "fixture-key-private" }); if (!result.ok) throw Error(result.error); }
       const result = await api.test("siliconflow", "fixture-sf"); if (!result.ok) throw Error(result.error);
     });
-    await page.getByRole("button", { name: "Research", exact: true }).click(); await page.getByRole("button", { name: "Usage", exact: true }).click();
+    await page.getByRole("button", { name:"Workshop", exact: true }).click(); await page.getByRole("button", { name: "Usage", exact: true }).click();
     await expect(page.locator(".usage-overview > div").first().locator("strong")).toHaveText("1");
     await expect(page.getByText(/1 without known costs/)).toBeVisible();
     await page.locator(".usage-prices summary").click();
@@ -121,14 +121,14 @@ test("records native usage, snapshots prices, separates retries and survives off
     expect((await page.evaluate(() => window.notesDesktop.ai!.usage())).ok).toBe(true); expect(networkCalls).toBe(before);
     const filenames = await fs.readdir(path.join(root, "Data", "Research", "Usage")); const log = (await Promise.all(filenames.map(name => fs.readFile(path.join(root, "Data", "Research", "Usage", name), "utf8")))).join(""); expect(log).not.toContain("fixture-key-private"); expect(log).not.toContain("retry accounting");
     await page.getByRole("button", { name: "Notes", exact: true }).click(); await expect(page.getByLabel("Note title")).toHaveValue(writing);
-    await page.getByRole("button", { name: "Research", exact: true }).click(); await page.getByRole("navigation", { name: "Research pages" }).getByRole("button", { name: "AI Settings", exact: true }).click();
+    await page.getByRole("button", { name:"Workshop", exact: true }).click(); await page.getByRole("navigation", { name:"Workshop pages" }).getByRole("button", { name: "AI Settings", exact: true }).click();
     await page.getByRole("button", { name: "Remove Fixture SF", exact: true }).click(); await page.getByRole("button", { name: "Save configuration", exact: true }).click(); await expect(page.getByText("Configuration saved.", { exact: true })).toBeVisible();
     const pruned = await page.evaluate(() => window.notesDesktop.ai!.prices()); expect(pruned.ok && pruned.prices.map(price => price.modelId)).toEqual(["fixture-free"]);
     const preserved = await page.evaluate(() => window.notesDesktop.ai!.usage()); expect(preserved.ok && preserved.usage.summary.costs).toEqual(result.usage.summary.costs);
     const removedService = await page.evaluate(() => window.notesDesktop.ai!.removeProvider("others-fixture")); expect(removedService.ok).toBe(true);
     const emptyPrices = await page.evaluate(() => window.notesDesktop.ai!.prices()); expect(emptyPrices.ok && emptyPrices.prices).toEqual([]);
     await app.close(); app = await launch(true); page = await app.firstWindow(); await page.getByRole("main").waitFor();
-    await page.getByRole("button", { name: "Research", exact: true }).click(); await page.getByRole("button", { name: "Usage", exact: true }).click(); await expect(page.locator(".usage-overview > div").first().locator("strong")).toHaveText("6");
+    await page.getByRole("button", { name:"Workshop", exact: true }).click(); await page.getByRole("button", { name: "Usage", exact: true }).click(); await expect(page.locator(".usage-overview > div").first().locator("strong")).toHaveText("6");
     await expect(page.locator(".usage-overview > div").nth(2).locator("strong")).toHaveText("≈ ¥0.02772");
     await page.getByRole("button", { name: "Refresh", exact: true }).click(); await expect(page.getByText(/History is available offline/)).toBeVisible(); expect(networkCalls).toBe(before);
   } finally { await app.close().catch(() => undefined); server.closeAllConnections(); await new Promise<void>(resolve => server.close(() => resolve())); if (path.dirname(root) !== path.resolve(os.tmpdir()) || !path.basename(root).startsWith("lancarbon-usage-desktop-")) throw Error("Unexpected test cleanup path"); await fs.rm(root, { recursive: true, force: true }); }

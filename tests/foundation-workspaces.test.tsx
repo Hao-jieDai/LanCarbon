@@ -36,15 +36,15 @@ describe("foundation workspaces", () => {
     await waitFor(() => expect(document.querySelector(".cm-activeLine")).toHaveTextContent(asset.id));
     expect(window.notesDesktop.saveWorkspace).toHaveBeenCalledWith(expect.objectContaining({ notes: expect.arrayContaining([expect.objectContaining({ id: note.id, content: linked.content })]) }));
   });
-  it("keeps edited writing across all workspaces and restores Research selection after restarting", async () => {
+  it("keeps edited writing across all workspaces and restores Workshop selection after restarting", async () => {
     const view = render(<App />); await screen.findByDisplayValue("Personal writing");
     fireEvent.change(screen.getByLabelText("Note title"), { target: { value: "Edited writing" } });
-    fireEvent.click(screen.getByRole("button", { name: "Research" }));
+    fireEvent.click(screen.getByRole("button", { name:"Workshop" }));
     fireEvent.click(screen.getByRole("button", { name: "Chat" }));
     expect(screen.getByRole("heading", { name: "Chat" })).toBeVisible();
     expect(screen.queryByLabelText("Note title")).toBeNull();
     fireEvent.keyDown(document, { key: "n", ctrlKey: true });
-    expect(screen.getByRole("button", { name: "Research" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name:"Workshop" })).toHaveAttribute("aria-pressed", "true");
     await waitFor(() => expect(window.notesDesktop.saveWorkspace).toHaveBeenCalledWith(expect.objectContaining({ notes: expect.arrayContaining([expect.objectContaining({ id: note.id, title: "Edited writing" })]) })));
     fireEvent.click(screen.getByRole("button", { name: "Library" }));
     fireEvent.click(await screen.findByRole("button", { name: "Original.pdf" }));
@@ -53,10 +53,10 @@ describe("foundation workspaces", () => {
     fireEvent.click(screen.getByRole("button", { name: "Notes" }));
     expect(screen.getByLabelText("Note title")).toHaveValue("Edited writing");
     fireEvent.click(screen.getByRole("button", { name: "Books" }));
-    fireEvent.click(screen.getByRole("button", { name: "Research" }));
+    fireEvent.click(screen.getByRole("button", { name:"Workshop" }));
     fireEvent.keyDown(document, { key: "q", ctrlKey: true });
     expect(screen.getByRole("button", { name: "Books" })).toHaveAttribute("aria-pressed", "true");
-    fireEvent.click(screen.getByRole("button", { name: "Research" }));
+    fireEvent.click(screen.getByRole("button", { name:"Workshop" }));
     view.unmount(); render(<App />);
     expect(await screen.findByRole("heading", { name: "Chat" })).toBeVisible();
   });

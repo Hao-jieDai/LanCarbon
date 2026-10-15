@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.3.6";
+export const RELEASE_VERSION = "2.3.7";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.3.6 adds local EPUB reading and a shared PDF/EPUB tab bar for up to ten files, with separate reading positions, chapter search, typography controls and selection translation.
+Version 2.3.7 simplifies PDF/EPUB reading to two toolbar rows, moves external opening beside search, and renames the AI and literature workspace to Workshop. Existing files, reading positions and saved AI data are preserved.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -28,7 +28,7 @@ LanCarbon now uses the new Logo consistently across the application, installer, 
 
 ### AI Settings and Chat
 
-1. Open **Research → AI Settings** and choose **SiliconFlow**, **OpenRouter** or **Others**. Presets supply their base addresses. Others supports OpenAI-compatible Chat Completions services and additional named configurations.
+1. Open **Workshop → AI Settings** and choose **SiliconFlow**, **OpenRouter** or **Others**. Presets supply their base addresses. Others supports OpenAI-compatible Chat Completions services and additional named configurations.
 2. Paste the service's **API Key** and select **Refresh models**, or enter an exact **Model ID** and **Display name**, then **Add model → Save models**. Choose a **Default model**. Use the platform catalogue for current model IDs and account permissions.
 3. Saved keys appear as **Configured**, showing their first four and last four characters with the middle hidden. Leave the key input blank to retain it, or enter a replacement and save. **Remove saved key** asks for confirmation and removes only the local key, preserving models and chats. Revoke the key separately at the service when required.
 4. Expand **Response guidelines · all chat models** to edit the shared **System prompt**, then select **Save guidelines**. **Restore default guidelines** fills the default; save to apply it. Defaults request professional, accurate, calm, neutral and concise responses, without emoji or decorative language, and distinguish facts from interpretation and uncertainty. These instructions apply to future replies across all services; they do not rewrite history or guarantee identical model quality.
@@ -53,13 +53,15 @@ Select an Imports folder to use **Rename folder** or **Delete folder**. Deleting
 
 ### Reading PDFs
 
-Open a PDF from Library with **Open** or a double-click. In a Note or Book, click its attachment in **Preview**, or use **Resources → Read PDF**. **Back** returns to the original writing or Library view. **Open externally** retains default-app editing and file versions; Other ordinary files use their default apps.
+Open a PDF from Library with **Open** or a double-click. In a Note or Book, click its attachment in **Preview**, or use **Resources → Read PDF**. **Workspace** in the tab bar returns to the original writing or Library view. **Open externally** retains default-app editing and file versions; Other ordinary files use their default apps.
 
 Use page numbers, previous/next, **Fit width**, **Fit page**, zoom, or **Pages / Contents** for on-demand thumbnails and the document's own outline. **Find in PDF** (Ctrl+F) searches the document with previous/next matches. Reading position and zoom are saved by document ID in **Data/Library/reading.json**, so rename/move and linked writing attachments share progress. The currently open PDF is an immutable reading snapshot; a new externally saved version offers **Reload latest version**.
 
 Enable the existing **Translate** switch (Ctrl+Alt+T), then select short English text in the PDF. Existing translation settings, cache and usage accounting apply. PDFs need a selectable text layer for selection/search; image-only scans remain viewable. Reading is local and does not call AI or change the file. Password-protected files prompt locally without saving the password. PDF scripts and editing are disabled. Annotation creation and OCR follow separately. The reader loads page data as needed and releases the open snapshot when closed; no PDF parsing or thumbnail disk cache is created.
 
-Use **Collapse sidebar** beside the Logo to hide the workspace sidebar. The menu button at the upper left of the content shows it again. Notes, Books, Research, Library and PDF reading share this control; the desktop collapse preference is remembered across restarts. On narrow windows the sidebar opens as a drawer.
+Use **Collapse sidebar** beside the Logo to hide the workspace sidebar. The menu button at the upper left of the content shows it again. Notes, Books, Workshop, Library and PDF reading share this control; the desktop collapse preference is remembered across restarts. On narrow windows the sidebar opens as a drawer.
+
+The reader uses two toolbar rows: file tabs and the sidebar toggle at the top, followed by reading controls. **Open externally** is beside the search box. The file name appears in its tab; **Workspace** returns to the previous writing or Library view while keeping file tabs open. When files are open, the sidebar toggle stays at the left of the tab row, including when the tabs are scrolled.
 
 ### EPUB reading and file tabs
 
@@ -67,25 +69,25 @@ Open an EPUB in Library with **Open** or a double-click, or open its attachment 
 
 Enable **Translate** (Ctrl+Alt+T) to translate selected English using the existing translation configuration and Usage records. Reading itself is offline and does not call AI. Chapter, scroll position and typography are saved by stable document ID in **Data/Library/epub-reading.json**, shared by Library and linked Note/Book attachments. Rename/move and restart preserve progress. A newer external version offers **Reload latest version**. The file remains unchanged; no extracted-book cache is written to disk.
 
-PDFs and EPUBs share a top tab bar with up to **10 files**. Opening the same document from another location activates its existing tab. Select a tab to return to its saved position; the active tab scrolls into view. **Workspace** or **Back** returns to writing or Library without closing the tabs. The **×** on a tab closes only that file; closing the active tab selects a neighboring one. At the limit, close a tab before opening another. Arrow keys, Home and End switch tabs when a tab has keyboard focus. Tabs and the active file are restored after restart; only the active document body is loaded.
+PDFs and EPUBs share a top tab bar with up to **10 files**. Opening the same document from another location activates its existing tab. Select a tab to return to its saved position; the active tab scrolls into view. **Workspace** returns to writing or Library without closing the tabs. The **×** on a tab closes only that file; closing the active tab selects a neighboring one. At the limit, close a tab before opening another. Arrow keys, Home and End switch tabs when a tab has keyboard focus. Tabs and the active file are restored after restart; only the active document body is loaded.
 
 ### Estimated API balances
 
-At the top of **Research → Usage**, use **Set balance / Update balance** to name a billing account and select **Connections sharing this balance**. Select only connections billed to the same account: different chat and dedicated translation API keys may share one account, while separate accounts on the same platform should stay independent. Each connection belongs to at most one account. Enter the full current balance in CNY or USD; never add existing card balances together. Only fees recorded after calibration are deducted across the selected connections, models, chat, tests and translation. Pending requests count when their fees arrive. Reported charges take priority over request-time price estimates; unknown fees stay unknown. Update balance prefills the current estimated remaining balance. Keep the amount unchanged when only renaming the account; saving preserves the original calibration and any fees completed while editing. Edit the amount to calibrate a new platform balance. After changing shared connections, explicitly enter the full current balance again to confirm the new checkpoint.
+At the top of **Workshop → Usage**, use **Set balance / Update balance** to name a billing account and select **Connections sharing this balance**. Select only connections billed to the same account: different chat and dedicated translation API keys may share one account, while separate accounts on the same platform should stay independent. Each connection belongs to at most one account. Enter the full current balance in CNY or USD; never add existing card balances together. Only fees recorded after calibration are deducted across the selected connections, models, chat, tests and translation. Pending requests count when their fees arrive. Reported charges take priority over request-time price estimates; unknown fees stay unknown. Update balance prefills the current estimated remaining balance. Keep the amount unchanged when only renaming the account; saving preserves the original calibration and any fees completed while editing. Edit the amount to calibrate a new platform balance. After changing shared connections, explicitly enter the full current balance again to confirm the new checkpoint.
 
 Choose **Unlimited · No balance tracking** for a free service or an account that needs no balance reminders. No amount is required; token and cost statistics continue unchanged. For tracked balances, reminders appear strictly below **CNY 5** or **USD 2**, based on currency rather than interface language. After a top-up or regrouping, enter the full current account balance to start a new checkpoint. Other accounts that lose connections need recalibration; unchecked connections become separate entries. Historical usage and fees are never moved, deleted or charged again. **Stop tracking** clears the checkpoint while preserving shared membership and usage. Cards are independent of Usage filters. Existing separate balances are retained until you explicitly regroup them. Records live in **Data/Research/Usage/balances.json** and travel with Data Location. Other apps' charges or platform credits require manual recalibration; no balance API is called. Cross-currency deductions use the exchange rate saved in Model prices.
 
 ### Selection translation
 
-1. Open **Research → Translation Settings**. With **Use an existing AI connection**, select a service and a model already saved in AI Settings. The saved key and model display name are reused; this mode has no model catalogue refresh or editable model fields. To add a dedicated translation service/model, choose **Separate translation connection**, configure SiliconFlow, OpenRouter or Others, then use **Refresh translation models** or enter its exact Model ID and display name. Refresh reads a platform catalogue; account access and pricing still need checking.
+1. Open **Workshop → Translation Settings**. With **Use an existing AI connection**, select a service and a model already saved in AI Settings. The saved key and model display name are reused; this mode has no model catalogue refresh or editable model fields. To add a dedicated translation service/model, choose **Separate translation connection**, configure SiliconFlow, OpenRouter or Others, then use **Refresh translation models** or enter its exact Model ID and display name. Refresh reads a platform catalogue; account access and pricing still need checking.
 2. **Save translation settings**, then **Test translation**. The result beside the buttons shows **Translation test succeeded**, the selected service/model, the fixed English sentence **Climate change affects investment.**, and its Chinese translation. **Stop translation test** cancels a running test. Testing makes a real request even with automatic translation off. The editable **Translation prompt** applies only to translation; model format adaptation is automatic. The default asks for accurate academic Chinese without explanations or emoji. English within this prompt field can also be selected for translation without changing its contents.
-3. Translation starts **off** each time LanCarbon opens. Enable the sidebar **Translate** switch or press **Ctrl+Alt+T**. Select an English word, phrase or short passage in Notes/Books **Edit** or **Preview**, Research, Library or selectable interface text. After selection settles, the floating panel shows the selected English and Chinese translation. Drag its header to move it; the position is remembered. Long source and translated text scroll independently inside the compact panel. Close the panel or use the switch/shortcut to disable automatic requests. Passwords, API keys and connection addresses are excluded.
+3. Translation starts **off** each time LanCarbon opens. Enable the sidebar **Translate** switch or press **Ctrl+Alt+T**. Select an English word, phrase or short passage in Notes/Books **Edit** or **Preview**, Workshop, Library or selectable interface text. After selection settles, the floating panel shows the selected English and Chinese translation. Drag its header to move it; the position is remembered. Long source and translated text scroll independently inside the compact panel. Close the panel or use the switch/shortcut to disable automatic requests. Passwords, API keys and connection addresses are excluded.
 4. Select at most **1,600 characters / 250 words**. Only the selection and translation instructions are sent, without the whole Note, Book or Chat. New selections cancel earlier translation requests. Cancellation cannot undo charges already incurred upstream.
 5. Repeated selections with the same saved service/model/prompt reuse local results without another API call. **Saved translations → Clear translation cache** clears only the translation cache, limited to **1,000 results / 5 MB**, stored under **Data/Research/Translation**. Translation and manual tests appear in **Usage → Purpose: Translation**; locally reused results do not add tokens or requests. Configure the translation model's price in **Model prices** when the service does not report costs. Dedicated keys have masked previews and **Remove translation key**; blank key inputs retain the saved key.
 
 ### Token usage and costs
 
-Open **Research → Usage**. The default is **Today**; choose **Last 7 days**, **Last 30 days**, or custom **From / To** dates. Source, model and purpose filters apply to the entire range. The compact overview shows **Requests**, total **Tokens** and **Costs**, with each title and value on one line. Requests are newest first, ten per page; pagination does not change totals or activity.
+Open **Workshop → Usage**. The default is **Today**; choose **Last 7 days**, **Last 30 days**, or custom **From / To** dates. Source, model and purpose filters apply to the entire range. The compact overview shows **Requests**, total **Tokens** and **Costs**, with each title and value on one line. Requests are newest first, ten per page; pagination does not change totals or activity.
 
 **Token activity** has its own dates, independently of the summary/request filters above. **Hourly** defaults to today and shows 24 square cells centered in three rows of eight (00–07, 08–15, 16–23); choose another day using its calendar. **Daily** defaults to the current full year, with 365/366 cells arranged by week and labeled by month; select a different year independently. Changing From / To or Today / Last 7 days / Last 30 days changes summaries and request records without switching activity mode or dates. Source, model and purpose filters apply to both. From, To and the hourly day use the LanCarbon-themed calendar; dates can also be typed as YYYY-MM-DD. Darker cells mean more tokens. Hover or focus for time/date, tokens and CNY cost; missing data stays unknown.
 
@@ -108,13 +110,15 @@ Viewing Usage works offline and does not call a model. Local logs are in **Data/
 
 ### PDF 阅读
 
-在 Library 中点击 **Open** 或双击 PDF。在 Note／Book 的 **Preview** 点击 PDF 附件，或通过 **Resources → Read PDF** 打开；**Back** 返回原来的写作或文件列表。**Open externally** 保留默认程序编辑和文件版本功能，其他普通文件继续使用默认程序。
+在 Library 中点击 **Open** 或双击 PDF。在 Note／Book 的 **Preview** 点击 PDF 附件，或通过 **Resources → Read PDF** 打开；标签栏的 **Workspace** 返回原来的写作或文件列表。**Open externally** 保留默认程序编辑和文件版本功能，其他普通文件继续使用默认程序。
 
 使用页码、前后翻页、**Fit width**、**Fit page**、缩放，以及 **Pages / Contents** 中按需生成的缩略图和原文目录。**Find in PDF**（Ctrl+F）提供全文搜索与前后匹配。阅读位置和缩放按文档 ID 保存在 **Data/Library/reading.json**；改名、移动及写作附件共用进度。正在阅读的内容保持为打开时的版本，外部保存新版后，可选择 **Reload latest version**。
 
 开启现有 **Translate**（Ctrl+Alt+T），选取 PDF 中的短英文即可翻译，沿用翻译配置、缓存和用量统计。选词与搜索需要 PDF 自带文字层；纯扫描件仍可查看。阅读本身离线运行，不调用 AI、不修改原件。加密文件在本地输入密码，密码不保存；禁用 PDF 脚本和编辑。新建批注与 OCR 另行提供。页面按需读取，关闭后释放打开快照，不建立 PDF 解析或缩略图磁盘缓存。
 
-点击 Logo 旁的 **Collapse sidebar** 可收起工作区侧栏，点击内容区左上角的菜单按钮再次展开。Notes、Books、Research、Library 与 PDF 阅读共用此操作，桌面侧栏状态在重启后保留；窄窗口使用抽屉式侧栏。
+点击 Logo 旁的 **Collapse sidebar** 可收起工作区侧栏，点击内容区左上角的菜单按钮再次展开。Notes、Books、Workshop、Library 与 PDF 阅读共用此操作，桌面侧栏状态在重启后保留；窄窗口使用抽屉式侧栏。
+
+阅读区使用两行工具栏：上方为文件标签和侧栏开关，下方为阅读操作；**Open externally** 位于搜索框左侧。文件名只在标签中显示，点击 **Workspace** 返回先前的写作或 Library 页面并保留文件标签。打开文件后，侧栏开关固定在标签行左侧，横向滚动标签时仍可操作。
 
 ### EPUB 阅读与文件标签
 
@@ -122,25 +126,25 @@ Viewing Usage works offline and does not call a model. Local logs are in **Data/
 
 开启 **Translate**（Ctrl+Alt+T）后，选取英文即可沿用翻译配置与 Usage 统计。阅读本身离线运行，不调用 AI。章节、滚动位置和文字样式按稳定文档 ID 保存在 **Data/Library/epub-reading.json**，Library 与 Note／Book 的关联附件共用；改名、移动或重启后保留进度。外部保存新版后提供 **Reload latest version**。阅读不修改原件，不在磁盘建立解压后的书籍缓存。
 
-PDF 与 EPUB 共用顶部标签栏，最多同时打开 **10 个文件**。从不同位置打开同一文献会切换到已有标签；切换后恢复各自位置，当前标签会自动滚动到可见处。**Workspace** 或 **Back** 返回写作／Library，同时保留文件标签；标签上的 **×** 只关闭该文件，关闭当前标签后切换到相邻文件。达到上限后需先关闭一个标签。标签获得键盘焦点时，可用方向键、Home、End 切换。重启后恢复标签和当前文件，正文只加载当前文件。
+PDF 与 EPUB 共用顶部标签栏，最多同时打开 **10 个文件**。从不同位置打开同一文献会切换到已有标签；切换后恢复各自位置，当前标签会自动滚动到可见处。**Workspace** 返回写作／Library，同时保留文件标签；标签上的 **×** 只关闭该文件，关闭当前标签后切换到相邻文件。达到上限后需先关闭一个标签。标签获得键盘焦点时，可用方向键、Home、End 切换。重启后恢复标签和当前文件，正文只加载当前文件。
 
 ### API 估算余额
 
-在 **Research → Usage** 顶部，通过 **Set balance / Update balance** 命名计费账户，在 **Connections sharing this balance** 勾选共用余额的连接。只合并实际从同一账户扣费的连接：聊天与独立翻译可使用不同 API Key；同平台的不同账户应保持独立。每个连接最多属于一个余额账户。输入 CNY 或 USD 的完整当前余额，不能把已有卡片的余额相加。保存后只扣减此后记录到的费用，汇总所选连接的所有模型、聊天、测试和翻译；尚未完成的请求在费用结算后计入。优先使用接口返回费用，否则采用请求时的价格快照；未知费用保持未知。Update balance 默认填入当前估算剩余余额。只修改账户名称时无需重填金额；保存会保留原校准起点，也保留编辑期间结算的费用。修改金额用于校准平台新余额；调整共享连接后，需明确重新输入完整当前余额以确认新起点。
+在 **Workshop → Usage** 顶部，通过 **Set balance / Update balance** 命名计费账户，在 **Connections sharing this balance** 勾选共用余额的连接。只合并实际从同一账户扣费的连接：聊天与独立翻译可使用不同 API Key；同平台的不同账户应保持独立。每个连接最多属于一个余额账户。输入 CNY 或 USD 的完整当前余额，不能把已有卡片的余额相加。保存后只扣减此后记录到的费用，汇总所选连接的所有模型、聊天、测试和翻译；尚未完成的请求在费用结算后计入。优先使用接口返回费用，否则采用请求时的价格快照；未知费用保持未知。Update balance 默认填入当前估算剩余余额。只修改账户名称时无需重填金额；保存会保留原校准起点，也保留编辑期间结算的费用。修改金额用于校准平台新余额；调整共享连接后，需明确重新输入完整当前余额以确认新起点。
 
 免费服务或不需要余额提醒的账户可选择 **Unlimited · No balance tracking**，无需填写额度，Token 与费用统计照常保留。追踪余额时，严格低于 **人民币 5 元**或 **2 美元**才提醒，按币种而非界面语言判断。充值或调整共享连接后重新输入完整当前余额，建立新的扣费起点；其他失去连接的账户需重新校准，取消勾选的连接独立显示。历史用量和费用不转移、不删除，也不重新扣减。**Stop tracking** 只清除余额起点，保留共享关系和用量。卡片独立于 Usage 筛选；现有独立余额会保留，直到你主动合并。记录位于 **Data/Research/Usage/balances.json**，随 Data Location 迁移；其他软件消费或平台赠额需手动校准，不调用平台余额接口。跨币种扣减沿用 Model prices 中的手动汇率。
 
 ### 选词翻译
 
-1. 打开 **Research → Translation Settings**。选择 **Use an existing AI connection** 时，仅选择服务与 AI Settings 已保存的模型，密钥和显示名称沿用原配置；该模式不提供目录刷新或模型字段编辑。新增独立的翻译服务／模型时，选择 **Separate translation connection** 配置 SiliconFlow、OpenRouter 或 Others，再 **Refresh translation models** 或手填准确的 Model ID 与显示名称。刷新读取平台目录，可调用权限与价格仍需核对。
+1. 打开 **Workshop → Translation Settings**。选择 **Use an existing AI connection** 时，仅选择服务与 AI Settings 已保存的模型，密钥和显示名称沿用原配置；该模式不提供目录刷新或模型字段编辑。新增独立的翻译服务／模型时，选择 **Separate translation connection** 配置 SiliconFlow、OpenRouter 或 Others，再 **Refresh translation models** 或手填准确的 Model ID 与显示名称。刷新读取平台目录，可调用权限与价格仍需核对。
 2. **Save translation settings → Test translation**。按钮附近的结果明确展示 **Translation test succeeded**、服务／模型、固定原句 **Climate change affects investment.** 与中文译文。**Stop translation test** 取消正在进行的测试；自动翻译关闭时也可手动测试，会产生真实请求。可编辑的 **Translation prompt** 仅用于翻译，所需模型格式自动适配；默认要求准确、专业、只输出简体中文且不用 emoji。提示词输入框中的英文也可选取翻译，原内容不受修改。
-3. 每次启动默认**关闭**。点击侧栏 **Translate** 或按 **Ctrl+Alt+T** 开启后，在 Notes／Books 的 **Edit** 或 **Preview**、Research、Library 及可选取的界面文字中选择英文单词、词组或短句。选取稳定后浮窗显示原文与中文；原文与长译文分别在内部滚动，保持窗口紧凑。拖动标题栏可移动并记住位置。关闭浮窗或使用开关／快捷键停止自动调用。密码、API Key 与接口地址不参与翻译。
+3. 每次启动默认**关闭**。点击侧栏 **Translate** 或按 **Ctrl+Alt+T** 开启后，在 Notes／Books 的 **Edit** 或 **Preview**、Workshop、Library 及可选取的界面文字中选择英文单词、词组或短句。选取稳定后浮窗显示原文与中文；原文与长译文分别在内部滚动，保持窗口紧凑。拖动标题栏可移动并记住位置。关闭浮窗或使用开关／快捷键停止自动调用。密码、API Key 与接口地址不参与翻译。
 4. 单次最多 **1,600 字符／250 词**，仅发送选取内容与翻译要求，不附带整篇 Note、Book 或聊天。新的选取取消旧翻译请求；取消不能撤销上游已经发生的费用。
 5. 相同来源、模型、提示词的重复选取复用本地结果，不再次请求 API。**Saved translations → Clear translation cache** 仅清除翻译缓存，位于 **Data/Research/Translation**，上限 **1,000 条／5 MB**。翻译及手动测试在 **Usage → Purpose: Translation** 中统计；本地复用不增加请求与 Token。服务不返回费用时，在 **Model prices** 配置翻译模型价格。独立密钥显示掩码，可用 **Remove translation key** 清除本地保存；输入框留空保留原密钥。
 
 ### Token 用量与费用
 
-打开 **Research → Usage**，默认查看 **Today**；可选 **Last 7 days**、**Last 30 days**，或自选 **From / To** 日期。来源、模型和用途筛选作用于整个区间。紧凑概览只显示 **Requests**、总 **Tokens** 和 **Costs**，标题与数字在同一行。请求按最新在前排列，每页十条；翻页不影响汇总和活动热力图。
+打开 **Workshop → Usage**，默认查看 **Today**；可选 **Last 7 days**、**Last 30 days**，或自选 **From / To** 日期。来源、模型和用途筛选作用于整个区间。紧凑概览只显示 **Requests**、总 **Tokens** 和 **Costs**，标题与数字在同一行。请求按最新在前排列，每页十条；翻页不影响汇总和活动热力图。
 
 **Token activity** 使用独立日期，不跟随上方汇总／请求筛选。**Hourly** 默认今天，24 个正方形格子按三行八列居中排列（00–07、08–15、16–23），可用自己的日历切换日期。**Daily** 默认当前完整年份，365／366 格按周排列、标记月份，可独立切换年份。修改 From／To 或 Today／Last 7 days／Last 30 days 只调整汇总和请求记录，不切换热力图模式或日期；来源、模型和用途筛选同时作用于两者。From、To 与小时日期使用 LanCarbon 风格日历，也可手填 YYYY-MM-DD。颜色越深表示 Token 越多；悬浮或聚焦查看时间／日期、总 Token 和人民币费用，缺失数据仍为未知。
 
@@ -152,7 +156,7 @@ PDF 与 EPUB 共用顶部标签栏，最多同时打开 **10 个文件**。从�
 
 ### Workspaces
 
-The four workspace buttons are arranged in two rows: Notes / Books above Research / Library. Switching and restarting retain your selected Note, Book page, Research page and Library resource. **Ctrl+Q** switches Notes and Books; from Research or Library it returns to the most recently used writing workspace. **Ctrl+N** and **Ctrl+E** act only in Notes or Books. Images and attachments are managed in **Library/assets**, with their IDs and writing links intact. In Library, select a file to keep its references visible above the scrolling list. Select a writing reference to open its Note or Book page at the cited line. Use **Folder** to reveal the actual managed file, **Rename** to change its display/save-copy name, and **Save a copy** beside the selected filename to export a copy. Renaming preserves the original extension and IDs; built-in tutorial resources are managed by LanCarbon and cannot be renamed. **Open Library folder** opens the originals folder under the LanCarbon root.
+The four workspace buttons are arranged in two rows: Notes / Books above Workshop / Library. Switching and restarting retain your selected Note, Book page, Workshop page and Library resource. **Ctrl+Q** switches Notes and Books; from Workshop or Library it returns to the most recently used writing workspace. **Ctrl+N** and **Ctrl+E** act only in Notes or Books. Images and attachments are managed in **Library/assets**, with their IDs and writing links intact. In Library, select a file to keep its references visible above the scrolling list. Select a writing reference to open its Note or Book page at the cited line. Use **Folder** to reveal the actual managed file, **Rename** to change its display/save-copy name, and **Save a copy** beside the selected filename to export a copy. Renaming preserves the original extension and IDs; built-in tutorial resources are managed by LanCarbon and cannot be renamed. **Open Library folder** opens the originals folder under the LanCarbon root.
 
 ### What you can do
 
@@ -206,7 +210,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.3.6 新增 EPUB 内置阅读及最多十个 PDF／EPUB 文件标签页，支持独立阅读进度、章节搜索、文字样式调整和选词翻译。
+2.3.7 将 PDF／EPUB 阅读区精简为两行工具栏，外部打开移至搜索框左侧，并将 AI 与文献工作区更名为 Workshop；保留原文件、阅读进度和已保存的 AI 数据。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
@@ -220,7 +224,7 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 
 ### AI Settings 与 Chat
 
-1. 打开 **Research → AI Settings**，选择 **SiliconFlow**、**OpenRouter** 或 **Others**。前两项预填 API 地址；Others 支持兼容 OpenAI Chat Completions 的服务，也可添加多个命名配置。
+1. 打开 **Workshop → AI Settings**，选择 **SiliconFlow**、**OpenRouter** 或 **Others**。前两项预填 API 地址；Others 支持兼容 OpenAI Chat Completions 的服务，也可添加多个命名配置。
 2. 填入服务的 **API Key** 后点击 **Refresh models**，或填写准确的 **Model ID** 与 **Display name**，点击 **Add model → Save models**，并选择 **Default model**。通过平台目录确认当前模型 ID 与账号调用权限。
 3. 已保存密钥显示 **Configured**，仅展示前四位和后四位，中间隐藏。密钥输入栏留空保留原密钥，填写新密钥并保存可替换。**Remove saved key** 经确认后仅清除本地保存的密钥，保留模型配置与会话；需要撤销平台上的密钥时另到平台操作。
 4. 展开 **Response guidelines · all chat models**，编辑共用的 **System prompt**，点击 **Save guidelines** 保存。**Restore default guidelines** 填入默认内容，保存后生效。默认要求专业准确、冷静中立、简洁高效，不使用 emoji 或装饰性表达，区分事实、解释与不确定性。规范用于各服务后续回复，不改写旧记录，也不保证不同模型质量相同。
@@ -234,7 +238,7 @@ SiliconFlow 地址为 \`https://api.siliconflow.cn/v1\`，OpenRouter 地址为 \
 
 ### 工作区
 
-四个工作区入口按两行排列：上行为 Notes / Books，下行为 Research / Library。切换和重启后保留所选 Note、Book 页面、Research 子页和 Library 资源。**Ctrl+Q** 在 Notes 与 Books 之间切换；在 Research 或 Library 中按下时返回最近使用的写作工作区。**Ctrl+N** 和 **Ctrl+E** 仅在 Notes 或 Books 中生效。图片和附件统一保存在 **Library/assets**，资源 ID 和正文引用保持有效。在 Library 中选择文件后，引用面板保持在滚动列表上方；点击正文引用可跳到对应 Note 或 Book 页面并定位引用行。使用 **Folder** 定位受管理文件，**Rename** 修改显示及保存副本时的名称，文件名旁的 **Save a copy** 导出副本。重命名保留扩展名和资源 ID；系统教程资源由 LanCarbon 管理，不提供重命名。**Open Library folder** 打开 LanCarbon 根目录下的原始资料文件夹。
+四个工作区入口按两行排列：上行为 Notes / Books，下行为 Workshop / Library。切换和重启后保留所选 Note、Book 页面、Workshop 子页和 Library 资源。**Ctrl+Q** 在 Notes 与 Books 之间切换；在 Workshop 或 Library 中按下时返回最近使用的写作工作区。**Ctrl+N** 和 **Ctrl+E** 仅在 Notes 或 Books 中生效。图片和附件统一保存在 **Library/assets**，资源 ID 和正文引用保持有效。在 Library 中选择文件后，引用面板保持在滚动列表上方；点击正文引用可跳到对应 Note 或 Book 页面并定位引用行。使用 **Folder** 定位受管理文件，**Rename** 修改显示及保存副本时的名称，文件名旁的 **Save a copy** 导出副本。重命名保留扩展名和资源 ID；系统教程资源由 LanCarbon 管理，不提供重命名。**Open Library folder** 打开 LanCarbon 根目录下的原始资料文件夹。
 
 ### 主要功能
 

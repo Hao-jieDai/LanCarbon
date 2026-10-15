@@ -43,7 +43,7 @@ test("global selection translation protects writing, keys, cache and usage acros
     const selectEditor = async () => { await page.getByLabel("Note content", { exact: true }).click(); await page.keyboard.press("Control+End"); await page.keyboard.press("Home"); await page.keyboard.press("Shift+End"); };
     await selectEditor(); await page.waitForTimeout(550); expect(requests).toHaveLength(0);
     await expect(page.getByRole("region", { name: "Selection translation" })).toHaveCount(0);
-    await page.getByRole("button", { name: "Research", exact: true }).click(); await page.getByRole("button", { name: "Translation Settings", exact: true }).click();
+    await page.getByRole("button", { name:"Workshop", exact: true }).click(); await page.getByRole("button", { name: "Translation Settings", exact: true }).click();
     await page.getByRole("combobox", { name: "Translation service", exact: true }).click(); await page.getByRole("option", { name: "SiliconFlow", exact: true }).click();
     await expect(page.getByRole("button", { name: "Refresh translation models", exact: true })).toHaveCount(0); await expect(page.getByLabel("Translation model display name", { exact: true })).toHaveCount(0);
     await page.getByRole("combobox", { name: "Translation model", exact: true }).click(); await expect(page.getByRole("option")).toHaveCount(2); await page.getByRole("option", { name: "Hunyuan MT", exact: true }).click();
@@ -61,7 +61,7 @@ test("global selection translation protects writing, keys, cache and usage acros
     await expect(page.getByLabel("Chinese translation", { exact: true })).toHaveText("碳定价"); expect(requests).toHaveLength(2);
     await page.getByRole("button", { name: "Preview", exact: true }).click(); await select(page.getByLabel("Rendered preview").getByText("carbon pricing", { exact: true }));
     await expect(page.locator(".translation-model")).toContainText("Saved result"); expect(requests).toHaveLength(2);
-    await page.getByRole("button", { name: "Research", exact: true }).click(); await page.getByRole("button", { name: "Run", exact: true }).click();
+    await page.getByRole("button", { name:"Workshop", exact: true }).click(); await page.getByRole("button", { name: "Run", exact: true }).click();
     await select(page.getByText(/^This workspace is ready/)); await expect.poll(() => requests.length).toBe(3);
     await select(page.getByText("Your Notes and Books are available from the workspace buttons.", { exact: true })); await expect(page.getByLabel("Chinese translation", { exact: true })).toHaveText("可通过工作区按钮访问笔记和书籍。");
     await page.waitForTimeout(2600); await expect(page.getByLabel("Chinese translation", { exact: true })).not.toHaveText("较早的回复"); expect(requests).toHaveLength(4);
@@ -72,7 +72,7 @@ test("global selection translation protects writing, keys, cache and usage acros
     await expect.poll(async () => (await panel.boundingBox())!.x).toBeLessThan(before.x - 80);
     await page.screenshot({ path: info.outputPath("translation-library-dark.png") }); await page.locator(".theme-option").filter({ hasText: "Light" }).click(); await page.screenshot({ path: info.outputPath("translation-library-light.png") });
     await page.keyboard.press("Control+Alt+t"); await expect(panel).toHaveCount(0); await select(page.getByRole("heading", { name: "Your source materials", exact: true })); await page.waitForTimeout(550); expect(requests).toHaveLength(5);
-    await page.getByRole("button", { name: "Research", exact: true }).click(); await page.getByRole("button", { name: "Translation Settings", exact: true }).click();
+    await page.getByRole("button", { name:"Workshop", exact: true }).click(); await page.getByRole("button", { name: "Translation Settings", exact: true }).click();
     await page.getByRole("combobox", { name: "Translation connection", exact: true }).click(); await page.getByRole("option", { name: "Separate translation connection", exact: true }).click();
     await page.getByRole("combobox", { name: "Translation service", exact: true }).click(); await page.getByRole("option", { name: "Others Translation · Key needed", exact: true }).click();
     await page.getByLabel("Translation API base address", { exact: true }).fill("https://translation.example/v1"); await page.getByLabel("Translation API Key", { exact: true }).fill("fixture-translation-private");
