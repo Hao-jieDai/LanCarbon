@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.3.2";
+export const RELEASE_VERSION = "2.3.3";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.3.2 adds offline PDF reading with search, outlines, thumbnails, saved progress and selection translation, plus manually calibrated API balance estimates by source. Notes and Books can open PDF attachments in the same reader. Existing writing, files, versions and AI configuration are preserved; EPUB reading follows separately.
+Version 2.3.3 adds shared billing accounts, Unlimited balance mode, currency-specific low-balance reminders and a collapsible workspace sidebar. Existing balances, usage, writing and files are preserved.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -57,11 +57,13 @@ Use page numbers, previous/next, **Fit width**, **Fit page**, zoom, or **Pages /
 
 Enable the existing **Translate** switch (Ctrl+Alt+T), then select short English text in the PDF. Existing translation settings, cache and usage accounting apply. PDFs need a selectable text layer for selection/search; image-only scans remain viewable. Reading is local and does not call AI or change the file. Password-protected files prompt locally without saving the password. PDF scripts and editing are disabled. Annotation creation, OCR and EPUB reading follow separately. The reader loads page data as needed and releases the open snapshot when closed; no PDF parsing or thumbnail disk cache is created.
 
+Use **Collapse sidebar** beside the Logo to hide the workspace sidebar. The menu button at the upper left of the content shows it again. Notes, Books, Research, Library and PDF reading share this control; the desktop collapse preference is remembered across restarts. On narrow windows the sidebar opens as a drawer.
+
 ### Estimated API balances
 
-At the top of **Research → Usage**, each configured source has **Set balance / Update balance**. Enter the platform's full current balance and choose CNY or USD. Saving records the calibration time and cumulative charges. Only subsequent recorded fees are deducted, combining all models, chat, connection tests and translation using that connection. Requests already running at calibration are counted when their fees arrive. Reported charges take priority; otherwise the request's saved price estimate is used. Unknown fees stay unknown.
+At the top of **Research → Usage**, use **Set balance / Update balance** to name a billing account and select **Connections sharing this balance**. Select only connections billed to the same account: different chat and dedicated translation API keys may share one account, while separate accounts on the same platform should stay independent. Each connection belongs to at most one account. Enter the full current balance in CNY or USD; never add existing card balances together. Only fees recorded after calibration are deducted across the selected connections, models, chat, tests and translation. Pending requests count when their fees arrive. Reported charges take priority over request-time price estimates; unknown fees stay unknown.
 
-After a top-up, enter the new full platform balance; this resets the starting point without deleting historical usage. Cards show the estimate and calibration time independently of Usage date filters. Low estimates (approximately CNY 10 or less, including zero/negative) are highlighted. **Stop tracking** removes only that balance checkpoint. Reused translation connections share their original source; dedicated connections have their own entries. Source identities include the API address. Local balance checkpoints live with the usage ledger in **Data/Research/Usage/balances.json**. Other apps' charges or platform credits require manual recalibration; no balance API is called. Cross-currency deductions use the exchange rate saved in Model prices.
+Choose **Unlimited · No balance tracking** for a free service or an account that needs no balance reminders. No amount is required; token and cost statistics continue unchanged. For tracked balances, reminders appear strictly below **CNY 5** or **USD 2**, based on currency rather than interface language. After a top-up or regrouping, enter the full current account balance to start a new checkpoint. Other accounts that lose connections need recalibration; unchecked connections become separate entries. Historical usage and fees are never moved, deleted or charged again. **Stop tracking** clears the checkpoint while preserving shared membership and usage. Cards are independent of Usage filters. Existing separate balances are retained until you explicitly regroup them. Records live in **Data/Research/Usage/balances.json** and travel with Data Location. Other apps' charges or platform credits require manual recalibration; no balance API is called. Cross-currency deductions use the exchange rate saved in Model prices.
 
 ### Selection translation
 
@@ -100,11 +102,13 @@ Viewing Usage works offline and does not call a model. Local logs are in **Data/
 
 开启现有 **Translate**（Ctrl+Alt+T），选取 PDF 中的短英文即可翻译，沿用翻译配置、缓存和用量统计。选词与搜索需要 PDF 自带文字层；纯扫描件仍可查看。阅读本身离线运行，不调用 AI、不修改原件。加密文件在本地输入密码，密码不保存；禁用 PDF 脚本和编辑。新建批注、OCR 和 EPUB 阅读另行提供。页面按需读取，关闭后释放打开快照，不建立 PDF 解析或缩略图磁盘缓存。
 
+点击 Logo 旁的 **Collapse sidebar** 可收起工作区侧栏，点击内容区左上角的菜单按钮再次展开。Notes、Books、Research、Library 与 PDF 阅读共用此操作，桌面侧栏状态在重启后保留；窄窗口使用抽屉式侧栏。
+
 ### API 估算余额
 
-在 **Research → Usage** 顶部，已配置来源可通过 **Set balance / Update balance** 填写平台当前的完整余额，并选择 CNY 或 USD。保存时记录校准时间和累计费用，只扣减此后记录到的费用；同一连接下的所有模型、聊天、连接测试和翻译合并计算，校准时尚未结束的请求在费用结算后计入。优先使用接口返回费用，否则采用请求当时保存的价格估算；未知费用保持未知。
+在 **Research → Usage** 顶部，通过 **Set balance / Update balance** 命名计费账户，在 **Connections sharing this balance** 勾选共用余额的连接。只合并实际从同一账户扣费的连接：聊天与独立翻译可使用不同 API Key；同平台的不同账户应保持独立。每个连接最多属于一个余额账户。输入 CNY 或 USD 的完整当前余额，不能把已有卡片的余额相加。保存后只扣减此后记录到的费用，汇总所选连接的所有模型、聊天、测试和翻译；尚未完成的请求在费用结算后计入。优先使用接口返回费用，否则采用请求时的价格快照；未知费用保持未知。
 
-充值后重新输入平台新的完整余额，重新设置起点，不清空历史用量。卡片展示估算余额和校准时间，独立于 Usage 日期筛选。折合约人民币 10 元及以下（含零、负值）突出提醒。**Stop tracking** 只移除余额起点。复用翻译连接计入原来源；独立连接单独显示，来源身份包含 API 地址。校准记录与用量账本一起保存在 **Data/Research/Usage/balances.json**；其他软件消费或平台赠额需手动重新校准，不调用平台余额接口。跨币种扣减沿用 Model prices 中的手动汇率。
+免费服务或不需要余额提醒的账户可选择 **Unlimited · No balance tracking**，无需填写额度，Token 与费用统计照常保留。追踪余额时，严格低于 **人民币 5 元**或 **2 美元**才提醒，按币种而非界面语言判断。充值或调整共享连接后重新输入完整当前余额，建立新的扣费起点；其他失去连接的账户需重新校准，取消勾选的连接独立显示。历史用量和费用不转移、不删除，也不重新扣减。**Stop tracking** 只清除余额起点，保留共享关系和用量。卡片独立于 Usage 筛选；现有独立余额会保留，直到你主动合并。记录位于 **Data/Research/Usage/balances.json**，随 Data Location 迁移；其他软件消费或平台赠额需手动校准，不调用平台余额接口。跨币种扣减沿用 Model prices 中的手动汇率。
 
 ### 选词翻译
 
@@ -182,7 +186,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.3.2 新增离线 PDF 阅读、搜索、目录、缩略图、进度记忆及选词翻译，并按来源显示手动校准的 API 估算余额。Note／Book 的 PDF 附件使用同一阅读器；保留现有写作、文件版本和 AI 配置，EPUB 阅读另行提供。
+2.3.3 新增共享计费账户、Unlimited 余额模式、按币种区分的低余额提醒，以及可收起的工作区侧栏；保留已有余额、用量、笔记与文件。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

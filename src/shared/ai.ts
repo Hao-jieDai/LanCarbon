@@ -29,7 +29,7 @@ export interface AIDesktopApi {
   onChat(callback: (chat: AIChat) => void): () => void;
   balances(): Promise<AIResult<{ balances: import("./aiBalances").SourceBalance[]; usdToCny: number }>>;
   saveBalance(input: import("./aiBalances").BalanceInput): Promise<AIResult<object>>;
-  removeBalance(source: import("./aiBalances").BalanceSource): Promise<AIResult<object>>;
+  removeBalance(source: import("./aiBalances").BalanceSource & { accountId?: string }): Promise<AIResult<object>>;
   usage(query?: AIUsageQuery): Promise<AIResult<{ usage: AIUsagePage }>>;
   prices(): Promise<AIResult<{ prices: AIModelPrice[]; usdToCny: number }>>;
   savePrice(price: AIModelPriceInput): Promise<AIResult<{ prices: AIModelPrice[] }>>;

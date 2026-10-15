@@ -968,3 +968,24 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .balance-editor .themed-select-trigger { min-width: 80px; min-height: 36px; padding: 7px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: 7px; color: var(--ink); }
 .balance-editor p { flex-basis: 100%; margin: 0; color: var(--muted); font-size: 10px; line-height: 1.7; }
 @media (max-width: 760px) { .app-shell.reader-active > .editor-panel { grid-column: 1; } .pdf-reader-footer span:last-child { display: none; } .pdf-reader-heading { gap: 7px; } .pdf-reader-sidebar { width: 140px; } }
+
+.balance-editor { gap: 16px; }
+.balance-editor > label { flex: 1 1 155px; min-width: 0; }
+.balance-editor > label:first-of-type { flex: 2 1 200px; }
+.balance-editor .balance-connections { flex: 1 0 100%; min-width: 0; max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; padding: 12px; margin: 0; }
+.balance-connections legend { font-size: 11px; padding: 0 5px; }
+.balance-editor .balance-connections label { flex-direction: row; align-items: flex-start; gap: 10px; margin: 6px 0 12px; }
+.balance-editor .balance-connections label:last-child { margin-bottom: 0; }
+.balance-editor .balance-connections input { flex: 0 0 15px; width: 15px; min-height: 15px; height: 15px; margin: 1px 0 0; padding: 0; accent-color: var(--accent); }
+.balance-connections span { min-width: 0; line-height: 1.5; overflow-wrap: anywhere; }
+.balance-connections small { display: block; color: var(--muted); font-size: 10px; }
+.balance-editor-actions { display: flex; gap: 10px; flex-basis: 100%; }
+.balance-card small { overflow-wrap: anywhere; }
+.sidebar-collapse { flex-shrink: 0; }
+@media (min-width: 761px) {
+  .app-shell.sidebar-collapsed { grid-template-columns: minmax(0, 1fr); }
+  .app-shell.sidebar-collapsed > .sidebar { display: none; }
+  .app-shell.sidebar-collapsed > .editor-panel { grid-column: 1; grid-row: 1; }
+  .app-shell.sidebar-collapsed .editor-toolbar .mobile-menu { display: grid; }
+}
+@media (max-width: 760px) { .sidebar-collapse { display: none; } }

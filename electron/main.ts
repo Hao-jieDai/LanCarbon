@@ -179,7 +179,7 @@ app.whenReady().then(async () => {
   const usage = () => { let value = usageStores.get(dataDirectory); if (!value) { value = new AIUsageStore(dataDirectory, aiPrices); usageStores.set(dataDirectory, value); } return value; };
   const balanceStores = new Map<string, AIBalanceStore>();
   const balances = () => { let value = balanceStores.get(dataDirectory); if (!value) { value = new AIBalanceStore(dataDirectory, usage()); balanceStores.set(dataDirectory, value); } return value; };
-  const balanceSources = async () => (await priceProviders()).filter(provider => provider.hasKey || provider.models.length > 0).map(provider => ({ providerId: provider.id, providerName: provider.name, baseUrl: provider.baseUrl }));
+  const balanceSources = async () => (await priceProviders()).filter(provider => provider.hasKey || provider.models.length > 0).map(provider => ({ providerId: provider.id, providerName: provider.name, baseUrl: provider.baseUrl, usage: provider.id.startsWith("translation-") ? "translation" as const : "ai" as const }));
   const syncPrices = async () => {
     try { const providers = await priceProviders(); await aiPrices.retain(providers.flatMap(provider => provider.models.map(model => ({ providerId: provider.id, baseUrl: provider.baseUrl, modelId: model.id })))); }
     catch { usage().reportFailure("Saved model prices could not be cleaned. Historical usage is preserved; check your configuration folder."); }
@@ -201,7 +201,7 @@ app.whenReady().then(async () => {
     try { return { ok: true, ...await action(...args) }; } catch (error) { return { ok: false, error: redactAIError(error) }; }
   });
   aiHandler("ai:balances", async () => { const usdToCny = await aiPrices.exchangeRate(); return { balances: await balances().list(await balanceSources(), usdToCny), usdToCny }; });
-  aiHandler("ai:save-balance", async (input: BalanceInput) => { const source = (await balanceSources()).find(source => source.providerId === input.providerId && source.baseUrl === input.baseUrl); if (!source) throw Error("Choose a configured API source."); await balances().save({ ...input, providerName: source.providerName }); mainWindow?.webContents.send("ai:usage-changed"); return {}; });
+  aiHandler("ai:save-balance", async (input: BalanceInput) => { await balances().save(input, await balanceSources()); mainWindow?.webContents.send("ai:usage-changed"); return {}; });
   aiHandler("ai:remove-balance", async (source: BalanceSource) => { await balances().remove(source); mainWindow?.webContents.send("ai:usage-changed"); return {}; });
   aiHandler("ai:providers", async () => ({ providers: await aiSettings.list() }));
   aiHandler("ai:price-providers", async () => ({ providers: await priceProviders() }));

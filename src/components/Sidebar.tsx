@@ -4,7 +4,7 @@ import { getBookForNote } from "../shared/books";
 import { sortBooks } from "../shared/workspaceSorting";
 import type { Book, Note, NoteFilter, Theme, WorkspaceSortOrder } from "../shared/types";
 import { BookTree } from "./BookTree";
-import { SearchIcon } from "./Icons";
+import { SearchIcon, SidebarIcon } from "./Icons";
 import { RESEARCH_PAGES, type ResearchPage, type WorkspaceMode } from "../shared/research";
 import { orderedFolders, type LibraryCollection, type LibraryFolder } from "../shared/library";
 
@@ -19,7 +19,7 @@ interface SidebarProps {
   onModeChange(value: WorkspaceMode): void; onBookChange(id: string): void; onQueryChange(value: string): void; onFilterChange(value: NoteFilter): void;
   onSelectNote(id: string): void; onSelectPage(id: string): void; onNewNote(): void; onNewBook(): void; onNewPage(section: boolean): void;
   onMovePage(pageId: string, targetId: string, placement: "before" | "inside" | "after"): void; onBookSettings(): void; onExportBook(): void; onBuildBook(): void; onPublishBook(): void; onDeleteBook(): void;
-  onClear(): void; onDataLocation(): void; onEnvironmentSetup(): void; onThemeChange(value: Theme): void; onClose(): void;
+  onClear(): void; onDataLocation(): void; onEnvironmentSetup(): void; onThemeChange(value: Theme): void; onClose(): void; onCollapse?(): void;
 }
 
 function shortDate(iso: string): string {
@@ -38,8 +38,8 @@ export function Sidebar(props: SidebarProps) {
   const visibleNotes = filterNotes(looseNotes, props.query, props.filter, props.notesSort);
   const visibleBooks = sortBooks(props.books, props.notes, props.booksSort);
   const activeBook = props.books.find(book => book.id === props.activeBookId) ?? null;
-  return <aside className="sidebar">
-    <header className="brand-row"><div className="brand"><img className="brand-mark" src="./icon.png" alt="" /><strong>LanCarbon</strong></div><button className="icon-button mobile-close" aria-label="Close notes list" onClick={props.onClose}>×</button></header>
+  return <aside className="sidebar" id="workspace-sidebar">
+    <header className="brand-row"><div className="brand"><img className="brand-mark" src="./icon.png" alt="" /><strong>LanCarbon</strong></div><button className="icon-button sidebar-collapse" aria-label="Collapse sidebar" aria-controls="workspace-sidebar" aria-expanded="true" title="Collapse sidebar" onClick={props.onCollapse}><SidebarIcon /></button><button className="icon-button mobile-close" aria-label="Close notes list" onClick={props.onClose}>×</button></header>
     <nav className="workspace-tabs" aria-label="Workspace mode">
       <button className={props.mode === "notes" ? "active" : ""} aria-pressed={props.mode === "notes"} title="Switch to Notes (Ctrl+Q)" onClick={() => props.onModeChange("notes")}>Notes</button>
       <button className={props.mode === "book" ? "active" : ""} aria-label="Books" aria-pressed={props.mode === "book"} aria-keyshortcuts="Control+Q" title="Switch between Notes and Books (Ctrl+Q)" onClick={() => props.onModeChange("book")}>Books<kbd aria-hidden="true">Q</kbd></button>

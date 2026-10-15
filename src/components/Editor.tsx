@@ -64,7 +64,7 @@ export function Editor(props: EditorProps) {
   return (
     <section className="editor-panel">
       <header className="editor-toolbar">
-        <button className="icon-button mobile-menu" aria-label="Open notes list" onClick={props.onOpenSidebar}>☰</button>
+        <button className="icon-button mobile-menu" title="Show sidebar" aria-label="Open notes list" onClick={props.onOpenSidebar}>☰</button>
         <div className="editor-toolbar-left">
           <div className={`save-status ${props.saveState === "error" ? "error" : ""}`} role="status"><i className="status-dot" />{statusCopy[props.saveState]}</div>
           {props.note && <div className="view-mode-control">
