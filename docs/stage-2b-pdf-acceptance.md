@@ -1,6 +1,6 @@
 # 第二阶段 2B：PDF 内置阅读与 API 估算余额
 
-本次更新 LanCarbon 2.4.0。PDF 使用本地 Mozilla PDF.js 组件；EPUB 内置阅读、批注创建、OCR 与 RAG 留待后续步骤。
+本次更新 LanCarbon 2.3.2，属于第二阶段；第二阶段沿用 2.3.x，进入第三阶段才使用 2.4.x。PDF 使用本地 Mozilla PDF.js 组件；EPUB 内置阅读、批注创建、OCR 与 RAG 留待后续步骤。
 
 ## PDF 验收
 
@@ -25,7 +25,7 @@
 
 - 原件、历史版本、附件链接、Notes／Books 与 AI 数据沿用已有格式和位置。阅读进度和余额为独立的小型记录；系统教程新增长期有效的 Reading PDF Documents 页面，并同步 Usage 的余额操作。
 - 安装前完整备份当前 LanCarbon，包含实际 Data、Config、Cache、Library 和匹配的 2.3.1 安装包。回滚旧程序时使用匹配快照，另行保留升级后的新增内容。
-- 最终包验证后保留 2.4.0、2.3.1、2.3.0 及其 blockmap，执行 clean:installers。自动化使用隔离工作区和模拟 AI，不调用真实 API。最终包和真实数据核对记录在 acceptance/2.4.0-verification.json。
+- 最终包验证后保留 2.3.2、2.3.1、2.3.0 及其 blockmap，执行 clean:installers。自动化使用隔离工作区和模拟 AI，不调用真实 API。最终包和真实数据核对记录在 acceptance/2.3.2-verification.json。
 
 ## English
 

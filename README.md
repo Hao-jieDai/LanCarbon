@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
 
-Version 2.4.0 adds offline PDF reading with search, outlines, thumbnails, saved progress and selection translation, plus manually calibrated API balance estimates by source. Notes and Books can open PDF attachments in the same reader. Existing writing, files, versions and AI configuration are preserved; EPUB reading follows separately.
+Version 2.3.2 adds offline PDF reading with search, outlines, thumbnails, saved progress and selection translation, plus manually calibrated API balance estimates by source. Notes and Books can open PDF attachments in the same reader. Existing writing, files, versions and AI configuration are preserved; EPUB reading follows separately.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -105,7 +105,7 @@ Managed writing resources are stored in root **Library/assets**. Existing Data/a
 Before upgrading, close LanCarbon and back up the complete LanCarbon home folder and any separately selected Data location. Include Cache because its encryption state is needed to read previously saved API keys. Keep the stable installer alongside the backup. Reinstalling an older application may also require restoring matching data. A restored snapshot returns to the backup date; retain later edits separately. Developers can use the verified snapshot commands below. Restore accepts a new empty folder, verifies all files before copying and adjusts saved managed paths to that folder.
 
 ```powershell
-node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.4.0-x64-Setup.exe"
+node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.3.2-x64-Setup.exe"
 node scripts/workspace-recovery.cjs verify --backup "D:\Backups\LanCarbon-snapshot"
 node scripts/workspace-recovery.cjs restore --backup "D:\Backups\LanCarbon-snapshot" --target "D:\Recovered\LanCarbon"
 ```
@@ -116,7 +116,7 @@ Select **Export PDF** in the page header from Edit or Preview, choose a filename
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.4.0-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.3.2-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -192,7 +192,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-2.4.0 新增离线 PDF 阅读、搜索、目录、缩略图、进度记忆及选词翻译，并按来源显示手动校准的 API 估算余额。Note／Book 的 PDF 附件使用同一阅读器；保留现有写作、文件版本和 AI 配置，EPUB 阅读另行提供。
+2.3.2 新增离线 PDF 阅读、搜索、目录、缩略图、进度记忆及选词翻译，并按来源显示手动校准的 API 估算余额。Note／Book 的 PDF 附件使用同一阅读器；保留现有写作、文件版本和 AI 配置，EPUB 阅读另行提供。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
@@ -289,7 +289,7 @@ SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `ht
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.4.0-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.3.2-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 

@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.0";
+export const RELEASE_VERSION = "2.3.2";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.4.0 adds offline PDF reading with search, outlines, thumbnails, saved progress and selection translation, plus manually calibrated API balance estimates by source. Notes and Books can open PDF attachments in the same reader. Existing writing, files, versions and AI configuration are preserved; EPUB reading follows separately.
+Version 2.3.2 adds offline PDF reading with search, outlines, thumbnails, saved progress and selection translation, plus manually calibrated API balance estimates by source. Notes and Books can open PDF attachments in the same reader. Existing writing, files, versions and AI configuration are preserved; EPUB reading follows separately.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -182,7 +182,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.4.0 新增离线 PDF 阅读、搜索、目录、缩略图、进度记忆及选词翻译，并按来源显示手动校准的 API 估算余额。Note／Book 的 PDF 附件使用同一阅读器；保留现有写作、文件版本和 AI 配置，EPUB 阅读另行提供。
+2.3.2 新增离线 PDF 阅读、搜索、目录、缩略图、进度记忆及选词翻译，并按来源显示手动校准的 API 估算余额。Note／Book 的 PDF 附件使用同一阅读器；保留现有写作、文件版本和 AI 配置，EPUB 阅读另行提供。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
