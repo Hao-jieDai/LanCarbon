@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
 
-Version 2.4.1 adds independent Embedding and optional Rerank settings, bounded local vector caching, hybrid retrieval and retrieval-purpose usage accounting. Chat and translation connections can be reused without changing their saved model lists.
+Version 2.4.2 adds document questions in Chat with per-conversation Library/Note/Book sources, automatic preparation, saved evidence and direct source navigation. Retrieval model catalogues are separate from Chat model lists.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -60,23 +60,23 @@ Open **Workshop → AI Settings → Retrieval**. Embedding and optional Rerank h
 3. **Test Embedding** sends a built-in English sentence and checks vector dimensions. **Test Rerank** sends a built-in question and two short examples. Both use normal service billing and are recorded under their corresponding Usage purposes. **Stop** cancels a test or active retrieval task. Saving alone makes no model request.
 4. In **Workshop → Usage → Model prices**, configure each retrieval model's input price per million tokens and set output to zero. For a model currently offered free, set both to zero. Provider-reported token counts and charges are used when available; missing usage remains unknown. Failed attempts and retries remain recorded. Reusing a connection automatically uses its existing billing account; independent retrieval connections can be grouped with Chat/translation in **Connections sharing this balance**. Keep a paid account tracked when only some of its models are free.
 
-**Index tools** is an optional advanced panel. It prepares vectors only for current, successfully extracted Knowledge base sources. Unchanged passage text is reused; changed/deleted or deselected sources are excluded from retrieval. A changed Embedding service/model has a separate vector space and needs preparation again. Local keyword ranking and semantic ranking are combined; optional Rerank orders the candidate passages. Retrieval check displays source passages and positions without generating a Chat answer. If semantic retrieval or reranking fails, the panel explicitly identifies the fallback and any incomplete preparation.
+**Index tools** is an optional advanced panel. It prepares vectors only for current cached source text. Unchanged passage text is reused; changed/deleted or deselected sources are excluded from retrieval. A changed Embedding service/model has a separate vector space and needs preparation again. Local keyword ranking and semantic ranking are combined; optional Rerank orders the candidate passages. Retrieval check displays source passages and positions without generating a Chat answer. If semantic retrieval or reranking fails, the panel explicitly identifies the fallback and any incomplete preparation.
 
 Preparing sources sends their extracted text to the selected Embedding service. A search sends the question to Embedding and selected candidate passages to Rerank when enabled. Ordinary writing and local keyword search with semantic retrieval off make no retrieval requests. Retrieval follows the computer's network and system proxy. Query instructions are normally blank; Qwen3 Embedding receives its standard retrieval query instruction automatically, and document text is not prefixed.
 
-Vectors use a bounded **128 MB** local cache in **Data/Research/Retrieval**, with up to 40,000 passages and 8,192 dimensions. No local model files are downloaded. **Clear vector index** removes vectors while keeping original files and extracted text; preparing again may incur service charges. Clearing the text index also clears its vector cache. Completed batches survive stop/restart; an interrupted task is resumed explicitly with Prepare. Data Location carries the derived cache. Chat answers with source citations are a separate feature.
+Vectors use a bounded **128 MB** local cache in **Data/Research/Retrieval**, with up to 40,000 passages and 8,192 dimensions. No local model files are downloaded. **Clear vector index** removes vectors while keeping original files and extracted text; preparing again may incur service charges. Clearing the text index also clears its vector cache. Completed batches survive stop/restart; an interrupted task is resumed explicitly with Prepare. Data Location carries the derived cache. Chat prepares the selected sources automatically when you send a document question.
 
-### Knowledge base
+### Document questions in Chat
 
-Open **Workshop → Knowledge base** to prepare a local text index. In **Library**, **Notes** or **Books**, select individual sources, an entire Book, or a Library Imports folder. A Book includes its pages; an included folder also includes files added later in its subfolders. **Include linked attachments** follows the selected writing's resources and indexes a shared file once. System content, including this tutorial and ReadMe, is excluded unless **Include system content** is enabled. Name, location and tag search helps choose sources.
+Open **Workshop → Chat → Choose sources**. Select PDF/EPUB documents from Library, individual Notes or Book pages, or a whole Book. Search by title or Book name. Up to 20 sources, including linked attachments, can be selected per chat. **Include linked attachments** follows writing references without copying Library originals into assets. Built-in content is excluded unless **Show built-in content** is enabled. **Import PDF / EPUB**, or drop files into Chat, imports/reuses Library originals and selects them for the conversation.
 
-Select **Build index** to save the selection and start processing. **Update index** applies later selection changes and retries failed sources; unchanged content is reused. **Keep selected sources up to date** refreshes changed writing and registered file versions while LanCarbon runs, and after its next launch. Rename/move retains source identity. Removed or deselected sources leave the index; outdated text is withheld until refreshed. Turn off automatic updates for manual control. **Stop** retains completed work and pauses processing; Update index resumes it.
+Send a question; local text extraction, changed-source checks, vector preparation and retrieval run automatically. Saved vectors are reused for unchanged passages. The preparation status appears with the reply; **Stop generating** cancels preparation and generation. Sources are remembered per chat across restarts. **Clear sources** returns to ordinary Chat. Changing the source selection excludes earlier document answers from the new evidence context. No separate Knowledge base page is required.
 
-**Ready** means extracted text is available; **Partial** explains incomplete coverage. **Failed**, **Missing** and **Unsupported** identify sources needing attention without stopping other sources. **Preview** displays extracted passages with PDF page numbers, EPUB chapter/paragraph positions, or Markdown headings/lines. Source links reopen the original file or writing. **Search extracted text** finds words and phrases present in the index; it does not generate answers or perform semantic retrieval.
+Configure Embedding and optional Rerank in **AI Settings → Retrieval**. **Refresh Embedding models** and **Refresh Rerank models** fetch separate catalogues; IDs can also be entered manually. A catalogue entry is not an account-access guarantee. Save and test a model before use. Refreshing the catalogue alone sends no document text. Changing Embedding models prepares the selected sources for that model when the next question is sent; changing Rerank does not rebuild document vectors. With semantic retrieval off or unavailable, replies identify keyword fallback; cross-language document questions usually need Embedding.
 
-Text extraction supports Note/Book Markdown pages, text-based PDFs and reflowable EPUBs. Images, Word and other formats are listed but are not parsed. Image-only scans need OCR; encrypted PDFs and DRM/fixed-layout EPUBs cannot be indexed. Limits are 500 PDF pages, 3,000 EPUB chapters and 2 million text characters per source, 2,000 passages per source, and 100 MB of stored text. Partial status reports the actual coverage. Complex layouts and tables may need checking in Preview.
+Replies cite saved excerpts as **[S1]**, **[S2]**, etc. Select a citation or expand **Evidence → Open source** to open the PDF page, EPUB chapter/paragraph, or Note/Book source lines. Evidence distinguishes cited and retrieved excerpts. Renaming or moving a source retains its identity; changing or deleting its contents blocks outdated navigation and preserves the quoted excerpt in the chat. Incomplete parsing, unavailable sources, failed retrieval and missing/unknown citations are reported. Broad comparisons include excerpts from each readable source, within a bounded evidence budget; answers are not a guarantee that every page has been read. Check important claims against the original.
 
-**Rebuild index** recreates derived text for the current selection. **Clear index** removes only derived text, pauses indexing and keeps your selection; Library originals, personal Notes/Books, chats and usage remain. The index and selection live in **Data/Research/Knowledge**, follow Data Location and can be rebuilt. Parsing and keyword search stay on this computer, do not send content to AI services and incur no API fees. Semantic retrieval is configured in AI Settings → Retrieval; document-grounded Chat is separate.
+Text extraction supports text-based PDFs, reflowable EPUBs and Note/Book Markdown. Image-only scans require OCR; encrypted PDFs, DRM/fixed-layout EPUBs, Word and images are not parsed. Limits are 500 PDF pages, 3,000 EPUB chapters, 2 million characters and 2,000 passages per source; cached text is limited to 100 MB and vectors to 128 MB. **AI Settings → Retrieval → Local text tools / Index tools** provides optional inspection and cache clearing. Clearing derived text/vectors preserves original documents, writing, chats and usage. Local parsing and ordinary writing make no retrieval API requests; questions send selected excerpts to the configured services and their usage is recorded.
 
 ### Library imports
 
@@ -150,7 +150,7 @@ Managed writing resources are stored in root **Library/assets**. Existing Data/a
 Before upgrading, close LanCarbon and back up the complete LanCarbon home folder and any separately selected Data location. Include Cache because its encryption state is needed to read previously saved API keys. Keep the stable installer alongside the backup. Reinstalling an older application may also require restoring matching data. A restored snapshot returns to the backup date; retain later edits separately. Developers can use the verified snapshot commands below. Restore accepts a new empty folder, verifies all files before copying and adjusts saved managed paths to that folder.
 
 ```powershell
-node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.4.1-x64-Setup.exe"
+node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.4.2-x64-Setup.exe"
 node scripts/workspace-recovery.cjs verify --backup "D:\Backups\LanCarbon-snapshot"
 node scripts/workspace-recovery.cjs restore --backup "D:\Backups\LanCarbon-snapshot" --target "D:\Recovered\LanCarbon"
 ```
@@ -161,7 +161,7 @@ Select **Export PDF** in the page header from Edit or Preview, choose a filename
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.4.1-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.4.2-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -237,7 +237,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-2.4.1 增加独立的 Embedding 与可选 Rerank 配置、有容量限制的本地向量缓存、混合检索及按检索用途统计的用量。可复用 Chat 或翻译连接，不改变其保存的模型列表。
+2.4.2 将资料问答接入 Chat：每个聊天可选择 Library／Note／Book 资料，自动准备检索，保存原文证据并直接跳转来源。检索模型目录与聊天模型列表分开管理。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
@@ -254,23 +254,23 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 3. **Test Embedding** 发送一条内置英文句子并检查向量维度；**Test Rerank** 发送内置问题和两条短例文。测试按平台规则计费，分别记入对应的 Usage 用途；**Stop** 可取消测试或正在执行的检索任务。仅保存设置不会请求模型。
 4. 在 **Workshop → Usage → Model prices** 设置每个检索模型每百万输入 tokens 的价格，输出价格设为零。平台当前免费的模型将输入和输出均设为零。优先使用平台返回的 tokens 和费用，缺失用量保留为未知；失败尝试和重试照实记录。复用连接自动沿用原余额账户；独立检索连接可在 **Connections sharing this balance** 与 Chat／翻译归入同一计费账户。仅部分模型免费时，保留付费账户的余额跟踪。
 
-**Index tools** 是可选的高级工具，仅为 Knowledge base 中当前选定且已成功提取的文本准备向量。未变化片段直接复用；修改、删除或取消选取的资料退出检索。更换 Embedding 服务或模型后使用独立向量空间，需要重新准备。系统结合本地关键词排名和语义排名，并可用 Rerank 重排候选片段。Retrieval check 展示资料片段及位置，不生成 Chat 回答；语义检索、重排失败或资料尚未准备完整时会明确提示降级情况。
+**Index tools** 是可选的高级工具，为已缓存且成功提取的文本准备向量。未变化片段直接复用；修改、删除或取消选取的资料退出检索。更换 Embedding 服务或模型后使用独立向量空间，需要重新准备。系统结合本地关键词排名和语义排名，并可用 Rerank 重排候选片段。Retrieval check 展示资料片段及位置，不生成 Chat 回答；语义检索、重排失败或资料尚未准备完整时会明确提示降级情况。
 
 准备资料会将提取的正文发送给所选 Embedding 服务；检索将问题发送给 Embedding，启用 Rerank 时再发送候选片段。普通写作及关闭语义检索后的本地关键词搜索不调用检索 API；网络沿用电脑的网络与系统代理。Query instructions 通常留空，Qwen3 Embedding 自动使用标准检索问题指令，不给资料正文添加指令前缀。
 
 向量缓存保存在 **Data/Research/Retrieval**，上限 **128 MB**，最多 40,000 个片段及 8,192 维，不下载本地模型。**Clear vector index** 仅删除向量，保留原文件及提取文本；重新准备可能再次计费。清除文本索引也会清除对应向量缓存。暂停和重启保留已完成批次，中断任务用 Prepare 明确继续；Data Location 会携带缓存。带来源引用的 Chat 问答是另一项功能。
 
-### 知识库
+### Chat 资料问答
 
-打开 **Workshop → Knowledge base** 准备本地文本索引。在 **Library**、**Notes** 或 **Books** 中选择单项资料、整本 Book 或 Library Imports 文件夹。整本 Book 包含其页面；纳入的文件夹也包含子文件夹内以后加入的文件。**Include linked attachments** 纳入所选写作引用的资源，共用文件只索引一次。内置教程、ReadMe 等系统内容默认排除，启用 **Include system content** 后才可纳入。可以按名称、位置和标签搜索资料。
+打开 **Workshop → Chat → Choose sources**，选择 Library 中的 PDF／EPUB、独立 Note、Book 页面或整本 Book，可以按标题或 Book 名称搜索。每个聊天最多选择 20 项资料，包括纳入的附件。**Include linked attachments** 纳入写作引用的附件，复用 Library 原件，不向 assets 复制原文件。内置内容默认排除，勾选 **Show built-in content** 才会显示。使用 **Import PDF / EPUB** 或把文件拖进 Chat，会导入或复用 Library 原件并将其加入当前聊天。
 
-点击 **Build index** 保存范围并开始处理。之后用 **Update index** 应用范围调整并重试失败资料，未改变的内容直接复用。**Keep selected sources up to date** 会在软件运行及下次启动后更新已保存的写作内容和已登记的文件新版本；改名、移动保留资料身份。被删除或取消选择的资料退出索引；更新完成前不提供过期文本。关闭自动更新后可手动控制。**Stop** 保留已完成结果并暂停，Update index 继续处理。
+发送问题后，软件自动提取文字、检查资料变化、准备向量并检索，无需单独操作 Knowledge base 页面。已准备且未变化的片段复用缓存。回复中显示准备进度；**Stop generating** 可取消资料准备和生成。资料范围按聊天保存，重启后保留；**Clear sources** 切回普通聊天。切换资料后，先前的文献回答不会作为新范围的证据发送。
 
-**Ready** 表示文本可用，**Partial** 说明实际覆盖范围。**Failed**、**Missing** 和 **Unsupported** 分别提示失败、缺失和不支持的资料，不中断其他资料。**Preview** 展示文本片段及 PDF 页码、EPUB 章节／段落位置、Markdown 标题／行号；来源链接可打开原文件或写作页面。**Search extracted text** 查找索引中实际存在的词句，不生成回答，也不进行语义检索。
+在 **AI Settings → Retrieval** 配置 Embedding 和可选 Rerank。**Refresh Embedding models** 与 **Refresh Rerank models** 分别获取对应目录，也可手填模型 ID。目录不保证当前账号可用，请保存后测试。仅刷新目录不会发送文献内容。更换 Embedding 后，下次提问自动为新模型准备所选资料；更换 Rerank 无需重建文献向量。关闭语义检索或接口不可用时，界面明确提示关键词降级；跨语言文献问答通常需要 Embedding。
 
-支持 Note／Book 的 Markdown 页面、带文本层的 PDF 和流式 EPUB。图片、Word 等其他格式会列出，但不解析；纯扫描版需要 OCR，密码保护的 PDF 以及 DRM／固定版式 EPUB 暂不能建立索引。每份资料最多处理 500 页 PDF、3,000 个 EPUB 章节、200 万个文本字符和 2,000 个片段，总文本存储上限 100 MB。达到限制会标为 Partial 并说明覆盖情况，复杂排版和表格请通过 Preview 核对。
+回答以 **[S1]**、**[S2]** 等引用保存的原文片段。点击引用，或展开 **Evidence → Open source**，可打开 PDF 对应页、EPUB 章节／段落或 Note／Book 对应行。证据区区分实际引用与检索候选。重命名、移动保持资料身份；正文修改或原件删除后阻止旧位置跳转，聊天仍保留当时的原文摘录。解析不完整、资料缺失、检索失败及引用缺失或无效会明确说明。多文献概括在有限证据预算内兼顾各项可读资料，不代表逐页全文审计；重要结论请对照原文。
 
-**Rebuild index** 根据当前范围重建文本，**Clear index** 仅清除派生文本、暂停索引并保留范围，不删除 Library 原件、个人 Notes／Books、聊天或用量。索引和范围在 **Data/Research/Knowledge**，随 Data Location 迁移，可重新生成。解析和关键词搜索都在本机进行，不向 AI 服务发送资料，不产生 API 费用；语义检索在 AI Settings → Retrieval 配置，基于资料的 Chat 是另一项功能。
+支持文字型 PDF、流式 EPUB 和 Note／Book Markdown。纯扫描 PDF 需要 OCR；加密 PDF、DRM／固定版式 EPUB、Word 和图片暂不解析。每项上限为 PDF 500 页、EPUB 3,000 章、200 万字符及 2,000 个片段；文本缓存最多 100 MB，向量缓存最多 128 MB。**AI Settings → Retrieval → Local text tools / Index tools** 提供可选的检查与清理工具。清除派生缓存不删除原文、写作、聊天或历史用量。普通写作与本地解析不调用检索 API；资料问答会向所选服务发送相关文字，用量计入统计。
 
 ### 主要功能
 
@@ -379,7 +379,7 @@ PDF 与 EPUB 共用顶部标签栏，最多同时打开 **10 个文件**。从�
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.4.1-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.4.2-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 

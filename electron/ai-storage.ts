@@ -1,3 +1,4 @@
+import { validKnowledgeScope } from "./knowledge-sources";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -109,14 +110,20 @@ export class AIChatStore extends Serialized {
     const ids = new Set<string>();
     for (const chat of data.chats) {
       validId(chat.id); if (ids.has(chat.id) || typeof chat.title !== "string" || !Array.isArray(chat.messages) || typeof chat.providerId !== "string" || typeof chat.modelId !== "string") throw new Error("Invalid conversation data"); ids.add(chat.id);
-      for (const message of chat.messages) { validId(message.id); if (!["user", "assistant"].includes(message.role) || typeof message.content !== "string" || !["complete", "streaming", "stopped", "error"].includes(message.status)) throw new Error("Invalid chat message"); if (message.status === "streaming") { message.status = "stopped"; message.error = "Generation was interrupted when LanCarbon closed. You can retry."; interrupted = true; } }
+      if (chat.sourceScope) chat.sourceScope = validKnowledgeScope(chat.sourceScope);
+      for (const message of chat.messages) { validId(message.id); if (message.sourceScope) message.sourceScope = validKnowledgeScope(message.sourceScope);
+        if (message.grounding) {
+          const g = message.grounding; g.scope = validKnowledgeScope(g.scope);
+          if (!Array.isArray(g.sourceIds) || g.sourceIds.length > 20 || !g.sourceIds.every(id => typeof id === "string" && /^(file|note):/.test(id)) || !Array.isArray(g.warnings) || g.warnings.length > 100 || !g.warnings.every(text => typeof text === "string" && text.length < 15000) || !["keyword", "hybrid", "reranked"].includes(g.mode) || !Array.isArray(g.evidence) || g.evidence.length > 24 || !g.evidence.every(hit => hit && /^S[1-9]\d{0,2}$/.test(hit.label) && g.sourceIds.includes(hit.source?.id) && typeof hit.source.title === "string" && typeof hit.source.entityId === "string" && Array.isArray(hit.source.locations) && /^[a-f0-9]{64}$/.test(hit.fingerprint) && typeof hit.chunk?.text === "string" && hit.chunk.text.length <= 1200 && ["markdown", "pdf", "epub"].includes(hit.chunk.anchor?.kind))) throw Error("Invalid saved document evidence. The original chat file is preserved.");
+        }
+        if (!["user", "assistant"].includes(message.role) || typeof message.content !== "string" || !["complete", "streaming", "stopped", "error"].includes(message.status)) throw new Error("Invalid chat message"); if (message.status === "streaming") { message.status = "stopped"; message.error = "Generation was interrupted when LanCarbon closed. You can retry."; interrupted = true; } }
     }
     if (interrupted) await atomicJson(this.filename, data);
     return this.loaded = data.chats;
   }
   async list(): Promise<AIChat[]> { return this.serial(async () => structuredClone(await this.read())); }
   async get(id: string): Promise<AIChat> { validId(id); const chat = (await this.list()).find(item => item.id === id); if (!chat) throw new Error("Conversation not found"); return chat; }
-  async update(id: string, change: (chat: AIChat) => void): Promise<AIChat> { validId(id); return this.serial(async () => { const chats = structuredClone(await this.read()), chat = chats.find(item => item.id === id); if (!chat) throw new Error("Conversation not found"); change(chat); chat.updatedAt = new Date().toISOString(); await atomicJson(this.filename, { version: 1, chats }); this.loaded = chats; return structuredClone(chat); }); }
+  async update(id: string, change: (chat: AIChat) => void): Promise<AIChat> { validId(id); return this.serial(async () => { const chats = structuredClone(await this.read()), chat = chats.find(item => item.id === id); if (!chat) throw new Error("Conversation not found"); change(chat); chat.updatedAt = new Date().toISOString(); if (Buffer.byteLength(JSON.stringify({version:1,chats})) > 25_000_000) throw Error("Saved chats reached 25 MB. Export important replies and remove an old conversation."); await atomicJson(this.filename, { version: 1, chats }); this.loaded = chats; return structuredClone(chat); }); }
   async create(providerId: string, modelId: string): Promise<AIChat> { return this.serial(async () => { const chats = await this.read(), now = new Date().toISOString(); const chat: AIChat = { id: randomUUID(), title: "New chat", providerId, modelId, messages: [], createdAt: now, updatedAt: now }; await atomicJson(this.filename, { version: 1, chats: [...chats, chat] }); this.loaded = [...chats, chat]; return structuredClone(chat); }); }
   async rename(id: string, title: string): Promise<AIChat> { const text = bounded(title, "chat title", 120); if (!text) throw new Error("Enter a chat title"); return this.update(id, chat => { chat.title = text; }); }
   async remove(id: string): Promise<void> { validId(id); return this.serial(async () => { const chats = (await this.read()).filter(chat => chat.id !== id); await atomicJson(this.filename, { version: 1, chats }); this.loaded = chats; }); }

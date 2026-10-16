@@ -3,6 +3,7 @@ import type { NotesDesktopApi } from "../src/shared/types";
 
 const api: NotesDesktopApi = {
   retrieval: {
+    models: (role, mode, providerId) => ipcRenderer.invoke("retrieval:models", role, mode, providerId),
     settings: () => ipcRenderer.invoke("retrieval:settings"),
     saveSettings: settings => ipcRenderer.invoke("retrieval:save-settings", settings),
     saveProvider: input => ipcRenderer.invoke("retrieval:save-provider", input),
@@ -88,6 +89,9 @@ const api: NotesDesktopApi = {
     stopTest: () => ipcRenderer.invoke("ai:stop-test"),
     onTestProgress: callback => { const listener = (_event: Electron.IpcRendererEvent, message: string) => callback(message); ipcRenderer.on("ai:test-progress", listener); return () => ipcRenderer.removeListener("ai:test-progress", listener); },
     chats: () => ipcRenderer.invoke("ai:chats"),
+    sourceCatalogue: () => ipcRenderer.invoke("ai:source-catalogue"),
+    setSources: (id, scope) => ipcRenderer.invoke("ai:set-sources", id, scope),
+    openCitation: (id, message, label) => ipcRenderer.invoke("ai:open-citation", id, message, label),
     createChat: (providerId, modelId) => ipcRenderer.invoke("ai:create-chat", providerId, modelId),
     renameChat: (id, title) => ipcRenderer.invoke("ai:rename-chat", id, title),
     deleteChat: id => ipcRenderer.invoke("ai:delete-chat", id),

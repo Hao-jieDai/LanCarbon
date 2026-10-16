@@ -1,13 +1,7 @@
 import { EpubArchive, elements, safePath, target, xml } from "./epub-reader";
 import { textChunks, type TextBlock } from "../src/shared/knowledgeText";
 import { KNOWLEDGE_MAX_TEXT, type KnowledgeExtraction } from "../src/shared/knowledge";
-const excluded = new Set(["head", "script", "style", "iframe", "object", "embed", "form"]);
-function readableText(node: Node, depth = 0): string {
-  if (depth > 100 || excluded.has((node as Element).localName)) return "";
-  if (node.nodeType === 3) return node.textContent ?? "";
-  if ((node as Element).localName === "br") return " ";
-  return Array.from(node.childNodes).map(child => readableText(child, depth + 1)).join("");
-}
+import { epubPassages } from "../src/shared/epubPassages";
 export function extractEpub(bytes: Buffer, progress: (unit: number, total: number) => void = () => {}): KnowledgeExtraction {
   const archive = new EpubArchive(bytes), container = xml(archive.read("META-INF/container.xml", 1024 * 1024)), opfPath = elements(container, "rootfile")[0]?.getAttribute("full-path");
   if (!opfPath) throw Error("The EPUB package could not be located."); safePath(opfPath);
@@ -22,19 +16,11 @@ export function extractEpub(bytes: Buffer, progress: (unit: number, total: numbe
     if (characters >= KNOWLEDGE_MAX_TEXT) { errors.push("Text extraction reached the per-source limit."); break; }
     try {
       const doc = xml(archive.read(chapters[index]), true), body = elements(doc, "body")[0]; if (!body) throw Error("No readable body");
-      let paragraph = 0, heading = "";
-      const walk = (node: Node, depth = 0) => {
-        if (depth > 100 || characters >= KNOWLEDGE_MAX_TEXT) return;
-        const element = node as Element, name = element.localName;
-        if (excluded.has(name)) return;
-        const block = /^(p|h[1-6]|li|pre|tr|blockquote|dt|dd)$/.test(name ?? ""), plain = element.nodeType === 3;
-        if (block || plain) {
-          const text = (name === "tr" ? Array.from(element.childNodes).filter(child => ["td", "th"].includes((child as Element).localName)).map(child => readableText(child)).join(" | ") : readableText(node)).replace(/\s+/g, " ").trim(); if (!text) return;
-          if (/^h[1-6]$/.test(name ?? "")) heading = text.slice(0, 300);
-          blocks.push({ text: text.slice(0, KNOWLEDGE_MAX_TEXT - characters), anchor: { kind: "epub", chapter: chapters[index], chapterIndex: index, paragraph: ++paragraph, heading, fragment: block ? element.getAttribute("id")?.slice(0, 500) ?? undefined : undefined } }); characters += text.length;
-        } else for (const child of Array.from(node.childNodes)) walk(child, depth + 1);
-      };
-      walk(body); processed++;
+      for (const passage of epubPassages(body)) {
+        if (characters >= KNOWLEDGE_MAX_TEXT) break;
+        blocks.push({ text: passage.text.slice(0, KNOWLEDGE_MAX_TEXT - characters), anchor: { kind: "epub", chapter: chapters[index], chapterIndex: index, paragraph: passage.paragraph, heading: passage.heading, fragment: passage.fragment } }); characters += passage.text.length;
+      }
+      processed++;
     } catch (error) { errors.push(`Chapter ${index + 1}: ${error instanceof Error ? error.message : "Could not extract text"}`); }
     progress(index + 1, chapters.length);
   }

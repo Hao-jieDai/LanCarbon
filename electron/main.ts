@@ -1,3 +1,4 @@
+import { ChatGrounder } from "./chat-grounding";
 import { app, BrowserWindow, dialog, ipcMain, net, screen, shell, safeStorage } from "electron";
 import path from "node:path";
 import { promises as fs } from "node:fs";
@@ -210,7 +211,7 @@ app.whenReady().then(async () => {
   };
   const aiClient = new AIClient((input, init) => net.fetch(input as string, init), observeUsage);
   const retrievalClient = new RetrievalClient((input, init) => net.fetch(input as string, init), observeUsage);
-  aiService = new AIService(aiSettings, chats, aiClient, chat => mainWindow?.webContents.send("ai:chat", chat));
+  aiService = new AIService(aiSettings, chats, aiClient, chat => mainWindow?.webContents.send("ai:chat", chat), new ChatGrounder(() => knowledge(), () => retrieval(), async () => (await retrievalSettings.get()).enabled));
   translationService = new TranslationService(translationSettings, translationConnections, aiSettings, cache, aiClient);
   const translationChanged = () => mainWindow?.webContents.send("translation:changed");
   const aiHandler = (channel: string, action: (...args: any[]) => Promise<object>) => ipcMain.handle(channel, async (event, ...args) => {
@@ -234,7 +235,11 @@ app.whenReady().then(async () => {
   aiHandler("ai:create-chat", async (provider: string, model: string) => ({ chat: await chats().create(provider, model) }));
   aiHandler("ai:rename-chat", async (id: string, title: string) => ({ chat: await chats().rename(id, title) }));
   aiHandler("ai:delete-chat", async (id: string) => { await aiService.remove(id); return {}; });
-  aiHandler("ai:send", async (id: string, provider: string, model: string, text: string, retry?: boolean) => ({ chat: await aiService.send(id, provider, model, text, retry) }));
+  const chatGrounder = new ChatGrounder(() => knowledge(), () => retrieval(), async () => (await retrievalSettings.get()).enabled);
+  aiHandler("ai:source-catalogue", async () => { await syncEdits(); return { catalogue: await chatGrounder.catalogue() }; });
+  aiHandler("ai:set-sources", async (id: string, scope: KnowledgeScope) => ({ chat: await aiService.setSources(id, scope) }));
+  aiHandler("ai:open-citation", async (id: string, message: string, label: string) => { await syncEdits(); return { target: await chatGrounder.open(await chats().get(id), message, label) }; });
+  aiHandler("ai:send", async (id: string, provider: string, model: string, text: string, retry?: boolean) => { await syncEdits(); return { chat: await aiService.send(id, provider, model, text, retry) }; });
   aiHandler("ai:stop", async (id: string) => { await aiService.stop(id); return {}; });
   aiHandler("ai:usage", async (query: AIUsageQuery) => ({ usage: await usage().query(query) }));
   aiHandler("ai:prices", async () => ({ prices: await aiPrices.list(), usdToCny: await aiPrices.exchangeRate() }));
@@ -333,6 +338,11 @@ app.whenReady().then(async () => {
   });
   aiHandler("retrieval:save-provider", async (input: AIProviderInput) => { await stopRetrieval(); const providers = await retrievalConnections.save(input); await syncPrices(); return { providers }; });
   aiHandler("retrieval:clear-key", async (id: string) => { await stopRetrieval(); return { providers: await retrievalConnections.clearKey(id) }; });
+  aiHandler("retrieval:models", async (role: RetrievalRole, mode: string, providerId: string) => {
+    if (!["embedding", "rerank"].includes(role) || !["reuse", "custom"].includes(mode) || typeof providerId !== "string") throw Error("Choose a retrieval connection.");
+    const owner = mode === "custom" ? retrievalConnections : providerId.startsWith("translation-") ? translationConnections : aiSettings, { provider, key } = await owner.connection(providerId);
+    return { models: await retrievalClient.models({ provider, key, modelId: "", modelName: "" }, role) };
+  });
   aiHandler("retrieval:test", async (role: RetrievalRole) => ({ message: await retrieval().test(role) }));
   aiHandler("retrieval:status", async () => { await syncEdits(); return { status: await retrieval().status() }; });
   aiHandler("retrieval:build", async () => { await syncEdits(); await retrieval().build(); return {}; });

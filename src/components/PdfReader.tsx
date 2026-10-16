@@ -1,3 +1,4 @@
+import type { CitationTarget } from "../shared/grounding";
 import { useEffect, useRef, useState } from "react";
 import * as pdfjs from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.mjs?url";
@@ -30,7 +31,7 @@ function OutlineItems({ items, link, depth = 0 }: { items: NonNullable<Outline>;
   if (depth > 12) return null;
   return <ul>{items.map((item, index) => <li key={index}><button disabled={!item.dest} onClick={() => { if (item.dest) void link.goToDestination(item.dest); }}>{item.title || "Untitled section"}</button>{!!item.items.length && <OutlineItems items={item.items} link={link} depth={depth + 1}/>}</li>)}</ul>;
 }
-export function PdfReader({ id, onClose }: { id: string; onClose(): void }) {
+export function PdfReader({ id, onClose, citation }: { id: string; onClose(): void; citation?: CitationTarget }) {
   const api = window.notesDesktop.reader!;
   const container = useRef<HTMLDivElement>(null), pages = useRef<HTMLDivElement>(null), searchInput = useRef<HTMLInputElement>(null);
   const engine = useRef<{ viewer: PDFViewer; link: PDFLinkService; bus: EventBus; document: pdfjs.PDFDocumentProxy } | null>(null);
@@ -111,6 +112,7 @@ export function PdfReader({ id, onClose }: { id: string; onClose(): void }) {
   const jump = (value: number) => { const current = engine.current; if (current) current.viewer.currentPageNumber = Math.min(current.document.numPages, Math.max(1, value)); };
   const search = (text: string, again = false, previous = false) => engine.current?.bus.dispatch("find", { source: window, type: again ? "again" : "", query: text, phraseSearch: true, caseSensitive: false, entireWord: false, highlightAll: true, findPrevious: previous, matchDiacritics: false });
   useEffect(() => { if (!ready) return; const timer = setTimeout(() => search(query), 200); return () => clearTimeout(timer); }, [query, ready]);
+  useEffect(() => { if (!ready || !citation || citation.anchor.kind !== "pdf") return; jump(citation.anchor.page ?? 1); setNotice(`Cited passage · Page ${citation.anchor.page}`); }, [ready, citation?.requestId]);
   const close = () => { void persist().catch(() => undefined).finally(onClose); };
   const zoomOptions = [{ value: "page-width", label: "Fit width" }, { value: "page-fit", label: "Fit page" }, ...[0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4].map(value => ({ value: String(value), label: `${Math.round(value * 100)}%` }))];
   if (!zoomOptions.some(option => option.value === zoom)) zoomOptions.push({ value: zoom, label: `${Math.round(Number(zoom) * 100)}%` });

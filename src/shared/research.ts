@@ -5,8 +5,7 @@ export const RESEARCH_PAGES: Array<{ id: ResearchPage; label: string; descriptio
   { id: "run", label: "Run", description: "Discover papers, expand your collection, and read selected materials." },
   { id: "templates", label: "Templates", description: "Choose the questions to investigate and the structure of your reading results." },
   { id: "outputs", label: "Outputs", description: "Review generated drafts and archive selected versions to Notes or Books." },
-  { id: "knowledge", label: "Knowledge base", description: "Prepare Library documents and personal writing for retrieval." },
-  { id: "chat", label: "Chat", description: "Discuss ideas with your selected AI model. Document questions will be added later." },
+  { id: "chat", label: "Chat", description: "Ask questions about selected Library documents, Notes and Book pages." },
   { id: "usage", label: "Usage", description: "Review local token usage and reported or estimated model costs." },
   { id: "settings", label: "AI Settings", description: "Manage your AI connections and models for reading and conversation." },
   { id: "translation", label: "Translation Settings", description: "Choose the service, model and prompt for selected-text translation." }

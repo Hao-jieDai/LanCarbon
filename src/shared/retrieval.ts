@@ -10,6 +10,7 @@ export interface RetrievalStatus { running: boolean; completed: number; total: n
 export interface RetrievalHit extends KnowledgeHit { score: number; retrieval: "keyword" | "hybrid" | "reranked" }
 export interface RetrievalResults { hits: RetrievalHit[]; warnings: string[]; mode: "keyword" | "hybrid" | "reranked" }
 export interface RetrievalApi {
+  models(role: RetrievalRole, mode: "reuse" | "custom", providerId: string): Promise<AIResult<{ models: AIModel[] }>>;
   settings(): Promise<AIResult<{ settings: RetrievalSettings; providers: AIProvider[]; shared: AIProvider[] }>>;
   saveSettings(settings: RetrievalSettings): Promise<AIResult<{ settings: RetrievalSettings }>>;
   saveProvider(input: AIProviderInput): Promise<AIResult<{ providers: AIProvider[] }>>;

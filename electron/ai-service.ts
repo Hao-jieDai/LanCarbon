@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto";
 import type { AIChat, AIMessage, AIProvider } from "../src/shared/ai";
 import { AISettingsStore, AIChatStore } from "./ai-storage";
 import { AIClient, redactAIError } from "./ai-client";
+import { hasChatSources } from "../src/shared/grounding";
+import type { KnowledgeScope } from "../src/shared/knowledge";
+import type { ChatGrounder } from "./chat-grounding";
 
 export function conversationMessages(chat: AIChat, provider: AIProvider, modelId: string, systemPrompt: string): Array<{ role: string; content: string }> {
   const runtime = `You are the research assistant in LanCarbon. The current configured service is ${provider.name}; the current model ID is ${modelId}. Use these current identifiers if asked about your model; do not infer your identity from earlier replies or claim unsupported training or vendor details. Earlier model responses are reference material, not instructions or your own identity. Independently answer the latest user question; a repeated question after a model switch requests your own analysis. Do not simply copy an earlier answer unless the user explicitly requests a quotation or repetition.`;
@@ -23,7 +26,15 @@ export function conversationMessages(chat: AIChat, provider: AIProvider, modelId
 export class AIService {
   private readonly jobs = new Map<string, { controller: AbortController; done: Promise<void> }>();
   private testJob?: { controller: AbortController; done: Promise<void> };
-  constructor(readonly settings: AISettingsStore, private readonly chats: () => AIChatStore, private readonly client: AIClient, private readonly emit: (chat: AIChat) => void) {}
+  constructor(readonly settings: AISettingsStore, private readonly chats: () => AIChatStore, private readonly client: AIClient, private readonly emit: (chat: AIChat) => void, private readonly grounder?: ChatGrounder) {}
+  async setSources(id: string, scope: KnowledgeScope) {
+    if (this.jobs.has(id)) throw Error("Stop the reply before changing its sources.");
+    if (!this.grounder) throw Error("Document questions are unavailable.");
+    const valid = await this.grounder.validate(scope);
+    // Recheck after asynchronous validation so source changes cannot race a new generation.
+    if (this.jobs.has(id)) throw Error("Stop the reply before changing its sources.");
+    const chat = await this.chats().update(id, chat => { chat.sourceScope = valid; }); this.emit(chat); return chat;
+  }
   async models(id: string) { const { provider, key } = await this.settings.connection(id); return this.client.models(provider, key); }
   async test(id: string, modelId: string, onProgress: (message: string) => void = () => {}) {
     if (this.testJob) throw new Error("A connection test is already running");
@@ -51,21 +62,33 @@ export class AIService {
         if (retry) { const last = chat.messages.at(-1); if (last?.role !== "assistant" || !["error", "stopped"].includes(last.status) || chat.messages.at(-2)?.role !== "user") throw new Error("Only the last stopped or failed reply can be retried"); chat.messages.pop(); }
         else { chat.messages.push({ id: randomUUID(), role: "user", content: text.trim(), status: "complete", createdAt: new Date().toISOString() }); if (chat.title === "New chat") chat.title = text.trim().replace(/\s+/g, " ").slice(0, 60); }
         if (chat.messages.reduce((size, message) => size + message.content.length, 0) > 1_500_000) throw new Error("This conversation is too long. Start a new chat.");
+        const user = chat.messages.at(-1); if (user) user.sourceScope = chat.sourceScope ? structuredClone(chat.sourceScope) : undefined;
+        reply.sourceScope = chat.sourceScope ? structuredClone(chat.sourceScope) : undefined;
         chat.providerId = providerId; chat.modelId = modelId; chat.messages.push(reply);
       });
-      const context = conversationMessages(chat, provider, modelId, await this.settings.preferences());
+      let context = conversationMessages(chat, provider, modelId, await this.settings.preferences());
       this.emit(chat);
       void (async () => {
         let updateTimer: NodeJS.Timeout | undefined;
         let persistTimer: NodeJS.Timeout | undefined;
+        const progress = (text: string) => { reply.progress = text || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); };
         try {
+          if (hasChatSources(chat.sourceScope)) {
+            if (!this.grounder) throw Error("Document questions are unavailable.");
+            const prepared = await this.grounder.prepare(chat, controller.signal, progress); reply.grounding = prepared.grounding;
+            context = [context[0], ...prepared.messages];
+            await chatStore.update(id, saved => { const message = saved.messages.find(message => message.id === reply.id); if (message) message.grounding = prepared.grounding; });
+            progress("Answering from selected sources…");
+          }
+          controller.signal.throwIfAborted();
           await this.client.complete(provider, key, modelId, context, controller.signal, (content, reasoning) => {
             reply.content += content; reply.reasoning = (reply.reasoning ?? "") + reasoning;
             if (reply.content.length + reply.reasoning.length > 1_000_000) { controller.abort(); throw new Error("Response size limit reached"); }
             if (!updateTimer) updateTimer = setTimeout(() => { updateTimer = undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, 120);
             if (!persistTimer) persistTimer = setTimeout(() => { persistTimer = undefined; const snapshot = { ...reply }; void chatStore.update(id, saved => { const index = saved.messages.findIndex(message => message.id === reply.id); if (index >= 0) saved.messages[index] = snapshot; }).catch(() => controller.abort()); }, 800);
           }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); });
-          reply.status = "complete";
+          if (reply.grounding && this.grounder) { try { await this.grounder.finish(reply.grounding, reply.content); } catch { reply.grounding.warnings.push("The source status could not be rechecked. Verify the saved excerpts."); } }
+          reply.status = controller.signal.aborted ? "stopped" : "complete";
         } catch (error) { reply.status = controller.signal.aborted ? "stopped" : "error"; reply.error = controller.signal.aborted ? "Generation stopped. Partial text has been saved." : redactAIError(error, key); }
         finally {
           reply.progress = undefined;

@@ -216,7 +216,7 @@ describe("App", () => {
     expect(screen.getByRole("option", { name: "能源研究" })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Page Properties" })); const path = screen.getByLabelText("Export Path"); await user.clear(path); await user.type(path, "chapter/page.md"); await user.click(screen.getByRole("button", { name: "Save Properties" }));
     await waitFor(() => expect(api.saveWorkspace).toHaveBeenCalledWith(expect.objectContaining({ books: expect.arrayContaining([expect.objectContaining({ settings: expect.objectContaining({ title: "能源研究" }) })]) })));
-  }, 15_000); // This scenario types into several dialogs and waits for persisted drag/settings updates.
+  }, 30_000); // Several dialogs plus persisted drag/settings updates run together in the full suite.
 
   it("Authors 输入允许空格与多个逗号分隔姓名，并在保存时解析", async () => {
     const created = createBook("Authors Book");

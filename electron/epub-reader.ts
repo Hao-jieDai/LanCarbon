@@ -1,3 +1,4 @@
+import { epubPassages } from "../src/shared/epubPassages";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -88,6 +89,11 @@ export class EpubReaderStore {
         const resource=source;
         if(resource){const dest=target(chapter.path,resource),type=dest?media.get(dest.file):undefined;if(dest&&type&&/^image\/(png|jpeg|gif|webp|svg\+xml)$/.test(type)){const bytes=archive.read(dest.file,16*MiB);imageBytes+=bytes.length;if(imageBytes>24*MiB)throw Error("This chapter contains too much image data. Use Open externally.");const img=element.localName==="image"?doc.createElement("img"):element;img.setAttribute("src",`data:${type};base64,${bytes.toString("base64")}`);if(img!==element)element.parentNode?.replaceChild(img,element);}}
       }
+    }
+    for (const passage of epubPassages(body)) {
+      const element = passage.node.nodeType === 1 ? passage.node as Element : doc.createElement("span");
+      if (passage.node.nodeType !== 1) { passage.node.parentNode?.replaceChild(element, passage.node); element.appendChild(passage.node); }
+      element.setAttribute("data-epub-paragraph", String(passage.paragraph));
     }
     return Array.from(body.childNodes).map(node=>new XMLSerializer().serializeToString(node)).join("");
   }

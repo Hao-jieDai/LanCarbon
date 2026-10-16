@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { AIProvider } from "../src/shared/ai";
+import { aiModelName, type AIModel, type AIProvider } from "../src/shared/ai";
 import { parseAIUsage, type AIReportedUsage, type AIUsageEvent } from "../src/shared/aiUsage";
 import type { RetrievalRole } from "../src/shared/retrieval";
 import { redactAIError } from "./ai-client";
@@ -19,6 +19,23 @@ async function body(response: Response): Promise<string> {
 export class RetrievalClient {
   constructor(private readonly fetcher: typeof fetch, private readonly observe: (event: AIUsageEvent) => Promise<void> = async () => {}) {}
   private async track(event: AIUsageEvent) { try { await this.observe(event); } catch { /* The shared usage observer reports persistence failures. */ } }
+  async models(connection: RetrievalConnection, role: RetrievalRole): Promise<AIModel[]> {
+    const provider = connection.provider, suffix = provider.kind === "openrouter" ? role === "embedding" ? "/embeddings/models" : "/models?output_modalities=rerank" : provider.kind === "siliconflow" ? `/models?sub_type=${role}` : "/models";
+    try {
+      const response = await this.fetcher(provider.baseUrl + suffix, { headers: { Authorization: `Bearer ${connection.key}` }, redirect: "error", signal: AbortSignal.timeout(45_000) }), raw = await body(response);
+      if (!response.ok) throw Error(`Model catalogue failed (HTTP ${response.status}). Enter a model ID manually or retry.`);
+      const value = JSON.parse(raw); if (!Array.isArray(value.data)) throw Error("The service did not return a compatible model catalogue.");
+      const models = new Map<string, AIModel>();
+      for (const item of value.data) {
+        const modalities = item.architecture?.output_modalities;
+        if (Array.isArray(modalities) && !modalities.includes(role === "embedding" ? "embeddings" : "rerank")) continue;
+        if (typeof item.id !== "string" || !item.id || item.id.length > 256 || /\s/.test(item.id)) continue;
+        const free = item.pricing && item.pricing.prompt !== undefined && Number(item.pricing.prompt) === 0 && ["completion", "request"].every(key => item.pricing[key] === undefined || Number(item.pricing[key]) === 0);
+        models.set(item.id, { id: item.id, name: `${typeof item.name === "string" ? item.name.slice(0, 90) : aiModelName(item.id)}${free ? " · Free" : ""}`, purpose: role });
+      }
+      return [...models.values()].sort((a, b) => a.id.localeCompare(b.id));
+    } catch (error) { throw Error(redactAIError(error, connection.key)); }
+  }
   private async request<T>(connection: RetrievalConnection, role: RetrievalRole, payload: object, signal: AbortSignal, decode: (value: any) => T): Promise<T> {
     for (let attempt = 1; ; attempt++) {
       const id = randomUUID(), timeout = AbortSignal.timeout(90_000), combined = AbortSignal.any([signal, timeout]); let usage: AIReportedUsage = {}, status: "complete" | "stopped" | "error" = "error", failure: unknown;
@@ -53,7 +70,7 @@ export class RetrievalClient {
   }
   async rerank(connection: RetrievalConnection, query: string, documents: string[], signal: AbortSignal): Promise<Array<{ index: number; score: number }>> {
     if (!query.trim() || query.length > 1500 || !documents.length || documents.length > 60 || documents.some(text => text.length > 1200)) throw Error("Invalid reranking input.");
-    return this.request(connection, "rerank", { query, documents, top_n: documents.length, return_documents: false }, signal, value => {
+    return this.request(connection, "rerank", { query, documents, top_n: documents.length, ...(connection.provider.kind === "openrouter" ? {} : { return_documents: false }) }, signal, value => {
       const results = value.results ?? value.data, seen = new Set<number>();
       if (!Array.isArray(results) || results.length !== documents.length) throw Error("The rerank API returned an incomplete candidate list.");
       return results.map((item: any) => { if (!item || !Number.isInteger(item.index) || item.index < 0 || item.index >= documents.length || seen.has(item.index) || typeof item.relevance_score !== "number" || !Number.isFinite(item.relevance_score)) throw Error("The rerank API returned invalid candidate indices or scores."); seen.add(item.index); return { index: item.index, score: item.relevance_score }; }).sort((a: any, b: any) => b.score - a.score);

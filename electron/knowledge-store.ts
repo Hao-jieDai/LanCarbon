@@ -54,6 +54,17 @@ export class KnowledgeStore {
     if (this.settings.enabled && !this.settings.paused && this.settings.scope.autoUpdate && !this.error) this.kick(); return view;
   }
   requestRefresh() { clearTimeout(this.timer); this.timer = setTimeout(() => { void this.inspect().catch(error => { this.error = error instanceof Error ? error.message : "Could not update the text index."; this.changed(); }); }, 400); this.timer.unref?.(); }
+  // Keep reusable local text across chats; callers must still filter every search by the active chat's selection.
+  async prepare(scope: KnowledgeScope, signal: AbortSignal, progress: (message: string) => void): Promise<KnowledgeView> {
+    signal.throwIfAborted(); await this.stop(); signal.throwIfAborted();
+    const previous = await this.serial(async () => { await this.load(); return structuredClone(this.settings.scope); });
+    const merged: KnowledgeScope = { ...scope, noteIds: [...new Set([...previous.noteIds, ...scope.noteIds])], fileIds: [...new Set([...previous.fileIds, ...scope.fileIds])], bookIds: [...new Set([...previous.bookIds, ...scope.bookIds])], folderIds: [...new Set([...previous.folderIds, ...scope.folderIds])], includeSystem: previous.includeSystem || scope.includeSystem, includeAttachments: previous.includeAttachments || scope.includeAttachments };
+    const abort = () => { void this.stop(); };
+    signal.addEventListener("abort", abort, { once: true });
+    const timer = setInterval(() => progress(`Reading sources ${this.progress.completed} / ${this.progress.total}${this.progress.current ? ` · ${this.progress.current}` : ""}`), 500);
+    try { await this.start(merged); if (signal.aborted) await this.stop(); await this.job; signal.throwIfAborted(); return await this.inspect(); }
+    finally { clearInterval(timer); signal.removeEventListener("abort", abort); }
+  }
   async start(scope: KnowledgeScope, rebuild = false) {
     await this.serial(async () => {
       await this.load(); if (this.running) throw Error("Stop the current indexing task first."); if (this.error && !rebuild) throw Error(this.error);

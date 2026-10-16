@@ -1,3 +1,5 @@
+import type { ChatGrounding, ChatSourceCatalogue, CitationTarget } from "./grounding";
+import type { KnowledgeScope } from "./knowledge";
 import type { AIModelPrice, AIModelPriceInput, AIUsagePage, AIUsageQuery } from "./aiUsage";
 export type AIProviderKind = "siliconflow" | "openrouter" | "others";
 // Retrieval roles use their own settings; Chat connections retain their Chat-only model lists.
@@ -5,8 +7,8 @@ export type AIModelPurpose = "chat" | "embedding" | "rerank";
 export interface AIModel { id: string; name: string; purpose: AIModelPurpose }
 export interface AIProvider { id: string; kind: AIProviderKind; name: string; baseUrl: string; models: AIModel[]; defaultModel: string; hasKey: boolean; maskedKey?: string }
 export interface AIProviderInput { id: string; kind: AIProviderKind; name: string; baseUrl: string; models: AIModel[]; defaultModel: string; apiKey?: string; clearKey?: boolean }
-export interface AIMessage { id: string; role: "user" | "assistant"; content: string; reasoning?: string; progress?: string; status: "complete" | "streaming" | "stopped" | "error"; providerId?: string; providerName?: string; modelId?: string; modelName?: string; error?: string; createdAt: string }
-export interface AIChat { id: string; title: string; providerId: string; modelId: string; messages: AIMessage[]; createdAt: string; updatedAt: string }
+export interface AIMessage { grounding?: ChatGrounding; sourceScope?: KnowledgeScope; id: string; role: "user" | "assistant"; content: string; reasoning?: string; progress?: string; status: "complete" | "streaming" | "stopped" | "error"; providerId?: string; providerName?: string; modelId?: string; modelName?: string; error?: string; createdAt: string }
+export interface AIChat { sourceScope?: KnowledgeScope; id: string; title: string; providerId: string; modelId: string; messages: AIMessage[]; createdAt: string; updatedAt: string }
 export type AIResult<T> = ({ ok: true } & T) | { ok: false; error: string };
 export interface AIDesktopApi {
   providers(): Promise<AIResult<{ providers: AIProvider[] }>>;
@@ -20,6 +22,9 @@ export interface AIDesktopApi {
   test(id: string, modelId: string): Promise<AIResult<{ message: string }>>;
   stopTest(): Promise<AIResult<object>>;
   onTestProgress(callback: (message: string) => void): () => void;
+  sourceCatalogue(): Promise<AIResult<{ catalogue: ChatSourceCatalogue }>>;
+  setSources(id: string, scope: KnowledgeScope): Promise<AIResult<{ chat: AIChat }>>;
+  openCitation(chatId: string, messageId: string, label: string): Promise<AIResult<{ target: CitationTarget }>>;
   chats(): Promise<AIResult<{ chats: AIChat[] }>>;
   createChat(providerId: string, modelId: string): Promise<AIResult<{ chat: AIChat }>>;
   renameChat(id: string, title: string): Promise<AIResult<{ chat: AIChat }>>;
