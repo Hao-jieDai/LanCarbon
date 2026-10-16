@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
 
-Version 2.4.2 adds document questions in Chat with per-conversation Library/Note/Book sources, automatic preparation, saved evidence and direct source navigation. Retrieval model catalogues are separate from Chat model lists.
+Version 2.4.3 fixes evidence coverage for combined document questions: numbered items are searched independently, relevant passages take priority, adjacent context is retained, and short selected documents can fit in full within a bounded context budget. Choose sources now sits directly above the Chat message box.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -68,7 +68,7 @@ Vectors use a bounded **128 MB** local cache in **Data/Research/Retrieval**, wit
 
 ### Document questions in Chat
 
-Open **Workshop → Chat → Choose sources**. Select PDF/EPUB documents from Library, individual Notes or Book pages, or a whole Book. Search by title or Book name. Up to 20 sources, including linked attachments, can be selected per chat. **Include linked attachments** follows writing references without copying Library originals into assets. Built-in content is excluded unless **Show built-in content** is enabled. **Import PDF / EPUB**, or drop files into Chat, imports/reuses Library originals and selects them for the conversation.
+Open **Workshop → Chat** and use **Choose sources** directly above the message box. Select PDF/EPUB documents from Library, individual Notes or Book pages, or a whole Book. Search by title or Book name. Up to 20 sources, including linked attachments, can be selected per chat. **Include linked attachments** follows writing references without copying Library originals into assets. Built-in content is excluded unless **Show built-in content** is enabled. **Import PDF / EPUB**, or drop files into Chat, imports/reuses Library originals and selects them for the conversation.
 
 Send a question; local text extraction, changed-source checks, vector preparation and retrieval run automatically. Saved vectors are reused for unchanged passages. The preparation status appears with the reply; **Stop generating** cancels preparation and generation. Sources are remembered per chat across restarts. **Clear sources** returns to ordinary Chat. Changing the source selection excludes earlier document answers from the new evidence context. No separate Knowledge base page is required.
 
@@ -150,7 +150,7 @@ Managed writing resources are stored in root **Library/assets**. Existing Data/a
 Before upgrading, close LanCarbon and back up the complete LanCarbon home folder and any separately selected Data location. Include Cache because its encryption state is needed to read previously saved API keys. Keep the stable installer alongside the backup. Reinstalling an older application may also require restoring matching data. A restored snapshot returns to the backup date; retain later edits separately. Developers can use the verified snapshot commands below. Restore accepts a new empty folder, verifies all files before copying and adjusts saved managed paths to that folder.
 
 ```powershell
-node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.4.2-x64-Setup.exe"
+node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.4.3-x64-Setup.exe"
 node scripts/workspace-recovery.cjs verify --backup "D:\Backups\LanCarbon-snapshot"
 node scripts/workspace-recovery.cjs restore --backup "D:\Backups\LanCarbon-snapshot" --target "D:\Recovered\LanCarbon"
 ```
@@ -161,7 +161,7 @@ Select **Export PDF** in the page header from Edit or Preview, choose a filename
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.4.2-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.4.3-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -237,7 +237,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-2.4.2 将资料问答接入 Chat：每个聊天可选择 Library／Note／Book 资料，自动准备检索，保存原文证据并直接跳转来源。检索模型目录与聊天模型列表分开管理。
+2.4.3 修复合并文献问题的证据遗漏：编号问题分别检索，优先保留相关片段并补充相邻上下文；较短资料在容量允许时保留完整内容。Choose sources 移到 Chat 消息输入框正上方。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
@@ -262,7 +262,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 ### Chat 资料问答
 
-打开 **Workshop → Chat → Choose sources**，选择 Library 中的 PDF／EPUB、独立 Note、Book 页面或整本 Book，可以按标题或 Book 名称搜索。每个聊天最多选择 20 项资料，包括纳入的附件。**Include linked attachments** 纳入写作引用的附件，复用 Library 原件，不向 assets 复制原文件。内置内容默认排除，勾选 **Show built-in content** 才会显示。使用 **Import PDF / EPUB** 或把文件拖进 Chat，会导入或复用 Library 原件并将其加入当前聊天。
+打开 **Workshop → Chat**，点击消息输入框正上方的 **Choose sources**，选择 Library 中的 PDF／EPUB、独立 Note、Book 页面或整本 Book，可以按标题或 Book 名称搜索。每个聊天最多选择 20 项资料，包括纳入的附件。**Include linked attachments** 纳入写作引用的附件，复用 Library 原件，不向 assets 复制原文件。内置内容默认排除，勾选 **Show built-in content** 才会显示。使用 **Import PDF / EPUB** 或把文件拖进 Chat，会导入或复用 Library 原件并将其加入当前聊天。
 
 发送问题后，软件自动提取文字、检查资料变化、准备向量并检索，无需单独操作 Knowledge base 页面。已准备且未变化的片段复用缓存。回复中显示准备进度；**Stop generating** 可取消资料准备和生成。资料范围按聊天保存，重启后保留；**Clear sources** 切回普通聊天。切换资料后，先前的文献回答不会作为新范围的证据发送。
 
@@ -379,7 +379,7 @@ PDF 与 EPUB 共用顶部标签栏，最多同时打开 **10 个文件**。从�
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.4.2-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.4.3-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 

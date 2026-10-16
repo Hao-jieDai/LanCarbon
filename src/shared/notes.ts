@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.2";
+export const RELEASE_VERSION = "2.4.3";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.4.2 adds document questions in Chat with per-conversation Library/Note/Book sources, automatic preparation, saved evidence and direct source navigation. Retrieval model catalogues are separate from Chat model lists.
+Version 2.4.3 fixes evidence coverage for combined document questions: numbered items are searched independently, relevant passages take priority, adjacent context is retained, and short selected documents can fit in full within a bounded context budget. Choose sources now sits directly above the Chat message box.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -57,7 +57,7 @@ Vectors use a bounded **128 MB** local cache in **Data/Research/Retrieval**, wit
 
 ### Document questions in Chat
 
-Open **Workshop → Chat → Choose sources**. Select PDF/EPUB documents from Library, individual Notes or Book pages, or a whole Book. Search by title or Book name. Up to 20 sources, including linked attachments, can be selected per chat. **Include linked attachments** follows writing references without copying Library originals into assets. Built-in content is excluded unless **Show built-in content** is enabled. **Import PDF / EPUB**, or drop files into Chat, imports/reuses Library originals and selects them for the conversation.
+Open **Workshop → Chat** and use **Choose sources** directly above the message box. Select PDF/EPUB documents from Library, individual Notes or Book pages, or a whole Book. Search by title or Book name. Up to 20 sources, including linked attachments, can be selected per chat. **Include linked attachments** follows writing references without copying Library originals into assets. Built-in content is excluded unless **Show built-in content** is enabled. **Import PDF / EPUB**, or drop files into Chat, imports/reuses Library originals and selects them for the conversation.
 
 Send a question; local text extraction, changed-source checks, vector preparation and retrieval run automatically. Saved vectors are reused for unchanged passages. The preparation status appears with the reply; **Stop generating** cancels preparation and generation. Sources are remembered per chat across restarts. **Clear sources** returns to ordinary Chat. Changing the source selection excludes earlier document answers from the new evidence context. No separate Knowledge base page is required.
 
@@ -245,7 +245,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.4.2 将资料问答接入 Chat：每个聊天可选择 Library／Note／Book 资料，自动准备检索，保存原文证据并直接跳转来源。检索模型目录与聊天模型列表分开管理。
+2.4.3 修复合并文献问题的证据遗漏：编号问题分别检索，优先保留相关片段并补充相邻上下文；较短资料在容量允许时保留完整内容。Choose sources 移到 Chat 消息输入框正上方。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
@@ -274,7 +274,7 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 
 ### Chat 资料问答
 
-打开 **Workshop → Chat → Choose sources**，选择 Library 中的 PDF／EPUB、独立 Note、Book 页面或整本 Book，可以按标题或 Book 名称搜索。每个聊天最多选择 20 项资料，包括纳入的附件。**Include linked attachments** 纳入写作引用的附件，复用 Library 原件，不向 assets 复制原文件。内置内容默认排除，勾选 **Show built-in content** 才会显示。使用 **Import PDF / EPUB** 或把文件拖进 Chat，会导入或复用 Library 原件并将其加入当前聊天。
+打开 **Workshop → Chat**，点击消息输入框正上方的 **Choose sources**，选择 Library 中的 PDF／EPUB、独立 Note、Book 页面或整本 Book，可以按标题或 Book 名称搜索。每个聊天最多选择 20 项资料，包括纳入的附件。**Include linked attachments** 纳入写作引用的附件，复用 Library 原件，不向 assets 复制原文件。内置内容默认排除，勾选 **Show built-in content** 才会显示。使用 **Import PDF / EPUB** 或把文件拖进 Chat，会导入或复用 Library 原件并将其加入当前聊天。
 
 发送问题后，软件自动提取文字、检查资料变化、准备向量并检索，无需单独操作 Knowledge base 页面。已准备且未变化的片段复用缓存。回复中显示准备进度；**Stop generating** 可取消资料准备和生成。资料范围按聊天保存，重启后保留；**Clear sources** 切回普通聊天。切换资料后，先前的文献回答不会作为新范围的证据发送。
 

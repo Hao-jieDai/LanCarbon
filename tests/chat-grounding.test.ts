@@ -14,6 +14,7 @@ import { RetrievalClient } from "../electron/retrieval-client";
 import { extractMarkdown } from "../src/shared/knowledgeText";
 import { emptyKnowledgeScope, type KnowledgeHit } from "../src/shared/knowledge";
 import { defaultAIProviders, type AIChat } from "../src/shared/ai";
+import { CHAT_EVIDENCE_MAX_CHUNKS } from "../src/shared/grounding";
 import { createNote } from "../src/shared/notes";
 const roots: string[] = [], stores: KnowledgeStore[] = [];
 afterEach(async () => { for (const store of stores.splice(0)) await store.stop(); for (const root of roots.splice(0)) { if (!root.startsWith(os.tmpdir()) || !path.basename(root).startsWith("lancarbon-grounding-")) throw Error("Unsafe cleanup"); await fs.rm(root, { recursive: true, force: true }); } });
@@ -63,10 +64,32 @@ it("keeps ordinary Chat unchanged and stops source preparation before any Chat c
 it("bounds broad evidence while covering each selected paper and reports unrecognized or missing citations", async () => {
   const f = await fixture(), chat: AIChat = { ...f.chat, sourceScope: { ...emptyKnowledgeScope(), noteIds: ["a", "b"] }, messages: [{ id: "question", role: "user", status: "complete", content: "Compare the conclusions", createdAt: new Date().toISOString() }] };
   const prepared = await f.grounder.prepare(chat, new AbortController().signal, () => {});
-  expect(prepared.grounding.evidence.length).toBeLessThanOrEqual(24); expect(prepared.grounding.evidence.some(hit => hit.chunk.text.includes("region"))).toBe(true);
+  expect(prepared.grounding.evidence.length).toBeLessThanOrEqual(CHAT_EVIDENCE_MAX_CHUNKS); expect(prepared.grounding.evidence.some(hit => hit.chunk.text.includes("region"))).toBe(true);
   await f.grounder.finish(prepared.grounding, "Unverifiable [S999]"); expect(prepared.grounding.warnings.join(" ")).toContain("unrecognized citation"); expect(prepared.grounding.warnings.join(" ")).toContain("did not supply valid");
   const long = Array.from({ length: 90 }, (_, i) => ({ ...prepared.grounding.evidence[0], chunk: { ...prepared.grounding.evidence[0].chunk, id: String(i) } }));
-  const selected = chooseEvidence([...long, ...prepared.grounding.evidence.filter(hit => hit.source.id === "note:b")], long, ["note:a", "note:b"], true); expect(new Set(selected.map(hit => hit.source.id)).size).toBe(2); expect(selected.length).toBeLessThanOrEqual(24);
+  const selected = chooseEvidence([...long, ...prepared.grounding.evidence.filter(hit => hit.source.id === "note:b")], [long], ["note:a", "note:b"], true); expect(new Set(selected.map(hit => hit.source.id)).size).toBe(2); expect(selected.length).toBeLessThanOrEqual(CHAT_EVIDENCE_MAX_CHUNKS);
+});
+it("retrieves each numbered item independently, keeps per-question candidates and reloads more than 24 saved excerpts", async () => {
+  const f = await fixture();
+  f.notes[0].content += "\n\n" + Array.from({ length: 35 }, (_, i) => `Paragraph ${i}: regional assumptions.`).join("\n\n");
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a", "b"] });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "1. Compare the carbon investment findings.\n2. Explain the methods and regional assumptions.");
+  const chat = await f.settled(), evidence = chat.messages.at(-1)!.grounding!.evidence;
+  expect(f.retrieval.search).toHaveBeenCalledTimes(2);
+  expect(vi.mocked(f.retrieval.search).mock.calls.map(call => call[0])).toEqual(["Compare the carbon investment findings.", "Explain the methods and regional assumptions."]);
+  const payload = JSON.parse(JSON.parse(f.fetcher.mock.calls[0][1]!.body as string).messages.find((item: { content: string }) => item.content.startsWith('{"selectedSources":')).content);
+  expect(payload.questionEvidence).toHaveLength(2); expect(payload.questionEvidence.every((item: { citations: string[] }) => item.citations.length > 0)).toBe(true);
+  expect(evidence.length).toBeGreaterThan(24);
+  expect((await new AIChatStore(f.root).get(chat.id)).messages.at(-1)!.grounding!.evidence).toEqual(evidence);
+});
+it("bounds empty-result follow-ups, reports missing questions and keeps cancellation active between subquestions", async () => {
+  const f = await fixture();
+  vi.mocked(f.retrieval.search).mockResolvedValue({ hits: [], warnings: [], mode: "keyword" });
+  const chat = { ...f.chat, sourceScope: { ...emptyKnowledgeScope(), noteIds: ["a"] }, messages: [{ id: "question", role: "user" as const, status: "complete" as const, content: "1. Missing methods? More details.\n2. Missing results? More details.\n3. Missing conclusions? More details.", createdAt: new Date().toISOString() }] };
+  const prepared = await f.grounder.prepare(chat, new AbortController().signal, () => {});
+  expect(f.retrieval.search).toHaveBeenCalledTimes(5); expect(prepared.grounding.warnings.join(" ")).toContain("Question 3: no matching");
+  const controller = new AbortController(); vi.mocked(f.retrieval.search).mockClear().mockImplementation(async () => { controller.abort(); return { hits: [], warnings: [], mode: "keyword" }; });
+  await expect(f.grounder.prepare(chat, controller.signal, () => {})).rejects.toThrow(); expect(f.retrieval.search).toHaveBeenCalledTimes(1);
 });
 it("discovers role-specific OpenRouter catalogues without polluting Chat models or exposing keys", async () => {
   const urls: string[] = [], fetcher = vi.fn<typeof fetch>(async url => { urls.push(String(url)); return new Response(JSON.stringify({ data: [{ id: "embed:free", name: "Free embedding", architecture: { output_modalities: ["embeddings"] }, pricing: { prompt: "0", completion: "0" } }, { id: "rank:free", architecture: { output_modalities: ["rerank"] } }, { id: "chat", architecture: { output_modalities: ["text"] } }] })); });

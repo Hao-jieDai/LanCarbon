@@ -1,4 +1,5 @@
 import type { KnowledgeHit, KnowledgeScope, KnowledgeSource, KnowledgeView } from "./knowledge";
+export const CHAT_EVIDENCE_MAX_CHUNKS = 96;
 export interface ChatEvidence extends KnowledgeHit { label: string }
 export interface ChatGrounding {
   scope: KnowledgeScope; sourceIds: string[]; evidence: ChatEvidence[];
