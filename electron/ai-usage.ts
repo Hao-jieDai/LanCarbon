@@ -120,7 +120,7 @@ export class AIUsageStore extends SerializedUsage {
   async allRecords(): Promise<AIUsageRecord[]> { return (await this.query({}, true)).records; }
   async query(input: AIUsageQuery = {}, includeAll = false): Promise<AIUsagePage> {
     if (!input || typeof input !== "object" || (input.from !== undefined && !validDay(input.from)) || (input.to !== undefined && !validDay(input.to)) || (input.from && input.to && input.from > input.to)) throw new Error("Choose a valid date range.");
-    if (input.purpose !== undefined && !["chat", "test", "translation"].includes(input.purpose)) throw new Error("Invalid usage purpose.");
+    if (input.purpose !== undefined && !["chat", "test", "translation", "embedding", "rerank"].includes(input.purpose)) throw new Error("Invalid usage purpose.");
     if (input.page !== undefined && (!Number.isSafeInteger(input.page) || input.page < 1 || input.page > 1_000_000)) throw new Error("Invalid usage page.");
     return this.serial(async () => {
       const names = (await fs.readdir(this.directory).catch(error => { if (error.code === "ENOENT") return []; throw error; })).filter(name => LEDGER_NAME.test(name) && (!input.from || name.slice(0, 10) >= input.from) && (!input.to || name.slice(0, 10) <= input.to)).sort();
@@ -134,7 +134,7 @@ export class AIUsageStore extends SerializedUsage {
             if (event.version !== 1) throw new Error("Unknown event version");
             if ("record" in event) {
               const record = event.record;
-              if (typeof record.id !== "string" || !validDay(record.day) || typeof record.startedAt !== "string" || !Number.isFinite(Date.parse(record.startedAt)) || !["chat", "test", "translation"].includes(record.purpose) || typeof record.providerId !== "string" || typeof record.baseUrl !== "string" || typeof record.modelId !== "string" || typeof record.providerName !== "string" || typeof record.modelName !== "string") throw new Error("Invalid usage record");
+              if (typeof record.id !== "string" || !validDay(record.day) || typeof record.startedAt !== "string" || !Number.isFinite(Date.parse(record.startedAt)) || !["chat", "test", "translation", "embedding", "rerank"].includes(record.purpose) || typeof record.providerId !== "string" || typeof record.baseUrl !== "string" || typeof record.modelId !== "string" || typeof record.providerName !== "string" || typeof record.modelName !== "string") throw new Error("Invalid usage record");
               if (record.price && (!["CNY", "USD"].includes(record.price.currency) || priceKey(record.price) !== priceKey(record) || [record.price.input, record.price.output, record.price.cacheRead ?? 0, record.price.cacheWrite ?? 0].some(value => typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1_000_000))) throw new Error("Invalid price snapshot");
               if (!records.has(record.id)) records.set(record.id, { ...record, status: this.active.has(record.id) ? "pending" : "interrupted" });
             } else if ("finish" in event) {

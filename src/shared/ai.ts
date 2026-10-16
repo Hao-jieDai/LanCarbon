@@ -1,6 +1,6 @@
 import type { AIModelPrice, AIModelPriceInput, AIUsagePage, AIUsageQuery } from "./aiUsage";
 export type AIProviderKind = "siliconflow" | "openrouter" | "others";
-// Retrieval roles are reserved for the later RAG phase; this release exposes chat only.
+// Retrieval roles use their own settings; Chat connections retain their Chat-only model lists.
 export type AIModelPurpose = "chat" | "embedding" | "rerank";
 export interface AIModel { id: string; name: string; purpose: AIModelPurpose }
 export interface AIProvider { id: string; kind: AIProviderKind; name: string; baseUrl: string; models: AIModel[]; defaultModel: string; hasKey: boolean; maskedKey?: string }

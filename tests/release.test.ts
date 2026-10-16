@@ -58,7 +58,7 @@ describe("release metadata", () => {
     const starter = JSON.parse(readFileSync(path.join(process.cwd(), "resources", "starter-content", "notes.json"), "utf8"));
     const book = starter.books.find((item: { id: string }) => item.id === "lancarbon-from-zero-to-one");
     expect(book.settings.title).toBe("LanCarbon: From 0 to 1");
-    expect(Object.keys(book.pages)).toHaveLength(48);
+    expect(Object.keys(book.pages)).toHaveLength(49);
     expect(book.pages["tutorial-page-s6-pdf"].noteId).toBe("tutorial-note-s6-pdf");
     expect(book.pages["tutorial-page-s6-epub"].noteId).toBe("tutorial-note-s6-epub");
     expect(book.settings.publishing).toBeUndefined();

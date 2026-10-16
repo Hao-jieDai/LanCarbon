@@ -111,6 +111,20 @@ export class KnowledgeStore {
     this.records.clear(); this.error = ""; await this.saveManifest();
   }
   async clear() { await this.stop(); await this.serial(async () => { await this.clearRecords(); this.settings.enabled = false; await this.writeJson("scope.json", this.settings); }); this.changed(); }
+  async corpus(): Promise<KnowledgeHit[]> {
+    return this.serial(async () => {
+      await this.load(); if (this.error) throw Error(this.error);
+      const snapshot = await this.snapshot(), selected = await this.reconcile(snapshot), hits: KnowledgeHit[] = [];
+      if (!this.settings.enabled) return hits;
+      for (const source of snapshot.sources) {
+        const record = this.records.get(source.id); if (!selected.has(source.id) || !record || !["ready", "partial"].includes(record.status) || record.fingerprint !== source.fingerprint || source.unavailable) continue;
+        const cached = await this.readJson(this.cacheName(source.id), 12_000_000) as CachedSource;
+        if (cached.version !== 1 || cached.sourceId !== source.id || cached.fingerprint !== source.fingerprint) throw Error("The text index changed. Update it before preparing retrieval."); validateExtraction(cached.extraction);
+        for (const chunk of cached.extraction.chunks) { hits.push({ source, chunk, indexedAt: record.indexedAt, fingerprint: source.fingerprint }); if (hits.length > 40000) throw Error("Retrieval supports up to 40,000 passages. Reduce the selected sources."); }
+      }
+      return hits;
+    });
+  }
   async search(query: string, sourceId?: string, offset = 0): Promise<{ hits: KnowledgeHit[]; total: number }> {
     if (typeof query !== "string" || query.length > 200 || sourceId !== undefined && typeof sourceId !== "string" || !Number.isSafeInteger(offset) || offset < 0 || offset > KNOWLEDGE_MAX_CHUNKS) throw Error("Enter up to 200 characters to search extracted text.");
     return this.serial(async () => {

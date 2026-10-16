@@ -8,6 +8,12 @@ import { LibraryStore, LibraryNameConflict } from "./library";
 import { exportLibraryFiles } from "./library-export";
 import { ExternalEdits } from "./external-edits";
 import { KnowledgeStore } from "./knowledge-store";
+import { RetrievalSettingsStore } from "./retrieval-settings";
+import { RetrievalService } from "./retrieval-service";
+import { RetrievalCache } from "./retrieval-cache";
+import { RetrievalClient } from "./retrieval-client";
+import { retrievalPriceProviders, type RetrievalRole, type RetrievalSettings } from "../src/shared/retrieval";
+import type { AIUsageEvent } from "../src/shared/aiUsage";
 import { knowledgeSnapshot } from "./knowledge-sources";
 import { LocalKnowledgeExtractor } from "./knowledge-extractor";
 import type { KnowledgeScope } from "../src/shared/knowledge";
@@ -175,18 +181,20 @@ app.whenReady().then(async () => {
   const aiSettings = new AISettingsStore(configurationDirectory, secretCodec);
   const translationConnections = new AISettingsStore(configurationDirectory, secretCodec, "translation-");
   const translationSettings = new TranslationSettingsStore(configurationDirectory);
+  const retrievalConnections = new AISettingsStore(configurationDirectory, secretCodec, "retrieval-");
+  const retrievalSettings = new RetrievalSettingsStore(configurationDirectory);
   let cacheDirectory = dataDirectory, translationCache = new TranslationCache(dataDirectory);
   const cache = () => { if (cacheDirectory !== dataDirectory) { cacheDirectory = dataDirectory; translationCache = new TranslationCache(dataDirectory); } return translationCache; };
   let chatDirectory = dataDirectory;
   let chatStore = new AIChatStore(chatDirectory);
   const chats = () => { if (chatDirectory !== dataDirectory) { chatDirectory = dataDirectory; chatStore = new AIChatStore(chatDirectory); } return chatStore; };
   const aiPrices = new AIPriceStore(configurationDirectory);
-  const priceProviders = async () => translationPriceProviders(await aiSettings.list(), await translationConnections.list(), await translationSettings.get());
+  const priceProviders = async () => retrievalPriceProviders(translationPriceProviders(await aiSettings.list(), await translationConnections.list(), await translationSettings.get()), await retrievalConnections.list(), await retrievalSettings.get());
   const usageStores = new Map<string, AIUsageStore>();
   const usage = () => { let value = usageStores.get(dataDirectory); if (!value) { value = new AIUsageStore(dataDirectory, aiPrices); usageStores.set(dataDirectory, value); } return value; };
   const balanceStores = new Map<string, AIBalanceStore>();
   const balances = () => { let value = balanceStores.get(dataDirectory); if (!value) { value = new AIBalanceStore(dataDirectory, usage()); balanceStores.set(dataDirectory, value); } return value; };
-  const balanceSources = async () => (await priceProviders()).filter(provider => provider.hasKey || provider.models.length > 0).map(provider => ({ providerId: provider.id, providerName: provider.name, baseUrl: provider.baseUrl, usage: provider.id.startsWith("translation-") ? "translation" as const : "ai" as const }));
+  const balanceSources = async () => (await priceProviders()).filter(provider => provider.hasKey || provider.models.length > 0).map(provider => ({ providerId: provider.id, providerName: provider.name, baseUrl: provider.baseUrl, usage: provider.id.startsWith("translation-") ? "translation" as const : provider.id.startsWith("retrieval-") ? "retrieval" as const : "ai" as const }));
   const syncPrices = async () => {
     try { const providers = await priceProviders(); await aiPrices.retain(providers.flatMap(provider => provider.models.map(model => ({ providerId: provider.id, baseUrl: provider.baseUrl, modelId: model.id })))); }
     catch { usage().reportFailure("Saved model prices could not be cleaned. Historical usage is preserved; check your configuration folder."); }
@@ -194,12 +202,14 @@ app.whenReady().then(async () => {
   await syncPrices();
   const usageRequests = new Map<string, AIUsageStore>();
   // Electron's network stack follows the computer's system proxy. Keys stay in the main process.
-  const aiClient = new AIClient((input, init) => net.fetch(input as string, init), async event => {
+  const observeUsage = async (event: AIUsageEvent) => {
     const target = event.type === "start" ? usage() : usageRequests.get(event.id) ?? usage();
     if (event.type === "start") usageRequests.set(event.request.id, target);
     try { await target.record(event); } catch { target.reportFailure(); }
     finally { if (event.type === "finish") usageRequests.delete(event.id); if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("ai:usage-changed"); }
-  });
+  };
+  const aiClient = new AIClient((input, init) => net.fetch(input as string, init), observeUsage);
+  const retrievalClient = new RetrievalClient((input, init) => net.fetch(input as string, init), observeUsage);
   aiService = new AIService(aiSettings, chats, aiClient, chat => mainWindow?.webContents.send("ai:chat", chat));
   translationService = new TranslationService(translationSettings, translationConnections, aiSettings, cache, aiClient);
   const translationChanged = () => mainWindow?.webContents.send("translation:changed");
@@ -212,9 +222,9 @@ app.whenReady().then(async () => {
   aiHandler("ai:remove-balance", async (source: BalanceSource) => { await balances().remove(source); mainWindow?.webContents.send("ai:usage-changed"); return {}; });
   aiHandler("ai:providers", async () => ({ providers: await aiSettings.list() }));
   aiHandler("ai:price-providers", async () => ({ providers: await priceProviders() }));
-  aiHandler("ai:save-provider", async (input: AIProviderInput) => { const providers = await aiSettings.save(input); await syncPrices(); translationChanged(); return { providers }; });
-  aiHandler("ai:remove-provider", async (id: string) => { const providers = await aiSettings.remove(id); await syncPrices(); translationChanged(); return { providers }; });
-  aiHandler("ai:clear-key", async (id: string) => { const providers = await aiSettings.clearKey(id); translationChanged(); return { providers }; });
+  aiHandler("ai:save-provider", async (input: AIProviderInput) => { await stopRetrieval(); const providers = await aiSettings.save(input); await syncPrices(); translationChanged(); return { providers }; });
+  aiHandler("ai:remove-provider", async (id: string) => { await stopRetrieval(); const providers = await aiSettings.remove(id); await syncPrices(); translationChanged(); return { providers }; });
+  aiHandler("ai:clear-key", async (id: string) => { await stopRetrieval(); const providers = await aiSettings.clearKey(id); translationChanged(); return { providers }; });
   aiHandler("ai:preferences", async () => ({ systemPrompt: await aiSettings.preferences() }));
   aiHandler("ai:save-preferences", async (prompt: string) => ({ systemPrompt: await aiSettings.savePreferences(prompt) }));
   aiHandler("ai:models", async (id: string) => ({ models: await aiService.models(id) }));
@@ -247,8 +257,8 @@ app.whenReady().then(async () => {
     if (input.mode === "reuse" && !providers.find(provider => provider.id === input.providerId)?.models.some(model => model.id === input.modelId)) throw Error("Choose a model saved in AI Settings, or use a separate translation connection.");
     const settings = await translationSettings.save(input); await syncPrices(); translationChanged(); return { settings };
   });
-  aiHandler("translation:save-provider", async (input: AIProviderInput) => { await translationService.cancel(); const providers = await translationConnections.save(input); await syncPrices(); translationChanged(); return { providers }; });
-  aiHandler("translation:clear-key", async (id: string) => { await translationService.cancel(); const providers = await translationConnections.clearKey(id); translationChanged(); return { providers }; });
+  aiHandler("translation:save-provider", async (input: AIProviderInput) => { await stopRetrieval(); await translationService.cancel(); const providers = await translationConnections.save(input); await syncPrices(); translationChanged(); return { providers }; });
+  aiHandler("translation:clear-key", async (id: string) => { await stopRetrieval(); await translationService.cancel(); const providers = await translationConnections.clearKey(id); translationChanged(); return { providers }; });
   aiHandler("translation:models", async (mode: TranslationSettings["mode"], id: string) => ({ models: await translationService.models(mode, id) }));
   aiHandler("translation:set-enabled", async (input: boolean) => { const enabled = await translationService.setEnabled(input); translationChanged(); return { enabled }; });
   aiHandler("translation:translate", async (id: string, text: string) => ({ result: await translationService.translate(id, text) }));
@@ -277,6 +287,14 @@ app.whenReady().then(async () => {
   const editStores = new Map<string, ExternalEdits>();
   const edits = () => { let manager = editStores.get(dataDirectory); if (!manager) { manager = new ExternalEdits(dataDirectory, directories.library, libraryStore()); editStores.set(dataDirectory, manager); } return manager; };
   const knowledgeStores = new Map<string, KnowledgeStore>(); let knowledgeExtractor: LocalKnowledgeExtractor | undefined;
+  const retrievalStores = new Map<string, RetrievalService>();
+  const retrievalConnection = async (role: RetrievalRole) => {
+    const settings = await retrievalSettings.get(), model = settings[role];
+    if (!model?.providerId || !model.modelId) throw Error(`Save an ${role === "embedding" ? "Embedding" : "Rerank"} service and model in AI Settings → Retrieval first.`);
+    const owner = model.mode === "custom" ? retrievalConnections : model.providerId.startsWith("translation-") ? translationConnections : aiSettings;
+    const connection = await owner.connection(model.providerId);
+    return { ...connection, modelId: model.modelId, modelName: model.modelName || model.modelId };
+  };
   const knowledge = () => {
     let value = knowledgeStores.get(dataDirectory);
     if (!value) {
@@ -286,7 +304,13 @@ app.whenReady().then(async () => {
     }
     return value;
   };
-  shutdownKnowledge = async () => { await Promise.all([...knowledgeStores.values()].map(manager => manager.stop(false))); knowledgeExtractor?.idle(); };
+  const retrieval = () => {
+    let value = retrievalStores.get(dataDirectory);
+    if (!value) { const text = knowledge(); value = new RetrievalService(() => retrievalSettings.get(), retrievalConnection, () => text.corpus(), new RetrievalCache(dataDirectory), retrievalClient, () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("retrieval:changed"); }); retrievalStores.set(dataDirectory, value); }
+    return value;
+  };
+  const stopRetrieval = async () => { await Promise.all([...retrievalStores.values()].map(manager => manager.stop())); };
+  shutdownKnowledge = async () => { await Promise.all([...retrievalStores.values()].map(manager => manager.shutdown())); await Promise.all([...knowledgeStores.values()].map(manager => manager.stop(false))); knowledgeExtractor?.idle(); };
   const libraryChanged = () => { mainWindow?.webContents.send("library:changed"); knowledgeStores.get(dataDirectory)?.requestRefresh(); };
   const syncEdits = async () => { const disk = await libraryStore().synchronize(); const edited = await edits().sync(); const result = { changed: disk.changed || edited.changed, errors: [...disk.errors, ...edited.errors] }; if (result.changed) libraryChanged(); return result; };
   flushExternal = async () => { await syncEdits(); await shutdownKnowledge(); await reader().flush(); await epub().flush(); await balances().flush(); };
@@ -296,11 +320,25 @@ app.whenReady().then(async () => {
   const knowledgeTimer = setInterval(() => knowledgeStores.get(dataDirectory)?.requestRefresh(), 5000); knowledgeTimer.unref();
   if (await fs.stat(path.join(dataDirectory, "Research/Knowledge/scope.json")).catch(() => null)) void knowledge().inspect().catch(() => undefined);
   aiHandler("knowledge:inspect", async () => { await syncEdits(); return { view: await knowledge().inspect() }; });
-  aiHandler("knowledge:start", async (scope: KnowledgeScope, rebuild = false) => { await syncEdits(); await knowledge().start(scope, rebuild === true); return {}; });
+  aiHandler("knowledge:start", async (scope: KnowledgeScope, rebuild = false) => { await stopRetrieval(); await syncEdits(); await knowledge().start(scope, rebuild === true); return {}; });
   aiHandler("knowledge:stop", async () => { await knowledge().stop(); return {}; });
-  aiHandler("knowledge:clear", async () => { await knowledge().clear(); return {}; });
+  aiHandler("knowledge:clear", async () => { await stopRetrieval(); await retrieval().clear(); await knowledge().clear(); return {}; });
   aiHandler("knowledge:preview", async (id: string, offset = 0) => { await syncEdits(); return knowledge().search("", id, offset); });
   aiHandler("knowledge:search", async (query: string) => { await syncEdits(); return knowledge().search(query); });
+  aiHandler("retrieval:settings", async () => ({ settings: await retrievalSettings.get(), providers: await retrievalConnections.list(), shared: [...await aiSettings.list(), ...await translationConnections.list()] }));
+  aiHandler("retrieval:save-settings", async (input: RetrievalSettings) => {
+    await stopRetrieval();
+    for (const role of ["embedding", "rerank"] as const) { const model = input?.[role]; if (!model?.providerId) continue; const providers = await (model.mode === "custom" ? retrievalConnections : model.providerId.startsWith("translation-") ? translationConnections : aiSettings).list(); if (!providers.some(provider => provider.id === model.providerId && provider.baseUrl)) throw Error("Choose a saved retrieval connection."); }
+    const settings = await retrievalSettings.save(input); await syncPrices(); mainWindow?.webContents.send("retrieval:changed"); return { settings };
+  });
+  aiHandler("retrieval:save-provider", async (input: AIProviderInput) => { await stopRetrieval(); const providers = await retrievalConnections.save(input); await syncPrices(); return { providers }; });
+  aiHandler("retrieval:clear-key", async (id: string) => { await stopRetrieval(); return { providers: await retrievalConnections.clearKey(id) }; });
+  aiHandler("retrieval:test", async (role: RetrievalRole) => ({ message: await retrieval().test(role) }));
+  aiHandler("retrieval:status", async () => { await syncEdits(); return { status: await retrieval().status() }; });
+  aiHandler("retrieval:build", async () => { await syncEdits(); await retrieval().build(); return {}; });
+  aiHandler("retrieval:stop", async () => { await stopRetrieval(); return {}; });
+  aiHandler("retrieval:clear", async () => { await retrieval().clear(); return {}; });
+  aiHandler("retrieval:search", async (text: string, sourceIds?: string[], limit?: number) => { await syncEdits(); return retrieval().search(text, sourceIds, limit); });
   const runManagedBuild = async (bookId: string, chooseLocation = false) => {
     if (!mainWindow) throw new Error("The main window is unavailable");
     const { workspace } = await store.loadWorkspace();

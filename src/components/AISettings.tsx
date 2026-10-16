@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import { AI_PRESETS, DEFAULT_AI_SYSTEM_PROMPT, aiModelName, type AIProvider, type AIModel, type AIProviderKind } from "../shared/ai";
 import { ThemedSelect } from "./ThemedSelect";
+import { RetrievalSettings } from "./RetrievalSettings";
 
-export function AISettings({ providers, onProviders }: { providers: AIProvider[]; onProviders(value: AIProvider[]): void }) {
+export function AISettings({ providers, onProviders, visible = true }: { providers: AIProvider[]; onProviders(value: AIProvider[]): void; visible?: boolean }) {
+  const [section, setSection] = useState("chat");
   const [kind, setKind] = useState<AIProviderKind>("siliconflow");
   const [selected, setSelected] = useState("siliconflow");
   const [draft, setDraft] = useState<AIProvider>(() => providers.find(item => item.id === selected)!);
@@ -37,7 +39,9 @@ export function AISettings({ providers, onProviders }: { providers: AIProvider[]
     if (draft.models.some(model => model.id === id)) { setError("This model is already in your list"); return; }
     setDraft({ ...draft, models: [...draft.models, { id, name, purpose: "chat" }], defaultModel: draft.defaultModel || id }); setModelId(""); setModelName(""); setError(""); setNotice("Model added. Save configuration to use it in Chat.");
   };
+  if (section === "retrieval") return <RetrievalSettings visible={visible} onChat={() => setSection("chat")}/>;
   return <div className="ai-settings-content">
+    <nav className="ai-settings-sections" role="tablist" aria-label="AI settings sections"><button role="tab" aria-selected="true" className="text-button">Chat</button><button role="tab" aria-selected="false" className="text-button" disabled={!!busy} onClick={() => setSection("retrieval")}>Retrieval</button></nav>
     <div className="ai-heading"><p className="foundation-eyebrow">RESEARCH</p><h1>AI Settings</h1><p>Connect your services and choose the models you use in Chat.</p></div>
     <details className="ai-guidelines"><summary>Response guidelines · all chat models</summary><p className="modal-help">A shared system prompt controls tone and format. It applies to future replies across SiliconFlow, OpenRouter and Others. Model quality can still vary.</p><label>System prompt<textarea aria-label="System prompt" rows={6} maxLength={12000} value={systemPrompt} disabled={!!busy || !promptLoaded} onChange={event => setSystemPrompt(event.target.value)}/></label><div className="ai-actions"><button className="quiet-button" disabled={!!busy || !promptLoaded} onClick={() => { setSystemPrompt(DEFAULT_AI_SYSTEM_PROMPT); setNotice("Default guidelines restored. Save guidelines to apply them."); }}>Restore default guidelines</button><button className="primary-button" disabled={!!busy || !promptLoaded} onClick={() => void act("Saving guidelines", async () => { const result = await window.notesDesktop.ai!.savePreferences(systemPrompt); if (!result.ok) throw new Error(result.error); setSystemPrompt(result.systemPrompt); setNotice("Response guidelines saved. They apply to future chat replies."); })}>Save guidelines</button></div></details>
     <div className="ai-provider-tabs" aria-label="AI service">{(["siliconflow", "openrouter", "others"] as const).map(type => <button disabled={!!busy} key={type} aria-pressed={kind === type} onClick={() => select(providers.find(item => item.kind === type)!.id, type)}>{AI_PRESETS[type].name}</button>)}</div>

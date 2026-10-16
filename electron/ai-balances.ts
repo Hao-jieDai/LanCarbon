@@ -11,7 +11,7 @@ export class AIBalanceStore {
   private queue: Promise<unknown> = Promise.resolve();
   constructor(private readonly data: string, private readonly usage: AIUsageStore) {}
   private source(value: BalanceSource): BalanceSource {
-    if (!value || typeof value.providerId !== "string" || !/^[a-zA-Z0-9-]{1,100}$/.test(value.providerId) || typeof value.providerName !== "string" || !value.providerName.trim() || value.providerName.length > 256 || (value.usage !== undefined && !["ai", "translation"].includes(value.usage))) throw Error("Choose a valid API connection.");
+    if (!value || typeof value.providerId !== "string" || !/^[a-zA-Z0-9-]{1,100}$/.test(value.providerId) || typeof value.providerName !== "string" || !value.providerName.trim() || value.providerName.length > 256 || (value.usage !== undefined && !["ai", "translation", "retrieval"].includes(value.usage))) throw Error("Choose a valid API connection.");
     return { providerId: value.providerId, baseUrl: aiBaseUrl(value.baseUrl), providerName: value.providerName.trim(), ...(value.usage ? { usage: value.usage } : {}) };
   }
   private input(value: BalanceInput): BalanceInput {

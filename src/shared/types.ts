@@ -175,6 +175,7 @@ export interface NotesDesktopApi {
   epub?: import("./epubReader").EpubReaderApi;
   library?: import("./library").LibraryDesktopApi;
   knowledge?: import("./knowledge").KnowledgeApi;
+  retrieval?: import("./retrieval").RetrievalApi;
   translation?: import("./translation").TranslationDesktopApi;
   ai?: import("./ai").AIDesktopApi;
   foundation?: {

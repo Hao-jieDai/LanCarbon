@@ -1,4 +1,4 @@
-export type AIUsagePurpose = "chat" | "test" | "translation";
+export type AIUsagePurpose = "chat" | "test" | "translation" | "embedding" | "rerank";
 export type AIUsageStatus = "pending" | "complete" | "stopped" | "error" | "interrupted";
 export type AICurrency = "CNY" | "USD";
 // A user-editable display reference, not a live exchange-rate quote.

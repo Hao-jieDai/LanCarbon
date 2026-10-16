@@ -4,6 +4,7 @@ import type { AICurrency } from "../shared/aiUsage";
 import { ThemedSelect } from "./ThemedSelect";
 
 const connectionLabel = (source: BalanceSource) => {
+  if (source.usage === "retrieval" || source.providerId.startsWith("retrieval-")) return source.providerName.endsWith(" Retrieval") ? source.providerName : `${source.providerName} · Retrieval`;
   if (source.usage !== "translation" && !source.providerId.startsWith("translation-")) return `${source.providerName} · AI connection`;
   const preset = ["SiliconFlow", "OpenRouter", "Others"].find(name => source.providerName === `${name} Translation`);
   const name = preset ?? source.providerName;

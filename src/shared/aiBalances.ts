@@ -1,6 +1,6 @@
 import type { AICurrency, AIUsageRecord } from "./aiUsage";
 
-export interface BalanceSource { providerId: string; baseUrl: string; providerName: string; usage?: "ai" | "translation" }
+export interface BalanceSource { providerId: string; baseUrl: string; providerName: string; usage?: "ai" | "translation" | "retrieval" }
 export type BalanceMode = "limited" | "unlimited";
 export interface BalanceInput extends BalanceSource {
   amount: number; currency: AICurrency; mode?: BalanceMode;

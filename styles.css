@@ -1091,3 +1091,23 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .app-shell.has-reader-tabs.sidebar-collapsed > .editor-panel, .app-shell.sidebar-collapsed > .reader-tab-bar { grid-column: 1; }
 @media (max-width: 760px) { .reader-tab-bar, .app-shell.has-reader-tabs > .editor-panel { grid-column: 1; } .epub-sidebar { width: 155px; } .epub-scroll { padding: 16px; } .epub-controls { gap: 6px; } }
 @media (max-width: 760px) { .reader-tab-bar .reader-sidebar-toggle { display: grid; } .reader-tools-end { gap: 8px; } }
+.ai-settings-sections { display: flex; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 10px; margin-bottom: 22px; }
+.ai-settings-sections [aria-selected="true"] { color: var(--accent); background: var(--surface); border-radius: 6px; }
+.retrieval-role { border: 1px solid var(--line); padding: 18px; border-radius: 10px; margin: 16px 0 24px; }
+.retrieval-role h2 { margin: 0 0 8px; font-size: 17px; }
+.retrieval-config-grid, .retrieval-connection-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.retrieval-settings label { display: grid; gap: 8px; color: var(--muted); font-size: 12px; min-width: 0; }
+.retrieval-settings label.retrieval-switch { display: flex; align-items: center; gap: 8px; color: var(--ink); }
+.retrieval-switch input { width: 14px; height: 14px; margin: 0; accent-color: var(--accent); }
+.retrieval-model-label, .retrieval-connection-fields { margin-top: 18px; }
+.retrieval-settings input:not([type="checkbox"]), .retrieval-settings textarea { width: 100%; min-width: 0; color: var(--ink); background: var(--surface); padding: 11px 12px; border: 1px solid var(--line); border-radius: 8px; }
+.retrieval-advanced, .retrieval-tools { border: 1px solid var(--line); border-radius: 8px; padding: 16px; margin: 22px 0; }
+.retrieval-advanced summary, .retrieval-tools summary { cursor: pointer; font-size: 14px; font-weight: 600; }
+.retrieval-advanced label { margin-top: 16px; }
+.retrieval-stats { display: flex; flex-wrap: wrap; gap: 10px 24px; font-size: 12px; color: var(--muted); margin: 18px 0; }
+.retrieval-check { display: flex; gap: 12px; align-items: end; margin-top: 24px; }.retrieval-check label { flex: 1; }
+.retrieval-tools article { padding: 14px 0; border-top: 1px solid var(--line); }.retrieval-tools article small { display: block; color: var(--muted); font-size: 11px; margin-top: 6px; }
+.retrieval-tools article pre { white-space: pre-wrap; overflow-wrap: anywhere; font: 12px/1.7 var(--sans); }
+.retrieval-clear-confirm { padding: 12px; background: var(--surface); border-radius: 8px; font-size: 12px; }
+@media (max-width: 850px) { .retrieval-config-grid, .retrieval-connection-fields { grid-template-columns: minmax(0,1fr); } .retrieval-role { padding: 14px; } }
+.retrieval-settings > .modal-help { margin-top: 18px; }

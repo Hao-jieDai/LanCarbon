@@ -35,8 +35,8 @@ class Serialized {
 }
 export class AISettingsStore extends Serialized {
   private readonly filename: string;
-  constructor(config: string, private readonly codec: SecretCodec, private readonly namespace = "") { super(); this.filename = path.join(config, namespace ? "translation-connections.json" : "ai-settings.json"); }
-  private defaults(): AIProvider[] { return defaultAIProviders().map(provider => ({ ...provider, id: this.namespace + provider.id, name: provider.name + (this.namespace ? " Translation" : "") })); }
+  constructor(config: string, private readonly codec: SecretCodec, private readonly namespace = "") { super(); this.filename = path.join(config, namespace === "retrieval-" ? "retrieval-connections.json" : namespace ? "translation-connections.json" : "ai-settings.json"); }
+  private defaults(): AIProvider[] { return defaultAIProviders().map(provider => ({ ...provider, id: this.namespace + provider.id, name: provider.name + (this.namespace === "retrieval-" ? " Retrieval" : this.namespace ? " Translation" : "") })); }
   private async read(): Promise<StoredSettings> {
     const data = await readJson(this.filename, 2_000_000) as { version?: number; providers?: StoredProvider[]; systemPrompt?: string } | undefined;
     if (!data) return { version: 1, providers: this.defaults().map(({ hasKey: _key, ...provider }) => provider), systemPrompt: DEFAULT_AI_SYSTEM_PROMPT };
@@ -52,7 +52,7 @@ export class AISettingsStore extends Serialized {
     if (!["siliconflow", "openrouter", "others"].includes(input.kind)) throw new Error("Unknown AI service");
     if (input.kind !== "others" && input.id !== this.namespace + input.kind) throw new Error("Invalid preset configuration");
     if (this.namespace && !input.id.startsWith(this.namespace)) throw new Error("Invalid translation configuration");
-    const name = input.kind === "others" ? bounded(input.name, "configuration name", 100) : AI_PRESETS[input.kind].name + (this.namespace ? " Translation" : "");
+    const name = input.kind === "others" ? bounded(input.name, "configuration name", 100) : AI_PRESETS[input.kind].name + (this.namespace === "retrieval-" ? " Retrieval" : this.namespace ? " Translation" : "");
     if (!name) throw new Error("Enter a configuration name");
     const baseUrl = input.kind === "others" ? (input.baseUrl.trim() ? aiBaseUrl(input.baseUrl) : "") : AI_PRESETS[input.kind].baseUrl;
     if (!Array.isArray(input.models) || input.models.length > 100) throw new Error("Configure up to 100 chat models per service");
