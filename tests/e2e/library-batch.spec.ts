@@ -29,11 +29,17 @@ test("selection, batch export and move retain identities, versions and reference
   try {
     let page = await app.firstWindow(); await expect(page.getByLabel("Note title")).toHaveValue(f.note.title); await page.getByRole("button", { name: "Library", exact: true }).click();
     const row = (id: string) => page.locator(`[data-resource-id="${id}"]`);
+    await expect(page.locator('.library-check')).toHaveCount(0); await expect(page.getByRole('group', { name: 'Library selection' })).toHaveCount(0);
+    await page.screenshot({ path: info.outputPath('library-normal.png') });
+    await row(f.a.id).getByRole('button', { name: 'batch-report.pdf', exact: true }).click(); await expect(page.getByRole('region', { name: 'Selected resource' })).toContainText('Personal batch writing');
+    await page.getByRole('button', { name: 'Batch select', exact: true }).click(); await row(f.a.id).getByRole('checkbox').check();
+    await page.getByRole('button', { name: 'Exit selection', exact: true }).click(); await expect(page.locator('.library-check')).toHaveCount(0); await expect(page.getByRole('group', { name: 'Library selection' })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Batch select', exact: true }).click(); await expect(row(f.a.id).getByRole('checkbox')).not.toBeChecked(); await expect(page.getByRole('group', { name: 'Library selection' })).toContainText('0 selected');
     await row(f.a.id).getByRole("checkbox").check(); await expect(page.getByRole("group", { name: "Library selection" })).toContainText("1 selected");
     await page.getByLabel("Find Library resource").fill("batch-"); await expect(page.getByRole("group", { name: "Library selection" })).toContainText("0 selected");
     await page.getByRole("checkbox", { name: "Select all visible Library files", exact: true }).check(); await expect(page.getByRole("group", { name: "Library selection" })).toContainText("4 selected"); await expect(page.getByRole("button", { name: "Move selected", exact: true })).toBeDisabled();
     await page.getByRole("button", { name: "Clear selection", exact: true }).click(); await row(f.a.id).getByRole("checkbox").check(); await row(f.c.id).getByRole("checkbox").check();
-    for (const theme of ["Light", "Dark"]) { await page.locator(".theme-option").filter({ hasText: theme }).click(); await page.screenshot({ path: info.outputPath(`library-batch-${theme.toLowerCase()}.png`) }); }
+    for (const theme of ["Light", "Dark"]) { await page.locator(".theme-option").filter({ hasText: theme }).click(); await expect(page.locator("html")).toHaveAttribute("data-theme",theme.toLowerCase()); await page.screenshot({ path: info.outputPath(`library-batch-${theme.toLowerCase()}.png`) }); }
     const exported = path.join(f.root, "Batch export"); await fs.mkdir(exported); await fs.writeFile(path.join(exported, "batch-report.pdf"), "Existing file");
     await destination(app, exported, true); await page.getByRole("button", { name: "Export selected", exact: true }).click(); expect(await fs.readdir(exported)).toEqual(["batch-report.pdf"]);
     await destination(app, exported); await page.getByRole("button", { name: "Export selected", exact: true }).click(); await expect(page.locator(".library-import-notice")).toContainText("2 exported");
@@ -42,7 +48,7 @@ test("selection, batch export and move retain identities, versions and reference
     const catalog = JSON.parse(await fs.readFile(path.join(f.data, "Library/documents.json"), "utf8")); expect(catalog.documents.find((item: any) => item.id === f.a.id)).toMatchObject({ title: "batch-report (2).pdf", folderId: f.folder.id, version: 2 });
     expect(catalog.documents.find((item: any) => item.id === f.b.id)).toMatchObject({ title: "batch-report.pdf", version: 1 });
     await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].setSize(900, 650)); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.screenshot({ path: info.outputPath("library-batch-small.png") });
-    await app.close(); app = await launch(f.root); page = await app.firstWindow(); await expect(page.getByRole("button", { name: "Library", exact: true })).toHaveAttribute("aria-pressed", "true"); const saved = JSON.parse(await fs.readFile(path.join(f.data, "notes.json"), "utf8")); expect(saved.notes.find((item: any) => item.id === f.note.id).content).toContain(f.linked.id); expect(saved.notes.find((item: any) => item.id === f.homeNote.id).content).toContain(f.linked.id);
+    await app.close(); app = await launch(f.root); page = await app.firstWindow(); await expect(page.getByRole("button", { name: "Library", exact: true })).toHaveAttribute("aria-pressed", "true"); await expect(page.locator(".library-check")).toHaveCount(0); const saved = JSON.parse(await fs.readFile(path.join(f.data, "notes.json"), "utf8")); expect(saved.notes.find((item: any) => item.id === f.note.id).content).toContain(f.linked.id); expect(saved.notes.find((item: any) => item.id === f.homeNote.id).content).toContain(f.linked.id);
     const files = await page.evaluate(() => window.notesDesktop.library!.list()); expect(files.ok && files.entries.find(item => item.id === f.a.id)?.name).toBe("batch-report (2).pdf");
   } finally { await app.close().catch(() => undefined); await cleanup(f.root); }
 });
@@ -52,6 +58,7 @@ test("confirmed deletion cleans writing, tabs, missing entries and external sess
   try {
     let page = await app.firstWindow(); await expect(page.getByLabel("Note title")).toHaveValue(f.note.title); await page.getByRole("button", { name: "Library", exact: true }).click();
     await page.locator(`[data-resource-id="${f.a.id}"]`).getByRole("button", { name: "Open batch-report.pdf", exact: true }).click(); await expect(page.getByLabel("PDF page number")).toBeEnabled(); await page.getByRole("tab", { name: "Workspace", exact: true }).click();
+    await page.getByRole("button", { name: "Batch select", exact: true }).click();
     await page.locator(`[data-resource-id="${f.a.id}"]`).getByRole("checkbox").check(); await page.getByRole("checkbox", { name: "Select batch-notes.txt", exact: true }).check();
     await app.evaluate(({ dialog }) => { (globalThis as any).deleteChoice = 1; dialog.showMessageBox = (async (_window, options) => { (globalThis as any).deleteDetail = options.detail; return { response: (globalThis as any).deleteChoice, checkboxChecked: false }; }) as typeof dialog.showMessageBox; });
     await page.getByRole("button", { name: "Delete selected", exact: true }).click(); await expect.poll(() => app.evaluate(() => (globalThis as any).deleteDetail)).toContain("Personal batch writing"); const detail = await app.evaluate(() => (globalThis as any).deleteDetail); expect(detail).toContain("Batch Book"); expect(detail).toContain("All 3 stored versions"); await expect(page.getByRole("group", { name: "Library selection" })).toContainText("2 selected");
