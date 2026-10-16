@@ -9,8 +9,8 @@ import { validReaderId } from "../src/shared/readerTabs";
 import { validEpubPosition, type EpubPosition, type EpubSession, type EpubMatch } from "../src/shared/epubReader";
 
 const MiB = 1024 * 1024;
-function safePath(value: string) { if (!value || value.length>1000 || /[\\\x00-\x1f]/.test(value) || value.startsWith("/") || value.split("/").some(part=>!part||part===".."||part==="."||part.includes(":"))) throw Error("Invalid EPUB resource path."); return value; }
-function target(base: string, href: string): { file: string; anchor: string } | undefined {
+export function safePath(value: string) { if (!value || value.length>1000 || /[\\\x00-\x1f]/.test(value) || value.startsWith("/") || value.split("/").some(part=>!part||part===".."||part==="."||part.includes(":"))) throw Error("Invalid EPUB resource path."); return value; }
+export function target(base: string, href: string): { file: string; anchor: string } | undefined {
   if (/^[a-z][a-z\d+.-]*:|^\/\//i.test(href) || href.startsWith("/")) return;
   try { const [name, anchor=""] = href.split("#",2), decoded=decodeURIComponent(name.split("?")[0]); return {file:safePath(name?path.posix.normalize(path.posix.join(path.posix.dirname(base),decoded)):base),anchor:decodeURIComponent(anchor)}; } catch { return; }
 }
@@ -42,8 +42,8 @@ export class EpubArchive {
     if(value.length!==size||crc32(value)!==entry.crc)throw Error("EPUB resource failed its integrity check.");return value;
   }
 }
-const elements=(node:Document|Element,name:string)=>Array.from(node.getElementsByTagName("*")).filter(element=>element.localName===name);
-function xml(bytes:Buffer,html=false):Document {
+export const elements=(node:Document|Element,name:string)=>Array.from(node.getElementsByTagName("*")).filter(element=>element.localName===name);
+export function xml(bytes:Buffer,html=false):Document {
   if(/<!ENTITY/i.test(bytes.toString("utf8")))throw Error("Custom XML entities are not supported.");
   let invalid=false;const doc=new DOMParser({errorHandler:{warning:()=>undefined,error:()=>{invalid=true;},fatalError:()=>{invalid=true;}}}).parseFromString(bytes.toString("utf8"),html?"text/html":"application/xml");
   if(invalid||!doc.documentElement)throw Error("The EPUB contains invalid XML.");return doc;

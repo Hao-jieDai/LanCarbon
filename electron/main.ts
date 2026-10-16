@@ -7,6 +7,10 @@ import { AssetStore, type ResolveConflict } from "./assets";
 import { LibraryStore, LibraryNameConflict } from "./library";
 import { exportLibraryFiles } from "./library-export";
 import { ExternalEdits } from "./external-edits";
+import { KnowledgeStore } from "./knowledge-store";
+import { knowledgeSnapshot } from "./knowledge-sources";
+import { LocalKnowledgeExtractor } from "./knowledge-extractor";
+import type { KnowledgeScope } from "../src/shared/knowledge";
 import { MAX_ASSET_BYTES, resourceUsages, type AssetConflictChoice } from "../src/shared/assets";
 import { exportPagePdf, pdfFileName } from "./pdf-exporter";
 import { withoutResources } from "../src/shared/removeResourceReferences";
@@ -52,6 +56,7 @@ let aiService: AIService;
 let translationService: TranslationService;
 let externalTimer: NodeJS.Timeout | undefined;
 let flushExternal: () => Promise<unknown> = async () => {};
+let shutdownKnowledge: () => Promise<unknown> = async () => {};
 
 const directories = resolveLanCarbonDirectories({
   executable: process.execPath,
@@ -127,7 +132,7 @@ async function createWindow(): Promise<void> {
     const bounds = mainWindow.getNormalBounds();
     void preferencesStore.saveWindowPreferences({ ...bounds, maximized: mainWindow.isMaximized() });
   });
-  mainWindow.on("closed", () => { mainWindow = null; });
+  mainWindow.on("closed", () => { mainWindow = null; void shutdownKnowledge().catch(() => undefined); });
 
   const developmentUrl = process.env.VITE_DEV_SERVER_URL;
   if (developmentUrl) await mainWindow.loadURL(developmentUrl);
@@ -271,12 +276,31 @@ app.whenReady().then(async () => {
   const reader = () => { let value = readerStores.get(dataDirectory); if (!value) { value = new PdfReaderStore(dataDirectory, libraryStore()); readerStores.set(dataDirectory, value); } return value; };
   const editStores = new Map<string, ExternalEdits>();
   const edits = () => { let manager = editStores.get(dataDirectory); if (!manager) { manager = new ExternalEdits(dataDirectory, directories.library, libraryStore()); editStores.set(dataDirectory, manager); } return manager; };
-  const libraryChanged = () => mainWindow?.webContents.send("library:changed");
+  const knowledgeStores = new Map<string, KnowledgeStore>(); let knowledgeExtractor: LocalKnowledgeExtractor | undefined;
+  const knowledge = () => {
+    let value = knowledgeStores.get(dataDirectory);
+    if (!value) {
+      const target = dataDirectory, notes = store, files = libraryStore();
+      knowledgeExtractor ??= new LocalKnowledgeExtractor();
+      value = new KnowledgeStore(target, async () => knowledgeSnapshot((await notes.loadWorkspace()).workspace, await files.list(), await files.folders()), async id => (await files.read(id)).bytes, knowledgeExtractor, () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("knowledge:changed"); }); knowledgeStores.set(target, value);
+    }
+    return value;
+  };
+  shutdownKnowledge = async () => { await Promise.all([...knowledgeStores.values()].map(manager => manager.stop(false))); knowledgeExtractor?.idle(); };
+  const libraryChanged = () => { mainWindow?.webContents.send("library:changed"); knowledgeStores.get(dataDirectory)?.requestRefresh(); };
   const syncEdits = async () => { const disk = await libraryStore().synchronize(); const edited = await edits().sync(); const result = { changed: disk.changed || edited.changed, errors: [...disk.errors, ...edited.errors] }; if (result.changed) libraryChanged(); return result; };
-  flushExternal = async () => { await syncEdits(); await reader().flush(); await epub().flush(); await balances().flush(); };
+  flushExternal = async () => { await syncEdits(); await shutdownKnowledge(); await reader().flush(); await epub().flush(); await balances().flush(); };
   let scanningExternal = false;
   externalTimer = setInterval(() => { if (scanningExternal) return; scanningExternal = true; void syncEdits().catch(() => undefined).finally(() => { scanningExternal = false; }); }, 3000);
   externalTimer.unref();
+  const knowledgeTimer = setInterval(() => knowledgeStores.get(dataDirectory)?.requestRefresh(), 5000); knowledgeTimer.unref();
+  if (await fs.stat(path.join(dataDirectory, "Research/Knowledge/scope.json")).catch(() => null)) void knowledge().inspect().catch(() => undefined);
+  aiHandler("knowledge:inspect", async () => { await syncEdits(); return { view: await knowledge().inspect() }; });
+  aiHandler("knowledge:start", async (scope: KnowledgeScope, rebuild = false) => { await syncEdits(); await knowledge().start(scope, rebuild === true); return {}; });
+  aiHandler("knowledge:stop", async () => { await knowledge().stop(); return {}; });
+  aiHandler("knowledge:clear", async () => { await knowledge().clear(); return {}; });
+  aiHandler("knowledge:preview", async (id: string, offset = 0) => { await syncEdits(); return knowledge().search("", id, offset); });
+  aiHandler("knowledge:search", async (query: string) => { await syncEdits(); return knowledge().search(query); });
   const runManagedBuild = async (bookId: string, chooseLocation = false) => {
     if (!mainWindow) throw new Error("The main window is unavailable");
     const { workspace } = await store.loadWorkspace();
@@ -499,6 +523,7 @@ app.whenReady().then(async () => {
   ipcMain.handle("workspace:save", async (_event, workspace: WorkspaceFile) => {
     try {
       await store.saveWorkspace(workspace);
+      knowledgeStores.get(dataDirectory)?.requestRefresh();
       return { ok: true };
     } catch (error) {
       return { ok: false, error: error instanceof Error ? error.message : "Failed to save notes" };
@@ -524,7 +549,7 @@ app.whenReady().then(async () => {
     if (selection.canceled || !selection.filePaths[0]) return { ok: false, canceled: true, error: "Data location change canceled" };
     const target = path.resolve(selection.filePaths[0]);
     try {
-      await translationService.shutdown(); await aiService.shutdown();
+      await translationService.shutdown(); await aiService.shutdown(); await shutdownKnowledge();
       await syncEdits();
       await usage().flush(); await balances().flush(); await reader().flush(); reader().release(); await epub().flush(); epub().release();
       await dataLocationManager.prepareTarget(dataDirectory, target);

@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
 
-Version 2.3.8 adds Library file deletion and batch selection, movement and export. Batch select reveals the checkboxes only when needed; Exit selection clears and hides them. Deletion confirms writing references and stored versions; moving retains document identity, and export keeps existing destination files.
+Version 2.4.0 adds a local Knowledge base for Library documents, Notes and Books: choose sources, extract text with positions, inspect passages and search keywords. Indexing can pause, resume and track saved changes without AI requests.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -50,6 +50,18 @@ Version 2.3.8 adds Library file deletion and batch selection, movement and expor
 SiliconFlow uses base address `https://api.siliconflow.cn/v1`; OpenRouter uses `https://openrouter.ai/api/v1`. Use **Refresh models** or your platform's catalogue for current IDs. The OpenRouter model `meta-llama/llama-4-maverick` can be added manually when available to your account.
 
 Keys remain encrypted for the current Windows account in **Config/ai-settings.json**; only masked previews reach the interface. Moving to another Windows account may require re-entry. Back up the complete LanCarbon home folder, including Config, Cache and Library, together with any separately selected Data location. Conversations are local in **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; closing LanCarbon stops it and preserves partial replies. Chat submits your conversation text and response guidelines; Notes, Books and Library files are not automatically attached. PDF and EPUB reading are available in Library; retrieval and literature workflows follow separately.
+
+### Knowledge base
+
+Open **Workshop → Knowledge base** to prepare a local text index. In **Library**, **Notes** or **Books**, select individual sources, an entire Book, or a Library Imports folder. A Book includes its pages; an included folder also includes files added later in its subfolders. **Include linked attachments** follows the selected writing's resources and indexes a shared file once. System content, including this tutorial and ReadMe, is excluded unless **Include system content** is enabled. Name, location and tag search helps choose sources.
+
+Select **Build index** to save the selection and start processing. **Update index** applies later selection changes and retries failed sources; unchanged content is reused. **Keep selected sources up to date** refreshes changed writing and registered file versions while LanCarbon runs, and after its next launch. Rename/move retains source identity. Removed or deselected sources leave the index; outdated text is withheld until refreshed. Turn off automatic updates for manual control. **Stop** retains completed work and pauses processing; Update index resumes it.
+
+**Ready** means extracted text is available; **Partial** explains incomplete coverage. **Failed**, **Missing** and **Unsupported** identify sources needing attention without stopping other sources. **Preview** displays extracted passages with PDF page numbers, EPUB chapter/paragraph positions, or Markdown headings/lines. Source links reopen the original file or writing. **Search extracted text** finds words and phrases present in the index; it does not generate answers or perform semantic retrieval.
+
+Text extraction supports Note/Book Markdown pages, text-based PDFs and reflowable EPUBs. Images, Word and other formats are listed but are not parsed. Image-only scans need OCR; encrypted PDFs and DRM/fixed-layout EPUBs cannot be indexed. Limits are 500 PDF pages, 3,000 EPUB chapters and 2 million text characters per source, 2,000 passages per source, and 100 MB of stored text. Partial status reports the actual coverage. Complex layouts and tables may need checking in Preview.
+
+**Rebuild index** recreates derived text for the current selection. **Clear index** removes only derived text, pauses indexing and keeps your selection; Library originals, personal Notes/Books, chats and usage remain. The index and selection live in **Data/Research/Knowledge**, follow Data Location and can be rebuilt. Parsing and keyword search stay on this computer, do not send content to AI services and incur no API fees. Embeddings and document-grounded Chat are separate later steps.
 
 ### Library imports
 
@@ -123,7 +135,7 @@ Managed writing resources are stored in root **Library/assets**. Existing Data/a
 Before upgrading, close LanCarbon and back up the complete LanCarbon home folder and any separately selected Data location. Include Cache because its encryption state is needed to read previously saved API keys. Keep the stable installer alongside the backup. Reinstalling an older application may also require restoring matching data. A restored snapshot returns to the backup date; retain later edits separately. Developers can use the verified snapshot commands below. Restore accepts a new empty folder, verifies all files before copying and adjusts saved managed paths to that folder.
 
 ```powershell
-node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.3.8-x64-Setup.exe"
+node scripts/workspace-recovery.cjs backup --root "D:\LanCarbon" --destination "D:\Backups\LanCarbon-snapshot" --installer "release/LanCarbon-2.4.0-x64-Setup.exe"
 node scripts/workspace-recovery.cjs verify --backup "D:\Backups\LanCarbon-snapshot"
 node scripts/workspace-recovery.cjs restore --backup "D:\Backups\LanCarbon-snapshot" --target "D:\Recovered\LanCarbon"
 ```
@@ -134,7 +146,7 @@ Select **Export PDF** in the page header from Edit or Preview, choose a filename
 
 ### Download and install
 
-Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.3.8-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
+Open [Releases](https://github.com/Hao-jieDai/LanCarbon/releases) and download `LanCarbon-2.4.0-x64-Setup.exe`. Ordinary users should download the installer, rather than GitHub's automatically generated source-code archives.
 
 The installer supports 64-bit Windows. Its default root is `D:\LanCarbon`. You may choose another location, but a first-install destination must be an empty folder named `LanCarbon`. The installer creates:
 
@@ -210,13 +222,25 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-2.3.8 增加 Library 文件删除，以及批量选取、移动和导出。点击 Batch select 才显示复选框，Exit selection 清空并隐藏勾选。删除前确认写作引用与历史版本；移动保留文档身份，导出不覆盖目标位置已有的文件。
+2.4.0 增加本地 Knowledge base，覆盖 Library 资料、Notes 和 Books：选择范围、提取带位置的文本、预览片段并搜索关键词。支持暂停、继续及跟踪已保存的内容变化，不调用 AI API。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
 **重要发布修复：** LanCarbon 现在会在同步官方教程内容时保留系统教程的 GitHub 仓库绑定。旧版本可能出现界面显示仓库已经连接，但发布后台已经丢失连接，导致 Publish 无法继续的问题。如果旧版本已经清除了绑定，请在升级后重新连接一次现有仓库；此后的教程同步会保留该连接。
 
 **资源提示修复：** 图片或附件重名时改用软件内选择对话框，关闭后恢复焦点，以处理重复资源提示后鼠标消失的问题。
+
+### 知识库
+
+打开 **Workshop → Knowledge base** 准备本地文本索引。在 **Library**、**Notes** 或 **Books** 中选择单项资料、整本 Book 或 Library Imports 文件夹。整本 Book 包含其页面；纳入的文件夹也包含子文件夹内以后加入的文件。**Include linked attachments** 纳入所选写作引用的资源，共用文件只索引一次。内置教程、ReadMe 等系统内容默认排除，启用 **Include system content** 后才可纳入。可以按名称、位置和标签搜索资料。
+
+点击 **Build index** 保存范围并开始处理。之后用 **Update index** 应用范围调整并重试失败资料，未改变的内容直接复用。**Keep selected sources up to date** 会在软件运行及下次启动后更新已保存的写作内容和已登记的文件新版本；改名、移动保留资料身份。被删除或取消选择的资料退出索引；更新完成前不提供过期文本。关闭自动更新后可手动控制。**Stop** 保留已完成结果并暂停，Update index 继续处理。
+
+**Ready** 表示文本可用，**Partial** 说明实际覆盖范围。**Failed**、**Missing** 和 **Unsupported** 分别提示失败、缺失和不支持的资料，不中断其他资料。**Preview** 展示文本片段及 PDF 页码、EPUB 章节／段落位置、Markdown 标题／行号；来源链接可打开原文件或写作页面。**Search extracted text** 查找索引中实际存在的词句，不生成回答，也不进行语义检索。
+
+支持 Note／Book 的 Markdown 页面、带文本层的 PDF 和流式 EPUB。图片、Word 等其他格式会列出，但不解析；纯扫描版需要 OCR，密码保护的 PDF 以及 DRM／固定版式 EPUB 暂不能建立索引。每份资料最多处理 500 页 PDF、3,000 个 EPUB 章节、200 万个文本字符和 2,000 个片段，总文本存储上限 100 MB。达到限制会标为 Partial 并说明覆盖情况，复杂排版和表格请通过 Preview 核对。
+
+**Rebuild index** 根据当前范围重建文本，**Clear index** 仅清除派生文本、暂停索引并保留范围，不删除 Library 原件、个人 Notes／Books、聊天或用量。索引和范围在 **Data/Research/Knowledge**，随 Data Location 迁移，可重新生成。解析和关键词搜索都在本机进行，不向 AI 服务发送资料，不产生 API 费用；Embedding 和基于资料的 Chat 是后续独立步骤。
 
 ### 主要功能
 
@@ -325,7 +349,7 @@ PDF 与 EPUB 共用顶部标签栏，最多同时打开 **10 个文件**。从�
 
 ### 下载与安装
 
-打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.3.8-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
+打开 [Releases](https://github.com/Hao-jieDai/LanCarbon/releases)，下载 `LanCarbon-2.4.0-x64-Setup.exe`。普通用户应下载安装程序，不要下载 GitHub 自动生成的 Source code 压缩包。
 
 安装程序支持 64 位 Windows，默认根目录为 `D:\LanCarbon`。你也可以选择其他位置，但首次安装的目标必须是一个名为 `LanCarbon` 的空文件夹。安装后自动建立：
 

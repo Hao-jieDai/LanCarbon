@@ -15,6 +15,15 @@ const api: NotesDesktopApi = {
     release: token => ipcRenderer.invoke("reader:release", token),
     savePosition: (id, position) => ipcRenderer.invoke("reader:save-position", id, position)
   },
+  knowledge: {
+    inspect: () => ipcRenderer.invoke("knowledge:inspect"),
+    start: (scope, rebuild) => ipcRenderer.invoke("knowledge:start", scope, rebuild),
+    stop: () => ipcRenderer.invoke("knowledge:stop"),
+    clear: () => ipcRenderer.invoke("knowledge:clear"),
+    preview: (id, offset) => ipcRenderer.invoke("knowledge:preview", id, offset),
+    search: query => ipcRenderer.invoke("knowledge:search", query),
+    onChanged: callback => { const listener = () => callback(); ipcRenderer.on("knowledge:changed", listener); return () => ipcRenderer.removeListener("knowledge:changed", listener); }
+  },
   library: {
     list: () => ipcRenderer.invoke("library:list"),
     choose: folderId => ipcRenderer.invoke("library:choose", folderId),

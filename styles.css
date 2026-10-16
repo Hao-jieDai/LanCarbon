@@ -900,6 +900,53 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .library-version-row small { display: block; margin-top: 5px; font-size: 11px; color: var(--muted); }
 .library-version-row button { white-space: nowrap; }
 @media (max-width: 1100px) { .library-column-heading, .library-resource { grid-template-columns: minmax(0, 1fr) 50px 52px 181px; } .library-selecting .library-column-heading, .library-selecting .library-resource { grid-template-columns: 18px minmax(0, 1fr) 50px 52px 181px; } .library-row-actions { gap: 2px; } .library-row-actions button { padding: 3px; } .library-toolbar-actions { gap: 7px; } .library-toolbar-actions .toolbar-text-button { padding: 7px; font-size: 10px; } }
+.knowledge-content { flex: 1; min-height: 0; overflow: auto; padding: 24px 28px; color: var(--ink); }
+.knowledge-heading, .knowledge-preview > header { display: flex; align-items: start; justify-content: space-between; gap: 14px; }
+.knowledge-heading h1 { margin: 0 0 8px; font: 30px var(--serif); }
+.knowledge-heading p, .knowledge-help { color: var(--muted); font-size: 12px; line-height: 1.65; margin: 0 0 16px; }
+.knowledge-overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 18px 0; }
+.knowledge-overview > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--surface); border: 1px solid var(--line); padding: 12px 14px; border-radius: 8px; }
+.knowledge-overview span { color: var(--muted); font-size: 12px; }
+.knowledge-overview strong { font-size: 19px; white-space: nowrap; }
+.knowledge-actions, .knowledge-options { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.knowledge-actions > span { color: var(--muted); font-size: 11px; overflow-wrap: anywhere; }
+.knowledge-options label, .knowledge-group-select, .knowledge-book-groups label { display: flex; gap: 8px; align-items: center; font-size: 12px; }
+.knowledge-content input[type="checkbox"] { width: 14px; height: 14px; flex: none; margin: 0; accent-color: var(--accent); }
+.knowledge-source-tabs { display: flex; gap: 5px; padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-top: 20px; }
+.knowledge-source-tabs button { border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; padding: 8px 16px; }
+.knowledge-source-tabs button[aria-selected="true"] { background: var(--surface); color: var(--accent); }
+.knowledge-filters { display: grid; grid-template-columns: minmax(0,1fr) 220px auto auto; align-items: end; gap: 10px; margin: 14px 0; }
+.knowledge-filters label, .knowledge-search label { display: grid; gap: 7px; min-width: 0; font-size: 12px; color: var(--muted); }
+.knowledge-filters input, .knowledge-search input { width: 100%; min-width: 0; background: var(--surface); border: 1px solid var(--line); color: var(--ink); border-radius: 7px; padding: 10px 12px; }
+.knowledge-group-select, .knowledge-book-groups { margin: 12px 0; }
+.knowledge-book-groups { display: flex; flex-wrap: wrap; gap: 12px 20px; }
+.knowledge-book-groups small { color: var(--muted); }
+.knowledge-source-list { min-height: 120px; max-height: min(380px, 43vh); overflow: auto; border: 1px solid var(--line); border-radius: 8px; }
+.knowledge-source-list > p { padding: 14px; font-size: 12px; color: var(--muted); }
+.knowledge-source-row { display: grid; grid-template-columns: 18px minmax(0,1fr) 95px 72px; align-items: center; gap: 10px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.knowledge-source-row:last-child { border-bottom: 0; }
+.knowledge-source-row strong { display: block; font-size: 12px; overflow-wrap: anywhere; }
+.knowledge-source-row small { display: block; color: var(--muted); font-size: 10px; line-height: 1.6; overflow-wrap: anywhere; margin-top: 3px; }
+.knowledge-source-row .knowledge-source-message { color: var(--danger); }
+.knowledge-state { font-size: 11px; color: var(--muted); }
+.knowledge-state.state-ready { color: var(--accent); }
+.knowledge-state.state-failed, .knowledge-state.state-missing { color: var(--danger); }
+.knowledge-content .toolbar-text-button { padding: 8px 10px; font-size: 11px; white-space: nowrap; }
+.knowledge-search { display: flex; align-items: end; gap: 10px; margin: 22px 0 14px; }
+.knowledge-search label { flex: 1; }
+.knowledge-preview { border: 1px solid var(--line); border-radius: 8px; max-height: 440px; overflow: auto; margin-bottom: 18px; }
+.knowledge-preview > header { position: sticky; top: 0; background: var(--paper); align-items: center; flex-wrap: wrap; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+.knowledge-preview h2 { font-size: 14px; margin: 0; }
+.knowledge-preview > header span { color: var(--muted); font-size: 11px; }
+.knowledge-preview article { padding: 13px 14px; border-bottom: 1px solid var(--line); }
+.knowledge-preview article strong { display: block; font-size: 13px; }
+.knowledge-preview article small { display: block; font-size: 11px; color: var(--muted); margin-top: 4px; }
+.knowledge-preview pre { font: 12px/1.7 var(--sans); white-space: pre-wrap; overflow-wrap: anywhere; }
+.knowledge-preview article > div { display: flex; flex-direction: column; align-items: start; gap: 5px; }
+.knowledge-preview .text-button { font-size: 11px; text-align: left; overflow-wrap: anywhere; }
+.knowledge-preview > p { padding: 12px 14px; color: var(--muted); font-size: 12px; }
+@media (max-width: 1000px) { .knowledge-content { padding: 20px; } .knowledge-filters { grid-template-columns: minmax(0, 1fr) minmax(120px, 1fr); } }
+@media (max-width: 650px) { .knowledge-overview { grid-template-columns: 1fr; gap: 7px; } .knowledge-source-row { grid-template-columns: 18px minmax(0,1fr) 68px; } .knowledge-source-row > button { grid-column: 2 / 4; justify-self: start; } .knowledge-filters { grid-template-columns: 1fr; } }
 .library-batch-toolbar, .library-batch-actions, .library-check-all { display: flex; align-items: center; gap: 9px; }
 .library-batch-toolbar { flex-wrap: wrap; min-height: 38px; padding: 5px 10px; border-bottom: 1px solid var(--line); font-size: 11px; }
 .library-check-all { white-space: nowrap; cursor: pointer; }

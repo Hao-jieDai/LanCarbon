@@ -606,6 +606,19 @@
       "pinned": false,
       "createdAt": "2026-10-15T15:15:59.161Z",
       "updatedAt": "2026-10-15T16:20:21.168Z"
+    },
+    {
+      "id": "tutorial-note-s6-knowledge",
+      "title": "Knowledge Base / 知识库",
+      "content": "# Knowledge Base\n\nOpen **Workshop → Knowledge base** to prepare a local text index. In **Library**, **Notes** or **Books**, select individual sources, an entire Book, or a Library Imports folder. A Book includes its pages; an included folder also includes files added later in its subfolders. **Include linked attachments** follows the selected writing's resources and indexes a shared file once. System content, including this tutorial and ReadMe, is excluded unless **Include system content** is enabled. Name, location and tag search helps choose sources.\n\nSelect **Build index** to save the selection and start processing. **Update index** applies later selection changes and retries failed sources; unchanged content is reused. **Keep selected sources up to date** refreshes changed writing and registered file versions while LanCarbon runs, and after its next launch. Rename/move retains source identity. Removed or deselected sources leave the index; outdated text is withheld until refreshed. Turn off automatic updates for manual control. **Stop** retains completed work and pauses processing; Update index resumes it.\n\n**Ready** means extracted text is available; **Partial** explains incomplete coverage. **Failed**, **Missing** and **Unsupported** identify sources needing attention without stopping other sources. **Preview** displays extracted passages with PDF page numbers, EPUB chapter/paragraph positions, or Markdown headings/lines. Source links reopen the original file or writing. **Search extracted text** finds words and phrases present in the index; it does not generate answers or perform semantic retrieval.\n\nText extraction supports Note/Book Markdown pages, text-based PDFs and reflowable EPUBs. Images, Word and other formats are listed but are not parsed. Image-only scans need OCR; encrypted PDFs and DRM/fixed-layout EPUBs cannot be indexed. Limits are 500 PDF pages, 3,000 EPUB chapters and 2 million text characters per source, 2,000 passages per source, and 100 MB of stored text. Partial status reports the actual coverage. Complex layouts and tables may need checking in Preview.\n\n**Rebuild index** recreates derived text for the current selection. **Clear index** removes only derived text, pauses indexing and keeps your selection; Library originals, personal Notes/Books, chats and usage remain. The index and selection live in **Data/Research/Knowledge**, follow Data Location and can be rebuilt. Parsing and keyword search stay on this computer, do not send content to AI services and incur no API fees. Embeddings and document-grounded Chat are separate later steps.\n\n---\n\n# 知识库\n\n打开 **Workshop → Knowledge base** 准备本地文本索引。在 **Library**、**Notes** 或 **Books** 中选择单项资料、整本 Book 或 Library Imports 文件夹。整本 Book 包含其页面；纳入的文件夹也包含子文件夹内以后加入的文件。**Include linked attachments** 纳入所选写作引用的资源，共用文件只索引一次。内置教程、ReadMe 等系统内容默认排除，启用 **Include system content** 后才可纳入。可以按名称、位置和标签搜索资料。\n\n点击 **Build index** 保存范围并开始处理。之后用 **Update index** 应用范围调整并重试失败资料，未改变的内容直接复用。**Keep selected sources up to date** 会在软件运行及下次启动后更新已保存的写作内容和已登记的文件新版本；改名、移动保留资料身份。被删除或取消选择的资料退出索引；更新完成前不提供过期文本。关闭自动更新后可手动控制。**Stop** 保留已完成结果并暂停，Update index 继续处理。\n\n**Ready** 表示文本可用，**Partial** 说明实际覆盖范围。**Failed**、**Missing** 和 **Unsupported** 分别提示失败、缺失和不支持的资料，不中断其他资料。**Preview** 展示文本片段及 PDF 页码、EPUB 章节／段落位置、Markdown 标题／行号；来源链接可打开原文件或写作页面。**Search extracted text** 查找索引中实际存在的词句，不生成回答，也不进行语义检索。\n\n支持 Note／Book 的 Markdown 页面、带文本层的 PDF 和流式 EPUB。图片、Word 等其他格式会列出，但不解析；纯扫描版需要 OCR，密码保护的 PDF 以及 DRM／固定版式 EPUB 暂不能建立索引。每份资料最多处理 500 页 PDF、3,000 个 EPUB 章节、200 万个文本字符和 2,000 个片段，总文本存储上限 100 MB。达到限制会标为 Partial 并说明覆盖情况，复杂排版和表格请通过 Preview 核对。\n\n**Rebuild index** 根据当前范围重建文本，**Clear index** 仅清除派生文本、暂停索引并保留范围，不删除 Library 原件、个人 Notes／Books、聊天或用量。索引和范围在 **Data/Research/Knowledge**，随 Data Location 迁移，可重新生成。解析和关键词搜索都在本机进行，不向 AI 服务发送资料，不产生 API 费用；Embedding 和基于资料的 Chat 是后续独立步骤。\n",
+      "tags": [
+        "Tutorial",
+        "Workshop",
+        "Knowledge"
+      ],
+      "pinned": false,
+      "createdAt": "2026-10-16T00:00:00.000Z",
+      "updatedAt": "2026-10-16T00:00:00.000Z"
     }
   ],
   "books": [
@@ -1560,7 +1573,8 @@
             "tutorial-page-s6-ai-settings",
             "tutorial-page-s6-chat",
             "tutorial-page-s6-usage",
-            "tutorial-page-s6-translation"
+            "tutorial-page-s6-translation",
+            "tutorial-page-s6-knowledge"
           ]
         },
         "tutorial-page-s6-workspaces": {
@@ -1722,6 +1736,29 @@
               "Reading",
               "Tabs"
             ]
+          },
+          "children": []
+        },
+        "tutorial-page-s6-knowledge": {
+          "id": "tutorial-page-s6-knowledge",
+          "noteId": "tutorial-note-s6-knowledge",
+          "sourceType": "markdown",
+          "exportPath": "06-research-library/knowledge.md",
+          "showInToc": true,
+          "metadata": {
+            "shortTitle": "Knowledge Base",
+            "description": "Selecting and checking local document text.",
+            "authors": [
+              {
+                "name": "Haojie Dai"
+              }
+            ],
+            "keywords": [
+              "LanCarbon",
+              "Knowledge",
+              "Library"
+            ],
+            "label": "lc-s6-knowledge"
           },
           "children": []
         }
