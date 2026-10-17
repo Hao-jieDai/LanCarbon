@@ -36,7 +36,7 @@ export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][],
   const result: KnowledgeHit[] = [], seen = new Set<string>(), texts = new Set<string>(); let tokens = 0;
   const add = (hit?: KnowledgeHit) => {
     if (!hit) return;
-    const textKey = `${hit.source.id}:${hit.chunk.text.replace(/\s+/g, " ").trim()}`;
+    const textKey = `${hit.source.id}:${JSON.stringify(hit.chunk.anchor)}:${hit.chunk.text.replace(/\s+/g, " ").trim()}`;
     if (seen.has(evidenceKey(hit)) || texts.has(textKey) || result.length >= CHAT_EVIDENCE_MAX_CHUNKS || tokens + evidenceTokens(hit) > budget) return;
     result.push(hit); seen.add(evidenceKey(hit)); texts.add(textKey); tokens += evidenceTokens(hit);
   };

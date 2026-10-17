@@ -65,7 +65,7 @@ export class RetrievalService {
     try { return await this.begin(async signal => {
       const selected = sourceIds && new Set(sourceIds), seenText = new Set<string>();
       const corpus = (await this.corpus()).filter(hit => !selected || selected.has(hit.source.id)).sort((a, b) => `${a.source.id}:${a.chunk.id}`.localeCompare(`${b.source.id}:${b.chunk.id}`)).filter(hit => {
-        const key = `${hit.source.id}:${hit.chunk.text.replace(/\s+/g, " ").trim()}`;
+        const key = `${hit.source.id}:${JSON.stringify(hit.chunk.anchor)}:${hit.chunk.text.replace(/\s+/g, " ").trim()}`;
         if (seenText.has(key)) return false; seenText.add(key); return true;
       }), settings = await this.settings(), warnings: string[] = [];
       if (!corpus.length) return { hits: [], warnings: ["No current extracted text is available for the selected sources."], mode: "keyword" };

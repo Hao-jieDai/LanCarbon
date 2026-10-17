@@ -27,6 +27,12 @@ it("protects late questions and table continuations with many irrelevant sources
   expect(selected.some(hit => hit.chunk.text.includes("sample-practice"))).toBe(true);
   expect(selected.every(hit => hit.source.id === "file:answer")).toBe(true);
 });
+it("keeps identical text at distinct source locations so table rows retain their own context and citations", () => {
+  const first = passage(0), second = passage(10);
+  first.chunk.text = second.chunk.text = "Total | 20";
+  const selected = chooseEvidence([first, second], [[first], [second]], [first.source.id], false);
+  expect(selected.map(hit => hit.chunk.anchor.page)).toEqual([1, 3]);
+});
 it("retains a short paper completely for a six-part question even when the reranker misses the crucial pages", () => {
   const corpus = Array.from({ length: 61 }, (_, index) => passage(index));
   corpus[31].chunk.text = "The two regions have different stranded asset totals and technology shares.";

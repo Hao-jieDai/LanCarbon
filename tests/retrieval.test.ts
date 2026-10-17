@@ -89,3 +89,11 @@ it("preserves rerank order and multiple answers from one document regardless of 
   expect(second.hits.map(hit => `${hit.source.id}:${hit.chunk.id}`)).toEqual(first.hits.map(hit => `${hit.source.id}:${hit.chunk.id}`));
   expect(f.fetcher.mock.calls.every(call => String(call[0]).endsWith("/rerank"))).toBe(true);
 });
+it("does not collapse identical table rows on different pages before ranking", async () => {
+  const f = await fixture(); f.settings.enabled = false;
+  const first = hit("Total investment | 20", "paper", "first"), second = hit("Total investment | 20", "paper", "second"); second.chunk.anchor.page = 2;
+  f.state.corpus = [first, second];
+  const results = await f.service.search("Total investment", ["file:paper"]);
+  expect(results.hits.map(hit => hit.chunk.anchor.page).sort()).toEqual([1, 2]);
+  expect(f.fetcher).not.toHaveBeenCalled();
+});
