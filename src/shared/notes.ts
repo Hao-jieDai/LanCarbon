@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.3";
+export const RELEASE_VERSION = "2.4.4";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.4.3 fixes evidence coverage for combined document questions: numbered items are searched independently, relevant passages take priority, adjacent context is retained, and short selected documents can fit in full within a bounded context budget. Choose sources now sits directly above the Chat message box.
+Version 2.4.4 fixes relevance ordering and evidence allocation for multi-source, multi-part RAG questions. Direct matches take priority over source sampling, table continuations are retained, duplicate excerpts are reduced, and at most two focused supplementary searches use the existing retrieval configuration. Source selection now follows Book and Library hierarchies, supports partial selection, and removes the fixed 20-source limit. Existing chats, citations and model settings remain compatible.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -57,13 +57,13 @@ Vectors use a bounded **128 MB** local cache in **Data/Research/Retrieval**, wit
 
 ### Document questions in Chat
 
-Open **Workshop → Chat** and use **Choose sources** directly above the message box. Select PDF/EPUB documents from Library, individual Notes or Book pages, or a whole Book. Search by title or Book name. Up to 20 sources, including linked attachments, can be selected per chat. **Include linked attachments** follows writing references without copying Library originals into assets. Built-in content is excluded unless **Show built-in content** is enabled. **Import PDF / EPUB**, or drop files into Chat, imports/reuses Library originals and selects them for the conversation.
+Open **Workshop → Chat** and use **Choose sources** directly above the message box. Notes appear as a list. Books expand into chapters and pages; Library folders expand into subfolders and files. Use the arrow to expand without selecting. A Book, chapter or folder checkbox selects its contents; individual items can be unchecked, and partial selections are shown. Search reveals matching items with their ancestors; collapsing or searching preserves selection. Repeated references to the same source are counted once. There is no 20-source chat limit; preparation remains subject to local text/vector capacity and a bounded evidence context. Whole-Book and folder selections include later additions, while chapter and individual-page selections retain the selected pages. Unchecked items remain excluded until selected again. **Include linked attachments** follows writing references without copying Library originals into assets. Built-in content is excluded unless **Show built-in content** is enabled. **Import PDF / EPUB**, or drop files into Chat, imports/reuses Library originals and selects them for the conversation.
 
 Send a question; local text extraction, changed-source checks, vector preparation and retrieval run automatically. Saved vectors are reused for unchanged passages. The preparation status appears with the reply; **Stop generating** cancels preparation and generation. Sources are remembered per chat across restarts. **Clear sources** returns to ordinary Chat. Changing the source selection excludes earlier document answers from the new evidence context. No separate Knowledge base page is required.
 
 Configure Embedding and optional Rerank in **AI Settings → Retrieval**. **Refresh Embedding models** and **Refresh Rerank models** fetch separate catalogues; IDs can also be entered manually. A catalogue entry is not an account-access guarantee. Save and test a model before use. Refreshing the catalogue alone sends no document text. Changing Embedding models prepares the selected sources for that model when the next question is sent; changing Rerank does not rebuild document vectors. With semantic retrieval off or unavailable, replies identify keyword fallback; cross-language document questions usually need Embedding.
 
-Replies cite saved excerpts as **[S1]**, **[S2]**, etc. Select a citation or expand **Evidence → Open source** to open the PDF page, EPUB chapter/paragraph, or Note/Book source lines. Evidence distinguishes cited and retrieved excerpts. Renaming or moving a source retains its identity; changing or deleting its contents blocks outdated navigation and preserves the quoted excerpt in the chat. Incomplete parsing, unavailable sources, failed retrieval and missing/unknown citations are reported. Broad comparisons include excerpts from each readable source, within a bounded evidence budget; answers are not a guarantee that every page has been read. Check important claims against the original.
+Replies cite saved excerpts as **[S1]**, **[S2]**, etc. Select a citation or expand **Evidence → Open source** to open the PDF page, EPUB chapter/paragraph, or Note/Book source lines. Evidence distinguishes cited and retrieved excerpts. Renaming or moving a source retains its identity; changing or deleting its contents blocks outdated navigation and preserves the quoted excerpt in the chat. Incomplete parsing, unavailable sources, failed retrieval and missing/unknown citations are reported. Questions retrieve relevant excerpts within a bounded context budget; a selected source may have no excerpt in a particular answer. Coverage messages distinguish incomplete preparation and omitted sources. Selection does not mean every page has been read. Check important claims against the original.
 
 Text extraction supports text-based PDFs, reflowable EPUBs and Note/Book Markdown. Image-only scans require OCR; encrypted PDFs, DRM/fixed-layout EPUBs, Word and images are not parsed. Limits are 500 PDF pages, 3,000 EPUB chapters, 2 million characters and 2,000 passages per source; cached text is limited to 100 MB and vectors to 128 MB. **AI Settings → Retrieval → Local text tools / Index tools** provides optional inspection and cache clearing. Clearing derived text/vectors preserves original documents, writing, chats and usage. Local parsing and ordinary writing make no retrieval API requests; questions send selected excerpts to the configured services and their usage is recorded.
 
@@ -245,7 +245,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.4.3 修复合并文献问题的证据遗漏：编号问题分别检索，优先保留相关片段并补充相邻上下文；较短资料在容量允许时保留完整内容。Choose sources 移到 Chat 消息输入框正上方。
+2.4.4 修复多来源、多问题 RAG 的相关度排序和证据分配，优先保留直接相关片段，补充表格相邻说明并减少重复片段，最多两次针对性补检索沿用现有配置。资料选择改为 Book 与 Library 目录结构，支持部分选中，取消固定 20 项来源限制，并保持既有聊天、引用和模型设置兼容。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
@@ -274,13 +274,13 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 
 ### Chat 资料问答
 
-打开 **Workshop → Chat**，点击消息输入框正上方的 **Choose sources**，选择 Library 中的 PDF／EPUB、独立 Note、Book 页面或整本 Book，可以按标题或 Book 名称搜索。每个聊天最多选择 20 项资料，包括纳入的附件。**Include linked attachments** 纳入写作引用的附件，复用 Library 原件，不向 assets 复制原文件。内置内容默认排除，勾选 **Show built-in content** 才会显示。使用 **Import PDF / EPUB** 或把文件拖进 Chat，会导入或复用 Library 原件并将其加入当前聊天。
+打开 **Workshop → Chat**，点击消息输入框正上方的 **Choose sources**，Notes 按列表显示，Books 按整本书、章节、页面逐层展开，Library 按文件夹、子文件夹、文件展开。点击箭头只展开目录；勾选整本书、章节或文件夹会选择其中的资料，也可单独取消页面或文件，父级显示部分选中状态。搜索显示匹配内容及其上级路径；收起和搜索不清除选择，同一来源重复选取只计一次。聊天不再限制为 20 项资料，实际准备仍受本地文本、向量容量及发送证据的上下文预算约束。整本 Book 和文件夹选择会纳入后续新增内容；章节、单页选择保留当时选中的页面。取消的条目保持排除，直到重新勾选。**Include linked attachments** 纳入写作引用的附件，复用 Library 原件，不向 assets 复制原文件。内置内容默认排除，勾选 **Show built-in content** 才会显示。使用 **Import PDF / EPUB** 或把文件拖进 Chat，会导入或复用 Library 原件并将其加入当前聊天。
 
 发送问题后，软件自动提取文字、检查资料变化、准备向量并检索，无需单独操作 Knowledge base 页面。已准备且未变化的片段复用缓存。回复中显示准备进度；**Stop generating** 可取消资料准备和生成。资料范围按聊天保存，重启后保留；**Clear sources** 切回普通聊天。切换资料后，先前的文献回答不会作为新范围的证据发送。
 
 在 **AI Settings → Retrieval** 配置 Embedding 和可选 Rerank。**Refresh Embedding models** 与 **Refresh Rerank models** 分别获取对应目录，也可手填模型 ID。目录不保证当前账号可用，请保存后测试。仅刷新目录不会发送文献内容。更换 Embedding 后，下次提问自动为新模型准备所选资料；更换 Rerank 无需重建文献向量。关闭语义检索或接口不可用时，界面明确提示关键词降级；跨语言文献问答通常需要 Embedding。
 
-回答以 **[S1]**、**[S2]** 等引用保存的原文片段。点击引用，或展开 **Evidence → Open source**，可打开 PDF 对应页、EPUB 章节／段落或 Note／Book 对应行。证据区区分实际引用与检索候选。重命名、移动保持资料身份；正文修改或原件删除后阻止旧位置跳转，聊天仍保留当时的原文摘录。解析不完整、资料缺失、检索失败及引用缺失或无效会明确说明。多文献概括在有限证据预算内兼顾各项可读资料，不代表逐页全文审计；重要结论请对照原文。
+回答以 **[S1]**、**[S2]** 等引用保存的原文片段。点击引用，或展开 **Evidence → Open source**，可打开 PDF 对应页、EPUB 章节／段落或 Note／Book 对应行。证据区区分实际引用与检索候选。重命名、移动保持资料身份；正文修改或原件删除后阻止旧位置跳转，聊天仍保留当时的原文摘录。解析不完整、资料缺失、检索失败及引用缺失或无效会明确说明。提问在有限上下文预算内检索相关片段，某份已选资料可能没有片段进入本次回答；覆盖提示会说明解析不完整或未纳入的来源。选择资料不代表逐页全文审计；重要结论请对照原文。
 
 支持文字型 PDF、流式 EPUB 和 Note／Book Markdown。纯扫描 PDF 需要 OCR；加密 PDF、DRM／固定版式 EPUB、Word 和图片暂不解析。每项上限为 PDF 500 页、EPUB 3,000 章、200 万字符及 2,000 个片段；文本缓存最多 100 MB，向量缓存最多 128 MB。**AI Settings → Retrieval → Local text tools / Index tools** 提供可选的检查与清理工具。清除派生缓存不删除原文、写作、聊天或历史用量。普通写作与本地解析不调用检索 API；资料问答会向所选服务发送相关文字，用量计入统计。
 

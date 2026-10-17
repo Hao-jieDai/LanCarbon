@@ -1,5 +1,6 @@
 import { validKnowledgeScope } from "./knowledge-sources";
 import { CHAT_EVIDENCE_MAX_CHUNKS } from "../src/shared/grounding";
+import { KNOWLEDGE_MAX_SOURCES } from "../src/shared/knowledge";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
@@ -115,7 +116,7 @@ export class AIChatStore extends Serialized {
       for (const message of chat.messages) { validId(message.id); if (message.sourceScope) message.sourceScope = validKnowledgeScope(message.sourceScope);
         if (message.grounding) {
           const g = message.grounding; g.scope = validKnowledgeScope(g.scope);
-          if (!Array.isArray(g.sourceIds) || g.sourceIds.length > 20 || !g.sourceIds.every(id => typeof id === "string" && /^(file|note):/.test(id)) || !Array.isArray(g.warnings) || g.warnings.length > 100 || !g.warnings.every(text => typeof text === "string" && text.length < 15000) || !["keyword", "hybrid", "reranked"].includes(g.mode) || !Array.isArray(g.evidence) || g.evidence.length > CHAT_EVIDENCE_MAX_CHUNKS || !g.evidence.every(hit => hit && /^S[1-9]\d{0,2}$/.test(hit.label) && g.sourceIds.includes(hit.source?.id) && typeof hit.source.title === "string" && typeof hit.source.entityId === "string" && Array.isArray(hit.source.locations) && /^[a-f0-9]{64}$/.test(hit.fingerprint) && typeof hit.chunk?.text === "string" && hit.chunk.text.length <= 1200 && ["markdown", "pdf", "epub"].includes(hit.chunk.anchor?.kind))) throw Error("Invalid saved document evidence. The original chat file is preserved.");
+          if (!Array.isArray(g.sourceIds) || g.sourceIds.length > KNOWLEDGE_MAX_SOURCES || !g.sourceIds.every(id => typeof id === "string" && id.length <= 330 && /^(file|note):/.test(id)) || !Array.isArray(g.warnings) || g.warnings.length > 100 || !g.warnings.every(text => typeof text === "string" && text.length < 15000) || !["keyword", "hybrid", "reranked"].includes(g.mode) || !Array.isArray(g.evidence) || g.evidence.length > CHAT_EVIDENCE_MAX_CHUNKS || !g.evidence.every(hit => hit && /^S[1-9]\d{0,2}$/.test(hit.label) && g.sourceIds.includes(hit.source?.id) && typeof hit.source.title === "string" && typeof hit.source.entityId === "string" && Array.isArray(hit.source.locations) && /^[a-f0-9]{64}$/.test(hit.fingerprint) && typeof hit.chunk?.text === "string" && hit.chunk.text.length <= 1200 && ["markdown", "pdf", "epub"].includes(hit.chunk.anchor?.kind))) throw Error("Invalid saved document evidence. The original chat file is preserved.");
         }
         if (!["user", "assistant"].includes(message.role) || typeof message.content !== "string" || !["complete", "streaming", "stopped", "error"].includes(message.status)) throw new Error("Invalid chat message"); if (message.status === "streaming") { message.status = "stopped"; message.error = "Generation was interrupted when LanCarbon closed. You can retry."; interrupted = true; } }
     }

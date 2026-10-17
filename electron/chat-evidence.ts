@@ -8,7 +8,7 @@ export function documentQuestions(question: string): string[] {
     ? markers.map((marker, index) => question.slice(marker.index! + marker[0].length, markers[index + 1]?.index ?? question.length).trim())
     : question.split(/(?<=[?？])\s*/u).map(text => text.trim());
   parts = parts.filter(Boolean);
-  if (parts.length > 8) parts = [...parts.slice(0, 7), parts.slice(7).join("\n")];
+  if (parts.length > 16) parts = [...parts.slice(0, 15), parts.slice(15).join("\n")];
   return parts.length ? parts : [question];
 }
 
@@ -32,32 +32,41 @@ export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][],
   const allowed = new Set(sourceIds), current = new Map(corpus.filter(hit => allowed.has(hit.source.id)).map(hit => [evidenceKey(hit), hit]));
   const valid = (hit: KnowledgeHit) => { const latest = current.get(evidenceKey(hit)); return latest?.fingerprint === hit.fingerprint && latest.chunk.text === hit.chunk.text ? latest : undefined; };
   const ranked = groups.map(group => group.flatMap(hit => { const latest = valid(hit); return latest ? [latest] : []; }));
-  const budget = Math.min(30_000, (broad ? 12_000 : 6_000) + Math.max(0, groups.length - 1) * 4_000 + Math.max(0, sourceIds.length - 1) * 1_000);
-  const result: KnowledgeHit[] = [], seen = new Set<string>(); let tokens = 0;
+  const budget = Math.min(30_000, (broad ? 12_000 : 6_000) + Math.max(0, groups.length - 1) * 4_000 + Math.min(8, Math.max(0, sourceIds.length - 1)) * 1_000);
+  const result: KnowledgeHit[] = [], seen = new Set<string>(), texts = new Set<string>(); let tokens = 0;
   const add = (hit?: KnowledgeHit) => {
-    if (!hit || seen.has(evidenceKey(hit)) || result.length >= CHAT_EVIDENCE_MAX_CHUNKS || tokens + evidenceTokens(hit) > budget) return;
-    result.push(hit); seen.add(evidenceKey(hit)); tokens += evidenceTokens(hit);
+    if (!hit) return;
+    const textKey = `${hit.source.id}:${hit.chunk.text.replace(/\s+/g, " ").trim()}`;
+    if (seen.has(evidenceKey(hit)) || texts.has(textKey) || result.length >= CHAT_EVIDENCE_MAX_CHUNKS || tokens + evidenceTokens(hit) > budget) return;
+    result.push(hit); seen.add(evidenceKey(hit)); texts.add(textKey); tokens += evidenceTokens(hit);
   };
-  // Preserve the strongest matches for every question and document, rather than allowing one topic to fill the budget.
-  for (const group of ranked) add(group[0]);
-  for (const id of sourceIds) add(ranked.flat().find(hit => hit.source.id === id));
-  for (let depth = 1; depth < 4; depth++) for (const group of ranked) add(group[depth]);
+  // Reserve matches for EVERY question before any source coverage or neighbours.
+  // Source count must not turn this into one arbitrary passage per source.
+  for (let depth = 0; depth < 6; depth++) for (const group of ranked) add(group[depth]);
 
-  const sources = new Map(sourceIds.map(id => [id, corpus.filter(hit => hit.source.id === id)]));
+  const sources = new Map<string, KnowledgeHit[]>();
+  for (const hit of current.values()) { const siblings = sources.get(hit.source.id) ?? []; siblings.push(hit); sources.set(hit.source.id, siblings); }
   // A short selected corpus can fit completely. Retain it instead of sampling away important details.
   const all = [...current.values()];
-  if ((broad || groups.length > 1) && all.length <= CHAT_EVIDENCE_MAX_CHUNKS && all.reduce((sum, hit) => sum + evidenceTokens(hit), 0) <= budget) {
+  if (sourceIds.length <= 3 && (broad || groups.length > 1) && all.length <= CHAT_EVIDENCE_MAX_CHUNKS && all.reduce((sum, hit) => sum + evidenceTokens(hit), 0) <= budget) {
     all.forEach(add);
   } else {
     // Bound neighbour expansion and keep original text/anchors intact for exact citations.
     for (const group of ranked) for (const hit of group.slice(0, 2)) {
       const siblings = sources.get(hit.source.id)!, index = siblings.findIndex(item => item.chunk.id === hit.chunk.id);
       for (const neighbour of [siblings[index - 1], siblings[index + 1]]) if (neighbour && adjacent(hit, neighbour)) add(neighbour);
+      // A table may span several chunks. Keep its nearby continuation/heading
+      // instead of replacing exact values with an unrelated source introduction.
+      if (/\|.*\||\btable\b|表\s*\d/iu.test(hit.chunk.text)) for (const offset of [-2, 2]) {
+        const neighbour = siblings[index + offset], middle = siblings[index + Math.sign(offset)];
+        if (neighbour && middle && adjacent(hit, middle) && adjacent(middle, neighbour)) add(neighbour);
+      }
     }
-    for (let depth = 4; depth < Math.max(0, ...ranked.map(group => group.length)); depth++) for (const group of ranked) add(group[depth]);
-    if (broad) for (const siblings of sources.values()) {
+    for (let depth = 6; depth < Math.max(0, ...ranked.map(group => group.length)); depth++) for (const group of ranked) add(group[depth]);
+    // Overview sampling is last and bounded. It never displaces direct answers.
+    if (broad) for (const [, siblings] of [...sources].sort(([a], [b]) => a.localeCompare(b))) {
       add(siblings[0]);
-      for (const hit of siblings.filter(item => /method|result|conclusion|discussion|limitation|方法|结果|结论|局限/i.test((item.chunk.anchor.heading ?? "") + " " + item.chunk.text.slice(0, 100)))) add(hit);
+      for (const hit of siblings.filter(item => /method|result|conclusion|discussion|limitation|方法|结果|结论|局限/i.test((item.chunk.anchor.heading ?? "") + " " + item.chunk.text.slice(0, 100))).slice(0, 2)) add(hit);
       add(siblings.at(-1));
     }
   }

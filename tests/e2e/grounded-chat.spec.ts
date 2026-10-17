@@ -5,7 +5,7 @@ import os from "node:os";
 import { AssetStore } from "../../electron/assets";
 import { LibraryStore } from "../../electron/library";
 import { createNote } from "../../src/shared/notes";
-import { createBook } from "../../src/shared/books";
+import { createBook, validateWorkspace } from "../../src/shared/books";
 import { defaultRetrievalSettings } from "../../src/shared/retrieval";
 import { readerPdfFixture } from "../fixtures/reader";
 import { readerEpubFixture } from "../fixtures/epub";
@@ -39,7 +39,7 @@ test("Chat automatically prepares selected PDF/EPUB/Note/Book evidence, navigate
     void configured;
     const retrieval = await page.evaluate(settings => window.notesDesktop.retrieval!.saveSettings(settings), { ...defaultRetrievalSettings(), enabled: true, rerankEnabled: true, embedding: { mode: "reuse" as const, providerId: "openrouter", modelId: "fixture-embedding", modelName: "Embedding fixture" }, rerank: { mode: "reuse" as const, providerId: "openrouter", modelId: "fixture-rerank", modelName: "Rerank fixture" } }); expect(retrieval.ok).toBe(true);
     await page.getByRole("button", { name: "Workshop", exact: true }).click(); await expect(page.getByRole("navigation", { name: "Workshop pages" }).getByRole("button", { name: "Knowledge base", exact: true })).toHaveCount(0); await page.getByRole("button", { name: "Chat", exact: true }).click(); await page.getByRole("button", { name: "Choose sources", exact: true }).click();
-    const picker = page.getByRole("dialog", { name: "Choose chat sources" }); await picker.getByLabel("Select Climate.pdf", { exact: true }).check(); await picker.getByLabel("Select Energy.epub", { exact: true }).check(); await picker.getByLabel("Select Investment memo", { exact: true }).check(); await picker.getByText("Whole Book", { exact: false }).filter({ hasText: "pages" }).first().locator("..").locator("..").getByRole("checkbox").check();
+    const picker = page.getByRole("dialog", { name: "Choose chat sources" }); await picker.getByLabel("Select Climate.pdf", { exact: true }).check(); await picker.getByLabel("Select Energy.epub", { exact: true }).check(); await picker.getByLabel("Select Investment memo", { exact: true }).check(); await picker.getByLabel("Select Book: Climate Book", { exact: true }).check();
     await picker.getByRole("button", { name: "Use sources", exact: true }).click(); expect(await app.evaluate(() => (globalThis as any).groundedCalls.length)).toBe(0);
     const sourceBar = page.getByRole("group", { name: "Chat sources", exact: true }), composer = page.locator(".ai-composer");
     await expect(composer.getByRole("group", { name: "Chat sources", exact: true })).toBeVisible();
@@ -82,5 +82,44 @@ test("source import reuses Library originals, catalogues stay role-specific and 
     await page.getByLabel("Chat message").fill("Summarize carbon investment"); await page.getByRole("button", { name: "Send", exact: true }).click(); await expect.poll(() => app.evaluate(() => !!(globalThis as any).blockedEmbedding), { timeout: 30000 }).toBe(true); await page.getByRole("button", { name: "Stop generating", exact: true }).click(); await expect(page.getByRole("button", { name: "Retry reply", exact: true })).toBeVisible();
     const stopped = await page.evaluate(() => window.notesDesktop.ai!.chats()); expect(stopped.ok && stopped.chats[0].messages.at(-1)!.status).toBe("stopped"); expect(await app.evaluate(() => (globalThis as any).groundedCalls.some((call: any) => call.endpoint.endsWith("/chat/completions")))).toBe(false);
     await mock(app); await page.getByRole("button", { name: "Retry reply", exact: true }).click(); await expect.poll(async()=>{const result=await page.evaluate(()=>window.notesDesktop.ai!.chats());return result.ok && result.chats[0].messages.at(-1)!.status;},{timeout:30000}).toBe("complete"); const retried = await page.evaluate(() => window.notesDesktop.ai!.chats()); expect(retried.ok && retried.chats[0].messages.filter(message => message.role === "user").length).toBe(1); expect(retried.ok && retried.chats[0].messages.at(-1)!.status).toBe("complete");
+  } finally { await app.close().catch(() => undefined); await cleanup(root); }
+});
+
+test("source trees select Books and nested folders, retain exceptions beyond twenty pages and reveal search paths", async ({}, info) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-grounded-ui-")), data = path.join(root, "Data"); await fs.mkdir(data);
+  const assets = new AssetStore(data, path.join(root, "Library/assets")), library = new LibraryStore(data, path.join(root, "Library"), assets);
+  const folder = await library.createFolder("Literature", null), nested = await library.createFolder("Refineries", folder.id), pdf = path.join(root, "Scope.pdf");
+  await fs.writeFile(pdf, readerPdfFixture()); const imported = (await library.importFiles([pdf], nested.id)).items[0].entry;
+  const { book, homeNote } = createBook("Selection handbook"), template = book.pages[book.homePageId], chapter = createNote({ id: "selection-chapter", title: "Methods", content: "Method overview." });
+  const pages = Array.from({ length: 24 }, (_, i) => createNote({ id: `selection-page-${i}`, title: i === 23 ? "Last detail" : `Detail ${i}`, content: `Evidence item ${i}.` }));
+  book.pages.chapter = { ...template, id: "chapter", noteId: chapter.id, exportPath: "methods.md", metadata: { ...template.metadata, shortTitle: "Methods" }, children: pages.map(note => note.id) }; book.rootPageIds = [book.homePageId, "chapter"];
+  for (const note of pages) book.pages[note.id] = { ...template, id: note.id, noteId: note.id, exportPath: `${note.id}.md`, metadata: { ...template.metadata, shortTitle: note.title }, children: [] };
+  const workspace = { version: 2 as const, notes: [homeNote, chapter, ...pages], books: [book] }; expect(validateWorkspace(workspace)).toEqual([]);
+  await fs.writeFile(path.join(data, "notes.json"), JSON.stringify(workspace));
+  let app = await launch(root);
+  try {
+    let page = await app.firstWindow(); await page.getByRole("main").waitFor(); await mock(app);
+    await page.evaluate(async () => { const result = await window.notesDesktop.ai!.saveProvider({ id: "siliconflow", kind: "siliconflow", name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", apiKey: "fixture-private-key", models: [{ id: "fixture-chat", name: "Chat fixture", purpose: "chat" }], defaultModel: "fixture-chat" }); if (!result.ok) throw Error(result.error); });
+    await page.getByRole("button", { name: "Workshop", exact: true }).click(); await page.getByRole("button", { name: "Chat", exact: true }).click(); await page.getByRole("button", { name: "Choose sources", exact: true }).click();
+    let picker = page.getByRole("dialog", { name: "Choose chat sources" });
+    await expect(picker.getByLabel("Select Last detail", { exact: true })).toHaveCount(0); await expect(picker.getByLabel("Select Scope.pdf", { exact: true })).toHaveCount(0);
+    await picker.getByLabel("Select Book: Selection handbook", { exact: true }).check(); await expect(picker).toContainText("26 sources selected");
+    await picker.getByRole("button", { name: "Expand Book: Selection handbook", exact: true }).click(); await picker.getByRole("button", { name: "Expand Methods", exact: true }).click();
+    await picker.getByLabel("Select Last detail", { exact: true }).uncheck(); await expect(picker.getByLabel("Select Book: Selection handbook", { exact: true })).toHaveAttribute("aria-checked", "mixed");
+    await picker.getByRole("button", { name: "Expand Folder: Literature", exact: true }).click(); await picker.getByRole("button", { name: "Expand Folder: Refineries", exact: true }).click(); await picker.getByLabel("Select Folder: Literature", { exact: true }).check();
+    await expect(picker.getByLabel("Select Scope.pdf", { exact: true })).toBeChecked();
+    await picker.getByRole("button", { name: "Collapse Book: Selection handbook", exact: true }).click();
+    await picker.getByLabel("Find chat sources", { exact: true }).fill("Last detail"); await expect(picker.getByLabel("Select Last detail", { exact: true })).not.toBeChecked(); await expect(picker).toContainText("26 sources selected");
+    await picker.getByLabel("Find chat sources", { exact: true }).fill("");
+    await picker.getByRole("button", { name: "Use sources", exact: true }).click();
+    await expect(picker).toBeHidden();
+    const saved = await page.evaluate(() => window.notesDesktop.ai!.chats()); if (!saved.ok) throw Error(saved.error);
+    expect(saved.chats[0].sourceScope!.excludedNoteIds).toContain(pages[23].id); expect(saved.chats[0].sourceScope!.folderIds).toContain(folder.id);
+    await app.close(); app = await launch(root); page = await app.firstWindow(); await page.getByRole("main").waitFor(); await mock(app);
+    await page.getByRole("button", { name: "Sources · 26", exact: true }).click(); picker = page.getByRole("dialog", { name: "Choose chat sources" });
+    await picker.getByRole("button", { name: "Expand Book: Selection handbook", exact: true }).click(); await picker.getByRole("button", { name: "Expand Folder: Literature", exact: true }).click();
+    for (const theme of ["Light", "Dark"]) { await page.evaluate(theme => { document.body.classList.toggle("dark", theme === "Dark"); document.documentElement.setAttribute("data-theme", theme.toLowerCase()); }, theme); await page.screenshot({ path: info.outputPath(`source-tree-${theme.toLowerCase()}.png`) }); }
+    expect(await app.evaluate(() => (globalThis as any).groundedCalls.length)).toBe(0);
+    expect(await fs.readFile(await library.filePath(imported.id))).toEqual(readerPdfFixture());
   } finally { await app.close().catch(() => undefined); await cleanup(root); }
 });

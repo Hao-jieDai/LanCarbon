@@ -74,3 +74,18 @@ it("removes stale passages that change during remote query embedding", async () 
 it("cancels late embedding batches and clears only derived vectors", async () => {
   const f = await fixture(); let release!: () => void; f.fetcher.mockImplementationOnce(async () => { await new Promise<void>(resolve => { release = resolve; }); return json({ data: [{ index: 0, embedding: [1, 0] }, { index: 1, embedding: [0, 1] }] }); }); await f.service.build(); for (let i = 0; !release && i < 100; i++) await new Promise(resolve => setTimeout(resolve, 5)); const stopping = f.service.stop(); release(); await stopping; expect((await f.service.status()).ready).toBe(0); const original = JSON.stringify(f.state.corpus); await f.service.clear(); expect(JSON.stringify(f.state.corpus)).toBe(original); expect((await f.service.status()).ready).toBe(0);
 });
+it("preserves rerank order and multiple answers from one document regardless of selection or catalogue order", async () => {
+  const f = await fixture(); f.settings.rerankEnabled = true;
+  f.state.corpus = [...Array.from({ length: 35 }, (_, i) => hit("Climate policy background.", `noise-${i}`)), ...Array.from({ length: 10 }, (_, i) => hit(`Climate policy answer-${i}.`, "answer", String(i)))];
+  f.fetcher.mockImplementation(async (_url, init) => {
+    const request = JSON.parse(init!.body as string);
+    return json({ results: request.documents.map((text: string, index: number) => ({ index, relevance_score: text.includes("answer-") ? 0.99 - Number(/answer-(\d+)/.exec(text)![1]) / 100 : 0.01 })) });
+  });
+  const ids = [...new Set(f.state.corpus.map(hit => hit.source.id))], first = await f.service.search("Climate policy", ids, 20);
+  expect(first.hits[0].chunk.text).toContain("answer-0");
+  expect(first.hits.slice(0, 10).every(hit => hit.source.id === "file:answer")).toBe(true);
+  f.state.corpus.reverse();
+  const second = await f.service.search("Climate policy", [...ids].reverse(), 20);
+  expect(second.hits.map(hit => `${hit.source.id}:${hit.chunk.id}`)).toEqual(first.hits.map(hit => `${hit.source.id}:${hit.chunk.id}`));
+  expect(f.fetcher.mock.calls.every(call => String(call[0]).endsWith("/rerank"))).toBe(true);
+});

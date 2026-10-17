@@ -14,7 +14,18 @@ it("splits numbered Chinese/English questions without treating decimals as list 
   expect(documentQuestions("Is the rate 4.66%? Is the total 3.25 billion?")).toHaveLength(2);
   expect(documentQuestions("范围是什么？折现率是多少？")).toHaveLength(2);
   const many = documentQuestions(Array.from({ length: 12 }, (_, i) => `${i + 1}. question-${i + 1}`).join("\n"));
-  expect(many).toHaveLength(8); expect(many.join("\n")).toContain("question-12");
+  expect(many).toHaveLength(12); expect(many.join("\n")).toContain("question-12");
+});
+it("protects late questions and table continuations with many irrelevant sources", () => {
+  const answer = Array.from({ length: 12 }, (_, i) => passage(i, "answer"));
+  answer[6].chunk.text = "| Path | Label |\n| first-observation.md | sample-observation |";
+  answer[7].chunk.text = "| 02-practice/index.md | sample-practice |";
+  const noise = Array.from({ length: 40 }, (_, i) => passage(0, `noise-${i}`));
+  const groups = [[answer[0]], [answer[3]], [answer[6]], [answer[10]]];
+  const selected = chooseEvidence([...noise, ...answer], groups, [...noise.map(hit => hit.source.id), "file:answer"], false);
+  for (const group of groups) expect(selected.some(hit => hit.chunk.id === group[0].chunk.id && hit.source.id === "file:answer")).toBe(true);
+  expect(selected.some(hit => hit.chunk.text.includes("sample-practice"))).toBe(true);
+  expect(selected.every(hit => hit.source.id === "file:answer")).toBe(true);
 });
 it("retains a short paper completely for a six-part question even when the reranker misses the crucial pages", () => {
   const corpus = Array.from({ length: 61 }, (_, index) => passage(index));

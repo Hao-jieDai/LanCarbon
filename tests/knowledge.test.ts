@@ -31,6 +31,18 @@ it("extracts Markdown headings, tables, math and source lines without indexing l
   const value = extractMarkdown("---\nprivate: meta\n---\n# Energy\n\nPolicy and [evidence](assets/" + "a".repeat(64) + ".pdf).\n\n| cost | value |\n| --- | --- |\n| Coal | $x^2$ |\n");
   expect(value.chunks[1].text).toBe("Policy and evidence."); expect(value.chunks[1].anchor).toMatchObject({ kind: "markdown", line: 6, endLine: 6, heading: "Energy" }); expect(value.chunks.some(chunk => chunk.text.includes("$x^2$"))).toBe(true); expect(JSON.stringify(value)).not.toContain("private: meta");
 });
+it("keeps reusable text from another chat while respecting each chat's individual exclusions", async () => {
+  const f = await fixture(), full = { ...emptyKnowledgeScope(), bookIds: [f.book.id] };
+  await f.store.prepare(full, new AbortController().signal, () => {});
+  const calls = f.extract.mock.calls.length;
+  const except = { ...full, noteIds: [f.note.id], excludedNoteIds: [f.homeNote.id] };
+  const view = await f.store.prepare(except, new AbortController().signal, () => {});
+  expect(selectedKnowledgeIds({ ...await f.snapshot() }, except)).toEqual(new Set([`note:${f.note.id}`]));
+  expect(view.records.some(record => record.sourceId === `note:${f.homeNote.id}` && record.status === "ready")).toBe(true);
+  await f.store.prepare(full, new AbortController().signal, () => {});
+  expect(f.extract.mock.calls.length).toBe(calls + 1);
+  await f.store.stop();
+});
 it("bounds extracted text and keeps page anchors on overlapping windows", () => {
   const value = textChunks([{ text: "x".repeat(2_500_000), anchor: { kind: "pdf", page: 3 } }]); expect(value.limited).toBe(true); expect(value.chunks.length).toBeLessThanOrEqual(2000); expect(value.chunks.every(chunk => chunk.text.length <= 1200 && chunk.anchor.page === 3)).toBe(true);
 });

@@ -96,3 +96,15 @@ it("discovers role-specific OpenRouter catalogues without polluting Chat models 
   const client = new RetrievalClient(fetcher), connection = { provider: defaultAIProviders()[1], key: "fixture-secret", modelId: "", modelName: "" };
   expect((await client.models(connection, "embedding")).map(model => model.id)).toEqual(["embed:free"]); expect((await client.models(connection, "rerank")).map(model => model.id)).toEqual(["rank:free"]); expect(urls).toEqual(["https://openrouter.ai/api/v1/embeddings/models", "https://openrouter.ai/api/v1/models?output_modalities=rerank"]);
 });
+it("accepts and reloads more than twenty sources without leaking unselected writing", async () => {
+  const f = await fixture();
+  f.notes.push(...Array.from({ length: 25 }, (_, i) => createNote({ id: `extra-${i}`, title: `Evidence ${i}`, content: `Carbon policy finding ${i}: the effect differs by region.` })));
+  const noteIds = f.notes.filter(note => note.id !== "private").map(note => note.id);
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Compare carbon policy findings.");
+  const chat = await f.settled(), saved = await new AIChatStore(f.root).get(chat.id);
+  expect(chat.messages.at(-1)!.status).toBe("complete");
+  expect(saved.messages.at(-1)!.grounding!.sourceIds).toHaveLength(27);
+  expect(saved.messages.at(-1)!.grounding).toEqual(chat.messages.at(-1)!.grounding);
+  expect(JSON.stringify(f.fetcher.mock.calls)).not.toContain("SecretOutsideSelection");
+});

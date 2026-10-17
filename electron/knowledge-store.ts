@@ -59,6 +59,12 @@ export class KnowledgeStore {
     signal.throwIfAborted(); await this.stop(); signal.throwIfAborted();
     const previous = await this.serial(async () => { await this.load(); return structuredClone(this.settings.scope); });
     const merged: KnowledgeScope = { ...scope, noteIds: [...new Set([...previous.noteIds, ...scope.noteIds])], fileIds: [...new Set([...previous.fileIds, ...scope.fileIds])], bookIds: [...new Set([...previous.bookIds, ...scope.bookIds])], folderIds: [...new Set([...previous.folderIds, ...scope.folderIds])], includeSystem: previous.includeSystem || scope.includeSystem, includeAttachments: previous.includeAttachments || scope.includeAttachments };
+    const snapshot = await this.snapshot(), retained = new Set([...selectedKnowledgeIds(snapshot, previous), ...selectedKnowledgeIds(snapshot, scope)]);
+    // A per-chat exception must not evict text that another chat already prepared.
+    for (const [key, prefix] of [["excludedNoteIds", "note:"], ["excludedFileIds", "file:"]] as const) {
+      const excluded = [...new Set([...(previous[key] ?? []), ...(scope[key] ?? [])])].filter(id => !retained.has(prefix + id));
+      if (excluded.length) merged[key] = excluded; else delete merged[key];
+    }
     const abort = () => { void this.stop(); };
     signal.addEventListener("abort", abort, { once: true });
     const timer = setInterval(() => progress(`Reading sources ${this.progress.completed} / ${this.progress.total}${this.progress.current ? ` · ${this.progress.current}` : ""}`), 500);

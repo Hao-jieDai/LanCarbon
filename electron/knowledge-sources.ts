@@ -8,8 +8,8 @@ export const knowledgeHash = (text: string) => createHash("sha256").update(text)
 export function knowledgeSnapshot(workspace: WorkspaceFile, entries: LibraryEntry[], folders: LibraryFolder[]): KnowledgeSnapshot {
   const content = new Map<string, string>(), sources: KnowledgeSource[] = [], files = new Map<string, string>();
   for (const entry of entries) { const id = `file:${entry.documentId ?? entry.id}`; files.set(entry.id, id); if (entry.assetId) files.set(entry.assetId, id); }
-  const books = workspace.books.map(book => ({ id: book.id, title: book.settings.title, noteIds: [...new Set(Object.values(book.pages).map(page => page.noteId))], systemManaged: book.id === "lancarbon-from-zero-to-one" }));
   const noteMap = new Map(workspace.notes.map(note => [note.id, note])), origins = new Map<string, KnowledgeSource["locations"]>();
+  const books = workspace.books.map(book => ({ id: book.id, title: book.settings.title, noteIds: [...new Set(Object.values(book.pages).map(page => page.noteId))], systemManaged: book.id === "lancarbon-from-zero-to-one", homePageId: book.homePageId, rootPageIds: book.rootPageIds, pages: Object.values(book.pages).map(page => ({ id: page.id, noteId: page.noteId, title: page.metadata.shortTitle || noteMap.get(page.noteId)?.title || "Untitled", children: page.children })) }));
   for (const book of workspace.books) {
     const visited = new Set<string>();
     const visit = (id: string, titles: string[] = []) => {
@@ -36,5 +36,6 @@ export function selectedKnowledgeIds(snapshot: KnowledgeSnapshot, scope: Knowled
 export function validKnowledgeScope(value: KnowledgeScope): KnowledgeScope {
   if (!value || typeof value !== "object" || ![value.noteIds, value.fileIds, value.bookIds, value.folderIds].every(ids => Array.isArray(ids) && ids.length <= 20000) || ![value.includeSystem, value.includeAttachments, value.autoUpdate].every(value => typeof value === "boolean")) throw Error("Invalid knowledge selection.");
   const strings = (items: unknown[]): string[] => { if (!items.every(item => typeof item === "string" && item.length > 0 && item.length <= 300 && !/[\x00-\x1f]/.test(item))) throw Error("Invalid knowledge selection."); return [...new Set(items as string[])]; };
-  return { noteIds: strings(value.noteIds), fileIds: strings(value.fileIds), bookIds: strings(value.bookIds), folderIds: [...new Set(value.folderIds.map(id => { if (id !== null && (typeof id !== "string" || !/^folder_[a-f0-9]{32}$/.test(id))) throw Error("Invalid selected folder."); return id; }))], includeSystem: value.includeSystem, includeAttachments: value.includeAttachments, autoUpdate: value.autoUpdate };
+  for (const key of ["excludedNoteIds", "excludedFileIds"] as const) if (value[key] !== undefined && (!Array.isArray(value[key]) || value[key]!.length > 20000)) throw Error("Invalid knowledge selection.");
+  return { noteIds: strings(value.noteIds), fileIds: strings(value.fileIds), bookIds: strings(value.bookIds), folderIds: [...new Set(value.folderIds.map(id => { if (id !== null && (typeof id !== "string" || !/^folder_[a-f0-9]{32}$/.test(id))) throw Error("Invalid selected folder."); return id; }))], ...(value.excludedNoteIds ? { excludedNoteIds: strings(value.excludedNoteIds) } : {}), ...(value.excludedFileIds ? { excludedFileIds: strings(value.excludedFileIds) } : {}), includeSystem: value.includeSystem, includeAttachments: value.includeAttachments, autoUpdate: value.autoUpdate };
 }
