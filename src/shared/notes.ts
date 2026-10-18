@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.6";
+export const RELEASE_VERSION = "2.4.7";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.4.6 adds offline export of a whole chat as PDF, including saved Thinking by default, per-reply model names and source locations, with optional cited excerpts. Document questions reserve monetary result passages, exclude dense bibliographies unless requested, and supply original-context unit equivalents. Explicit amount/scenario conflicts are flagged for checking. Planning and coverage checks now run selectively, with smaller evidence budgets for focused questions; existing Chat and retrieval connections are retained. This does not guarantee factual accuracy or add OCR.
+Version 2.4.7 improves document questions when switching papers or comparing their findings, adds local checks for factual subparts without extra API calls, and retains valid original monetary evidence across follow-ups. Replies are instructed to answer directly and identify specific gaps once, with retrieval diagnostics kept in Evidence. Amount-unit checks cover explicit unit definitions, and numeric intervals are distinguished from subtraction. Existing model connections, fixed pricing and document workflows are preserved. Developer handoff guidance and offline regression cases support future maintenance.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -251,7 +251,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.4.6 新增整段聊天离线导出 PDF，默认包含已保存的 Thinking、逐条模型名称与来源位置，可选附加实际引用的摘录。资料问答优先保留金额结果段落，非文献列表问题排除密集参考文献，并附带原文上下文及单位换算；明确的金额数量级或情景冲突会提示核对。规划与覆盖检查改为按需触发，聚焦问题使用较小证据预算，沿用既有 Chat 与检索连接。本次不包含 OCR，也不承诺回答绝对正确。
+2.4.7 优化资料问答中的文献切换与跨文献比较，新增不调用 API 的本地子问题取证，并在追问中保留仍有效的金额原文证据。回答提示词要求直接作答、只对具体缺口说明一次，检索诊断保留在 Evidence。金额检查覆盖明确的单位定义，并区分数值区间与减法。沿用现有模型连接、固定单价和文献操作流程；新增开发交接说明与离线回归案例，支持后续维护。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

@@ -8,7 +8,7 @@ import { AIPriceStore, AIUsageStore } from "../electron/ai-usage";
 import { RetrievalSettingsStore, validRetrievalSettings } from "../electron/retrieval-settings";
 import { RetrievalCache } from "../electron/retrieval-cache";
 import { RetrievalClient, normalizeVector, type RetrievalConnection } from "../electron/retrieval-client";
-import { RetrievalService, keywordRanks, retrievalProfile } from "../electron/retrieval-service";
+import { RetrievalService, keywordRanks, retrievalProfile, retrievalTerms } from "../electron/retrieval-service";
 import { defaultRetrievalSettings, retrievalPriceProviders } from "../src/shared/retrieval";
 import { defaultAIProviders } from "../src/shared/ai";
 import type { KnowledgeHit } from "../src/shared/knowledge";
@@ -18,6 +18,12 @@ async function root() { const directory = await fs.mkdtemp(path.join(os.tmpdir()
 const connection = (modelId = "BAAI/bge-m3"): RetrievalConnection => ({ provider: { ...defaultAIProviders()[0], hasKey: true }, key: "fixture-secret-12345", modelId, modelName: modelId });
 const json = (value: unknown) => new Response(JSON.stringify(value), { headers: { "content-type": "application/json" } });
 const hit = (text: string, id = "paper", index = "0"): KnowledgeHit => ({ source: { id: `file:${id}`, entityId: id, kind: "file", format: "pdf", title: id, fingerprint: id + text, locations: [{ kind: "file", fileId: id, label: id }], tags: [], attachments: [], systemManaged: false }, chunk: { id: index, text, anchor: { kind: "pdf", page: 1 } }, fingerprint: id + text });
+it("retrieves mixed Chinese/Latin questions without requiring spaces around application labels or numbers", async () => {
+  const terms = retrievalTerms("导出Book源项目，PDF页数和100MB缓存");
+  expect(terms).toEqual(expect.arrayContaining(["导出", "book", "源项", "项目", "pdf", "页数", "100mb", "缓存"]));
+  const corpus = [hit("普通页面可以阅读。", "irrelevant"), hit("导出的项目只包含本 Book 实际引用的资源。", "export")];
+  expect((await keywordRanks(corpus, "导出Book源项目是否带出所有资源"))[0].index).toBe(1);
+});
 async function fixture() {
   const directory = await root(), cache = new RetrievalCache(directory); caches.push(cache); const settings = { ...defaultRetrievalSettings(), enabled: true, embedding: { mode: "reuse" as const, providerId: "siliconflow", modelId: "BAAI/bge-m3", modelName: "BGE" } };
   const state = { corpus: [hit("Climate investment and carbon policy.", "paper"), hit("A recipe for bread.", "recipe")], connection: connection() };

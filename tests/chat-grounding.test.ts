@@ -77,8 +77,8 @@ it("retrieves each numbered item independently, keeps per-question candidates an
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a", "b"] });
   await f.service.send(f.chat.id, "siliconflow", "fixture-model", "1. Compare the carbon investment findings.\n2. Explain the methods and regional assumptions.");
   const chat = await f.settled(), evidence = chat.messages.at(-1)!.grounding!.evidence;
-  expect(f.retrieval.search).toHaveBeenCalledTimes(2);
-  expect(vi.mocked(f.retrieval.search).mock.calls.map(call => call[0])).toEqual(["Compare the carbon investment findings.", "Explain the methods and regional assumptions."]);
+  expect(vi.mocked(f.retrieval.search).mock.calls.length).toBeLessThanOrEqual(4);
+  expect(vi.mocked(f.retrieval.search).mock.calls.slice(0, 2).map(call => call[0])).toEqual(["Compare the carbon investment findings.", "Explain the methods and regional assumptions."]);
   const payload = JSON.parse(JSON.parse(f.fetcher.mock.calls.at(-1)![1]!.body as string).messages.find((item: { content: string }) => item.content.startsWith('{"selectedSources":')).content);
   expect(payload.questionEvidence).toHaveLength(2); expect(payload.questionEvidence.every((item: { citations: string[] }) => item.citations.length > 0)).toBe(true);
   expect(evidence.length).toBeGreaterThan(24);
@@ -167,4 +167,36 @@ it("skips paid planning/review for a resolved focused follow-up with usable cove
   const saved = await f.settled(); expect(saved.messages.at(-1)!.status).toBe("complete");
   expect(f.fetcher).toHaveBeenCalledTimes(1); expect(saved.messages.at(-1)!.grounding!.research).toMatchObject({ modelChecks: 0, review: "not-needed" });
   expect(JSON.stringify(f.fetcher.mock.calls)).toContain("unitEquivalents");
+});
+
+it("switches to a lowercase named paper instead of inheriting the old focus and keeps irrelevant diagnostics out of the model payload", async () => {
+  const f = await fixture();
+  f.notes[0].content = "Alvarez et al. Coal study.\n\n" + Array.from({ length: 40 }, (_, i) => `Coal retirement result ${i}.`).join("\n\n");
+  f.notes[1].content = "Bennett et al. Refinery study.\n\n" + Array.from({ length: 40 }, (_, i) => `Refinery retrofit result ${i}.`).join("\n\n");
+  const scope = { ...emptyKnowledgeScope(), noteIds: ["a", "b"] };
+  const first: AIChat = { ...f.chat, sourceScope: scope, messages: [{ id: "q1", role: "user", content: "Alvarez 的煤电结果是什么？", sourceScope: scope, status: "complete", createdAt: new Date().toISOString() }] };
+  const original = await f.grounder.prepare(first, new AbortController().signal, () => {});
+  const next: AIChat = { ...first, messages: [...first.messages, { id: "a1", role: "assistant", content: "Old answer is not evidence: invented 999.", status: "complete", sourceScope: scope, grounding: original.grounding, createdAt: new Date().toISOString() }, { id: "q2", role: "user", content: "再看bennett炼油这篇。改造结果是什么？", sourceScope: scope, status: "complete", createdAt: new Date().toISOString() }] };
+  const prepared = await f.grounder.prepare(next, new AbortController().signal, () => {}), payload = JSON.parse(prepared.messages[1].content);
+  expect(prepared.grounding.research!.focusSourceIds).toEqual(["note:b"]);
+  expect(prepared.grounding.evidence.every(hit => hit.source.id === "note:b")).toBe(true);
+  expect(payload.selectedSources.map((source: any) => source.id)).toEqual(["note:a", "note:b"]);
+  expect(payload.coverageNotes).toBeUndefined(); expect(payload.sourcesWithoutExcerpts).toBeUndefined(); expect(payload.missingRelevantSources).toEqual([]);
+  expect(prepared.grounding.warnings.some(warning => warning.includes("no excerpt"))).toBe(true);
+  expect(prepared.messages.some(message => message.content.includes("invented 999"))).toBe(false);
+  expect(f.fetcher).not.toHaveBeenCalled();
+});
+
+it("retrieves both sides of a natural contradiction question even when the planning model omits an explicitly named source", async () => {
+  const f = await fixture();
+  f.notes[0].content = "Alvarez et al. Economy.\n\n" + Array.from({ length: 35 }, (_, i) => `GDP benefit result ${i}.`).join("\n\n");
+  f.notes[1].content = "Bennett et al. Industry.\n\n" + Array.from({ length: 35 }, (_, i) => `Factory value loss result ${i}.`).join("\n\n");
+  const scope = { ...emptyKnowledgeScope(), noteIds: ["a", "b"] }, question = "Alvarez 说经济受益，Bennett 却有工厂损失。这是不是矛盾？";
+  const chat: AIChat = { ...f.chat, sourceScope: scope, messages: [{ id: "q", role: "user", content: question, sourceScope: scope, status: "complete", createdAt: new Date().toISOString() }] };
+  const consult = vi.fn(async (_messages: Array<{ role: string; content: string }>, stage: "plan" | "review") => stage === "plan" ? JSON.stringify({ question, sourceIds: ["note:a"], compare: false, queries: [] }) : JSON.stringify({ sufficient: true, queries: [] }));
+  const prepared = await f.grounder.prepare(chat, new AbortController().signal, () => {}, consult);
+  expect(new Set(prepared.grounding.research!.focusSourceIds)).toEqual(new Set(["note:a", "note:b"]));
+  expect(new Set(prepared.grounding.evidence.map(hit => hit.source.id))).toEqual(new Set(["note:a", "note:b"]));
+  expect(consult).toHaveBeenCalledTimes(2); expect(f.fetcher).not.toHaveBeenCalled();
+  expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
 });

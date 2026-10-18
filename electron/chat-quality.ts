@@ -21,15 +21,16 @@ export function resultCoverage(corpus: KnowledgeHit[], sourceIds: string[], prev
     const candidates = corpus.filter(hit => hit.source.id === id && !bibliography(hit) && money.test(hit.chunk.text));
     const score = (hit: KnowledgeHit) => {
       const text = hit.chunk.text;
-      return (/total|aggregate|national|present value|合计|总额|全国/iu.test(text) ? 4 : 0) +
+      return (/total|aggregate|national|sum up|amount to|present value|合计|总额|全国/iu.test(text) ? 4 : 0) +
         (/stranded|loss|搁浅|损失/iu.test(text) ? 3 : 0) +
+        (/stranded.{0,65}(?:total|sum up|amount to)|(?:total|aggregate).{0,65}stranded/iu.test(text) ? 4 : 0) +
         (/result|conclusion|结果|结论/iu.test((hit.chunk.anchor.heading ?? "") + text.slice(0, 100)) ? 2 : 0);
     };
     const remembered = previous.flatMap(hit => {
       const fresh = current.get(`${hit.source.id}:${hit.chunk.id}`);
       return fresh && fresh.source.id === id && fresh.fingerprint === hit.fingerprint && fresh.chunk.text === hit.chunk.text && !bibliography(fresh) && money.test(fresh.chunk.text) ? [fresh] : [];
     }).sort((a, b) => score(b) - score(a));
-    const result = [...candidates.sort((a, b) => score(b) - score(a)).slice(0, 4), ...remembered.slice(0, 2)];
+    const result = [...remembered.slice(0, 3), ...candidates.sort((a, b) => score(b) - score(a)).slice(0, 4)];
     return [...new Map(result.map(hit => [`${hit.source.id}:${hit.chunk.id}`, hit])).values()];
   }).filter(group => group.length);
 }
@@ -69,7 +70,22 @@ export function quantityWarnings(text: string, evidence: ChatEvidence[]): string
       if (warnings.size >= 5) return [...warnings];
     }
   }
-  return [...warnings];
+  return [...warnings, ...unitDefinitionWarnings(plain)].slice(0, 5);
+}
+
+/** Check explicit English-to-Chinese unit definitions, not prose about different quantities. */
+export function unitDefinitionWarnings(text: string): string[] {
+  const warnings = new Set<string>();
+  const pattern = /\b(?:(\d+(?:\.\d+)?|one)\s+)?(billion|million|trillion)\s*(CNY|RMB|USD|US\$)\s*[，,:：（(]*\s*(?:即|也就是|等于|=|means)\s*(?:(\d+(?:\.\d+)?|一|十|百|千)\s*)?(万亿|十亿|亿|百万|万)\s*(人民币|美元|元)/giu;
+  for (const match of text.replace(/```[\s\S]*?```|`[^`\n]*`/g, "").matchAll(pattern)) {
+    const fromCurrency = /CNY|RMB/i.test(match[3]) ? "CNY" : "USD", toCurrency = match[6] === "美元" ? "USD" : "CNY";
+    if (fromCurrency !== toCurrency) continue; // An FX claim needs an explicit exchange rate, not this check.
+    const prefix = match[4] ? ({ 一: 1, 十: 10, 百: 100, 千: 1000 } as Record<string, number>)[match[4]] ?? Number(match[4]) : 1;
+    const factor = ({ 万亿: 1e12, 十亿: 1e9, 亿: 1e8, 百万: 1e6, 万: 1e4 } as Record<string, number>)[match[5]];
+    const expected = ({ billion: 1e9, million: 1e6, trillion: 1e12 } as Record<string, number>)[match[2].toLowerCase()], value = !match[1] || /^one$/i.test(match[1]) ? 1 : Number(match[1]);
+    if (Number.isFinite(prefix) && Math.abs(prefix * factor - expected * value) > 0.000001) warnings.add(`Amount needs checking: ${match[0]}. 1 ${match[2]} ${match[3]} = ${expected / 1e8} ${fromCurrency === "CNY" ? "亿元人民币" : "亿美元"}. Check the unit definition against the displayed amounts.`);
+  }
+  return [...warnings].slice(0, 3);
 }
 
 function scenarioLevels(text: string): string[] {

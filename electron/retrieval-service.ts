@@ -7,7 +7,13 @@ const hash = (value: string) => createHash("sha256").update(value).digest("hex")
 export const retrievalProfile = (connection: RetrievalConnection) => hash(JSON.stringify([1, connection.provider.id, connection.provider.baseUrl, connection.modelId]));
 const pause = () => new Promise<void>(resolve => setImmediate(resolve));
 const stopwords = new Set("the a an is are was were of to in and or for on with this that it as by from be what how which".split(" "));
-export function retrievalTerms(text: string) { return (text.toLocaleLowerCase().match(/[\p{L}\p{N}_]+/gu) ?? []).flatMap(term => /^[\p{Script=Han}]+$/u.test(term) && term.length > 1 ? Array.from({ length: term.length - 1 }, (_, i) => term.slice(i, i + 2)) : stopwords.has(term) ? [] : [term]); }
+export function retrievalTerms(text: string) {
+  // Unicode letter runs can contain both scripts: "导出Book源项目" is not one keyword.
+  // Split script transitions before Chinese bigrams, retaining Latin names/model IDs and numbers.
+  return (text.toLocaleLowerCase().match(/[\p{L}\p{N}_]+/gu) ?? [])
+    .flatMap(run => run.match(/\p{Script=Han}+|[^\p{Script=Han}]+/gu) ?? [])
+    .flatMap(term => /^[\p{Script=Han}]+$/u.test(term) && term.length > 1 ? Array.from({ length: term.length - 1 }, (_, i) => term.slice(i, i + 2)) : stopwords.has(term) ? [] : [term]);
+}
 export async function keywordRanks(corpus: KnowledgeHit[], text: string, signal?: AbortSignal) {
   const terms = new Set(retrievalTerms(text)), documents: Array<{ length: number; counts: Map<string, number> }> = [], frequency = new Map<string, number>(); let total = 0;
   for (let index = 0; index < corpus.length; index++) {

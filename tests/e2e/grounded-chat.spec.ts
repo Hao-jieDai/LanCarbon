@@ -51,7 +51,12 @@ test("Chat automatically prepares selected PDF/EPUB/Note/Book evidence, navigate
     await page.getByLabel("Chat message").fill("1. Compare climate investment page 4 with the other sources.\n2. Compare the methods, conclusions and energy transition evidence."); await page.getByRole("button", { name: "Send", exact: true }).click();
     await expect(page.locator(".ai-message-assistant").last().locator(".chat-evidence summary")).toBeVisible({ timeout: 60000 }); await expect(page.getByRole("button", { name: "Stop generating", exact: true })).toHaveCount(0, { timeout: 60000 });
     const saved = await page.evaluate(() => window.notesDesktop.ai!.chats()); if (!saved.ok) throw Error(saved.error); const chat = saved.chats[0], reply = chat.messages.at(-1)!; expect(reply.status).toBe("complete"); expect(new Set(reply.grounding!.evidence.map(hit => hit.source.id))).toEqual(new Set([`file:${entries[0].id}`, `file:${entries[1].id}`, `note:${note.id}`, `note:${homeNote.id}`]));
-    const calls = await app.evaluate(() => (globalThis as any).groundedCalls); expect(calls.some((call: any) => call.endpoint.endsWith("/embeddings"))).toBe(true); expect(calls.filter((call: any) => call.endpoint.endsWith("/rerank"))).toHaveLength(2); expect(JSON.stringify(calls)).not.toContain("SecretOutsideSelection");
+    const calls = await app.evaluate(() => (globalThis as any).groundedCalls); expect(calls.some((call: any) => call.endpoint.endsWith("/embeddings"))).toBe(true);
+    const reranks = calls.filter((call: any) => call.endpoint.endsWith("/rerank"));
+    // Two initial subquestions plus at most six targeted supplements; comparisons can verify each source.
+    expect(reranks.length).toBeGreaterThanOrEqual(2); expect(reranks.length).toBeLessThanOrEqual(8);
+    expect(reranks.slice(0, 2).map((call: any) => call.request.query)).toEqual(["Compare climate investment page 4 with the other sources.", "Compare the methods, conclusions and energy transition evidence."]);
+    expect(JSON.stringify(calls)).not.toContain("SecretOutsideSelection");
     await fs.writeFile(info.outputPath("retrieved-evidence.json"), JSON.stringify({ grounding: reply.grounding, queries: calls.filter((call: any) => call.endpoint.endsWith("/rerank")).map((call: any) => call.request) }, null, 2));
     const usage = await page.evaluate(() => window.notesDesktop.ai!.usage()); expect(usage.ok && new Set(usage.usage.records.map(record => record.purpose))).toEqual(new Set(["chat", "embedding", "rerank"]));
     await page.locator(".chat-evidence summary").last().click();

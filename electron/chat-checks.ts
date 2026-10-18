@@ -12,8 +12,11 @@ export function arithmeticWarnings(text: string): string[] {
   };
   for (const match of plain.matchAll(pattern)) check(match[0], match[1], match[2], match[3], match[4], match[5]);
   // Scientific prose also writes the result first: 123 million (200 − 80).
+  // An ascending dash pair is usually an interval, e.g. 18.9 trillion (16–21.7).
+  // Subtraction with an explicit equals sign remains checked above in either order.
   const resultFirst = new RegExp(`(?<![\\w.])(${number})\\s*(?:亿元|万元|万亿美元|亿美元|万亿|百万|billion|million|trillion)?\\s*[（(]\\s*(${number})\\s*([+−–×÷*/-])\\s*(${number})\\s*[）)]`, "giu");
   for (const match of plain.matchAll(resultFirst)) {
+    if (/[-–]/.test(match[3]) && Number(match[2].replace(/,/g, "")) <= Number(match[4].replace(/,/g, ""))) continue;
     check(match[0], match[2], match[3], match[4], match[1]);
   }
   return warnings;
