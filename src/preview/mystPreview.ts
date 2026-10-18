@@ -11,7 +11,7 @@ import { citationText } from "../shared/bibliography";
 import type { BibliographyEntry } from "../shared/types";
 export type PreviewAssets = Record<string, { name: string; url?: string }>;
 
-export interface PreviewDocument { id: string; title: string; content: string; path?: string; label?: string; bibliography?:BibliographyEntry[] }
+export interface PreviewDocument { id: string; title: string; content: string; path?: string; label?: string; bibliography?:BibliographyEntry[]; navigationAnchors?: string[] }
 export interface PreviewTarget { documentId: string; anchor: string; title: string; number?: number }
 export interface PreviewResult { html: string; warnings: string[]; error?: string }
 interface Parsed { tree: GenericParent; warnings: string[]; macros: Record<string, string>; label?: string }
@@ -160,6 +160,11 @@ export function renderMystPreview(current: PreviewDocument, documents: PreviewDo
     visit(active.tree, node => {
       if (!["crossReference", "link"].includes(node.type)) return;
       const url = node.type === "crossReference" ? (node.kind === "doc" ? node.identifier : `#${node.identifier}`) : node.url;
+      // The caller can supply known UI destinations outside the rendered Markdown (e.g. Chat evidence).
+      // Ordinary Note/Book previews keep their existing cross-reference resolution.
+      if (typeof url === "string" && /^#[a-zA-Z][\w-]{0,200}$/.test(url) && current.navigationAnchors?.includes(url.slice(1))) {
+        node.type = "previewNavigationLink"; node.url = url; return;
+      }
       const resource = typeof url === "string" && assetId(url);
       if (resource) {
         if (assets[resource]) { node.type = "previewAssetLink"; node.assetId = resource; }
@@ -218,6 +223,7 @@ export function renderMystPreview(current: PreviewDocument, documents: PreviewDo
         // column array on the table. Preserve it through HTML sanitization.
         table: (h, node) => defaultHandlers.table(h, { ...node, align: node.children?.[0]?.children?.map((cell: GenericNode) => ["left", "center", "right"].includes(cell.align) ? cell.align : null) }),
         previewReference: (h, node) => h(node, "a", { href: `#${node.previewTarget.anchor}`, "data-preview-note": node.previewTarget.documentId, "data-preview-anchor": node.previewTarget.anchor }, all(h, node)),
+        previewNavigationLink: (h, node) => h(node, "a", { href: node.url }, all(h, node)),
         previewMissingReference: (h, node) => h(node, "span", { className: "preview-unresolved", title: "Reference could not be resolved in this Book" }, all(h, node)),
         previewAssetLink: (h, node) => h(node,"a",{href:"#", "data-asset-id":node.assetId, title:"Save a copy"},all(h,node)),
         cite:(h,node)=>{const entry=references.get(String(node.identifier??"").toLowerCase());return h(node,"span",{className:entry?"preview-citation":"preview-unresolved"},[text(entry?citationText(entry,node.kind==="narrative"):`@${node.identifier}`)]);},

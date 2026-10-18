@@ -1,0 +1,20 @@
+/** Validate explicit same-unit arithmetic, without evaluating code or rewriting a scientific claim. */
+export function arithmeticWarnings(text: string): string[] {
+  const warnings: string[] = [], plain = text.replace(/```[\s\S]*?```|`[^`\n]*`/g, "");
+  const number = "-?\\d+(?:,\\d{3})*(?:\\.\\d+)?";
+  const pattern = new RegExp(`(?<![\\w.])(${number})\\s*([+−–×÷*/-])\\s*(${number})\\s*(?:=|＝|≈)\\s*(${number})(%)?`, "gu");
+  const check = (expression: string, left: string, op: string, right: string, claimed: string, percent = "") => {
+    const [a, b, stated] = [left, right, claimed].map(s => Number(s.replace(/,/g, "")));
+    const result = op === "+" ? a + b : /[-−–]/.test(op) ? a - b : /[×*]/.test(op) ? a * b : b ? a / b : NaN;
+    if (percent && !/[÷/]/.test(op)) return;
+    const expected = result * (percent ? 100 : 1), decimals = claimed.split(".")[1]?.length ?? 0;
+    if (warnings.length < 5 && Number.isFinite(expected) && Math.abs(expected - stated) > Math.max(0.51 * 10 ** -decimals, Math.abs(expected) * 1e-8)) warnings.push(`Calculation needs checking: ${expression}; calculated result = ${Number(expected.toFixed(Math.min(decimals + 2, 8)))}${percent}. Check the operands and units against the source.`);
+  };
+  for (const match of plain.matchAll(pattern)) check(match[0], match[1], match[2], match[3], match[4], match[5]);
+  // Scientific prose also writes the result first: 123 million (200 − 80).
+  const resultFirst = new RegExp(`(?<![\\w.])(${number})\\s*(?:亿元|万元|万亿美元|亿美元|万亿|百万|billion|million|trillion)?\\s*[（(]\\s*(${number})\\s*([+−–×÷*/-])\\s*(${number})\\s*[）)]`, "giu");
+  for (const match of plain.matchAll(resultFirst)) {
+    check(match[0], match[2], match[3], match[4], match[1]);
+  }
+  return warnings;
+}

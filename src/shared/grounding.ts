@@ -4,6 +4,7 @@ export interface ChatEvidence extends KnowledgeHit { label: string }
 export interface ChatGrounding {
   scope: KnowledgeScope; sourceIds: string[]; evidence: ChatEvidence[];
   warnings: string[]; mode: "keyword" | "hybrid" | "reranked";
+  research?: { focusSourceIds: string[]; searches: number; modelChecks: number; supplemented: boolean; review: "sufficient" | "limited" | "unavailable" | "not-needed" };
 }
 export type ChatSourceCatalogue = Pick<KnowledgeView, "sources" | "books" | "folders">;
 export interface CitationTarget { source: KnowledgeSource; anchor: KnowledgeHit["chunk"]["anchor"]; excerpt: string; requestId: string }
@@ -13,4 +14,8 @@ export function citationLocation(hit: KnowledgeHit): string {
   const a = hit.chunk.anchor;
   return a.kind === "pdf" ? `Page ${a.page}` : a.kind === "epub" ? `Chapter ${(a.chapterIndex ?? 0) + 1} · Paragraph ${a.paragraph}` : `Lines ${a.line}–${a.endLine}`;
 }
-export function citedLabels(text: string): Set<string> { return new Set([...text.matchAll(/\[(S[1-9]\d{0,2})\]/g)].map(match => match[1])); }
+/** Normalize grouped/full-width citations, preserving code examples and existing Markdown links. */
+export function mapCitations(text: string, render: (label: string) => string = label => `[${label}]`): string {
+  return text.split(/(```[\s\S]*?(?:```|$)|~~~[\s\S]*?(?:~~~|$)|`[^`\n]*`)/g).map((part, index) => index % 2 ? part : part.replace(/[\[［]\s*(S[1-9]\d{0,2}(?:\s*[,，、;；]\s*S[1-9]\d{0,2})*)\s*[\]］]/g, (match, group: string, offset: number) => part[offset + match.length] === "(" || part[offset - 1] === "\\" ? match : (group.match(/S[1-9]\d{0,2}/g) ?? []).map(render).join(" "))).join("");
+}
+export function citedLabels(text: string): Set<string> { const labels = new Set<string>(); mapCitations(text, label => { labels.add(label); return `[${label}]`; }); return labels; }

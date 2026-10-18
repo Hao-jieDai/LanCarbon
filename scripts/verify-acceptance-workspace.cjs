@@ -39,7 +39,9 @@ async function verify(root, backup, expectedVersion, reportDirectory) {
     const result = await page.evaluate(() => window.notesDesktop.loadWorkspace());
     if (!result.ok || JSON.stringify(personal(result.workspace)) !== JSON.stringify(expectedPersonal)) throw new Error("Personal Notes, Books or publishing bindings changed");
     if (Number(expectedVersion.split(".")[0]) >= 2) {
-      for (const name of ["Notes", "Books", "Research", "Library"]) await page.getByRole("button", { name, exact: true }).waitFor();
+      const [major, minor, patch] = expectedVersion.split(".").map(Number);
+      const workshopName = major > 2 || minor > 3 || (minor === 3 && patch >= 7) ? "Workshop" : "Research";
+      for (const name of ["Notes", "Books", workshopName, "Library"]) await page.getByRole("button", { name, exact: true }).waitFor();
       const tutorial = result.workspace.books.find(book => book.id === "lancarbon-from-zero-to-one");
       if (!tutorial?.pages["tutorial-page-s6"]) throw new Error("The independent Research and Library tutorial chapter is missing");
     }
@@ -64,6 +66,7 @@ async function verify(root, backup, expectedVersion, reportDirectory) {
   await fs.writeFile(path.join(reports, `verified-${expectedVersion}-${Date.now()}.json`), JSON.stringify(summary, null, 2));
   return summary;
 }
+module.exports = { verify };
 if (require.main === module) {
   const [root, backup, version, reportDirectory] = process.argv.slice(2);
   if (!root || !backup || !version) throw new Error("Usage: node scripts/verify-acceptance-workspace.cjs ROOT BACKUP VERSION [REPORT_DIRECTORY]");

@@ -4,21 +4,22 @@ import { renderMystPreview } from "../preview/mystPreview";
 import type { AIChat as Conversation, AIMessage, AIProvider } from "../shared/ai";
 import { ChatSources } from "./ChatSources";
 import { emptyKnowledgeScope, selectedKnowledgeSources, type KnowledgeScope } from "../shared/knowledge";
-import { hasChatSources, citationLocation, citedLabels, type ChatSourceCatalogue, type CitationTarget } from "../shared/grounding";
+import { hasChatSources, citationLocation, citedLabels, mapCitations, type ChatSourceCatalogue, type CitationTarget } from "../shared/grounding";
 import { ThemedSelect } from "./ThemedSelect";
 
 const Message = memo(function Message({ message, onCopy, onCitation }: { message: AIMessage; onCopy(text: string): void; onCitation(messageId: string, label: string): void }) {
   const evidence = message.grounding?.evidence ?? [], labels = citedLabels(message.content);
   const [expanded, setExpanded] = useState(false);
-  const referenced = message.content.replace(/\[(S[1-9]\d{0,2})\]/g, (text, label: string) => evidence.some(hit => hit.label === label) ? `[${label}](#evidence-${message.id}-${label})` : text);
-  const rendered = useMemo(() => message.role === "assistant" && message.status !== "streaming" && message.content ? renderMystPreview({ id: message.id, title: "AI reply", content: referenced }) : null, [referenced, message.status, message.role, message.id]);
+  const referenced = mapCitations(message.content, label => evidence.some(hit => hit.label === label) ? `[${label}](#evidence-${message.id}-${label})` : `[${label}]`);
+  const rendered = useMemo(() => message.role === "assistant" && message.status !== "streaming" && message.content ? renderMystPreview({ id: message.id, title: "AI reply", content: referenced, navigationAnchors: evidence.map(hit => `evidence-${message.id}-${hit.label}`) }) : null, [referenced, message.status, message.role, message.id, message.grounding]);
   return <article className={`ai-message ai-message-${message.role}`} aria-label={message.role === "user" ? "Your message" : "AI reply"}>
     <header><strong>{message.role === "user" ? "You" : `${message.providerName} · ${message.modelName}`}</strong>{message.content && <button className="quiet-button" aria-label={`Copy ${message.role === "user" ? "message" : "reply"}`} onClick={() => onCopy(message.content)}>Copy</button>}</header>
     {message.reasoning && <details className="ai-reasoning"><summary>Reasoning</summary><pre>{message.reasoning}</pre></details>}
     {rendered && !rendered.error ? <div className="markdown-preview ai-markdown"><div className="preview-body" onClick={event => { const link = (event.target as HTMLElement).closest("a"); if (link) { event.preventDefault(); const label = link.getAttribute("href")?.match(/-([S][1-9]\d{0,2})$/)?.[1]; if (label && evidence.some(hit => hit.label === label)) { setExpanded(true); onCitation(message.id, label); } } }} dangerouslySetInnerHTML={{ __html: rendered.html }}/></div> : <div className="ai-plain-text">{message.content || (message.status === "streaming" ? (message.reasoning ? "Thinking…" : "Waiting for the model…") : "")}</div>}
     {message.status === "streaming" && <span className="ai-generating" role="status">{message.progress || "Generating…"}</span>}
-    {message.grounding?.warnings.some(text => /unavailable|missing|changed|could not|incomplete|no matching|not ready|unrecognized|did not supply/i.test(text)) && <p className="usage-warning" role="status">Some evidence is unavailable or needs checking. See Evidence below.</p>}
+    {message.grounding?.warnings.some(text => /unavailable|missing|changed|could not|incomplete|no matching|not ready|unrecognized|did not supply|needs checking|unresolved/i.test(text)) && <p className="usage-warning" role="status">{message.grounding.warnings.some(text => text.startsWith("Calculation needs checking")) ? "A calculation needs checking. See Evidence below." : "Some evidence needs checking. See Evidence below."}</p>}
     {message.grounding && <details className="chat-evidence" open={expanded} onToggle={event => setExpanded(event.currentTarget.open)}><summary>Evidence · {message.grounding.evidence.length} excerpts · {message.grounding.mode}</summary>
+      {message.grounding.research && <p className="modal-help">{new Set(evidence.map(hit => hit.source.id)).size} sources represented · {message.grounding.research.searches} searches · {message.grounding.research.modelChecks} model checks{message.grounding.research.supplemented ? " · Supplementary search completed" : ""}{message.grounding.research.review === "limited" ? " · Coverage needs checking" : ""}. Coverage checks help retrieval; they do not verify every claim.</p>}
       {message.grounding.warnings.map((text, i) => <p key={i} className="modal-help">{text}</p>)}
       {evidence.map(hit => <article key={hit.label} aria-label={`Evidence ${hit.label}`}><header><strong>{hit.label} · {hit.source.title}</strong><button className="quiet-button" onClick={() => onCitation(message.id, hit.label)}>Open source</button></header><small>{citationLocation(hit)}{labels.has(hit.label) ? " · Cited" : " · Retrieved"}</small><blockquote>{hit.chunk.text}</blockquote></article>)}
     </details>}

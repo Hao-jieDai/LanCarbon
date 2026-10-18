@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.4";
+export const RELEASE_VERSION = "2.4.5";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.4.4 fixes relevance ordering and evidence allocation for multi-source, multi-part RAG questions. Direct matches take priority over source sampling, table continuations are retained, duplicate excerpts are reduced, and at most two focused supplementary searches use the existing retrieval configuration. Source selection now follows Book and Library hierarchies, supports partial selection, and removes the fixed 20-source limit. Existing chats, citations and model settings remain compatible.
+Version 2.4.5 adds bounded evidence planning and coverage checks for document questions, using the currently selected Chat model and existing retrieval connections. Named papers take priority over stale dialogue topics, multi-paper comparisons reserve source-specific evidence, and missing details trigger targeted supplementary searches. Full-width/grouped citations work as source links, and explicit arithmetic disagreements are flagged. All model checks are included in Usage; OCR is not included.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -64,6 +64,8 @@ Send a question; local text extraction, changed-source checks, vector preparatio
 Configure Embedding and optional Rerank in **AI Settings → Retrieval**. **Refresh Embedding models** and **Refresh Rerank models** fetch separate catalogues; IDs can also be entered manually. A catalogue entry is not an account-access guarantee. Save and test a model before use. Refreshing the catalogue alone sends no document text. Changing Embedding models prepares the selected sources for that model when the next question is sent; changing Rerank does not rebuild document vectors. With semantic retrieval off or unavailable, replies identify keyword fallback; cross-language document questions usually need Embedding.
 
 Replies cite saved excerpts as **[S1]**, **[S2]**, etc. Select a citation or expand **Evidence → Open source** to open the PDF page, EPUB chapter/paragraph, or Note/Book source lines. Evidence distinguishes cited and retrieved excerpts. Renaming or moving a source retains its identity; changing or deleting its contents blocks outdated navigation and preserves the quoted excerpt in the chat. Incomplete parsing, unavailable sources, failed retrieval and missing/unknown citations are reported. Questions retrieve relevant excerpts within a bounded context budget; a selected source may have no excerpt in a particular answer. Coverage messages distinguish incomplete preparation and omitted sources. Selection does not mean every page has been read. Check important claims against the original.
+
+For complex document questions, LanCarbon identifies the relevant papers, checks the available evidence and performs bounded supplementary searches before answering. A newly named paper takes priority over earlier topics; follow-up references are resolved from the same source selection. These steps use your currently selected Chat model and existing Embedding/Rerank connections, with at most two additional Chat checks and six supplementary searches per question. Checks and failed attempts are included under Chat in **Usage**; no other model or service is selected automatically. Short self-contained sources can skip the model checks. **Evidence** shows source coverage and supplementary searches. A coverage check is not a guarantee of correctness: an absent excerpt does not establish that a paper lacks a fact. Explicit arithmetic disagreements are flagged for checking against the original operands and units. Stop cancels preparation, checks and generation together.
 
 Text extraction supports text-based PDFs, reflowable EPUBs and Note/Book Markdown. Image-only scans require OCR; encrypted PDFs, DRM/fixed-layout EPUBs, Word and images are not parsed. Limits are 500 PDF pages, 3,000 EPUB chapters, 2 million characters and 2,000 passages per source; cached text is limited to 100 MB and vectors to 128 MB. **AI Settings → Retrieval → Local text tools / Index tools** provides optional inspection and cache clearing. Clearing derived text/vectors preserves original documents, writing, chats and usage. Local parsing and ordinary writing make no retrieval API requests; questions send selected excerpts to the configured services and their usage is recorded.
 
@@ -245,7 +247,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.4.4 修复多来源、多问题 RAG 的相关度排序和证据分配，优先保留直接相关片段，补充表格相邻说明并减少重复片段，最多两次针对性补检索沿用现有配置。资料选择改为 Book 与 Library 目录结构，支持部分选中，取消固定 20 项来源限制，并保持既有聊天、引用和模型设置兼容。
+2.4.5 为资料问答加入有上限的检索规划与证据覆盖检查，沿用当前聊天模型及既有检索连接。点名论文优先于旧对话主题，多文献比较预留各来源证据，缺失细节按来源补查。全角与组合引用支持原文跳转，明确算式的计算错误会提示核对；额外模型检查计入 Usage，本次不包含 OCR。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
@@ -281,6 +283,8 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 在 **AI Settings → Retrieval** 配置 Embedding 和可选 Rerank。**Refresh Embedding models** 与 **Refresh Rerank models** 分别获取对应目录，也可手填模型 ID。目录不保证当前账号可用，请保存后测试。仅刷新目录不会发送文献内容。更换 Embedding 后，下次提问自动为新模型准备所选资料；更换 Rerank 无需重建文献向量。关闭语义检索或接口不可用时，界面明确提示关键词降级；跨语言文献问答通常需要 Embedding。
 
 回答以 **[S1]**、**[S2]** 等引用保存的原文片段。点击引用，或展开 **Evidence → Open source**，可打开 PDF 对应页、EPUB 章节／段落或 Note／Book 对应行。证据区区分实际引用与检索候选。重命名、移动保持资料身份；正文修改或原件删除后阻止旧位置跳转，聊天仍保留当时的原文摘录。解析不完整、资料缺失、检索失败及引用缺失或无效会明确说明。提问在有限上下文预算内检索相关片段，某份已选资料可能没有片段进入本次回答；覆盖提示会说明解析不完整或未纳入的来源。选择资料不代表逐页全文审计；重要结论请对照原文。
+
+复杂资料问题会先识别相关论文、检查已有证据，再按需进行有上限的补充检索，最后生成回答。新点名论文优先于先前主题，连续追问根据同一资料范围识别指代。所有步骤沿用当前所选 Chat 模型和 Embedding／Rerank 连接，每个问题最多额外两次 Chat 检查、六次补充检索；检查与失败尝试均计入 **Usage** 的 Chat 用途，不自动选择其他模型或服务。简短且可完整纳入的资料可跳过模型检查。**Evidence** 展示来源覆盖与是否补查。覆盖检查不保证结论正确，未出现在摘录中不能证明原文没有该信息；明确算式的计算错误会提示回查操作数与单位。Stop 同时停止资料准备、检查与回答生成。
 
 支持文字型 PDF、流式 EPUB 和 Note／Book Markdown。纯扫描 PDF 需要 OCR；加密 PDF、DRM／固定版式 EPUB、Word 和图片暂不解析。每项上限为 PDF 500 页、EPUB 3,000 章、200 万字符及 2,000 个片段；文本缓存最多 100 MB，向量缓存最多 128 MB。**AI Settings → Retrieval → Local text tools / Index tools** 提供可选的检查与清理工具。清除派生缓存不删除原文、写作、聊天或历史用量。普通写作与本地解析不调用检索 API；资料问答会向所选服务发送相关文字，用量计入统计。
 

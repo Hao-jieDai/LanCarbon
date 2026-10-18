@@ -123,3 +123,44 @@ test("source trees select Books and nested folders, retain exceptions beyond twe
     expect(await fs.readFile(await library.filePath(imported.id))).toEqual(readerPdfFixture());
   } finally { await app.close().catch(() => undefined); await cleanup(root); }
 });
+
+
+test("enhanced document questions record model checks and render grouped citations as source links", async ({}, info) => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-grounded-ui-")), data = path.join(root, "Data"); await fs.mkdir(data);
+  const notes = ["Alvarez", "Bennett"].map((name, i) => createNote({ id: `research-${i}`, title: `${name} paper`, content: `${name}. Climate investment evidence.\n\n` + Array.from({ length: 30 }, (_, j) => `Result ${j}: climate investment losses depend on ownership and policy assumptions.`).join("\n\n") }));
+  await fs.writeFile(path.join(data, "notes.json"), JSON.stringify({ version: 2, notes, books: [] }));
+  const app = await launch(root);
+  try {
+    const page = await app.firstWindow(); await page.getByRole("main").waitFor(); await mock(app);
+    await app.evaluate(({ net }) => {
+      const original = net.fetch;
+      net.fetch = async (url, init) => {
+        const request = init?.body ? JSON.parse(init.body as string) : {}, prompt = request.messages?.[0]?.content ?? "";
+        if (!String(url).endsWith("/chat/completions")) return original(url, init);
+        (globalThis as any).groundedCalls.push({ endpoint: String(url), request });
+        const input = JSON.parse(request.messages.at(-1).content.startsWith("{") ? request.messages.at(-1).content : "{}");
+        const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare the selected papers' loss definitions", sourceIds: input.catalogue.map((p: any) => p.id), compare: true, queries: [] }) : prompt.startsWith("Check whether") ? JSON.stringify({ sufficient: true, queries: [] }) : "The definitions differ ［S1，S2］.";
+        return new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 70, completion_tokens: 25 } }), { headers: { "content-type": "application/json" } });
+      };
+    });
+    await page.evaluate(async () => {
+      const ai = window.notesDesktop.ai!;
+      await ai.saveProvider({ id: "siliconflow", kind: "siliconflow", name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", apiKey: "fixture-private-key", models: [{ id: "fixture-chat", name: "Chat fixture", purpose: "chat" }], defaultModel: "fixture-chat" });
+    });
+    await page.getByRole("button", { name: "Workshop", exact: true }).click(); await page.getByRole("button", { name: "Chat", exact: true }).click(); await page.getByRole("button", { name: "Choose sources", exact: true }).click();
+    const picker = page.getByRole("dialog", { name: "Choose chat sources" });
+    for (const note of notes) await picker.getByLabel(`Select ${note.title}`, { exact: true }).check();
+    await picker.getByRole("button", { name: "Use sources", exact: true }).click();
+    await page.getByLabel("Chat message").fill("这几篇文章的损失定义有什么不同？"); await page.getByRole("button", { name: "Send", exact: true }).click();
+    await expect(page.locator(".ai-message-assistant .preview-body")).toContainText("The definitions differ", { timeout: 60000 });
+    await expect(page.getByRole("button", { name: "Stop generating", exact: true })).toHaveCount(0);
+    await expect(page.locator('.ai-message-assistant a[href$="-S1"]')).toHaveCount(1); await expect(page.locator('.ai-message-assistant a[href$="-S2"]')).toHaveCount(1);
+    await page.locator(".chat-evidence summary").click(); await expect(page.locator(".chat-evidence")).toContainText("2 model checks");
+    const saved = await page.evaluate(() => window.notesDesktop.ai!.chats()); if (!saved.ok) throw Error(saved.error);
+    expect(saved.chats[0].messages.at(-1)!.grounding!.research).toMatchObject({ modelChecks: 2, review: "sufficient" });
+    const usage = await page.evaluate(() => window.notesDesktop.ai!.usage()); if (!usage.ok) throw Error(usage.error);
+    expect(usage.usage.records.filter(item => item.purpose === "chat")).toHaveLength(3);
+    await page.screenshot({ path: info.outputPath("enhanced-chat.png") });
+    await page.locator('.ai-message-assistant a[href$="-S1"]').click(); await expect(page.getByLabel("Note title")).toBeVisible();
+  } finally { await app.close().catch(() => undefined); await cleanup(root); }
+});

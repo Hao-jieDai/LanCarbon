@@ -16,6 +16,7 @@ import { emptyKnowledgeScope, type KnowledgeHit } from "../src/shared/knowledge"
 import { defaultAIProviders, type AIChat } from "../src/shared/ai";
 import { CHAT_EVIDENCE_MAX_CHUNKS } from "../src/shared/grounding";
 import { createNote } from "../src/shared/notes";
+import type { AIUsageEvent } from "../src/shared/aiUsage";
 const roots: string[] = [], stores: KnowledgeStore[] = [];
 afterEach(async () => { for (const store of stores.splice(0)) await store.stop(); for (const root of roots.splice(0)) { if (!root.startsWith(os.tmpdir()) || !path.basename(root).startsWith("lancarbon-grounding-")) throw Error("Unsafe cleanup"); await fs.rm(root, { recursive: true, force: true }); } });
 async function fixture() {
@@ -29,9 +30,10 @@ async function fixture() {
   const chats = new AIChatStore(root), settings = new AISettingsStore(root, { available: () => true, encrypt: value => Buffer.from(value), decrypt: value => value.toString() });
   await settings.save({ ...defaultAIProviders()[0], apiKey: "fixture-key-private", models: [{ id: "fixture-model", name: "Fixture", purpose: "chat" }], defaultModel: "fixture-model" });
   const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ choices: [{ message: { content: "A reports 12 percent [S1]. B differs [S2]." } }], usage: { prompt_tokens: 50, completion_tokens: 15, total_tokens: 65 } }), { headers: { "content-type": "application/json" } }));
-  const service = new AIService(settings, () => chats, new AIClient(fetcher), () => {}, grounder), chat = await chats.create("siliconflow", "fixture-model");
+  const usage: AIUsageEvent[] = [];
+  const service = new AIService(settings, () => chats, new AIClient(fetcher, async event => { usage.push(event); }), () => {}, grounder), chat = await chats.create("siliconflow", "fixture-model");
   const settled = async () => { for (let i = 0; i < 300; i++) { const current = await chats.get(chat.id); if (current.messages.at(-1)?.status !== "streaming") return current; await new Promise(resolve => setTimeout(resolve, 5)); } throw Error("Not settled"); };
-  return { root, notes, store, searches, retrieval, grounder, chats, service, chat, fetcher, settled };
+  return { root, notes, store, searches, retrieval, grounder, chats, service, chat, fetcher, usage, settled };
 }
 it("prepares sources automatically, isolates the chat scope, persists evidence and opens stable citations after rename", async () => {
   const f = await fixture(); await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a", "b"] });
@@ -77,7 +79,7 @@ it("retrieves each numbered item independently, keeps per-question candidates an
   const chat = await f.settled(), evidence = chat.messages.at(-1)!.grounding!.evidence;
   expect(f.retrieval.search).toHaveBeenCalledTimes(2);
   expect(vi.mocked(f.retrieval.search).mock.calls.map(call => call[0])).toEqual(["Compare the carbon investment findings.", "Explain the methods and regional assumptions."]);
-  const payload = JSON.parse(JSON.parse(f.fetcher.mock.calls[0][1]!.body as string).messages.find((item: { content: string }) => item.content.startsWith('{"selectedSources":')).content);
+  const payload = JSON.parse(JSON.parse(f.fetcher.mock.calls.at(-1)![1]!.body as string).messages.find((item: { content: string }) => item.content.startsWith('{"selectedSources":')).content);
   expect(payload.questionEvidence).toHaveLength(2); expect(payload.questionEvidence.every((item: { citations: string[] }) => item.citations.length > 0)).toBe(true);
   expect(evidence.length).toBeGreaterThan(24);
   expect((await new AIChatStore(f.root).get(chat.id)).messages.at(-1)!.grounding!.evidence).toEqual(evidence);
@@ -90,6 +92,16 @@ it("bounds empty-result follow-ups, reports missing questions and keeps cancella
   expect(f.retrieval.search).toHaveBeenCalledTimes(5); expect(prepared.grounding.warnings.join(" ")).toContain("Question 3: no matching");
   const controller = new AbortController(); vi.mocked(f.retrieval.search).mockClear().mockImplementation(async () => { controller.abort(); return { hits: [], warnings: [], mode: "keyword" }; });
   await expect(f.grounder.prepare(chat, controller.signal, () => {})).rejects.toThrow(); expect(f.retrieval.search).toHaveBeenCalledTimes(1);
+});
+it("resolves a brief follow-up from earlier evidence when the saved focus is empty and model checks are unavailable", async () => {
+  const f = await fixture(), scope = { ...emptyKnowledgeScope(), noteIds: ["a"] };
+  const first: AIChat = { ...f.chat, sourceScope: scope, messages: [{ id: "q1", role: "user", content: "Explain the carbon investment finding", sourceScope: scope, status: "complete", createdAt: new Date().toISOString() }] };
+  const prepared = await f.grounder.prepare(first, new AbortController().signal, () => {});
+  expect(prepared.grounding.research!.focusSourceIds).toEqual([]);
+  const next: AIChat = { ...first, messages: [...first.messages, { id: "a1", role: "assistant", content: "A previous answer is not evidence", status: "complete", sourceScope: scope, grounding: prepared.grounding, createdAt: new Date().toISOString() }, { id: "q2", role: "user", content: "Why does it happen?", status: "complete", sourceScope: scope, createdAt: new Date().toISOString() }] };
+  await f.grounder.prepare(next, new AbortController().signal, () => {});
+  const query = vi.mocked(f.retrieval.search).mock.calls.at(-1)![0];
+  expect(query).toContain("Explain the carbon investment finding"); expect(query).toContain("Why does it happen?"); expect(query).not.toContain("A previous answer");
 });
 it("discovers role-specific OpenRouter catalogues without polluting Chat models or exposing keys", async () => {
   const urls: string[] = [], fetcher = vi.fn<typeof fetch>(async url => { urls.push(String(url)); return new Response(JSON.stringify({ data: [{ id: "embed:free", name: "Free embedding", architecture: { output_modalities: ["embeddings"] }, pricing: { prompt: "0", completion: "0" } }, { id: "rank:free", architecture: { output_modalities: ["rerank"] } }, { id: "chat", architecture: { output_modalities: ["text"] } }] })); });
@@ -107,4 +119,44 @@ it("accepts and reloads more than twenty sources without leaking unselected writ
   expect(saved.messages.at(-1)!.grounding!.sourceIds).toHaveLength(27);
   expect(saved.messages.at(-1)!.grounding).toEqual(chat.messages.at(-1)!.grounding);
   expect(JSON.stringify(f.fetcher.mock.calls)).not.toContain("SecretOutsideSelection");
+});
+it("uses the selected chat model for bounded planning/review, supplements a missed result and records every paid request", async () => {
+  const f = await fixture();
+  f.notes[0].content = "Alvarez. Facility losses.\n\n" + Array.from({ length: 45 }, (_, i) => `Facility result ${i}. Investment loss at plant level.`).join("\n\n");
+  f.notes[1].content = "Bennett. Investor losses.\n\n" + Array.from({ length: 45 }, (_, i) => i === 35 ? "Aggregate present value is 1.73 trillion; this is investor wealth, not GDP." : `Investor method ${i}. Ownership assumptions differ.`).join("\n\n");
+  vi.mocked(f.retrieval.search).mockImplementation(async (query, ids) => {
+    const corpus = (await f.store.corpus()).filter(hit => ids!.includes(hit.source.id));
+    return { hits: (query.includes("aggregate present value") ? corpus.filter(hit => hit.chunk.text.includes("1.73 trillion")) : corpus.slice(0, 6)).map(hit => ({ ...hit, score: 1, retrieval: "keyword" as const })), warnings: [], mode: "keyword" };
+  });
+  f.fetcher.mockImplementation(async (_url, init) => {
+    const body = JSON.parse(init!.body as string), prompt = body.messages[0].content;
+    const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare facility and investor loss definitions", sourceIds: ["note:a", "note:b"], compare: true, queries: [] }) : prompt.startsWith("Check whether") ? JSON.stringify({ sufficient: false, queries: [{ query: "aggregate present value investor wealth", sourceIds: ["note:b"] }] }) : "The retrieved metrics differ ［S1，S2］. 4821.6 - 3139.2 = 1672.4.";
+    return new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 100, completion_tokens: 20 } }), { headers: { "content-type": "application/json" } });
+  });
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a", "b"] });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "这几篇文章的损失定义有什么不同？");
+  const result = await f.settled(), reply = result.messages.at(-1)!;
+  expect(reply.status).toBe("complete"); expect(f.fetcher).toHaveBeenCalledTimes(3);
+  expect(JSON.stringify(JSON.parse(f.fetcher.mock.calls.at(-1)![1]!.body as string))).toContain("1.73 trillion");
+  expect(reply.grounding!.research).toMatchObject({ modelChecks: 2, supplemented: true, review: "limited" });
+  expect(reply.grounding!.warnings.some(text => text.includes("1682.4"))).toBe(true);
+  expect(reply.grounding!.warnings.some(text => text.includes("did not supply valid"))).toBe(false);
+  const starts = f.usage.filter(event => event.type === "start"); expect(starts).toHaveLength(3);
+  expect(starts.every(event => event.type === "start" && event.request.modelId === "fixture-model" && event.request.purpose === "chat")).toBe(true);
+  expect(JSON.stringify(f.fetcher.mock.calls)).not.toContain("SecretOutsideSelection");
+  expect((await new AIChatStore(f.root).get(result.id)).messages.at(-1)!.grounding).toEqual(reply.grounding);
+});
+it("cancels during a model evidence review without starting a final answer", async () => {
+  const f = await fixture(); f.notes[0].content += "\n\n" + Array.from({ length: 45 }, (_, i) => `Detailed method ${i}. Investment assumptions.`).join("\n\n");
+  let reviewing = false;
+  f.fetcher.mockImplementation(async (_url, init) => {
+    const request = JSON.parse(init!.body as string);
+    if (request.messages[0].content.startsWith("Check whether")) {
+      reviewing = true; await new Promise<void>(resolve => init!.signal!.addEventListener("abort", () => resolve(), { once: true })); throw Error("aborted");
+    }
+    return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ question: "Summarize methods", sourceIds: ["note:a"], compare: false, queries: [] }) } }] }), { headers: { "content-type": "application/json" } });
+  });
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Summarize methods");
+  await vi.waitFor(() => expect(reviewing).toBe(true)); await f.service.stop(f.chat.id);
+  expect((await f.settled()).messages.at(-1)!.status).toBe("stopped"); expect(f.fetcher).toHaveBeenCalledTimes(2);
 });

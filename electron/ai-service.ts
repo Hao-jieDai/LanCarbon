@@ -75,7 +75,15 @@ export class AIService {
         try {
           if (hasChatSources(chat.sourceScope)) {
             if (!this.grounder) throw Error("Document questions are unavailable.");
-            const prepared = await this.grounder.prepare(chat, controller.signal, progress); reply.grounding = prepared.grounding;
+            const prepared = await this.grounder.prepare(chat, controller.signal, progress, async (messages, stage) => {
+              let output = "", length = 0;
+              await this.client.complete(provider, key, modelId, messages, controller.signal, (content, reasoning) => {
+                length += content.length + reasoning.length;
+                if (length > 40_000) throw Error("Evidence check response limit reached");
+                output += content;
+              }, false, () => {}, { maxTokens: stage === "plan" ? 1400 : 1800, disableThinking: true, timeoutMs: 90_000, maxRetries: 0 });
+              return output;
+            }); reply.grounding = prepared.grounding;
             context = [context[0], ...prepared.messages];
             await chatStore.update(id, saved => { const message = saved.messages.find(message => message.id === reply.id); if (message) message.grounding = prepared.grounding; });
             progress("Answering from selected sources…");

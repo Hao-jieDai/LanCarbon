@@ -9,6 +9,12 @@ function render(content: string, documents?: PreviewDocument[]) {
 }
 
 describe("Phase 2C MyST preview", () => {
+  it("keeps explicitly allowed UI evidence links clickable without enabling arbitrary unresolved anchors", () => {
+    const result = renderMystPreview({ id: "reply", title: "Reply", content: "[S1](#evidence-reply-S1) [S2](#evidence-reply-S2)", navigationAnchors: ["evidence-reply-S1"] });
+    const host = document.createElement("div"); host.innerHTML = result.html;
+    expect(host.querySelector('a[href="#evidence-reply-S1"]')).toHaveTextContent("S1");
+    expect(host.querySelectorAll("a")).toHaveLength(1); expect(result.warnings.join(" ")).toContain("Unresolved reference");
+  });
   it("renders offline inline/block/role/directive math with labels and local equation numbers", () => {
     const result = render('$x^2$ and {math}`y^2`\n\n```{math}\n:label: eq-one\nE=mc^2\n```\n\n$$\\label{eq-two}z=3$$\n\n{eq}`eq-one` and [](#eq-two)');
     expect(result.warnings).toEqual([]);

@@ -28,11 +28,11 @@ function adjacent(a: KnowledgeHit, b: KnowledgeHit): boolean {
 }
 
 /** Relevant evidence is reserved per question before adding neighbours or overview context. */
-export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][], sourceIds: string[], broad: boolean): ChatEvidence[] {
+export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][], sourceIds: string[], broad: boolean, requiredSourceIds: string[] = [], limitTokens = 30_000): ChatEvidence[] {
   const allowed = new Set(sourceIds), current = new Map(corpus.filter(hit => allowed.has(hit.source.id)).map(hit => [evidenceKey(hit), hit]));
   const valid = (hit: KnowledgeHit) => { const latest = current.get(evidenceKey(hit)); return latest?.fingerprint === hit.fingerprint && latest.chunk.text === hit.chunk.text ? latest : undefined; };
   const ranked = groups.map(group => group.flatMap(hit => { const latest = valid(hit); return latest ? [latest] : []; }));
-  const budget = Math.min(30_000, (broad ? 12_000 : 6_000) + Math.max(0, groups.length - 1) * 4_000 + Math.min(8, Math.max(0, sourceIds.length - 1)) * 1_000);
+  const budget = Math.min(30_000, limitTokens, (broad ? 12_000 : 6_000) + Math.max(0, groups.length - 1) * 4_000 + Math.min(8, Math.max(0, sourceIds.length - 1)) * 1_000);
   const result: KnowledgeHit[] = [], seen = new Set<string>(), texts = new Set<string>(); let tokens = 0;
   const add = (hit?: KnowledgeHit) => {
     if (!hit) return;
@@ -43,6 +43,12 @@ export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][],
   // Reserve matches for EVERY question before any source coverage or neighbours.
   // Source count must not turn this into one arbitrary passage per source.
   for (let depth = 0; depth < 6; depth++) for (const group of ranked) add(group[depth]);
+
+  // Reserve direct, source-specific retrieval before neighbour expansion can consume the budget.
+  const direct = new Map<string, Map<string, KnowledgeHit>>();
+  for (const group of ranked) for (const hit of group) { const items = direct.get(hit.source.id) ?? new Map<string, KnowledgeHit>(); items.set(evidenceKey(hit), hit); direct.set(hit.source.id, items); }
+  const reserved = requiredSourceIds.map(id => [...(direct.get(id)?.values() ?? [])]);
+  for (let depth = 0; depth < 4; depth++) for (const candidates of reserved) add(candidates[depth]);
 
   const sources = new Map<string, KnowledgeHit[]>();
   for (const hit of current.values()) { const siblings = sources.get(hit.source.id) ?? []; siblings.push(hit); sources.set(hit.source.id, siblings); }

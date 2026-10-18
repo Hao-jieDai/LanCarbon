@@ -1,7 +1,7 @@
 import { aiModelName, type AIModel, type AIProvider } from "../src/shared/ai";
 import { randomUUID } from "node:crypto";
 import { parseAIUsage, type AIReportedUsage, type AIUsageEvent, type AIUsagePurpose } from "../src/shared/aiUsage";
-export interface AICompletionOptions { purpose?: AIUsagePurpose; maxTokens?: number; temperature?: number; disableThinking?: boolean; timeoutMs?: number }
+export interface AICompletionOptions { purpose?: AIUsagePurpose; maxTokens?: number; temperature?: number; disableThinking?: boolean; timeoutMs?: number; maxRetries?: number }
 
 export function redactAIError(error: unknown, key = ""): string {
   let text = error instanceof Error ? error.message : String(error);
@@ -64,7 +64,7 @@ export class AIClient {
           onProgress(""); return;
         } catch (error) {
           const delay = error instanceof AIRequestError ? error.retryAfter ?? (attempt === 0 ? 5 : 15) : 0;
-          if (!(error instanceof AIRequestError) || ![429, 500, 502, 503, 504].includes(error.status) || received || attempt >= 2 || controller.signal.aborted || delay > 120) throw error;
+          if (!(error instanceof AIRequestError) || ![429, 500, 502, 503, 504].includes(error.status) || received || attempt >= (options.maxRetries ?? 2) || controller.signal.aborted || delay > 120) throw error;
           onProgress(`Upstream service busy. Retrying ${attempt + 1}/2 in ${Math.max(1, Math.ceil(delay))}s…`);
           await waitForRetry(Math.max(1, delay) * 1000, controller.signal);
         }
