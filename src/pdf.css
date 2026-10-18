@@ -26,3 +26,16 @@ blockquote { margin: 5mm 0; padding: 1mm 4mm; border-left: 1mm solid #888; }
 .preview-smallcaps { font-variant: small-caps; }
 hr { border: 0; border-top: 1px solid #aaa; }
 @media print { #pdf-page { width: auto; } }
+.pdf-chat-metadata { margin: 1mm 0 5mm; color: #666; font-size: 9pt; }
+.pdf-chat-message { padding-top: 4mm; margin-top: 6mm; border-top: 1px solid #bbb; }
+.pdf-chat-message > h2 { margin: 0; font-size: 15pt; }
+.pdf-chat-message h3 { font-size: 12pt; }
+.pdf-chat-user .pdf-chat-answer { border-left: 1mm solid #b48080; padding-left: 4mm; }
+.pdf-thinking { color: #505050; border-left: .5mm solid #bbb; padding-left: 4mm; }
+.pdf-thinking h3 { margin-top: 4mm; }
+.pdf-plain-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.pdf-chat-warning { color: #733b3b; font-size: 9pt; }
+.pdf-chat-sources { margin-top: 5mm; font-size: 9pt; }
+.pdf-chat-sources h3 { margin-bottom: 2mm; }
+.pdf-source-entry > p { margin: 2mm 0; }
+.pdf-source-entry blockquote { font-size: 9pt; }

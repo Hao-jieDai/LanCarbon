@@ -95,6 +95,7 @@ const api: NotesDesktopApi = {
     createChat: (providerId, modelId) => ipcRenderer.invoke("ai:create-chat", providerId, modelId),
     renameChat: (id, title) => ipcRenderer.invoke("ai:rename-chat", id, title),
     deleteChat: id => ipcRenderer.invoke("ai:delete-chat", id),
+    exportPdf: (id, options) => ipcRenderer.invoke("ai:export-pdf", id, options),
     send: (id, providerId, modelId, text, retry) => ipcRenderer.invoke("ai:send", id, providerId, modelId, text, retry),
     stop: id => ipcRenderer.invoke("ai:stop", id),
     onChat: callback => { const listener = (_event: Electron.IpcRendererEvent, chat: Parameters<typeof callback>[0]) => callback(chat); ipcRenderer.on("ai:chat", listener); return () => ipcRenderer.removeListener("ai:chat", listener); },

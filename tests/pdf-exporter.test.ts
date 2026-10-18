@@ -3,12 +3,13 @@ import { promises as fs } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const print = vi.hoisted(() => ({ render: vi.fn(), pdf: vi.fn(), destroy: vi.fn(), payload: "" }));
-vi.mock("electron", () => ({ BrowserWindow: class {
-  webContents = { setWindowOpenHandler: vi.fn(), on: vi.fn(), executeJavaScript: (script: string) => { print.payload = script; return print.render(); }, printToPDF: print.pdf };
+const print = vi.hoisted(() => ({ render: vi.fn(), pdf: vi.fn(), destroy: vi.fn(), network: vi.fn(), payload: "" }));
+vi.mock("electron", () => ({ session: { fromPartition: vi.fn() }, BrowserWindow: class {
+  webContents = { session: { webRequest: { onBeforeRequest: print.network } }, setWindowOpenHandler: vi.fn(), on: vi.fn(), executeJavaScript: (script: string) => { print.payload = script; return print.render(); }, printToPDF: print.pdf };
   loadFile = vi.fn(); loadURL = vi.fn(); isDestroyed = () => false; destroy = print.destroy;
 } }));
-import { exportPagePdf, pdfFileName } from "../electron/pdf-exporter";
+import { exportChatPdf, exportPagePdf, pdfFileName } from "../electron/pdf-exporter";
+import type { AIChat } from "../src/shared/ai";
 import { AssetStore } from "../electron/assets";
 import { createNote } from "../src/shared/notes";
 import { addNoteToBook, createBook } from "../src/shared/books";
@@ -34,6 +35,9 @@ describe("single-page PDF exporter", () => {
     expect((await fs.readFile(destination)).toString()).toContain("%PDF");
     expect(print.pdf).toHaveBeenCalledWith(expect.objectContaining({ pageSize: "A4", printBackground: true }));
     expect(JSON.stringify(workspace)).toBe(before); expect(print.destroy).toHaveBeenCalledOnce();
+    const callback = vi.fn(), filter = print.network.mock.calls.at(-1)![0];
+    filter({ url: "https://remote.invalid/image.png" }, callback); expect(callback).toHaveBeenLastCalledWith({ cancel: true });
+    filter({ url: "file:///local/offline-font.woff2" }, callback); expect(callback).toHaveBeenLastCalledWith({ cancel: false });
     expect(await fs.readdir(directory)).toEqual(["note.pdf"]);
   });
   it("prints the selected Book page while passing other pages only as reference context", async () => {
@@ -57,5 +61,13 @@ describe("single-page PDF exporter", () => {
     await expect(exportPagePdf(workspace, note.id, path.join(directory, "missing.pdf"), store)).rejects.toThrow("Missing or damaged resource");
     await expect(exportPagePdf(workspace, "gone", path.join(directory, "gone.pdf"), store)).rejects.toThrow("no longer exists");
     expect(print.pdf).not.toHaveBeenCalled();
+  });
+  it("refuses empty/live chats before printing or replacing an existing PDF", async () => {
+    const chat: AIChat = { id: "chat", title: "Chat", providerId: "", modelId: "", messages: [], createdAt: "2026-10-18", updatedAt: "2026-10-18" }, destination = path.join(directory, "chat.pdf");
+    await fs.writeFile(destination, "previous");
+    await expect(exportChatPdf(chat, { includeThinking: true, includeEvidence: false }, destination)).rejects.toThrow("no messages");
+    chat.messages.push({ id: "stream", role: "assistant", status: "streaming", createdAt: "2026-10-18", content: "partial" });
+    await expect(exportChatPdf(chat, { includeThinking: true, includeEvidence: false }, destination)).rejects.toThrow("stop it");
+    expect(print.pdf).not.toHaveBeenCalled(); expect(await fs.readFile(destination, "utf8")).toBe("previous");
   });
 });

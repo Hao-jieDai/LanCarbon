@@ -842,6 +842,10 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .ai-reasoning { margin: 8px 0; color: var(--muted); font-size: 12px; }
 .ai-reasoning summary { cursor: pointer; }
 .ai-reasoning pre { max-height: 240px; overflow: auto; white-space: pre-wrap; line-height: 1.6; }
+.chat-pdf-options > label { display: flex; align-items: center; gap: 9px; margin: 14px 0; }
+.chat-pdf-options input[type="checkbox"] { width: auto; flex: none; accent-color: var(--accent); }
+.chat-pdf-options > label { display: flex; align-items: center; gap: 9px; margin: 14px 0; }
+.chat-pdf-options input[type="checkbox"] { width: auto; flex: none; accent-color: var(--accent); }
 .ai-generating { display: block; margin-top: 8px; color: var(--accent); font-size: 11px; }
 .ai-composer { flex: none; padding: 12px 22px 16px; border-top: 1px solid var(--line); }
 .ai-composer textarea { min-height: 72px; max-height: 160px; resize: vertical; line-height: 1.6; }

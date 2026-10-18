@@ -19,7 +19,7 @@ import { knowledgeSnapshot } from "./knowledge-sources";
 import { LocalKnowledgeExtractor } from "./knowledge-extractor";
 import type { KnowledgeScope } from "../src/shared/knowledge";
 import { MAX_ASSET_BYTES, resourceUsages, type AssetConflictChoice } from "../src/shared/assets";
-import { exportPagePdf, pdfFileName } from "./pdf-exporter";
+import { exportChatPdf, exportPagePdf, pdfFileName } from "./pdf-exporter";
 import { withoutResources } from "../src/shared/removeResourceReferences";
 import { exportBookToDirectory } from "./book-exporter";
 import { bookSourceHash, buildBookForPublication, buildBookInParent, preflightBook } from "./book-builder";
@@ -660,6 +660,24 @@ app.whenReady().then(async () => {
     return environmentManager.install(id);
   });
   let pdfExporting = false;
+  aiHandler("ai:export-pdf", async (id: string, options: import("../src/shared/ai").ChatPdfOptions) => {
+    if (pdfExporting) throw Error("A PDF export is already in progress");
+    if (typeof id !== "string" || !options || typeof options.includeThinking !== "boolean" || typeof options.includeEvidence !== "boolean") throw Error("Invalid chat PDF options");
+    pdfExporting = true;
+    try {
+      let chat = await chats().get(id);
+      if (!chat.messages.length) throw Error("This conversation has no messages to export.");
+      if (chat.messages.some(message => message.status === "streaming")) throw Error("Wait for the reply to finish or stop it before exporting PDF.");
+      await fs.mkdir(directories.pdfs, { recursive: true });
+      const selection = await dialog.showSaveDialog(mainWindow!, { title: "Export chat as PDF", defaultPath: path.join(directories.pdfs, pdfFileName(chat.title)), filters: [{ name: "PDF document", extensions: ["pdf"] }], properties: ["showOverwriteConfirmation", "createDirectory"] });
+      if (selection.canceled || !selection.filePath) return { ok: false, canceled: true, error: "PDF export canceled" };
+      // Re-read after the save dialog: a different window/request must not export a live reply.
+      chat = await chats().get(id);
+      const destination = /\.pdf$/i.test(selection.filePath) ? selection.filePath : `${selection.filePath}.pdf`;
+      const warnings = await exportChatPdf(chat, options, destination);
+      return { destination, warnings };
+    } finally { pdfExporting = false; }
+  });
   ipcMain.handle("page:export-pdf", async (event, noteId: string) => {
     if (!mainWindow || event.sender.id !== mainWindow.webContents.id) return { ok: false, error: "The main window is unavailable" };
     if (pdfExporting) return { ok: false, error: "A PDF export is already in progress" };

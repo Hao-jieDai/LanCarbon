@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.5";
+export const RELEASE_VERSION = "2.4.6";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.4.5 adds bounded evidence planning and coverage checks for document questions, using the currently selected Chat model and existing retrieval connections. Named papers take priority over stale dialogue topics, multi-paper comparisons reserve source-specific evidence, and missing details trigger targeted supplementary searches. Full-width/grouped citations work as source links, and explicit arithmetic disagreements are flagged. All model checks are included in Usage; OCR is not included.
+Version 2.4.6 adds offline export of a whole chat as PDF, including saved Thinking by default, per-reply model names and source locations, with optional cited excerpts. Document questions reserve monetary result passages, exclude dense bibliographies unless requested, and supply original-context unit equivalents. Explicit amount/scenario conflicts are flagged for checking. Planning and coverage checks now run selectively, with smaller evidence budgets for focused questions; existing Chat and retrieval connections are retained. This does not guarantee factual accuracy or add OCR.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -39,6 +39,8 @@ LanCarbon now uses the new Logo consistently across the application, installer, 
 SiliconFlow uses base address \`https://api.siliconflow.cn/v1\`; OpenRouter uses \`https://openrouter.ai/api/v1\`. Use **Refresh models** or your platform's catalogue for current IDs. The OpenRouter model \`meta-llama/llama-4-maverick\` can be added manually when available to your account.
 
 Keys remain encrypted for the current Windows account in **Config/ai-settings.json**; only masked previews reach the interface. Moving to another Windows account may require re-entry. Back up the complete LanCarbon home folder, including Config, Cache and Library, together with any separately selected Data location. Conversations are local in **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; closing LanCarbon stops it and preserves partial replies. Chat submits your conversation text and response guidelines; Notes, Books and Library files are not automatically attached. PDF and EPUB reading are available in Library; retrieval and literature workflows follow separately.
+
+Use **Export PDF** beside the chat title to save the entire conversation. **Include Thinking** is checked by default and exports all saved reasoning, even when collapsed on screen; disable it for answers only. **Include cited evidence excerpts** adds the original passages referenced by each reply. Model names, timestamps, source titles and locations remain included; citation labels belong to their own reply. Wait for generation to finish or stop it first. Export is offline, makes no model request and defaults to the **PDFs** folder. Stopped/error replies retain their partial status; exporting does not delete the chat.
 
 ### Retrieval models
 
@@ -65,7 +67,9 @@ Configure Embedding and optional Rerank in **AI Settings → Retrieval**. **Refr
 
 Replies cite saved excerpts as **[S1]**, **[S2]**, etc. Select a citation or expand **Evidence → Open source** to open the PDF page, EPUB chapter/paragraph, or Note/Book source lines. Evidence distinguishes cited and retrieved excerpts. Renaming or moving a source retains its identity; changing or deleting its contents blocks outdated navigation and preserves the quoted excerpt in the chat. Incomplete parsing, unavailable sources, failed retrieval and missing/unknown citations are reported. Questions retrieve relevant excerpts within a bounded context budget; a selected source may have no excerpt in a particular answer. Coverage messages distinguish incomplete preparation and omitted sources. Selection does not mean every page has been read. Check important claims against the original.
 
-For complex document questions, LanCarbon identifies the relevant papers, checks the available evidence and performs bounded supplementary searches before answering. A newly named paper takes priority over earlier topics; follow-up references are resolved from the same source selection. These steps use your currently selected Chat model and existing Embedding/Rerank connections, with at most two additional Chat checks and six supplementary searches per question. Checks and failed attempts are included under Chat in **Usage**; no other model or service is selected automatically. Short self-contained sources can skip the model checks. **Evidence** shows source coverage and supplementary searches. A coverage check is not a guarantee of correctness: an absent excerpt does not establish that a paper lacks a fact. Explicit arithmetic disagreements are flagged for checking against the original operands and units. Stop cancels preparation, checks and generation together.
+For complex document questions, LanCarbon identifies the relevant papers, checks the available evidence and performs bounded supplementary searches before answering. A newly named paper takes priority over earlier topics; follow-up references are resolved from the same source selection. These steps use your currently selected Chat model and existing Embedding/Rerank connections, with at most two additional Chat checks and six supplementary searches per question. Checks and failed attempts are included under Chat in **Usage**; no other model or service is selected automatically. Short self-contained sources and focused questions with usable coverage can skip model checks. **Evidence** shows source coverage and supplementary searches. A coverage check is not a guarantee of correctness: an absent excerpt does not establish that a paper lacks a fact. Explicit arithmetic disagreements are flagged for checking against the original operands and units. Stop cancels preparation, checks and generation together.
+
+Planning and coverage checks are selected according to the question and available evidence, rather than always making two extra requests. Their maximum remains two Chat checks and six supplementary searches. **Evidence** also reports explicit amount/unit or scenario conflicts when locally detectable; it does not automatically rewrite a scientific claim. Unit equivalents retain the cited original context. Important results still require checking against their scenario, price year and discount basis.
 
 Text extraction supports text-based PDFs, reflowable EPUBs and Note/Book Markdown. Image-only scans require OCR; encrypted PDFs, DRM/fixed-layout EPUBs, Word and images are not parsed. Limits are 500 PDF pages, 3,000 EPUB chapters, 2 million characters and 2,000 passages per source; cached text is limited to 100 MB and vectors to 128 MB. **AI Settings → Retrieval → Local text tools / Index tools** provides optional inspection and cache clearing. Clearing derived text/vectors preserves original documents, writing, chats and usage. Local parsing and ordinary writing make no retrieval API requests; questions send selected excerpts to the configured services and their usage is recorded.
 
@@ -247,7 +251,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.4.5 为资料问答加入有上限的检索规划与证据覆盖检查，沿用当前聊天模型及既有检索连接。点名论文优先于旧对话主题，多文献比较预留各来源证据，缺失细节按来源补查。全角与组合引用支持原文跳转，明确算式的计算错误会提示核对；额外模型检查计入 Usage，本次不包含 OCR。
+2.4.6 新增整段聊天离线导出 PDF，默认包含已保存的 Thinking、逐条模型名称与来源位置，可选附加实际引用的摘录。资料问答优先保留金额结果段落，非文献列表问题排除密集参考文献，并附带原文上下文及单位换算；明确的金额数量级或情景冲突会提示核对。规划与覆盖检查改为按需触发，聚焦问题使用较小证据预算，沿用既有 Chat 与检索连接。本次不包含 OCR，也不承诺回答绝对正确。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
@@ -284,7 +288,9 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 
 回答以 **[S1]**、**[S2]** 等引用保存的原文片段。点击引用，或展开 **Evidence → Open source**，可打开 PDF 对应页、EPUB 章节／段落或 Note／Book 对应行。证据区区分实际引用与检索候选。重命名、移动保持资料身份；正文修改或原件删除后阻止旧位置跳转，聊天仍保留当时的原文摘录。解析不完整、资料缺失、检索失败及引用缺失或无效会明确说明。提问在有限上下文预算内检索相关片段，某份已选资料可能没有片段进入本次回答；覆盖提示会说明解析不完整或未纳入的来源。选择资料不代表逐页全文审计；重要结论请对照原文。
 
-复杂资料问题会先识别相关论文、检查已有证据，再按需进行有上限的补充检索，最后生成回答。新点名论文优先于先前主题，连续追问根据同一资料范围识别指代。所有步骤沿用当前所选 Chat 模型和 Embedding／Rerank 连接，每个问题最多额外两次 Chat 检查、六次补充检索；检查与失败尝试均计入 **Usage** 的 Chat 用途，不自动选择其他模型或服务。简短且可完整纳入的资料可跳过模型检查。**Evidence** 展示来源覆盖与是否补查。覆盖检查不保证结论正确，未出现在摘录中不能证明原文没有该信息；明确算式的计算错误会提示回查操作数与单位。Stop 同时停止资料准备、检查与回答生成。
+复杂资料问题会先识别相关论文、检查已有证据，再按需进行有上限的补充检索，最后生成回答。新点名论文优先于先前主题，连续追问根据同一资料范围识别指代。所有步骤沿用当前所选 Chat 模型和 Embedding／Rerank 连接，每个问题最多额外两次 Chat 检查、六次补充检索；检查与失败尝试均计入 **Usage** 的 Chat 用途，不自动选择其他模型或服务。简短资料及证据充足的聚焦问题可跳过模型检查。**Evidence** 展示来源覆盖与是否补查。覆盖检查不保证结论正确，未出现在摘录中不能证明原文没有该信息；明确算式的计算错误会提示回查操作数与单位。Stop 同时停止资料准备、检查与回答生成。
+
+规划与覆盖检查依据问题和现有证据按需执行，不固定增加两次调用；上限仍为两次 Chat 检查和六次补充检索。**Evidence** 也会提示本地可识别的金额单位或情景冲突，不自动改写科学结论。单位换算保留对应的原文上下文；关键结果仍需核对情景、价格年份及折现口径。
 
 支持文字型 PDF、流式 EPUB 和 Note／Book Markdown。纯扫描 PDF 需要 OCR；加密 PDF、DRM／固定版式 EPUB、Word 和图片暂不解析。每项上限为 PDF 500 页、EPUB 3,000 章、200 万字符及 2,000 个片段；文本缓存最多 100 MB，向量缓存最多 128 MB。**AI Settings → Retrieval → Local text tools / Index tools** 提供可选的检查与清理工具。清除派生缓存不删除原文、写作、聊天或历史用量。普通写作与本地解析不调用检索 API；资料问答会向所选服务发送相关文字，用量计入统计。
 
@@ -301,6 +307,8 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 SiliconFlow 地址为 \`https://api.siliconflow.cn/v1\`，OpenRouter 地址为 \`https://openrouter.ai/api/v1\`。通过 **Refresh models** 或平台目录获取当前准确 ID；账号可用时可以手动添加 OpenRouter 模型 \`meta-llama/llama-4-maverick\`。
 
 密钥仍使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，界面只接收掩码。迁移 Windows 账户后可能需要重填；备份时保留完整 LanCarbon 文件夹（包括 Config、Cache 和 Library），另选的数据目录也需同时备份。会话位于 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，关闭软件会停止生成并保存已有回复。Chat 提交会话文字与回答规范，Notes、Books 和 Library 文件不会自动附加。PDF 和 EPUB 可在 Library 内阅读；检索与文献工作流另行提供。
+
+点击聊天标题旁的 **Export PDF** 导出完整会话。默认勾选 **Include Thinking**，即使界面已折叠也会完整导出已保存的推理内容；取消勾选则只导出问答。**Include cited evidence excerpts** 可附加每条回复实际引用的原文摘录。逐条保留模型名称、时间及来源位置，各轮引用编号互不混淆。请先等待生成完成或停止生成；导出在本机完成，不调用模型，默认保存到 **PDFs** 文件夹。停止或失败的回复保留未完成标记，导出不会删除聊天。
 
 ### 工作区
 

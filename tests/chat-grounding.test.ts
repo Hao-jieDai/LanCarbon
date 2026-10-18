@@ -32,7 +32,7 @@ async function fixture() {
   const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ choices: [{ message: { content: "A reports 12 percent [S1]. B differs [S2]." } }], usage: { prompt_tokens: 50, completion_tokens: 15, total_tokens: 65 } }), { headers: { "content-type": "application/json" } }));
   const usage: AIUsageEvent[] = [];
   const service = new AIService(settings, () => chats, new AIClient(fetcher, async event => { usage.push(event); }), () => {}, grounder), chat = await chats.create("siliconflow", "fixture-model");
-  const settled = async () => { for (let i = 0; i < 300; i++) { const current = await chats.get(chat.id); if (current.messages.at(-1)?.status !== "streaming") return current; await new Promise(resolve => setTimeout(resolve, 5)); } throw Error("Not settled"); };
+  const settled = async () => { const deadline = Date.now() + 10_000; while (Date.now() < deadline) { const current = await chats.get(chat.id); if (current.messages.at(-1)?.status !== "streaming") return current; await new Promise(resolve => setTimeout(resolve, 5)); } throw Error("Not settled"); };
   return { root, notes, store, searches, retrieval, grounder, chats, service, chat, fetcher, usage, settled };
 }
 it("prepares sources automatically, isolates the chat scope, persists evidence and opens stable citations after rename", async () => {
@@ -156,7 +156,15 @@ it("cancels during a model evidence review without starting a final answer", asy
     }
     return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ question: "Summarize methods", sourceIds: ["note:a"], compare: false, queries: [] }) } }] }), { headers: { "content-type": "application/json" } });
   });
-  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Summarize methods");
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Compare these papers' definitions");
   await vi.waitFor(() => expect(reviewing).toBe(true)); await f.service.stop(f.chat.id);
   expect((await f.settled()).messages.at(-1)!.status).toBe("stopped"); expect(f.fetcher).toHaveBeenCalledTimes(2);
+});
+it("skips paid planning/review for a resolved focused follow-up with usable coverage", async () => {
+  const f = await fixture(); f.notes[0].content = "Alvarez. Investment losses.\n\n" + Array.from({ length: 45 }, (_, i) => `Result ${i}: total losses are ${i + 1}.2 billion CNY.`).join("\n\n");
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Alvarez: total losses是多少？");
+  const saved = await f.settled(); expect(saved.messages.at(-1)!.status).toBe("complete");
+  expect(f.fetcher).toHaveBeenCalledTimes(1); expect(saved.messages.at(-1)!.grounding!.research).toMatchObject({ modelChecks: 0, review: "not-needed" });
+  expect(JSON.stringify(f.fetcher.mock.calls)).toContain("unitEquivalents");
 });

@@ -1,5 +1,6 @@
 import { CHAT_EVIDENCE_MAX_CHUNKS, type ChatEvidence } from "../src/shared/grounding";
 import type { KnowledgeHit } from "../src/shared/knowledge";
+import { bibliography } from "./chat-quality";
 
 /** Split explicit question lists locally; keep every item, even when the request budget is reached. */
 export function documentQuestions(question: string): string[] {
@@ -28,14 +29,14 @@ function adjacent(a: KnowledgeHit, b: KnowledgeHit): boolean {
 }
 
 /** Relevant evidence is reserved per question before adding neighbours or overview context. */
-export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][], sourceIds: string[], broad: boolean, requiredSourceIds: string[] = [], limitTokens = 30_000): ChatEvidence[] {
+export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][], sourceIds: string[], broad: boolean, requiredSourceIds: string[] = [], limitTokens = 30_000, includeBibliography = false): ChatEvidence[] {
   const allowed = new Set(sourceIds), current = new Map(corpus.filter(hit => allowed.has(hit.source.id)).map(hit => [evidenceKey(hit), hit]));
-  const valid = (hit: KnowledgeHit) => { const latest = current.get(evidenceKey(hit)); return latest?.fingerprint === hit.fingerprint && latest.chunk.text === hit.chunk.text ? latest : undefined; };
+  const valid = (hit: KnowledgeHit) => { const latest = current.get(evidenceKey(hit)); return latest?.fingerprint === hit.fingerprint && latest.chunk.text === hit.chunk.text && (includeBibliography || !bibliography(latest)) ? latest : undefined; };
   const ranked = groups.map(group => group.flatMap(hit => { const latest = valid(hit); return latest ? [latest] : []; }));
   const budget = Math.min(30_000, limitTokens, (broad ? 12_000 : 6_000) + Math.max(0, groups.length - 1) * 4_000 + Math.min(8, Math.max(0, sourceIds.length - 1)) * 1_000);
   const result: KnowledgeHit[] = [], seen = new Set<string>(), texts = new Set<string>(); let tokens = 0;
   const add = (hit?: KnowledgeHit) => {
-    if (!hit) return;
+    if (!hit || (!includeBibliography && bibliography(hit))) return;
     const textKey = `${hit.source.id}:${JSON.stringify(hit.chunk.anchor)}:${hit.chunk.text.replace(/\s+/g, " ").trim()}`;
     if (seen.has(evidenceKey(hit)) || texts.has(textKey) || result.length >= CHAT_EVIDENCE_MAX_CHUNKS || tokens + evidenceTokens(hit) > budget) return;
     result.push(hit); seen.add(evidenceKey(hit)); texts.add(textKey); tokens += evidenceTokens(hit);
@@ -73,7 +74,7 @@ export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][],
     if (broad) for (const [, siblings] of [...sources].sort(([a], [b]) => a.localeCompare(b))) {
       add(siblings[0]);
       for (const hit of siblings.filter(item => /method|result|conclusion|discussion|limitation|方法|结果|结论|局限/i.test((item.chunk.anchor.heading ?? "") + " " + item.chunk.text.slice(0, 100))).slice(0, 2)) add(hit);
-      add(siblings.at(-1));
+      // The last page is often a bibliography; it is not an overview of the paper.
     }
   }
   return result.map((hit, index) => ({ ...hit, label: `S${index + 1}` }));

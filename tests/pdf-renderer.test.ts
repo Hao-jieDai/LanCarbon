@@ -22,4 +22,12 @@ describe("print-only reading renderer", () => {
     expect(document.querySelector('a[href="https://example.com"]')).not.toBeNull();
     expect(document.querySelector("details")?.open).toBe(true); expect(document.body).toHaveTextContent("Hidden content must print");
   });
+  it("preserves Thinking verbatim and distinguishes monetary prose from answer formulae", async () => {
+    const reasoning = '原文说 "US$300 billion each"。\n\n不要把 $1.4 trillion 当作公式。\n最后一行 <literal> **raw**';
+    const rendered = await window.renderLanCarbonChatPdf({ chat: { id: "chat", title: "Chat", providerId: "", modelId: "", createdAt: "2026-10-18", updatedAt: "2026-10-18", messages: [{ id: "reply", role: "assistant", createdAt: "2026-10-18", status: "complete", reasoning, content: "US$1.4 trillion，$300 billion 是金额。\n\n数学公式 $E=mc^2$。" }] }, options: { includeThinking: true, includeEvidence: false } });
+    expect(document.querySelector(".pdf-thinking-text")?.textContent).toBe(reasoning);
+    expect(document.querySelectorAll(".katex")).toHaveLength(1); expect(rendered.warnings).toEqual([]);
+    expect(document.querySelector(".pdf-chat-answer")?.textContent).toContain("US$1.4 trillion");
+    expect(document.querySelector(".pdf-chat-answer")?.textContent).toContain("$300 billion");
+  });
 });
