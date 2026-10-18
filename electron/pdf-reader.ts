@@ -1,11 +1,11 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import type { LibraryStore } from "./library";
 import { managedDirectory } from "./resource-files";
 import { validReadingPosition, type ReadingPosition, type PdfSession } from "../src/shared/pdfReader";
 export class PdfReaderStore {
-  private grant?: { token: string; bytes: Buffer };
+  private grant?: { token: string; bytes: Buffer; fingerprint: string; fileIds: string[] };
   private queue: Promise<unknown> = Promise.resolve();
   constructor(private readonly data: string, private readonly library: LibraryStore) {}
   private async positions(): Promise<Record<string, ReadingPosition>> {
@@ -22,7 +22,7 @@ export class PdfReaderStore {
     const { entry, bytes } = await this.library.read(id);
     if (entry.format !== "pdf") throw Error("Choose a PDF document.");
     const readingId = entry.documentId ?? entry.id, positions = await this.positions(), token = randomUUID();
-    this.grant = { token, bytes }; // One immutable open-document snapshot; released when the reader closes.
+    this.grant = { token, bytes, fingerprint: createHash("sha256").update(bytes).digest("hex"), fileIds: [entry.id, ...(entry.assetId ? [entry.assetId] : [])] }; // One immutable open-document snapshot; released when the reader closes.
     return { token, readingId, entry, length: bytes.length, initial: Uint8Array.from(bytes.subarray(0, 65536)), position: positions[readingId] };
     }); this.queue = action.catch(() => undefined); return action;
   }
@@ -31,6 +31,7 @@ export class PdfReaderStore {
     if (!Number.isInteger(begin) || !Number.isInteger(end) || begin < 0 || end <= begin || end > this.grant.bytes.length || end - begin > 2 * 1024 * 1024) throw Error("Invalid PDF page-data request.");
     return Uint8Array.from(this.grant.bytes.subarray(begin, end));
   }
+  snapshot(token: string) { if (!this.grant || this.grant.token !== token) throw Error("This PDF session has closed."); return this.grant; }
   release(token?: string): void { if (token === undefined || this.grant?.token === token) this.grant = undefined; }
   savePosition(id: string, input: ReadingPosition): Promise<void> {
     const action = this.queue.then(async () => {

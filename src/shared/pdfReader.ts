@@ -1,4 +1,5 @@
 import type { LibraryEntry } from "./library";
+import type { OcrPage, OcrStats } from "./ocr";
 export interface ReadingPosition { page: number; zoom: string; x: number; y: number; updatedAt?: string }
 export interface PdfSession { token: string; entry: LibraryEntry; readingId: string; length: number; initial: Uint8Array; position?: ReadingPosition }
 export type ReaderResult<T> = ({ ok: true } & T) | { ok: false; error: string };
@@ -7,6 +8,12 @@ export interface PdfReaderApi {
   range(token: string, begin: number, end: number): Promise<ReaderResult<{ bytes: Uint8Array }>>;
   release(token: string): Promise<ReaderResult<object>>;
   savePosition(id: string, position: ReadingPosition): Promise<ReaderResult<object>>;
+  cachedOcr(token: string, page: number): Promise<ReaderResult<{ page?: OcrPage }>>;
+  recognize(token: string, page?: number, force?: boolean): Promise<ReaderResult<{ page?: OcrPage; message?: string }>>;
+  stopOcr(token: string): Promise<ReaderResult<object>>;
+  ocrStats(): Promise<ReaderResult<{ stats: OcrStats }>>;
+  clearOcr(): Promise<ReaderResult<object>>;
+  onOcrProgress(callback: (value: { token: string; message: string }) => void): () => void;
 }
 export function validReadingPosition(value: ReadingPosition): boolean {
   return !!value && Number.isInteger(value.page) && value.page >= 1 && value.page <= 1_000_000 && typeof value.zoom === "string" && (["page-width", "page-fit", "auto"].includes(value.zoom) || /^\d+(?:\.\d+)?$/.test(value.zoom) && Number(value.zoom) >= 0.25 && Number(value.zoom) <= 4) && [value.x, value.y].every(number => Number.isFinite(number) && Math.abs(number) <= 1_000_000);

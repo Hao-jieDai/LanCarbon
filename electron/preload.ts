@@ -27,7 +27,13 @@ const api: NotesDesktopApi = {
     open: id => ipcRenderer.invoke("reader:open", id),
     range: (token, begin, end) => ipcRenderer.invoke("reader:range", token, begin, end),
     release: token => ipcRenderer.invoke("reader:release", token),
-    savePosition: (id, position) => ipcRenderer.invoke("reader:save-position", id, position)
+    savePosition: (id, position) => ipcRenderer.invoke("reader:save-position", id, position),
+    cachedOcr: (token, page) => ipcRenderer.invoke("reader:cached-ocr", token, page),
+    recognize: (token, page, force) => ipcRenderer.invoke("reader:recognize", token, page, force),
+    stopOcr: token => ipcRenderer.invoke("reader:stop-ocr", token),
+    ocrStats: () => ipcRenderer.invoke("reader:ocr-stats"),
+    clearOcr: () => ipcRenderer.invoke("reader:clear-ocr"),
+    onOcrProgress: callback => { const listener = (_event: Electron.IpcRendererEvent, value: { token: string; message: string }) => callback(value); ipcRenderer.on("reader:ocr-progress", listener); return () => ipcRenderer.removeListener("reader:ocr-progress", listener); }
   },
   knowledge: {
     inspect: () => ipcRenderer.invoke("knowledge:inspect"),

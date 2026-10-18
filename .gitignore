@@ -1,4 +1,5 @@
 node_modules/
+.npm-cache/
 dist/
 dist-electron/
 release/
@@ -12,4 +13,5 @@ acceptance/
 .dev-workspace/
 
 public/pdfjs/
+public/ocr/
 src/generated/

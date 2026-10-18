@@ -31,6 +31,18 @@ it("extracts Markdown headings, tables, math and source lines without indexing l
   const value = extractMarkdown("---\nprivate: meta\n---\n# Energy\n\nPolicy and [evidence](assets/" + "a".repeat(64) + ".pdf).\n\n| cost | value |\n| --- | --- |\n| Coal | $x^2$ |\n");
   expect(value.chunks[1].text).toBe("Policy and evidence."); expect(value.chunks[1].anchor).toMatchObject({ kind: "markdown", line: 6, endLine: 6, heading: "Energy" }); expect(value.chunks.some(chunk => chunk.text.includes("$x^2$"))).toBe(true); expect(JSON.stringify(value)).not.toContain("private: meta");
 });
+
+it("retries an in-flight PDF after new OCR text without cancelling the active preparation or retaining stale passages", async () => {
+  const f = await fixture(), file = path.join(f.root, "scan.pdf"); await fs.writeFile(file, pdfFixture()); const id = (await f.library.importFiles([file])).items[0].entry.id;
+  let release!: (value: ReturnType<typeof extractMarkdown>) => void;
+  f.extract.mockImplementationOnce(() => new Promise(resolve => { release = resolve; }));
+  f.extract.mockImplementation(async () => extractMarkdown("NewOCRSignal with verified page text."));
+  const scope = { ...emptyKnowledgeScope(), fileIds: [id], autoUpdate: false }; await f.store.start(scope);
+  await vi.waitFor(() => expect(release).toBeTypeOf("function")); await f.store.invalidatePdfs([id]);
+  release(extractMarkdown("OldOCRSignal must not become final cached evidence."));
+  const view = await f.settle(); expect(view.records[0].status).toBe("ready"); expect(f.extract).toHaveBeenCalledTimes(2);
+  expect((await f.store.search("OldOCRSignal")).total).toBe(0); expect((await f.store.search("NewOCRSignal")).total).toBe(1); await f.store.stop();
+});
 it("keeps reusable text from another chat while respecting each chat's individual exclusions", async () => {
   const f = await fixture(), full = { ...emptyKnowledgeScope(), bookIds: [f.book.id] };
   await f.store.prepare(full, new AbortController().signal, () => {});

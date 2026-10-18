@@ -18,8 +18,20 @@
 4. `chat-plan.ts`：识别当前对象、消解追问、规划比较与补查。新点名对象优先于上一轮焦点；同姓候选不等于同一论文。
 5. `chat-grounding.ts`、`chat-context.ts`、`chat-evidence.ts`：在选定范围内组合语义候选、本地子问题候选、有效旧原文和必要结果段落，按预算选证据，并生成模型输入。
 6. `ai-service.ts`、`ai-client.ts`：沿用当前 Chat 模型进行有限规划/覆盖检查和最终生成，保存正文、Thinking、证据和用量。
-7. `chat-checks.ts`、`chat-quality.ts`：本地算术、金额单位和情景检查；诊断不等于事实已被自动纠正。
+7. `chat-checks.ts`、`chat-quality.ts`、`chat-repair.ts`：本地算术、金额单位和情景检查；仅对有引用、同币种、原文数值/范围精确对应且单位关系唯一的中文金额作程序换算修正，保留审计。假设例子、无引用、原文矛盾和不确定 OCR 不自动改写；其余诊断仍不代表结论正确。
 8. `src/components/AIChat.tsx`、`src/shared/grounding.ts`：呈现正文、引用和可展开 Evidence，跳转原文并验证身份。
+
+`chat-answer-plan.ts` 按定义、机制、比较、计算、写作和排名问题保留相应证据与回答指引。最终输入仅列当前有证据的来源；完整选择范围与无关来源诊断仍在保存的 grounding 中。近期同范围用户问题和当前来源焦点用于连贯追问，不把历史回答或用户假设当作事实。
+
+## 本地 OCR
+
+- `src/pdf-ocr.ts`：隐藏解析窗口中的本地 Tesseract.js；复用单个中英文 worker，按页释放图像。`scripts/prepare-ocr.cjs` 将固定依赖中的 worker、三种 CPU WASM 变体和中英文训练资源拷入构建；运行时不访问 CDN。
+- `electron/ocr-store.ts`：按 PDF 内容 SHA-256 和原页码保存文字及坐标，64 MB/20,000 页上限，不缓存整页图片。新文件内容使用新缓存身份；改名、移动和相同内容的引用可复用。
+- `knowledge-parser.ts` 优先原文字层，对无效/稀少文字页识别；用户手动重识别的页优先使用 OCR。每份最多 500 页、200 万字符，片段保留原页码、OCR 来源、置信度和需复核标记。
+- `pdf-ocr-text.ts` 将坐标还原为 PDF.js text content，供正常选择、复制、搜索、翻译和引用跳页使用。原 `getTextContent` 内部使用 `streamTextContent`，适配时必须读取原始 stream，不能让二者递归调用。OCR 完成后重置受影响的 PageView 和 FindController。
+- 解析任务串行、可取消，有进度与超时；已完成页面可复用。阅读识别变更会让对应派生 PDF 文本失效；正在准备的资料使用 revision 重试，不能为更新 OCR 而中断另一聊天的资料准备。旧的 partial/failed PDF 索引可自动尝试本地识别，已成功的普通文字索引无需统一重建。
+- 置信度不是科学正确性的保证。对长整数与多个小数混排的可疑表格行提示核对小数点；不猜测补点。低置信度或有复核标记的 OCR 不作为自动金额修正依据。复杂表格/公式结构、旋转扫描、模糊页和加密 PDF 仍有实际限制。
+- OCR 自身不调用 AI API；新增识别文本的 embedding/问答仍走用户现有配置和用量。测试只能使用临时目录，不可把实际论文或截图提交到 Git。
 
 历史 assistant 正文不能充当事实来源。可以重新使用历史保存的原文摘录，但必须同时满足当前选择范围、来源指纹、片段身份和原文文本一致，且有当前问题的相关性。
 
@@ -47,6 +59,7 @@ npm run typecheck
 npm test
 npm run build
 npx playwright test tests/e2e/grounded-chat.spec.ts
+npx playwright test tests/e2e/ocr.spec.ts tests/e2e/pdf-reader.spec.ts tests/e2e/knowledge.spec.ts
 ```
 
 `test:rag` 验证范围隔离、来源切换、比较、子问题取证、有效证据复用、单位/算术及停止行为，全部离线。端到端测试同样使用临时数据和模拟网络。Windows 下 Electron 的加密与界面测试需在适合当前账户的环境运行；不要改用用户真实密钥规避测试问题。

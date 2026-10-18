@@ -8,10 +8,10 @@ export interface KnowledgeSource {
 }
 export interface KnowledgeScope { noteIds: string[]; fileIds: string[]; bookIds: string[]; folderIds: Array<string | null>; excludedNoteIds?: string[]; excludedFileIds?: string[]; includeSystem: boolean; includeAttachments: boolean; autoUpdate: boolean }
 export const emptyKnowledgeScope = (): KnowledgeScope => ({ noteIds: [], fileIds: [], bookIds: [], folderIds: [], includeSystem: false, includeAttachments: true, autoUpdate: true });
-export interface KnowledgeAnchor { kind: "markdown" | "pdf" | "epub"; line?: number; endLine?: number; page?: number; chapter?: string; chapterIndex?: number; paragraph?: number; heading?: string; fragment?: string }
+export interface KnowledgeAnchor { kind: "markdown" | "pdf" | "epub"; line?: number; endLine?: number; page?: number; chapter?: string; chapterIndex?: number; paragraph?: number; heading?: string; fragment?: string; method?: "ocr"; confidence?: number; needsReview?: boolean }
 export interface KnowledgeChunk { id: string; text: string; anchor: KnowledgeAnchor }
-export interface KnowledgeExtraction { chunks: KnowledgeChunk[]; partial: boolean; message?: string; totalUnits: number; processedUnits: number }
-export interface KnowledgeRecord { sourceId: string; fingerprint: string; status: KnowledgeStatus; message?: string; chunks: number; bytes: number; indexedAt?: string; processedUnits?: number; totalUnits?: number }
+export interface KnowledgeExtraction { chunks: KnowledgeChunk[]; partial: boolean; message?: string; totalUnits: number; processedUnits: number; ocrVersion?: number; ocrPages?: number }
+export interface KnowledgeRecord { sourceId: string; fingerprint: string; status: KnowledgeStatus; message?: string; chunks: number; bytes: number; indexedAt?: string; processedUnits?: number; totalUnits?: number; ocrVersion?: number; ocrPages?: number }
 export interface KnowledgeView {
   sources: KnowledgeSource[]; folders: LibraryFolder[]; books: Array<{ id: string; title: string; noteIds: string[]; systemManaged: boolean; pages?: Array<{ id: string; noteId: string; title: string; children: string[] }>; rootPageIds?: string[]; homePageId?: string }>;
   scope: KnowledgeScope; selectedIds: string[]; records: KnowledgeRecord[]; running: boolean; paused: boolean; enabled: boolean;

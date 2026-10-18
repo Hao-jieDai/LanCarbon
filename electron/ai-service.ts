@@ -95,7 +95,7 @@ export class AIService {
             if (!updateTimer) updateTimer = setTimeout(() => { updateTimer = undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, 120);
             if (!persistTimer) persistTimer = setTimeout(() => { persistTimer = undefined; const snapshot = { ...reply }; void chatStore.update(id, saved => { const index = saved.messages.findIndex(message => message.id === reply.id); if (index >= 0) saved.messages[index] = snapshot; }).catch(() => controller.abort()); }, 800);
           }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); });
-          if (reply.grounding && this.grounder) { try { await this.grounder.finish(reply.grounding, reply.content); } catch { reply.grounding.warnings.push("The source status could not be rechecked. Verify the saved excerpts."); } }
+          if (reply.grounding && this.grounder) { try { progress("Checking answer…"); reply.content = await this.grounder.finish(reply.grounding, reply.content); } catch { reply.grounding.warnings.push("The source status could not be rechecked. Verify the saved excerpts."); } }
           reply.status = controller.signal.aborted ? "stopped" : "complete";
         } catch (error) { reply.status = controller.signal.aborted ? "stopped" : "error"; reply.error = controller.signal.aborted ? "Generation stopped. Partial text has been saved." : redactAIError(error, key); }
         finally {

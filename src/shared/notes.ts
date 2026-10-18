@@ -8,13 +8,13 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.7";
+export const RELEASE_VERSION = "2.4.8";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.4.7 improves document questions when switching papers or comparing their findings, adds local checks for factual subparts without extra API calls, and retains valid original monetary evidence across follow-ups. Replies are instructed to answer directly and identify specific gaps once, with retrieval diagnostics kept in Evidence. Amount-unit checks cover explicit unit definitions, and numeric intervals are distinguished from subtraction. Existing model connections, fixed pricing and document workflows are preserved. Developer handoff guidance and offline regression cases support future maintenance.
+Version 2.4.8 adds offline English/Chinese OCR for scanned and mixed PDFs, sharing page text between reading and document questions. The PDF OCR menu supports page retry, document preparation and cancellation; recognized text supports selection, search and translation, with a bounded 64 MB cache. Document answers adapt evidence and structure to the question, retain recent user context, normalize citations and correct unambiguous cited currency-unit mistakes in final prose without another model call. Original files, personal writing and existing model connections are preserved.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -69,9 +69,9 @@ Replies cite saved excerpts as **[S1]**, **[S2]**, etc. Select a citation or exp
 
 For complex document questions, LanCarbon identifies the relevant papers, checks the available evidence and performs bounded supplementary searches before answering. A newly named paper takes priority over earlier topics; follow-up references are resolved from the same source selection. These steps use your currently selected Chat model and existing Embedding/Rerank connections, with at most two additional Chat checks and six supplementary searches per question. Checks and failed attempts are included under Chat in **Usage**; no other model or service is selected automatically. Short self-contained sources and focused questions with usable coverage can skip model checks. **Evidence** shows source coverage and supplementary searches. A coverage check is not a guarantee of correctness: an absent excerpt does not establish that a paper lacks a fact. Explicit arithmetic disagreements are flagged for checking against the original operands and units. Stop cancels preparation, checks and generation together.
 
-Planning and coverage checks are selected according to the question and available evidence, rather than always making two extra requests. Their maximum remains two Chat checks and six supplementary searches. **Evidence** also reports explicit amount/unit or scenario conflicts when locally detectable; it does not automatically rewrite a scientific claim. Unit equivalents retain the cited original context. Important results still require checking against their scenario, price year and discount basis.
+Planning and coverage checks are selected according to the question and available evidence, rather than always making two extra requests. Their maximum remains two Chat checks and six supplementary searches. **Evidence** also reports explicit amount/unit or scenario conflicts when locally detectable; unambiguous cited currency-unit conflicts are corrected in the answer, with Unit corrected records in Evidence; unresolved scientific or scenario ambiguity remains a warning. Unit equivalents retain the cited original context. Important results still require checking against their scenario, price year and discount basis.
 
-Text extraction supports text-based PDFs, reflowable EPUBs and Note/Book Markdown. Image-only scans require OCR; encrypted PDFs, DRM/fixed-layout EPUBs, Word and images are not parsed. Limits are 500 PDF pages, 3,000 EPUB chapters, 2 million characters and 2,000 passages per source; cached text is limited to 100 MB and vectors to 128 MB. **AI Settings → Retrieval → Local text tools / Index tools** provides optional inspection and cache clearing. Clearing derived text/vectors preserves original documents, writing, chats and usage. Local parsing and ordinary writing make no retrieval API requests; questions send selected excerpts to the configured services and their usage is recorded.
+Text extraction supports text-based and scanned PDFs, reflowable EPUBs and Note/Book Markdown. Scanned pages use local English/Chinese OCR. Encrypted PDFs, DRM/fixed-layout EPUBs, Word and standalone images are not indexed. Limits are 500 PDF pages, 3,000 EPUB chapters, 2 million characters and 2,000 passages per source; cached text is limited to 100 MB and vectors to 128 MB. **AI Settings → Retrieval → Local text tools / Index tools** provides optional inspection and cache clearing. Clearing derived text/vectors preserves original documents, writing, chats and usage. Local parsing and ordinary writing make no retrieval API requests; questions send selected excerpts to the configured services and their usage is recorded.
 
 ### Library imports
 
@@ -94,7 +94,7 @@ Open a PDF from Library with **Open** or a double-click. In a Note or Book, clic
 
 Use page numbers, previous/next, **Fit width**, **Fit page**, zoom, or **Pages / Contents** for on-demand thumbnails and the document's own outline. **Find in PDF** (Ctrl+F) searches the document with previous/next matches. Reading position and zoom are saved by document ID in **Data/Library/reading.json**, so rename/move and linked writing attachments share progress. The currently open PDF is an immutable reading snapshot; a new externally saved version offers **Reload latest version**.
 
-Enable the existing **Translate** switch (Ctrl+Alt+T), then select short English text in the PDF. Existing translation settings, cache and usage accounting apply. PDFs need a selectable text layer for selection/search; image-only scans remain viewable. Reading is local and does not call AI or change the file. Password-protected files prompt locally without saving the password. PDF scripts and editing are disabled. Annotation creation and OCR follow separately. The reader loads page data as needed and releases the open snapshot when closed; no PDF parsing or thumbnail disk cache is created.
+Enable the existing **Translate** switch (Ctrl+Alt+T), then select short English text in the PDF. Existing translation settings, cache and usage accounting apply. Scanned pages use local English/Chinese OCR. The OCR menu provides Recognize page, Recognize PDF and Stop OCR; recognized text supports selection, search and existing translation. Reading is local and does not call AI or change the file. Password-protected files prompt locally without saving the password. PDF scripts and editing are disabled. Annotation creation remains separate. The reader loads page data as needed and releases the open snapshot when closed; recognized text and coordinates are cached up to 64 MB; temporary page images and thumbnails are not saved to disk.
 
 Use **Collapse sidebar** beside the Logo to hide the workspace sidebar. The menu button at the upper left of the content shows it again. Notes, Books, Workshop, Library and PDF reading share this control; the desktop collapse preference is remembered across restarts. On narrow windows the sidebar opens as a drawer.
 
@@ -155,7 +155,7 @@ Viewing Usage works offline and does not call a model. Local logs are in **Data/
 
 使用页码、前后翻页、**Fit width**、**Fit page**、缩放，以及 **Pages / Contents** 中按需生成的缩略图和原文目录。**Find in PDF**（Ctrl+F）提供全文搜索与前后匹配。阅读位置和缩放按文档 ID 保存在 **Data/Library/reading.json**；改名、移动及写作附件共用进度。正在阅读的内容保持为打开时的版本，外部保存新版后，可选择 **Reload latest version**。
 
-开启现有 **Translate**（Ctrl+Alt+T），选取 PDF 中的短英文即可翻译，沿用翻译配置、缓存和用量统计。选词与搜索需要 PDF 自带文字层；纯扫描件仍可查看。阅读本身离线运行，不调用 AI、不修改原件。加密文件在本地输入密码，密码不保存；禁用 PDF 脚本和编辑。新建批注与 OCR 另行提供。页面按需读取，关闭后释放打开快照，不建立 PDF 解析或缩略图磁盘缓存。
+开启现有 **Translate**（Ctrl+Alt+T），选取 PDF 中的短英文即可翻译，沿用翻译配置、缓存和用量统计。扫描页使用本地中英文 OCR；OCR 菜单提供 Recognize page、Recognize PDF 和 Stop OCR，识别文字支持选词、搜索及现有翻译。阅读本身离线运行，不调用 AI、不修改原件。加密文件在本地输入密码，密码不保存；禁用 PDF 脚本和编辑。新建批注另行提供。页面按需读取，关闭后释放打开快照，识别文字与坐标缓存最多 64 MB，不长期保存整页图片或缩略图。
 
 点击 Logo 旁的 **Collapse sidebar** 可收起工作区侧栏，点击内容区左上角的菜单按钮再次展开。Notes、Books、Workshop、Library 与 PDF 阅读共用此操作，桌面侧栏状态在重启后保留；窄窗口使用抽屉式侧栏。
 
@@ -251,7 +251,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.4.7 优化资料问答中的文献切换与跨文献比较，新增不调用 API 的本地子问题取证，并在追问中保留仍有效的金额原文证据。回答提示词要求直接作答、只对具体缺口说明一次，检索诊断保留在 Evidence。金额检查覆盖明确的单位定义，并区分数值区间与减法。沿用现有模型连接、固定单价和文献操作流程；新增开发交接说明与离线回归案例，支持后续维护。
+2.4.8 加入本地中英文 OCR，扫描 PDF 与混合 PDF 的识别文字可供阅读和资料问答共用。PDF 的 OCR 菜单支持重新识别当前页、准备全文及停止；识别文字支持选取、搜索和翻译，缓存上限为 64 MB。资料问答按问题类型组织证据和答案，保留近期用户问题上下文，统一引用格式，并直接修正有明确引用依据的币种单位换算错误，无须增加模型调用。保留原文件、个人写作及现有模型配置。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
@@ -290,9 +290,9 @@ LanCarbon 现已在软件界面、安装包、仓库 ReadMe、系统内置教程
 
 复杂资料问题会先识别相关论文、检查已有证据，再按需进行有上限的补充检索，最后生成回答。新点名论文优先于先前主题，连续追问根据同一资料范围识别指代。所有步骤沿用当前所选 Chat 模型和 Embedding／Rerank 连接，每个问题最多额外两次 Chat 检查、六次补充检索；检查与失败尝试均计入 **Usage** 的 Chat 用途，不自动选择其他模型或服务。简短资料及证据充足的聚焦问题可跳过模型检查。**Evidence** 展示来源覆盖与是否补查。覆盖检查不保证结论正确，未出现在摘录中不能证明原文没有该信息；明确算式的计算错误会提示回查操作数与单位。Stop 同时停止资料准备、检查与回答生成。
 
-规划与覆盖检查依据问题和现有证据按需执行，不固定增加两次调用；上限仍为两次 Chat 检查和六次补充检索。**Evidence** 也会提示本地可识别的金额单位或情景冲突，不自动改写科学结论。单位换算保留对应的原文上下文；关键结果仍需核对情景、价格年份及折现口径。
+规划与覆盖检查依据问题和现有证据按需执行，不固定增加两次调用；上限仍为两次 Chat 检查和六次补充检索。**Evidence** 也会提示本地可识别的金额单位或情景冲突，有明确引用依据且换算关系唯一的币种单位错误会在正文修正，并在 Evidence 记录 Unit corrected；不确定的科学含义或情景关系仍提示核对。单位换算保留对应的原文上下文；关键结果仍需核对情景、价格年份及折现口径。
 
-支持文字型 PDF、流式 EPUB 和 Note／Book Markdown。纯扫描 PDF 需要 OCR；加密 PDF、DRM／固定版式 EPUB、Word 和图片暂不解析。每项上限为 PDF 500 页、EPUB 3,000 章、200 万字符及 2,000 个片段；文本缓存最多 100 MB，向量缓存最多 128 MB。**AI Settings → Retrieval → Local text tools / Index tools** 提供可选的检查与清理工具。清除派生缓存不删除原文、写作、聊天或历史用量。普通写作与本地解析不调用检索 API；资料问答会向所选服务发送相关文字，用量计入统计。
+支持文字型及扫描 PDF、流式 EPUB 和 Note／Book Markdown。扫描页使用本地中英文 OCR；加密 PDF、DRM／固定版式 EPUB、Word 和独立图片暂不索引。每项上限为 PDF 500 页、EPUB 3,000 章、200 万字符及 2,000 个片段；文本缓存最多 100 MB，向量缓存最多 128 MB。**AI Settings → Retrieval → Local text tools / Index tools** 提供可选的检查与清理工具。清除派生缓存不删除原文、写作、聊天或历史用量。普通写作与本地解析不调用检索 API；资料问答会向所选服务发送相关文字，用量计入统计。
 
 ### AI Settings 与 Chat
 

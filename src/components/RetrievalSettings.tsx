@@ -1,4 +1,5 @@
 import { KnowledgeBase } from "./KnowledgeBase";
+import { OcrTools } from "./OcrTools";
 import { useCallback, useEffect, useState } from "react";
 import { aiModelName, type AIModel, type AIProvider } from "../shared/ai";
 import { defaultRetrievalSettings, retrievalModelSuggestions, type RetrievalModel, type RetrievalResults, type RetrievalRole, type RetrievalSettings as Settings, type RetrievalStatus } from "../shared/retrieval";
@@ -53,6 +54,7 @@ export function RetrievalSettings({ onChat, visible = true }: { onChat(): void; 
       <form className="retrieval-check" onSubmit={event => { event.preventDefault(); void act("Checking retrieval", async () => { const result = await api!.search(query); if (!result.ok) throw Error(result.error); setResults(result); }); }}><label>Retrieval check<input aria-label="Retrieval check question" value={query} maxLength={1500} disabled={disabled} onChange={event => setQuery(event.target.value)} placeholder="A question about your selected sources"/></label><button className="quiet-button" disabled={disabled || !query.trim()}>Check retrieval</button></form>
       {results && <section aria-label="Retrieval matches"><p>{results.mode} · {results.hits.length} matches</p>{results.warnings.map((warning, i) => <p className="usage-warning" key={i}>{warning}</p>)}{results.hits.map(hit => <article key={`${hit.source.id}:${hit.chunk.id}`}><strong>{hit.source.title}</strong><small>{hit.chunk.anchor.kind === "pdf" ? `Page ${hit.chunk.anchor.page}` : hit.chunk.anchor.kind === "epub" ? `${hit.chunk.anchor.chapter} · Paragraph ${hit.chunk.anchor.paragraph}` : `Lines ${hit.chunk.anchor.line}–${hit.chunk.anchor.endLine}`}</small><pre>{hit.chunk.text}</pre></article>)}</section>}
     </details>
+    <OcrTools/>
     <details className="retrieval-local-tools" onToggle={event => setLocalToolsOpen(event.currentTarget.open)}><summary>Local text tools</summary>{localToolsOpen && <KnowledgeBase visible={visible}/>}</details>
   </div>;
 }

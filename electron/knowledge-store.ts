@@ -10,6 +10,7 @@ interface Settings { version: 1; scope: KnowledgeScope; enabled: boolean; paused
 interface CachedSource { version: 1; sourceId: string; fingerprint: string; extraction: KnowledgeExtraction }
 const statuses = new Set(["pending", "processing", "ready", "partial", "failed", "missing", "unsupported"]);
 export class KnowledgeStore {
+  private readonly revisions = new Map<string, number>();
   private settings: Settings = { version: 1, scope: emptyKnowledgeScope(), enabled: false, paused: false };
   private records = new Map<string, KnowledgeRecord>(); private loaded = false; private queue: Promise<unknown> = Promise.resolve();
   private error = ""; private epoch = 0; private controller?: AbortController; private job?: Promise<void>; private running = false; private timer?: ReturnType<typeof setTimeout>;
@@ -40,7 +41,8 @@ export class KnowledgeStore {
     const selected = selectedKnowledgeIds(snapshot, this.settings.scope), sourceMap = new Map(snapshot.sources.map(source => [source.id, source])); let dirty = false;
     for (const id of this.records.keys()) if (!selected.has(id) || !sourceMap.has(id)) { await this.unlinkCache(id); this.records.delete(id); dirty = true; }
     for (const source of snapshot.sources) if (selected.has(source.id)) {
-      const previous = this.records.get(source.id), status = source.unavailable ? "missing" : source.format === "other" ? "unsupported" : previous && previous.fingerprint === source.fingerprint && !["missing", "unsupported"].includes(previous.status) ? previous.status : "pending";
+      const previous = this.records.get(source.id), legacyOcr = source.format === "pdf" && previous && ["partial", "failed"].includes(previous.status) && previous.ocrVersion !== 1;
+      const status = source.unavailable ? "missing" : source.format === "other" ? "unsupported" : previous && !legacyOcr && previous.fingerprint === source.fingerprint && !["missing", "unsupported"].includes(previous.status) ? previous.status : "pending";
       if (!previous || previous.status !== status || previous.fingerprint !== source.fingerprint && previous.status !== "pending") {
         this.records.set(source.id, { sourceId: source.id, fingerprint: source.fingerprint, status, chunks: previous?.chunks ?? 0, bytes: previous?.bytes ?? 0, indexedAt: previous?.indexedAt, message: source.unavailable || (status === "unsupported" ? "Text indexing supports PDF, EPUB and Note/Book Markdown pages. This format is not supported yet." : status === "pending" ? undefined : previous?.message), processedUnits: previous?.processedUnits, totalUnits: previous?.totalUnits }); dirty = true;
       }
@@ -94,25 +96,26 @@ export class KnowledgeStore {
         this.progress.total = Math.max(this.progress.total, this.progress.completed + [...this.records.values()].filter(record => record.status === "pending").length);
         const source = snapshot.sources.find(source => source.id === record.sourceId)!;
         this.records.set(source.id, { ...record, fingerprint: source.fingerprint, status: "processing", message: undefined }); this.progress.current = source.title; this.progress.unit = undefined; this.progress.units = undefined; await this.saveManifest(); this.changed();
-        return { source, content: snapshot.content.get(source.id) };
+        return { source, content: snapshot.content.get(source.id), revision: this.revisions.get(source.id) ?? 0 };
       });
       if (!work) break;
       try {
         const input = work.source.kind === "note" ? work.content! : await this.readFile(work.source.entityId);
-        const extraction = await this.extractor.extract(work.source, input, signal, (unit, total) => { if (!signal.aborted) { this.progress.unit = unit; this.progress.units = total; this.changed(); } });
+        const extraction = await this.extractor.extract(work.source, input, signal, (unit, total, message) => { if (!signal.aborted) { this.progress.unit = unit; this.progress.units = total; this.progress.current = message ? `${work.source.title} · ${message}` : work.source.title; this.changed(); } });
         validateExtraction(extraction);
         await this.serial(async () => {
           if (signal.aborted || epoch !== this.epoch) return;
+          if ((this.revisions.get(work.source.id) ?? 0) !== work.revision) { const old = this.records.get(work.source.id); if (old) this.records.set(work.source.id, { ...old, status: "pending", message: undefined }); await this.saveManifest(); return; }
           const fresh = await this.snapshot(); await this.reconcile(fresh); const source = fresh.sources.find(source => source.id === work.source.id), selected = selectedKnowledgeIds(fresh, this.settings.scope);
           if (!source || !selected.has(source.id) || source.unavailable || source.fingerprint !== work.source.fingerprint) return;
           if (!extraction.chunks.length) throw Error(extraction.message ?? "No readable text was found in this source.");
           const cached: CachedSource = { version: 1, sourceId: source.id, fingerprint: source.fingerprint, extraction }, bytes = Buffer.byteLength(JSON.stringify(cached));
           if (this.bytes() - (this.records.get(source.id)?.bytes ?? 0) + bytes > KNOWLEDGE_MAX_BYTES) throw Error("The text index reached 100 MB. Reduce the selection or clear the index.");
           await this.writeJson(this.cacheName(source.id), cached);
-          this.records.set(source.id, { sourceId: source.id, fingerprint: source.fingerprint, status: extraction.partial ? "partial" : "ready", message: extraction.message, chunks: extraction.chunks.length, bytes, indexedAt: new Date().toISOString(), processedUnits: extraction.processedUnits, totalUnits: extraction.totalUnits }); await this.saveManifest();
+          this.records.set(source.id, { sourceId: source.id, fingerprint: source.fingerprint, status: extraction.partial ? "partial" : "ready", message: extraction.message, chunks: extraction.chunks.length, bytes, indexedAt: new Date().toISOString(), processedUnits: extraction.processedUnits, totalUnits: extraction.totalUnits, ocrVersion: work.source.format === "pdf" ? 1 : undefined, ocrPages: extraction.ocrPages }); await this.saveManifest();
         });
       } catch (error) {
-        if (!signal.aborted) await this.serial(async () => { const record = this.records.get(work.source.id); if (record && record.fingerprint === work.source.fingerprint) { this.records.set(work.source.id, { ...record, status: "failed", message: error instanceof Error ? error.message : "Could not extract text." }); await this.saveManifest(); } });
+        if (!signal.aborted) await this.serial(async () => { const record = this.records.get(work.source.id); if (record && record.fingerprint === work.source.fingerprint) { const invalidated = (this.revisions.get(work.source.id) ?? 0) !== work.revision; this.records.set(work.source.id, { ...record, status: invalidated ? "pending" : "failed", ocrVersion: work.source.format === "pdf" ? 1 : undefined, message: invalidated ? undefined : error instanceof Error ? error.message : "Could not extract text." }); await this.saveManifest(); } });
       }
       this.progress.completed++; this.changed();
     }
@@ -128,6 +131,11 @@ export class KnowledgeStore {
     this.records.clear(); this.error = ""; await this.saveManifest();
   }
   async clear() { await this.stop(); await this.serial(async () => { await this.clearRecords(); this.settings.enabled = false; await this.writeJson("scope.json", this.settings); }); this.changed(); }
+  async invalidatePdfs(fileIds?: string[]) {
+    await this.serial(async () => { await this.load(); const snapshot = await this.snapshot(), ids = new Set(snapshot.sources.filter(source => source.format === "pdf" && (!fileIds || fileIds.includes(source.entityId))).map(source => source.id));
+      for (const id of ids) { const record = this.records.get(id); this.revisions.set(id, (this.revisions.get(id) ?? 0) + 1); if (record && record.status !== "processing") this.records.set(id, { ...record, status: "pending", message: undefined }); }
+      await this.saveManifest(); }); this.changed();
+  }
   async corpus(): Promise<KnowledgeHit[]> {
     return this.serial(async () => {
       await this.load(); if (this.error) throw Error(this.error);

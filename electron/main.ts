@@ -17,6 +17,7 @@ import { retrievalPriceProviders, type RetrievalRole, type RetrievalSettings } f
 import type { AIUsageEvent } from "../src/shared/aiUsage";
 import { knowledgeSnapshot } from "./knowledge-sources";
 import { LocalKnowledgeExtractor } from "./knowledge-extractor";
+import { OcrStore } from "./ocr-store";
 import type { KnowledgeScope } from "../src/shared/knowledge";
 import { MAX_ASSET_BYTES, resourceUsages, type AssetConflictChoice } from "../src/shared/assets";
 import { exportChatPdf, exportPagePdf, pdfFileName } from "./pdf-exporter";
@@ -292,6 +293,11 @@ app.whenReady().then(async () => {
   const editStores = new Map<string, ExternalEdits>();
   const edits = () => { let manager = editStores.get(dataDirectory); if (!manager) { manager = new ExternalEdits(dataDirectory, directories.library, libraryStore()); editStores.set(dataDirectory, manager); } return manager; };
   const knowledgeStores = new Map<string, KnowledgeStore>(); let knowledgeExtractor: LocalKnowledgeExtractor | undefined;
+  const ocrStores = new Map<string, OcrStore>();
+  const ocr = () => { let value = ocrStores.get(dataDirectory); if (!value) { value = new OcrStore(dataDirectory); ocrStores.set(dataDirectory, value); } return value; };
+  const extractor = () => knowledgeExtractor ??= new LocalKnowledgeExtractor(ocr);
+  const readerOcrJobs = new Map<string, { controller: AbortController; done: Promise<unknown> }>();
+  const stopReaderOcr = async (token?: string) => { const jobs = [...readerOcrJobs].filter(([id]) => !token || id === token); for (const [, job] of jobs) job.controller.abort(); await Promise.allSettled(jobs.map(([, job]) => job.done)); };
   const retrievalStores = new Map<string, RetrievalService>();
   const retrievalConnection = async (role: RetrievalRole) => {
     const settings = await retrievalSettings.get(), model = settings[role];
@@ -304,8 +310,7 @@ app.whenReady().then(async () => {
     let value = knowledgeStores.get(dataDirectory);
     if (!value) {
       const target = dataDirectory, notes = store, files = libraryStore();
-      knowledgeExtractor ??= new LocalKnowledgeExtractor();
-      value = new KnowledgeStore(target, async () => knowledgeSnapshot((await notes.loadWorkspace()).workspace, await files.list(), await files.folders()), async id => (await files.read(id)).bytes, knowledgeExtractor, () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("knowledge:changed"); }); knowledgeStores.set(target, value);
+      value = new KnowledgeStore(target, async () => knowledgeSnapshot((await notes.loadWorkspace()).workspace, await files.list(), await files.folders()), async id => (await files.read(id)).bytes, extractor(), () => { if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send("knowledge:changed"); }); knowledgeStores.set(target, value);
     }
     return value;
   };
@@ -315,7 +320,7 @@ app.whenReady().then(async () => {
     return value;
   };
   const stopRetrieval = async () => { await Promise.all([...retrievalStores.values()].map(manager => manager.stop())); };
-  shutdownKnowledge = async () => { await Promise.all([...retrievalStores.values()].map(manager => manager.shutdown())); await Promise.all([...knowledgeStores.values()].map(manager => manager.stop(false))); knowledgeExtractor?.idle(); };
+  shutdownKnowledge = async () => { await stopReaderOcr(); await Promise.all([...retrievalStores.values()].map(manager => manager.shutdown())); await Promise.all([...knowledgeStores.values()].map(manager => manager.stop(false))); knowledgeExtractor?.idle(); };
   const libraryChanged = () => { mainWindow?.webContents.send("library:changed"); knowledgeStores.get(dataDirectory)?.requestRefresh(); };
   const syncEdits = async () => { const disk = await libraryStore().synchronize(); const edited = await edits().sync(); const result = { changed: disk.changed || edited.changed, errors: [...disk.errors, ...edited.errors] }; if (result.changed) libraryChanged(); return result; };
   flushExternal = async () => { await syncEdits(); await shutdownKnowledge(); await reader().flush(); await epub().flush(); await balances().flush(); };
@@ -372,15 +377,29 @@ app.whenReady().then(async () => {
     return result;
   };
   const assetError = (error: unknown) => ({ ok: false, canceled: error instanceof Error && error.message === "Import canceled", error: error instanceof Error ? error.message : "Resource operation failed", ...(error instanceof LibraryNameConflict ? { suggestedName: error.suggestedName } : {}) });
-  aiHandler("reader:open", async (id: string) => { await syncEdits(); return { session: await reader().open(id) }; });
+  aiHandler("reader:open", async (id: string) => { await stopReaderOcr(); await syncEdits(); return { session: await reader().open(id) }; });
   aiHandler("epub:open", async (id: string) => { await syncEdits(); return { session: await epub().open(id) }; });
   aiHandler("epub:chapter", async (token: string, index: number) => ({ html: epub().chapter(token, index) }));
   aiHandler("epub:search", async (token: string, query: string) => epub().search(token, query));
   aiHandler("epub:release", async (token: string) => { epub().release(token); return {}; });
   aiHandler("epub:save-position", async (id: string, position: import("../src/shared/epubReader").EpubPosition) => { await epub().savePosition(id, position); return {}; });
   aiHandler("reader:range", async (token: string, begin: number, end: number) => ({ bytes: reader().range(token, begin, end) }));
-  aiHandler("reader:release", async (token: string) => { reader().release(token); return {}; });
+  aiHandler("reader:release", async (token: string) => { await stopReaderOcr(token); reader().release(token); return {}; });
   aiHandler("reader:save-position", async (id: string, position: import("../src/shared/pdfReader").ReadingPosition) => { await reader().savePosition(id, position); return {}; });
+  aiHandler("reader:cached-ocr", async (token: string, page: number) => ({ page: await ocr().get(reader().snapshot(token).fingerprint, page) }));
+  aiHandler("reader:recognize", async (token: string, page?: number, force = false) => {
+    const snapshot = reader().snapshot(token), target = dataDirectory, store = knowledgeStores.get(target);
+    if (page !== undefined && (!Number.isSafeInteger(page) || page < 1 || page > 20000)) throw Error("Choose a PDF page.");
+    if (readerOcrJobs.has(token)) throw Error("OCR is already running. Stop it before starting another task.");
+    const controller = new AbortController();
+    const done = extractor().recognize(snapshot.bytes, page, controller.signal, (unit, total, message) => { mainWindow?.webContents.send("reader:ocr-progress", { token, message: message || `OCR · Page ${unit} / ${total}` }); }, force === true).then(result => {
+      controller.signal.throwIfAborted(); return { page: result.ocrPage, message: result.message };
+    }).catch(error => { if (controller.signal.aborted) throw Error("OCR stopped. Completed pages are saved."); throw error; }).finally(async () => { try { await store?.invalidatePdfs(snapshot.fileIds); } finally { readerOcrJobs.delete(token); } });
+    readerOcrJobs.set(token, { controller, done }); return done;
+  });
+  aiHandler("reader:stop-ocr", async (token: string) => { await stopReaderOcr(token); return {}; });
+  aiHandler("reader:ocr-stats", async () => ({ stats: await ocr().stats() }));
+  aiHandler("reader:clear-ocr", async () => { await stopReaderOcr(); await stopRetrieval(); await knowledge().stop(); await ocr().clear(); await knowledge().invalidatePdfs(); return {}; });
   ipcMain.handle("library:list", async () => {
     try { const scan = await syncEdits(); return { ok: true, entries: await libraryStore().list(), folders: await libraryStore().folders(), editErrors: scan.errors }; } catch (error) { return assetError(error); }
   });

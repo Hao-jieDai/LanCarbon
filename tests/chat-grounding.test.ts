@@ -169,6 +169,16 @@ it("skips paid planning/review for a resolved focused follow-up with usable cove
   expect(JSON.stringify(f.fetcher.mock.calls)).toContain("unitEquivalents");
 });
 
+it("persists a corrected cited amount without another API request and keeps original reasoning intact", async () => {
+  const f = await fixture(); f.notes[0].content = "Results: the national total is CNY 28.4 billion.";
+  f.fetcher.mockImplementation(async () => new Response(JSON.stringify({ choices: [{ message: { content: "全国损失为28.4亿元人民币 [S1]。", reasoning_content: "Original provider thinking stays unchanged." } }], usage: { prompt_tokens: 50, completion_tokens: 15 } }), { headers: { "content-type": "application/json" } }));
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "全国损失多少钱？");
+  const chat = await f.settled(), reply = chat.messages.at(-1)!;
+  expect(reply.content).toContain("284亿元人民币"); expect(reply.reasoning).toBe("Original provider thinking stays unchanged.");
+  expect(reply.grounding!.warnings.some(w => w.startsWith("Unit corrected"))).toBe(true); expect(reply.grounding!.warnings.some(w => w.startsWith("Amount needs checking"))).toBe(false);
+  expect(f.fetcher).toHaveBeenCalledTimes(1); expect((await f.chats.get(chat.id)).messages.at(-1)!.content).toBe(reply.content);
+});
+
 it("switches to a lowercase named paper instead of inheriting the old focus and keeps irrelevant diagnostics out of the model payload", async () => {
   const f = await fixture();
   f.notes[0].content = "Alvarez et al. Coal study.\n\n" + Array.from({ length: 40 }, (_, i) => `Coal retirement result ${i}.`).join("\n\n");
@@ -180,7 +190,8 @@ it("switches to a lowercase named paper instead of inheriting the old focus and 
   const prepared = await f.grounder.prepare(next, new AbortController().signal, () => {}), payload = JSON.parse(prepared.messages[1].content);
   expect(prepared.grounding.research!.focusSourceIds).toEqual(["note:b"]);
   expect(prepared.grounding.evidence.every(hit => hit.source.id === "note:b")).toBe(true);
-  expect(payload.selectedSources.map((source: any) => source.id)).toEqual(["note:a", "note:b"]);
+  expect(payload.selectedSources.map((source: any) => source.id)).toEqual(["note:b"]);
+  expect(prepared.grounding.sourceIds).toEqual(["note:a", "note:b"]);
   expect(payload.coverageNotes).toBeUndefined(); expect(payload.sourcesWithoutExcerpts).toBeUndefined(); expect(payload.missingRelevantSources).toEqual([]);
   expect(prepared.grounding.warnings.some(warning => warning.includes("no excerpt"))).toBe(true);
   expect(prepared.messages.some(message => message.content.includes("invented 999"))).toBe(false);
