@@ -16,6 +16,10 @@ export function calendarDays(from: string, to: string): Array<string | null> {
 }
 
 type Hover = { label: string; totals: AIUsageTotals; x: number; y: number };
+export const HEATMAP_LEVELS = 8;
+export function usageHeatLevel(tokens: number, maximum: number): number {
+  return tokens > 0 && maximum > 0 ? Math.min(HEATMAP_LEVELS, Math.max(1, Math.ceil(Math.log1p(tokens) / Math.log1p(maximum) * HEATMAP_LEVELS))) : 0;
+}
 export function AIUsageHeatmap({ query, usdToCny, mode, onMode, visible }: { query: AIUsageQuery; usdToCny: number; mode: "hourly" | "daily"; onMode(mode: "hourly" | "daily"): void; visible: boolean }) {
   const [day, setDay] = useState(localUsageDay), [year, setYear] = useState(new Date().getFullYear());
   const [data, setData] = useState<{ identity: string; activity: AIUsageActivity[] }>();
@@ -51,7 +55,7 @@ export function AIUsageHeatmap({ query, usdToCny, mode, onMode, visible }: { que
     setHover({ label, totals, x: Math.max(10, Math.min(rect.left, window.innerWidth - 250)), y: Math.max(10, rect.bottom + 120 > window.innerHeight ? rect.top - 112 : rect.bottom + 8) });
   };
   const cell = (key: string, label: string, totals: AIUsageTotals) => {
-    const level = maximum && totals.totalTokens ? Math.min(4, Math.max(1, Math.ceil(Math.log1p(totals.totalTokens) / Math.log1p(maximum) * 4))) : 0;
+    const level = usageHeatLevel(totals.totalTokens, maximum);
     return <button key={key} type="button" className={"usage-heat-cell level-" + level + (totals.unknownTokens ? " incomplete" : "")} data-day={mode === "daily" ? key : day} data-hour={mode === "hourly" ? key : undefined} data-tokens={totals.totalTokens} aria-label={label + ": " + totals.totalTokens.toLocaleString("en-US") + " tokens"} onMouseEnter={event => show(event.currentTarget, label, totals)} onMouseLeave={() => setHover(undefined)} onFocus={event => show(event.currentTarget, label, totals)} onBlur={() => setHover(undefined)}/>;
   };
   const hoveredCost = hover ? cnyUsageCost(hover.totals, usdToCny) : undefined;
@@ -64,7 +68,7 @@ export function AIUsageHeatmap({ query, usdToCny, mode, onMode, visible }: { que
       <div className="usage-months" style={{ gridTemplateColumns: "repeat(" + weeks.length + ", var(--heat-cell))" }}>{weeks.map((week, index) => { const first = week.find(day => day && (index === 0 || day.slice(8) === "01")); return <span key={index}>{first ? new Date(first + "T12:00:00Z").toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }) : ""}</span>; })}</div>
       <div className="usage-days" style={{ gridTemplateColumns: "repeat(" + weeks.length + ", var(--heat-cell))" }}>{cells.map((date, index) => date ? cell(date, date, activity.find(value => value.day === date)?.summary ?? emptyUsageTotals()) : <span className="usage-heat-blank" key={"blank-" + index}/>)}</div>
     </div></div>}
-    <div className="usage-activity-legend"><span>Local time · Tokens</span><div><span>Less</span>{[0, 1, 2, 3, 4].map(level => <i key={level} className={"usage-heat-cell level-" + level}/>)}<span>More</span></div></div>
+    <div className="usage-activity-legend"><span>Local time · Tokens</span><div><span>Less</span>{Array.from({ length: HEATMAP_LEVELS + 1 }, (_, level) => <i key={level} className={"usage-heat-cell level-" + level}/>)}<span>More</span></div></div>
     {hover && createPortal(<div className="usage-heat-tooltip" role="tooltip" style={{ left: hover.x, top: hover.y }}><strong>{hover.label}</strong><span>Tokens {hover.totals.totalTokens.toLocaleString("en-US")}</span><span>Costs {hover.totals.requests ? hoveredCost === undefined ? "Unknown" : "≈ " + formatCnyCost(hoveredCost) : formatCnyCost(0)}</span>{(hover.totals.unknownTokens > 0 || hover.totals.unknownCosts > 0) && <small>Known data only · {hover.totals.unknownTokens} missing tokens · {hover.totals.unknownCosts} unknown costs</small>}</div>, document.body)}
   </section>;
 }

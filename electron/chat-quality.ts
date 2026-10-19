@@ -1,5 +1,6 @@
 import type { KnowledgeHit } from "../src/shared/knowledge";
 import { citedLabels, type ChatEvidence } from "../src/shared/grounding";
+import { monetaryBlocks, monetaryLabels } from "./chat-claims";
 
 /** Conservative bibliography detection; citations in ordinary prose are not a bibliography. */
 export function bibliography(hit: KnowledgeHit): boolean {
@@ -35,15 +36,16 @@ export function resultCoverage(corpus: KnowledgeHit[], sourceIds: string[], prev
   }).filter(group => group.length);
 }
 
-interface Amount { original: string; value: number; factor: number; currency: "CNY" | "USD"; context: string }
+interface Amount { original: string; start: number; value: number; factor: number; currency: "CNY" | "USD"; context: string }
 function amounts(text: string): Amount[] {
   const result: Amount[] = [];
-  const expression = /(?:(CNY|RMB|USD|US\$)\s*)?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(trillion|billion|million|万亿|千亿|百亿|亿|百万|万)\s*(CNY|RMB|USD|US\$|美元|人民币|元|dollars)?/giu;
+  const expression = /(?:(CNY|RMB|USD|US\\?\$)\s*)?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(trillion|billion|million|万亿|千亿|百亿|亿|百万|万)\s*(CNY|RMB|USD|US\\?\$|美元|人民币|元|dollars)?/giu;
   for (const match of text.matchAll(expression)) {
-    const currency = /CNY|RMB|人民币|^元$/iu.test((match[1] ?? "") + (match[4] ?? "")) ? "CNY" : /USD|US\$|美元|dollars/iu.test((match[1] ?? "") + (match[4] ?? "")) ? "USD" : undefined;
+    const currencyText = ((match[1] ?? "") + (match[4] ?? "")).replaceAll("\\", "");
+    const currency = /CNY|RMB|人民币|^元$/iu.test(currencyText) ? "CNY" : /USD|US\$|美元|dollars/iu.test(currencyText) ? "USD" : undefined;
     if (!currency) continue; // Bare numbers may be counts, energy or emissions, not money.
     const unit = match[3].toLowerCase(), factor = ({ trillion: 1e12, billion: 1e9, million: 1e6, 万亿: 1e12, 千亿: 1e11, 百亿: 1e10, 亿: 1e8, 百万: 1e6, 万: 1e4 } as Record<string, number>)[unit];
-    result.push({ original: match[0], value: Number(match[2].replace(/,/g, "")), factor, currency, context: text.slice(Math.max(0, match.index! - 110), match.index! + match[0].length + 110).replace(/\s+/g, " ") });
+    result.push({ original: match[0], start: match.index!, value: Number(match[2].replace(/,/g, "")), factor, currency, context: text.slice(Math.max(0, match.index! - 110), match.index! + match[0].length + 110).replace(/\s+/g, " ") });
   }
   return result;
 }
@@ -57,12 +59,17 @@ export function quantityNotes(hit: KnowledgeHit, includeContext = true, convertT
 /** Flag only exact-mantissa, same-currency scale conflicts in cited passages. Never silently rewrite scientific claims. */
 export function quantityWarnings(text: string, evidence: ChatEvidence[]): string[] {
   const warnings = new Set<string>();
-  const plain = text.replace(/```[\s\S]*?```|`[^`\n]*`/g, "").replace(/\*\*/g, "");
+  const plain = text.replace(/```[\s\S]*?```|`[^`\n]*`/g, "");
   // Keep decimal points intact, and include a sentence-final citation in the same claim window.
-  for (const paragraph of plain.split(/\n\s*\n|\n(?=\s*(?:[-*]|\d+[.)、]))/u)) {
-    const labels = citedLabels(paragraph), cited = evidence.filter(hit => labels.has(hit.label));
-    const originals = cited.flatMap(hit => amounts(hit.chunk.text).map(item => ({ ...item, label: hit.label })));
+  for (const originalBlock of monetaryBlocks(plain)) {
+    const block = { ...originalBlock, text: originalBlock.text.replace(/\*\*/g, "") };
+    const paragraph = block.text;
     for (const claim of amounts(paragraph)) {
+      // Two English amounts sharing digits may describe different entities or scenarios.
+      // A scale-translation check cannot assert that those amounts must be equal.
+      if (!/[亿万]/u.test(claim.original)) continue;
+      const labels = monetaryLabels(block, claim.start, claim.original.length);
+      const originals = evidence.filter(hit => labels.has(hit.label)).flatMap(hit => amounts(hit.chunk.text).map(item => ({ ...item, label: hit.label })));
       const compatible = originals.filter(item => item.currency === claim.currency);
       const actual = claim.value * claim.factor;
       if (compatible.some(item => Math.abs(item.value * item.factor - actual) <= Math.max(0.005 * claim.factor, actual * 0.001))) continue;

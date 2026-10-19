@@ -7,7 +7,7 @@ import { AIClient } from "../electron/ai-client";
 import { AIPriceStore, AIUsageStore } from "../electron/ai-usage";
 import { defaultAIProviders } from "../src/shared/ai";
 import { cnyUsageCost, DEFAULT_USD_TO_CNY, localUsageDay, parseAIUsage, priceKey, summarizeUsage, usageCost, type AIModelPrice, type AIUsageEvent, type AIUsageRequest } from "../src/shared/aiUsage";
-import { calendarDays } from "../src/components/AIUsageHeatmap";
+import { calendarDays, HEATMAP_LEVELS, usageHeatLevel } from "../src/components/AIUsageHeatmap";
 
 let root: string;
 const provider = { ...defaultAIProviders()[1], models: [{ id: "fixture-model", name: "Fixture model", purpose: "chat" as const }] };
@@ -165,6 +165,13 @@ describe("local usage ledger", () => {
     expect(leap).toHaveLength(366); expect(leap).toContain("2024-02-29"); expect(new Set(leap).size).toBe(366);
     const sunday = calendarDays("2026-10-11", "2026-10-11"); expect(sunday.slice(0, 6)).toEqual(Array(6).fill(null)); expect(sunday[6]).toBe("2026-10-11");
     expect(calendarDays("2026-10-15", "2026-10-14")).toEqual([]);
+  });
+  it("distinguishes eight positive token bands and zero despite a high-volume outlier", () => {
+    const volumes = [3, 15, 63, 255, 1023, 4095, 16383, 65535];
+    expect(HEATMAP_LEVELS).toBe(8);
+    expect(volumes.map(value => usageHeatLevel(value, volumes.at(-1)!))).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    expect(usageHeatLevel(0, 65535)).toBe(0); expect(usageHeatLevel(0, 0)).toBe(0);
+    expect(usageHeatLevel(1, 65535)).toBeGreaterThan(0);
   });
   it("rejects corrupted negative usage instead of presenting false totals", async () => {
     const prices = new AIPriceStore(root), store = new AIUsageStore(root, prices);

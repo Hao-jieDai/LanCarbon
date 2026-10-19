@@ -45,3 +45,11 @@ it("flags the observed billion-to-yi mistakes with exact cited originals, avoidi
   expect(quantityWarnings("339.0亿美元。[S1]", originals)).toEqual([]);
   expect(quantityWarnings("Cost 339.0亿元。[S2]", originals)).toEqual([]);
 });
+
+it("checks shared-caption table amounts and does not equate unrelated English figures with matching digits", () => {
+  const originals = [hit("Regional transport exposure is US$3.6 billion. Global exposure in the stricter scenario is US$3.6 trillion.")];
+  expect(quantityWarnings("Global exposure is US$3.6 trillion [S1].", [hit("The regional operator owns US$3.6 billion.")])).toEqual([]);
+  const table = "**Transport [S1]**\n\n| Metric | Original |\n|---|---|\n| National | US\\$58 亿 |";
+  expect(quantityWarnings(table, [hit("National transport exposure is US$58 billion.")]).join(" ")).toContain("580 亿美元");
+  expect(quantityWarnings("损失为3.6万亿美元[S1]。", originals)).toEqual([]);
+});

@@ -95,7 +95,7 @@ export class AIService {
             if (reply.content.length + reply.reasoning.length > 1_000_000) { controller.abort(); throw new Error("Response size limit reached"); }
             if (!updateTimer) updateTimer = setTimeout(() => { updateTimer = undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, 120);
             if (!persistTimer) persistTimer = setTimeout(() => { persistTimer = undefined; const snapshot = { ...reply }; void chatStore.update(id, saved => { const index = saved.messages.findIndex(message => message.id === reply.id); if (index >= 0) saved.messages[index] = snapshot; }).catch(() => controller.abort()); }, 800);
-          }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); });
+          }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, { onFinish: reason => { reply.finishReason = reason; } });
           if (reply.grounding && this.grounder) { try { progress("Checking answer…"); reply.content = await this.grounder.finish(reply.grounding, reply.content); } catch { reply.grounding.warnings.push("The source status could not be rechecked. Verify the saved excerpts."); } }
           reply.content = chatMarkdown(reply.content);
           reply.status = controller.signal.aborted ? "stopped" : "complete";

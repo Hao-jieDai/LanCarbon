@@ -51,6 +51,9 @@ test("Chat automatically prepares selected PDF/EPUB/Note/Book evidence, navigate
     await page.getByLabel("Chat message").fill("1. Compare climate investment page 4 with the other sources.\n2. Compare the methods, conclusions and energy transition evidence."); await page.getByRole("button", { name: "Send", exact: true }).click();
     await expect(page.locator(".ai-message-assistant").last().locator(".chat-evidence summary")).toBeVisible({ timeout: 60000 }); await expect(page.getByRole("button", { name: "Stop generating", exact: true })).toHaveCount(0, { timeout: 60000 });
     const saved = await page.evaluate(() => window.notesDesktop.ai!.chats()); if (!saved.ok) throw Error(saved.error); const chat = saved.chats[0], reply = chat.messages.at(-1)!; expect(reply.status).toBe("complete"); expect(new Set(reply.grounding!.evidence.map(hit => hit.source.id))).toEqual(new Set([`file:${entries[0].id}`, `file:${entries[1].id}`, `note:${note.id}`, `note:${homeNote.id}`]));
+    expect(reply.grounding!.warnings.length).toBeGreaterThan(0);
+    await expect(page.locator(".ai-message-assistant > .usage-warning")).toHaveCount(0);
+    await expect(page.getByText("Some evidence needs checking. See Evidence below.", { exact: true })).toHaveCount(0);
     const calls = await app.evaluate(() => (globalThis as any).groundedCalls); expect(calls.some((call: any) => call.endpoint.endsWith("/embeddings"))).toBe(true);
     const reranks = calls.filter((call: any) => call.endpoint.endsWith("/rerank"));
     // Two initial subquestions plus at most six targeted supplements; comparisons can verify each source.

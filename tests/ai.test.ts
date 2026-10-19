@@ -91,6 +91,22 @@ describe("provider adapters and durable streaming", () => {
     expect(await new AIClient(fetcher).models(provider, key)).toHaveLength(1);
     expect((await settings.list()).find(item => item.id === provider.id)?.models).toHaveLength(1);
   });
+  it("preserves partial replies and usage but rejects output limits and filters instead of recording completion", async () => {
+    const settings = new AISettingsStore(root, codec); await settings.save(config()); const { provider, key } = await settings.connection("siliconflow");
+    for (const reason of ["length", "max_tokens", "content_filter", "tool_calls", "error"]) {
+      const events: any[] = [], finish: string[] = [];
+      const response = () => new Response(`data: ${JSON.stringify({ choices: [{ delta: { content: "Incomplete answer" }, finish_reason: reason }] })}\n\ndata: ${JSON.stringify({ choices: [], usage: { prompt_tokens: 19, completion_tokens: 23 } })}\n\ndata: [DONE]\n\n`);
+      await expect(new AIClient(vi.fn().mockImplementation(response), async event => { events.push(event); }).complete(provider, key, "model", [], new AbortController().signal, () => {}, false, () => {}, { onFinish: value => finish.push(value) })).rejects.toThrow();
+      expect(finish).toEqual([reason]); expect(events.at(-1)).toMatchObject({ status: "error", usage: { inputTokens: 19, outputTokens: 23, totalTokens: 42 } });
+    }
+    const store = new AIChatStore(root), model = config().models[0].id;
+    const fetcher = vi.fn().mockImplementation(async () => new Response('data: {"choices":[{"delta":{"content":"Partial answer"},"finish_reason":"length"}]}\n\ndata: [DONE]\n\n'));
+    const service = new AIService(settings, () => store, new AIClient(fetcher), () => {}), chat = await store.create("siliconflow", model);
+    await service.send(chat.id, "siliconflow", model, "Explain this");
+    await vi.waitFor(async () => expect((await store.get(chat.id)).messages.at(-1)?.status).toBe("error"));
+    expect((await store.get(chat.id)).messages.at(-1)).toMatchObject({ content: "Partial answer", finishReason: "length", error: expect.stringContaining("output limit") });
+    expect(fetcher).toHaveBeenCalledTimes(1); await service.shutdown();
+  });
   it("stops and persists partial output, retries the same user turn and sends history when switching services", async () => {
     const settings = new AISettingsStore(root, codec); await settings.save(config()); await settings.save(config("openrouter")); const store = new AIChatStore(root), events: AIChat[] = [];
     let started!: () => void; const ready = new Promise<void>(resolve => { started = resolve; });

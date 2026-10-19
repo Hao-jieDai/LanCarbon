@@ -66,3 +66,34 @@ it("binds independently cited metrics to their own sentences, clauses and table 
   expect(repairCitedUnits("未引用的28.4亿元人民币。另一句话只有引用[S1]。", hits).corrections).toEqual([]);
   expect(repairCitedUnits("```text\n28.4亿元人民币[S1]\n```\n\n真实损失28.4亿元人民币[S1]", hits).text).toBe("```text\n28.4亿元人民币[S1]\n```\n\n真实损失284亿元人民币[S1]");
 });
+
+it("inherits a table caption's sources without borrowing another section or overriding row attribution", () => {
+  const hits = [evidence("Transport exposure is US$52 billion; funds hold US$184 billion."), evidence("Agriculture exposure is US$52 million.", "b", "S2")];
+  const text = "**Transport [S1]**\n\n| Metric | Original | 人民币 |\n|---|---|---|\n| Exposure | US\\$52 亿 | $520e$ 亿元 |\n| Funds | US$184 亿 | $1840e$ 亿元 |\n\n**Agriculture**\n\n| Metric | Original |\n|---|---|\n| Uncited | US$52 亿 |\n| Explicit | US$52 亿 [S2] |";
+  const fixed = repairCitedUnits(text, hits);
+  expect(fixed.text).toContain("US\\$520 亿"); expect(fixed.text).toContain("US$1840 亿");
+  expect(fixed.text).toContain("| Uncited | US$52 亿 |"); expect(fixed.text).toContain("US$0.52 亿 [S2]");
+  expect(fixed.corrections).toHaveLength(3); expect(repairCitedUnits(fixed.text, hits).corrections).toEqual([]);
+  const mixed = "**Comparison [S1][S2]**\n\n| Metric | Amount |\n|---|---|\n| Exposure | US$52 亿 |";
+  expect(repairCitedUnits(mixed, hits).text).toBe(mixed);
+});
+
+it("computes symbolic table conversions from exact originals and preserves unknown rates, unsupported data and other columns", () => {
+  const hit = evidence("Crop exposure is US$46 billion; another crop is US$92 million.");
+  const text = "## Crop results [S1]\n\n| Crop | 原值 | 人民币 |\n|---|---|---|\n| A | US$46 billion | $46e$ 亿元 |\n| B | US$92 million | $920e$ 亿元 |\n| Unknown | US$123 billion | $123e$ 亿元 |";
+  const fixed = repairCitedUnits(text, [hit]);
+  expect(fixed.text).toContain("US$46 billion | $460e$ 亿元"); expect(fixed.text).toContain("US$92 million | $0.92e$ 亿元");
+  expect(fixed.text).toContain("US$123 billion | $123e$ 亿元"); expect(fixed.corrections).toHaveLength(2);
+  expect(repairCitedUnits(fixed.text, [hit])).toEqual({ text: fixed.text, corrections: [] });
+  const unrelated = text.replace(/人民币/g, "Other measure");
+  expect(repairCitedUnits(unrelated, [hit]).text).toBe(unrelated);
+  expect(repairCitedUnits("```markdown\n" + text + "\n```", [hit]).corrections).toEqual([]);
+});
+
+it("honours monetary column units without confusing counts or crossing currency dimensions", () => {
+  const hits = [evidence("Transport exposure is US$52 billion; domestic exposure is CNY 3.4 trillion.")];
+  const text = "**Transport [S1]**\n\n| Metric | 原值（亿美元） | 人民币 | Plants |\n|---|---|---|---|\n| A | 52 | $52e$ 亿元 | 52 |\n\n**Domestic [S1]**\n\n| Metric | 损失（亿元人民币） |\n|---|---|\n| B | $3.4$ |";
+  const fixed = repairCitedUnits(text, hits);
+  expect(fixed.text).toContain("| A | 520 | $520e$ 亿元 | 52 |"); expect(fixed.text).toContain("| B | $34000$ |");
+  expect(repairCitedUnits(fixed.text, hits).corrections).toEqual([]);
+});

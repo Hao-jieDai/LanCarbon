@@ -9,7 +9,7 @@ export type AIModelPurpose = "chat" | "embedding" | "rerank";
 export interface AIModel { id: string; name: string; purpose: AIModelPurpose }
 export interface AIProvider { id: string; kind: AIProviderKind; name: string; baseUrl: string; models: AIModel[]; defaultModel: string; hasKey: boolean; maskedKey?: string }
 export interface AIProviderInput { id: string; kind: AIProviderKind; name: string; baseUrl: string; models: AIModel[]; defaultModel: string; apiKey?: string; clearKey?: boolean }
-export interface AIMessage { grounding?: ChatGrounding; sourceScope?: KnowledgeScope; id: string; role: "user" | "assistant"; content: string; reasoning?: string; progress?: string; status: "complete" | "streaming" | "stopped" | "error"; providerId?: string; providerName?: string; modelId?: string; modelName?: string; error?: string; createdAt: string }
+export interface AIMessage { grounding?: ChatGrounding; sourceScope?: KnowledgeScope; id: string; role: "user" | "assistant"; content: string; reasoning?: string; progress?: string; finishReason?: string; status: "complete" | "streaming" | "stopped" | "error"; providerId?: string; providerName?: string; modelId?: string; modelName?: string; error?: string; createdAt: string }
 export interface AIChat { sourceScope?: KnowledgeScope; id: string; title: string; providerId: string; modelId: string; messages: AIMessage[]; createdAt: string; updatedAt: string }
 export interface ChatPdfOptions { includeThinking: boolean; includeEvidence: boolean }
 export type ChatPdfResult = { ok: true; destination: string; warnings: string[] } | { ok: false; canceled?: boolean; error: string };

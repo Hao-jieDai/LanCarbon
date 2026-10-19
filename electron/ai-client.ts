@@ -1,7 +1,7 @@
 import { aiModelName, type AIModel, type AIProvider } from "../src/shared/ai";
 import { randomUUID } from "node:crypto";
 import { parseAIUsage, type AIReportedUsage, type AIUsageEvent, type AIUsagePurpose } from "../src/shared/aiUsage";
-export interface AICompletionOptions { purpose?: AIUsagePurpose; maxTokens?: number; temperature?: number; disableThinking?: boolean; timeoutMs?: number; maxRetries?: number }
+export interface AICompletionOptions { purpose?: AIUsagePurpose; maxTokens?: number; temperature?: number; disableThinking?: boolean; timeoutMs?: number; maxRetries?: number; onFinish?(reason: string): void }
 
 export function redactAIError(error: unknown, key = ""): string {
   let text = error instanceof Error ? error.message : String(error);
@@ -96,7 +96,7 @@ export class AIClient {
       const response = await this.fetcher(`${provider.baseUrl}/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(provider.kind === "openrouter" ? { "X-OpenRouter-Title": "LanCarbon" } : {}) }, redirect: "error", signal: controller.signal, body: JSON.stringify({ model: modelId, messages, stream: true, ...(test ? { max_tokens: 128 } : {}), ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}), ...(options.temperature !== undefined ? { temperature: options.temperature } : {}), ...((test || options.disableThinking) && provider.kind === "siliconflow" && /DeepSeek-V[34]/.test(modelId) ? { enable_thinking: false } : {}) }) });
       if (!response.ok) { const detail = await response.text(); try { captureUsage(JSON.parse(detail).usage); } catch { /* Plain-text service errors have no usage metadata. */ } throw statusError(response.status, detail, response.headers); }
       touch();
-      let received = false, finished = false;
+      let received = false, finished = false, finishReason = "";
       const consume = (data: unknown) => {
         const item = data as { usage?: unknown; error?: { message?: string; code?: number; metadata?: object } | string; message?: string; choices?: Array<{ delta?: { content?: unknown; reasoning_content?: unknown; reasoning?: unknown }; message?: { content?: unknown; reasoning_content?: unknown }; finish_reason?: string }> };
         captureUsage(item.usage);
@@ -106,9 +106,9 @@ export class AIClient {
         const content = typeof delta?.content === "string" ? delta.content : "";
         const reason = delta && "reasoning" in delta ? delta.reasoning : undefined;
         const reasoning = typeof delta?.reasoning_content === "string" ? delta.reasoning_content : typeof reason === "string" ? reason : "";
-        if (content || reasoning) { received = true; onDelta(content, reasoning); }
-        if (choice.finish_reason === "error") throw new Error("The AI service interrupted this response");
-        if (choice.finish_reason) finished = true;
+        if (content || reasoning) { if (content) received = true; onDelta(content, reasoning); }
+        // Read the remaining usage frame before reporting a truncated/filtered reply.
+        if (choice.finish_reason) { finishReason = choice.finish_reason; finished = true; }
       };
       if ((response.headers.get("content-type") ?? "").includes("application/json")) { consume(await response.json()); finished = true; }
       else {
@@ -118,7 +118,11 @@ export class AIClient {
         while (!done) { const chunk = await reader.read(); if (chunk.done) break; touch(); buffer += decoder.decode(chunk.value, { stream: true }); if (buffer.length > 2_000_000) throw new Error("Invalid oversized streaming event"); let end: number; while ((end = buffer.indexOf("\n")) >= 0) { line(buffer.slice(0, end).replace(/\r$/, "")); buffer = buffer.slice(end + 1); if (done) break; } }
         buffer += decoder.decode(); if (buffer) line(buffer.replace(/\r$/, "")); line("");
       }
-      if (!received) throw new Error("The model returned no text. Check that this is a chat model and retry.");
+      options.onFinish?.(finishReason || "done");
+      if (/^(?:length|max_tokens|max_output_tokens)$/iu.test(finishReason)) throw new Error("The model reached its output limit before finishing. Partial text was saved; retry the reply or ask a shorter question.");
+      if (finishReason === "content_filter") throw new Error("The AI service filtered this response before it finished. Partial text was saved.");
+      if (/^(?:error|tool_calls|function_call)$/iu.test(finishReason)) throw new Error("The AI service did not finish a text answer. Partial text was saved; you can retry.");
+      if (!received) throw new Error("The model returned no answer text. Check that this is a chat model and retry.");
       if (!finished) throw new Error("The connection ended before the response finished. Partial text was saved; you can retry.");
       status = "complete";
     } catch (error) {

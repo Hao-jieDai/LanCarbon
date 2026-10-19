@@ -77,6 +77,8 @@ test("records native usage, snapshots prices, separates retries and survives off
     await expect(page.getByRole("table", { name: "Usage by source and model" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "All time", exact: true })).toHaveCount(0);
     await expect(page.locator(".usage-hours button")).toHaveCount(24);
+    await expect(page.locator(".usage-activity-legend i")).toHaveCount(9);
+    expect(await page.locator(".usage-activity-legend i").evaluateAll(cells => new Set(cells.map(cell => getComputedStyle(cell).backgroundColor)).size)).toBe(9);
     expect(await page.locator('.usage-hours button').evaluateAll(cells => cells.every(cell => { const rect = cell.getBoundingClientRect(); return rect.width === rect.height && rect.width === 32; }))).toBe(true);
     expect(await page.locator('.usage-hours').evaluate(element => { const grid = element.getBoundingClientRect(), frame = element.closest('.usage-activity')!.getBoundingClientRect(); return Math.abs(grid.left + grid.width / 2 - frame.left - frame.width / 2) < 2 && grid.width < frame.width; })).toBe(true);
     expect(await page.getByRole("table", { name: "Usage requests" }).locator("tbody tr td:nth-child(3) small").count()).toBe(0);
@@ -115,6 +117,7 @@ test("records native usage, snapshots prices, separates retries and survives off
     await page.locator(".usage-prices summary").click();
     await page.locator(".usage-prices summary").click(); await page.locator(".ai-usage-content").evaluate(element => { element.scrollTop = 0; }); await page.screenshot({ path: info.outputPath("usage-dark.png") });
     await page.locator(".theme-option").filter({ hasText: "Light" }).click(); await expect(page.locator(".toast")).not.toHaveClass(/show/); await page.screenshot({ path: info.outputPath("usage-light.png") });
+    expect(await page.locator(".usage-activity-legend i").evaluateAll(cells => new Set(cells.map(cell => getComputedStyle(cell).backgroundColor)).size)).toBe(9);
     await page.getByRole("button", { name: "Open Heatmap day calendar", exact: true }).click(); await page.screenshot({ path: info.outputPath('calendar-light.png') }); await page.keyboard.press('Escape'); await expect(page.getByRole('dialog', { name: 'Heatmap day calendar' })).toHaveCount(0);
     await page.setViewportSize({ width: 900, height: 650 }); await page.screenshot({ path: info.outputPath("usage-small.png") }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.evaluate(async id => { const result = await window.notesDesktop.ai!.deleteChat(id); if (!result.ok) throw Error(result.error); }, stopChat);

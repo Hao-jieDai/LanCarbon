@@ -12,6 +12,15 @@
   --accent: #b27777;
   --accent-light: #c99898;
   --accent-soft: #4a3134;
+  --heat-empty: #211a1e;
+  --heat-1: #49313c;
+  --heat-2: #633648;
+  --heat-3: #7d3b54;
+  --heat-4: #984061;
+  --heat-5: #b3486d;
+  --heat-6: #ce597f;
+  --heat-7: #e77b9e;
+  --heat-8: #ffacc5;
   --selection: #302225;
   --danger: #d89595;
   --body-bg: #050405;
@@ -48,6 +57,15 @@
   --accent: #a76366;
   --accent-light: #925356;
   --accent-soft: #efd9da;
+  --heat-empty: #f0e9eb;
+  --heat-1: #ecd0d9;
+  --heat-2: #dfb1c1;
+  --heat-3: #d193a8;
+  --heat-4: #bf758f;
+  --heat-5: #ab5878;
+  --heat-6: #913e62;
+  --heat-7: #75264d;
+  --heat-8: #581238;
   --selection: #f5e5e6;
   --danger: #b74f57;
   --body-bg: #eadfe0;
@@ -696,12 +714,16 @@ body.book-dragging, body.book-dragging * { cursor: grabbing !important; }
 .usage-hours { display: grid; grid-template-columns: repeat(8, 32px); gap: 12px; width: max-content; max-width: 100%; margin: 22px auto; }
 .usage-hours > div { min-width: 0; }
 .usage-hours span { display: block; margin-top: 5px; color: var(--muted); font-size: 9px; text-align: center; }
-.usage-heat-cell { display: block; width: var(--heat-cell); height: var(--heat-cell); min-width: 0; border: 1px solid transparent; border-radius: 4px; padding: 0; background: var(--surface); }
+.usage-heat-cell { display: block; width: var(--heat-cell); height: var(--heat-cell); min-width: 0; border: 1px solid transparent; border-radius: 4px; padding: 0; background: var(--heat-empty); }
 .usage-hours .usage-heat-cell { width: 32px; height: 32px; }
-.usage-heat-cell.level-1 { background: color-mix(in srgb, var(--accent) 25%, var(--surface)); }
-.usage-heat-cell.level-2 { background: color-mix(in srgb, var(--accent) 50%, var(--surface)); }
-.usage-heat-cell.level-3 { background: color-mix(in srgb, var(--accent) 75%, var(--surface)); }
-.usage-heat-cell.level-4 { background: var(--accent); }
+.usage-heat-cell.level-1 { background: var(--heat-1); }
+.usage-heat-cell.level-2 { background: var(--heat-2); }
+.usage-heat-cell.level-3 { background: var(--heat-3); }
+.usage-heat-cell.level-4 { background: var(--heat-4); }
+.usage-heat-cell.level-5 { background: var(--heat-5); }
+.usage-heat-cell.level-6 { background: var(--heat-6); }
+.usage-heat-cell.level-7 { background: var(--heat-7); }
+.usage-heat-cell.level-8 { background: var(--heat-8); }
 .usage-heat-cell.incomplete { border-color: var(--muted); border-style: dotted; }
 button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
 .usage-days-scroll { display: flex; gap: 9px; overflow-x: auto; padding: 2px 2px 5px; }

@@ -15,7 +15,7 @@ LanCarbon is a Windows desktop application for writing ordinary Markdown Notes a
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
-Version 2.4.11 fixes cited monetary conversions when factual results appear beside examples or model assumptions. Amounts use their local citations; incidental figures receive the same checks as headline results. Scope evidence now retains sector lists in captions, while response guidance preserves valuation qualifiers, overlapping statistical categories and agreement with table arithmetic, and limits unsolicited monetary calculations in qualitative explanations. Requested currency conversions receive symbolic unit aids before an exchange rate is supplied; formula explanations retain the original baseline/scenario associations. Existing formula coverage, model connections, personal writing and exports remain available; no additional model service is introduced.
+Version 2.4.12 extends monetary checks to tables with shared caption citations and verifies symbolic currency conversions against cited originals. Incomplete responses caused by output limits are saved as failed replies with an explanation and Retry, while retaining returned usage. Evidence diagnostics stay inside the expandable Evidence panel. Token activity uses eight color levels plus a separate zero-usage color, with distinct light and dark palettes. Existing model connections, personal writing and exports are preserved; no additional model service is introduced.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -147,7 +147,7 @@ Choose **Unlimited · No balance tracking** for a free service or an account tha
 
 Open **Workshop → Usage**. The default is **Today**; choose **Last 7 days**, **Last 30 days**, or custom **From / To** dates. Source, model and purpose filters apply to the entire range. The compact overview shows **Requests**, total **Tokens** and **Costs**, with each title and value on one line. Requests are newest first, ten per page; pagination does not change totals or activity.
 
-**Token activity** has its own dates, independently of the summary/request filters above. **Hourly** defaults to today and shows 24 square cells centered in three rows of eight (00–07, 08–15, 16–23); choose another day using its calendar. **Daily** defaults to the current full year, with 365/366 cells arranged by week and labeled by month; select a different year independently. Changing From / To or Today / Last 7 days / Last 30 days changes summaries and request records without switching activity mode or dates. Source, model and purpose filters apply to both. From, To and the hourly day use the LanCarbon-themed calendar; dates can also be typed as YYYY-MM-DD. Darker cells mean more tokens. Hover or focus for time/date, tokens and CNY cost; missing data stays unknown.
+**Token activity** has its own dates, independently of the summary/request filters above. **Hourly** defaults to today and shows 24 square cells centered in three rows of eight (00–07, 08–15, 16–23); choose another day using its calendar. **Daily** defaults to the current full year, with 365/366 cells arranged by week and labeled by month; select a different year independently. Changing From / To or Today / Last 7 days / Last 30 days changes summaries and request records without switching activity mode or dates. Source, model and purpose filters apply to both. From, To and the hourly day use the LanCarbon-themed calendar; dates can also be typed as YYYY-MM-DD. The legend separates zero usage and eight positive token levels. Darker cells in Light theme and brighter cells in Dark theme mean more tokens; logarithmic bands keep lower-volume activity visible. Hover or focus for time/date, tokens and CNY cost; missing data stays unknown.
 
 In **Model prices**, choose a configured model and save its input/output rates per million tokens and original currency. Optional cache rates use the input rate when blank; enter zero for a verified free model. Saved prices can be edited. Removing a model and saving its configuration, deleting a service, or changing its API address automatically removes obsolete prices. Historical requests retain their own price snapshots and original reported charges.
 
@@ -255,7 +255,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
-2.4.11 修复真实金额与列举、模型假设混排时漏作单位换算的问题，按具体金额定位引用，并同样检查附带数字。范围取证补充图注中的部门清单；回答规范保留估值条件，避免将不同统计分组误认为包含关系，并核对归因与表格计算是否一致，限制在定性解释中额外推算金额。请求换币时先提供单位换算后的符号汇率辅助；公式说明保留原文的基准与情景对应关系。沿用公式取证、现有模型配置、个人写作与导出，不增加模型服务。
+2.4.12 将金额检查扩展到表格上方统一引用的形式，并依据原文检查符号汇率换算。输出额度耗尽等原因造成的不完整回复会保存为失败状态，显示原因并允许重试，返回用量仍正常记录。证据诊断保留在可展开的 Evidence 内。Token 热力图增加为八档颜色，零用量单独显示，并分别调整深浅主题配色。保留现有模型配置、个人写作与导出，不增加模型服务。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
@@ -387,7 +387,7 @@ PDF 与 EPUB 共用顶部标签栏，最多同时打开 **10 个文件**。从�
 
 打开 **Workshop → Usage**，默认查看 **Today**；可选 **Last 7 days**、**Last 30 days**，或自选 **From / To** 日期。来源、模型和用途筛选作用于整个区间。紧凑概览只显示 **Requests**、总 **Tokens** 和 **Costs**，标题与数字在同一行。请求按最新在前排列，每页十条；翻页不影响汇总和活动热力图。
 
-**Token activity** 使用独立日期，不跟随上方汇总／请求筛选。**Hourly** 默认今天，24 个正方形格子按三行八列居中排列（00–07、08–15、16–23），可用自己的日历切换日期。**Daily** 默认当前完整年份，365／366 格按周排列、标记月份，可独立切换年份。修改 From／To 或 Today／Last 7 days／Last 30 days 只调整汇总和请求记录，不切换热力图模式或日期；来源、模型和用途筛选同时作用于两者。From、To 与小时日期使用 LanCarbon 风格日历，也可手填 YYYY-MM-DD。颜色越深表示 Token 越多；悬浮或聚焦查看时间／日期、总 Token 和人民币费用，缺失数据仍为未知。
+**Token activity** 使用独立日期，不跟随上方汇总／请求筛选。**Hourly** 默认今天，24 个正方形格子按三行八列居中排列（00–07、08–15、16–23），可用自己的日历切换日期。**Daily** 默认当前完整年份，365／366 格按周排列、标记月份，可独立切换年份。修改 From／To 或 Today／Last 7 days／Last 30 days 只调整汇总和请求记录，不切换热力图模式或日期；来源、模型和用途筛选同时作用于两者。From、To 与小时日期使用 LanCarbon 风格日历，也可手填 YYYY-MM-DD。图例区分零用量和八档正用量；浅色主题颜色越深、深色主题颜色越亮表示 Token 越多，对数分档保留低用量活动的差异；悬浮或聚焦查看时间／日期、总 Token 和人民币费用，缺失数据仍为未知。
 
 在 **Model prices** 选择已配置模型，保存每百万 Token 的输入／输出单价及原始币种。缓存价格留空按输入价；经平台确认的免费模型可填零。已保存价格可编辑。删除模型并保存配置、删除服务或更改 API 地址时，自动清理对应的旧价格；历史请求保留当时单价及平台返回的原币费用，不受清理影响。
 
