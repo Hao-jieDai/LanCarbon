@@ -55,3 +55,12 @@ export function monetaryLabels(block: ClaimBlock, position: number, length: numb
 }
 
 export { tableCells };
+
+/** An isolated chart label lacks the entity/scenario binding needed for automatic repair. */
+export function isolatedFigureAmount(text: string, start: number, length: number): boolean {
+  const from = text.lastIndexOf("\n", start - 1) + 1;
+  const next = text.indexOf("\n", start + length);
+  const line = text.slice(from, next < 0 ? text.length : next).trim();
+  return line === text.slice(start, start + length).trim() &&
+    /(?:Fig\.?\s*\d|图\s*\d|Capacity\s*\(|emissions\s*\(|Years to retirement|Stranded assets\s*\()/iu.test(text);
+}

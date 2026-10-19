@@ -28,6 +28,9 @@ it("reserves actual monetary results despite bad rankings, accepts only fresh sc
   const groups = resultCoverage([context, result, changed, privateHit], [result.source.id], [stale, privateHit], "把这些金额换算成人民币能直接相加吗？");
   expect(groups.flat().some(item => item.chunk.id === "result")).toBe(true); expect(groups.flat().every(item => item.source.id !== "file:private")).toBe(true);
   expect(resultCoverage([context, result], [result.source.id], [], "Explain its method")).toEqual([]);
+  const background = hit("Earlier literature reports 719 billion CNY.", "background-money");
+  const remembered = resultCoverage([background, result], [result.source.id], [background], "Compare all total losses and convert to CNY");
+  expect(remembered[0][0].chunk.id).toBe("result");
   const removed = resultCoverage([context], [result.source.id], [result], "总损失是多少？"); expect(removed).toEqual([]);
 });
 it("supplies exact unit equivalents with verbatim scenario context without inventing labels", () => {
@@ -52,4 +55,5 @@ it("checks shared-caption table amounts and does not equate unrelated English fi
   const table = "**Transport [S1]**\n\n| Metric | Original |\n|---|---|\n| National | US\\$58 亿 |";
   expect(quantityWarnings(table, [hit("National transport exposure is US$58 billion.")]).join(" ")).toContain("580 亿美元");
   expect(quantityWarnings("损失为3.6万亿美元[S1]。", originals)).toEqual([]);
+  expect(quantityWarnings("全球损失3.6万亿美元[S1]。", [hit("Capacity (GW)\nUS$3.6 billion\nUS$2.4 billion\nFig. 4 | Companies in another scenario.")])).toEqual([]);
 });

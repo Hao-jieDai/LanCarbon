@@ -1,16 +1,20 @@
 import { mapCitations, type ChatEvidence } from "../src/shared/grounding";
-import { monetaryBlocks, monetaryLabels, tableCells, type ClaimBlock } from "./chat-claims";
+import { isolatedFigureAmount, monetaryBlocks, monetaryLabels, tableCells, type ClaimBlock } from "./chat-claims";
 interface Amount { raw: string; start: number; values: number[]; factor: number; currency: string; digits: string[]; chineseHeader?: boolean }
 const factors: Record<string, number> = { trillion: 1e12, billion: 1e9, million: 1e6, 万亿: 1e12, 千亿: 1e11, 百亿: 1e10, 亿: 1e8, 百万: 1e6, 万: 1e4 };
 function amounts(text: string): Amount[] {
   // Numeric-only inline math is formatting, not a different amount. Keep offsets and
   // original delimiters so a repair changes digits only, including copied/exported LaTeX.
   const readable = text.replace(/(?<!\\)\$([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)\$/gu, (_match, digits: string) => ` ${digits} `);
-  const expression = /(?:(CNY|RMB|USD|US\\?\$)\s*)?([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\s*(?:to|[-–—~～至])\s*(?:CNY|RMB|USD|US\\?\$)?\s*([+−-]?\d+(?:,\d{3})*(?:\.\d+)?))?\s*(trillion|billion|million|万亿|千亿|百亿|百万|亿|万)\s*(CNY|RMB|USD|US\\?\$|美元|人民币|元(?:人民币)?|dollars)?/giu;
+  const expression = /(?:(CNY|RMB|USD|US\\?\$)\s*)?([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\s*(?:to|[-–—~～至])\s*(?:CNY|RMB|USD|US\\?\$)?\s*([+−-]?\d+(?:,\d{3})*(?:\.\d+)?))?\s*(trillion|billion|million|万亿|千亿|百亿|百万|亿|万)[ \t]*(CNY|RMB|USD|US\\?\$|美元|人民币|元(?:人民币)?|dollars)?/giu;
   return [...readable.matchAll(expression)].flatMap(match => {
     const currencyText = ((match[1] ?? "") + (match[5] ?? "")).replaceAll("\\", ""), currency = /CNY|RMB|人民币|^元$/iu.test(currencyText) ? "CNY" : /USD|US\$|美元|dollars/iu.test(currencyText) ? "USD" : "";
     return currency ? [{ raw: text.slice(match.index!, match.index! + match[0].length), start: match.index!, values: [match[2], ...(match[3] ? [match[3]] : [])].map(s => Number(s.replace(/,/g, "").replace("−", "-"))), digits: [match[2], ...(match[3] ? [match[3]] : [])], factor: factors[match[4].toLowerCase()], currency }] : [];
   });
+}
+
+function supportedAmounts(hit: ChatEvidence): Amount[] {
+  return amounts(hit.chunk.text).filter(amount => !isolatedFigureAmount(hit.chunk.text, amount.start, amount.raw.length));
 }
 
 /** A numeric-only table cell may declare its monetary unit once in its column header. */
@@ -62,7 +66,7 @@ export function repairCitedUnits(text: string, evidence: ChatEvidence[]): { text
         const labels = monetaryLabels(block, claim.start, claim.raw.length);
         if (block.table && !/\[S\d+\]/u.test(paragraph) && new Set(evidence.filter(hit => labels.has(hit.label)).map(hit => hit.source.id)).size !== 1) continue;
         // Low-confidence OCR is not an authoritative basis for silently changing a value.
-        const originals = evidence.filter(hit => labels.has(hit.label) && (hit.chunk.anchor.method !== "ocr" || !hit.chunk.anchor.needsReview && (hit.chunk.anchor.confidence ?? 0) >= 80)).flatMap(hit => amounts(hit.chunk.text).map(amount => ({ ...amount, label: hit.label })));
+        const originals = evidence.filter(hit => labels.has(hit.label) && (hit.chunk.anchor.method !== "ocr" || !hit.chunk.anchor.needsReview && (hit.chunk.anchor.confidence ?? 0) >= 80)).flatMap(hit => supportedAmounts(hit).map(amount => ({ ...amount, label: hit.label })));
         const compatible = originals.filter(item => item.currency === claim.currency && item.values.length === claim.values.length);
         if (compatible.some(item => item.values.every((value, i) => Math.abs(value * item.factor - claim.values[i] * claim.factor) <= Math.max(0.005 * claim.factor, Math.abs(value * item.factor) * 1e-8)))) continue;
         const matching = compatible.filter(item => item.values.every((value, i) => value === claim.values[i]));
@@ -99,7 +103,7 @@ function repairTableConversions(text: string, evidence: ChatEvidence[], correcti
     const labels = monetaryLabels(block, 0, block.text.length);
     const hits = evidence.filter(hit => labels.has(hit.label) && (hit.chunk.anchor.method !== "ocr" || !hit.chunk.anchor.needsReview && (hit.chunk.anchor.confidence ?? 0) >= 80));
     if (!/\[S\d+\]/u.test(block.text) && new Set(hits.map(hit => hit.source.id)).size !== 1) continue;
-    const originals = hits.flatMap(hit => amounts(hit.chunk.text));
+    const originals = hits.flatMap(supportedAmounts);
     if (!sourceCells.every(amount => originals.some(original => original.currency === "USD" && original.values.length === 1 && Math.abs(original.values[0] * original.factor - amount.values[0] * amount.factor) < Math.max(1, Math.abs(amount.values[0] * amount.factor) * 1e-8)))) continue;
     let cell = cells[target];
     for (let i = coefficients.length - 1; i >= 0; i--) {

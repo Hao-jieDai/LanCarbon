@@ -1,6 +1,6 @@
 import type { KnowledgeHit } from "../src/shared/knowledge";
 import { citedLabels, type ChatEvidence } from "../src/shared/grounding";
-import { monetaryBlocks, monetaryLabels } from "./chat-claims";
+import { isolatedFigureAmount, monetaryBlocks, monetaryLabels } from "./chat-claims";
 
 /** Conservative bibliography detection; citations in ordinary prose are not a bibliography. */
 export function bibliography(hit: KnowledgeHit): boolean {
@@ -32,14 +32,15 @@ export function resultCoverage(corpus: KnowledgeHit[], sourceIds: string[], prev
       return fresh && fresh.source.id === id && fresh.fingerprint === hit.fingerprint && fresh.chunk.text === hit.chunk.text && !bibliography(fresh) && money.test(fresh.chunk.text) ? [fresh] : [];
     }).sort((a, b) => score(b) - score(a));
     const result = [...remembered.slice(0, 3), ...candidates.sort((a, b) => score(b) - score(a)).slice(0, 4)];
-    return [...new Map(result.map(hit => [`${hit.source.id}:${hit.chunk.id}`, hit])).values()];
+    // Remembering an introduction must not outrank this paper's current totals.
+    return [...new Map(result.map(hit => [`${hit.source.id}:${hit.chunk.id}`, hit])).values()].sort((a, b) => score(b) - score(a));
   }).filter(group => group.length);
 }
 
 interface Amount { original: string; start: number; value: number; factor: number; currency: "CNY" | "USD"; context: string }
 function amounts(text: string): Amount[] {
   const result: Amount[] = [];
-  const expression = /(?:(CNY|RMB|USD|US\\?\$)\s*)?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(trillion|billion|million|万亿|千亿|百亿|亿|百万|万)\s*(CNY|RMB|USD|US\\?\$|美元|人民币|元|dollars)?/giu;
+  const expression = /(?:(CNY|RMB|USD|US\\?\$)\s*)?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(trillion|billion|million|万亿|千亿|百亿|亿|百万|万)[ \t]*(CNY|RMB|USD|US\\?\$|美元|人民币|元|dollars)?/giu;
   for (const match of text.matchAll(expression)) {
     const currencyText = ((match[1] ?? "") + (match[4] ?? "")).replaceAll("\\", "");
     const currency = /CNY|RMB|人民币|^元$/iu.test(currencyText) ? "CNY" : /USD|US\$|美元|dollars/iu.test(currencyText) ? "USD" : undefined;
@@ -69,7 +70,7 @@ export function quantityWarnings(text: string, evidence: ChatEvidence[]): string
       // A scale-translation check cannot assert that those amounts must be equal.
       if (!/[亿万]/u.test(claim.original)) continue;
       const labels = monetaryLabels(block, claim.start, claim.original.length);
-      const originals = evidence.filter(hit => labels.has(hit.label)).flatMap(hit => amounts(hit.chunk.text).map(item => ({ ...item, label: hit.label })));
+      const originals = evidence.filter(hit => labels.has(hit.label)).flatMap(hit => amounts(hit.chunk.text).filter(item => !isolatedFigureAmount(hit.chunk.text, item.start, item.original.length)).map(item => ({ ...item, label: hit.label })));
       const compatible = originals.filter(item => item.currency === claim.currency);
       const actual = claim.value * claim.factor;
       if (compatible.some(item => Math.abs(item.value * item.factor - actual) <= Math.max(0.005 * claim.factor, actual * 0.001))) continue;

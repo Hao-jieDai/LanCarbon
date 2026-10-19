@@ -225,6 +225,21 @@ it("skips paid planning/review for a resolved focused follow-up with usable cove
   expect(JSON.stringify(f.fetcher.mock.calls)).toContain("unitEquivalents");
 });
 
+it("retains each paper's totals after supplementary background searches without expanding the evidence budget", async () => {
+  const f = await fixture();
+  for (const [i, title] of ["Transport", "Agriculture"].entries()) {
+    f.notes[i].title = title;
+    f.notes[i].content = "# " + title + "\n\n" + Array.from({ length: 40 }, (_, j) => `## Background ${j}\n\nEarlier literature reports US$719 billion. ${"Demand, estimates and accounting differ across regions. ".repeat(18)}`).join("\n\n") + `\n\n# Results\n\nNational aggregate stranded loss totals CNY ${i ? "6.8" : "13.7"} billion under our model. This is the study's reported total after insurance deductions.`;
+  }
+  const scope = { ...emptyKnowledgeScope(), noteIds: ["a", "b"] };
+  vi.mocked(f.retrieval.search).mockImplementation(async (_query, ids) => ({ hits: (await f.store.corpus()).filter(hit => ids!.includes(hit.source.id) && /Background/.test(hit.chunk.text)).slice(0, 20).map(hit => ({ ...hit, score: 1, retrieval: "keyword" as const })), warnings: [], mode: "keyword" }));
+  const prepared = await f.grounder.prepare({ ...f.chat, sourceScope: scope, messages: [{ id: "q", role: "user", status: "complete", content: "把这两篇的总损失换成人民币并比较金额口径", createdAt: new Date().toISOString() }] }, new AbortController().signal, () => {}, async (_messages, stage) => JSON.stringify(stage === "plan" ? { question: "Compare totals and convert all amounts to CNY", sourceIds: ["note:a", "note:b"], compare: true, queries: [] } : { sufficient: false, queries: [{ query: "Background of results", sourceIds: ["note:a", "note:b"] }] }));
+  const payload = JSON.parse(prepared.messages[1].content);
+  for (const total of ["CNY 13.7 billion", "CNY 6.8 billion"]) expect(JSON.stringify(payload.evidence)).toContain(total);
+  expect(JSON.stringify(payload)).not.toContain("SecretOutsideSelection");
+  expect(prepared.grounding.research).toMatchObject({ modelChecks: 2, supplemented: true });
+});
+
 it("persists a corrected cited amount without another API request and keeps original reasoning intact", async () => {
   const f = await fixture(); f.notes[0].content = "Results: the national total is CNY 28.4 billion. The companies hold US$41 billion.";
   f.fetcher.mockImplementation(async () => new Response(JSON.stringify({ choices: [{ message: { content: "全国损失为28.4亿元人民币；公司持有US$41亿 [S1]。", reasoning_content: "Original provider thinking stays unchanged." } }], usage: { prompt_tokens: 50, completion_tokens: 15 } }), { headers: { "content-type": "application/json" } }));

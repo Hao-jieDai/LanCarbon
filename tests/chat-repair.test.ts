@@ -99,3 +99,9 @@ it("honours monetary column units without confusing counts or crossing currency 
   const shared = "**Transport [S1]**\n\n| Metric | 原值（亿美元） | 人民币（万亿元） |\n|---|---|---|\n| A | 52 | $52e$ |";
   expect(repairCitedUnits(shared, hits).text).toContain("| A | 520 | $0.052e$ |");
 });
+
+it("does not use isolated chart labels as proof that another entity's total has the wrong scale", () => {
+  const chart = evidence("Company risks\nCapacity (GW)\nUS$2.7 billion\nUS$1.6 billion\nFig. 3 | Selected operators in a moderate scenario.");
+  const text = "全球更严格情景的总损失是2.7万亿美元[S1]。";
+  expect(repairCitedUnits(text, [chart]).corrections).toEqual([]);
+});

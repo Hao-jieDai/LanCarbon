@@ -73,6 +73,9 @@ it("distinguishes scientific intervals from equations and validates explicit uni
   expect(arithmeticWarnings("18.9 万亿美元（16–21.7）；5.4 trillion (4.6–6.1); 3.7 trillion (3.2-4.2)")).toEqual([]);
   expect(arithmeticWarnings("差额为558.1亿元（3958.4 − 3390.3）")[0]).toContain("568.1");
   expect(arithmeticWarnings("16 - 21.7 = 18.9")).toHaveLength(1);
+  expect(arithmeticWarnings("120.5 + 34.2 + 7.3 = 162; 10 + 3 * 4 = 22; 8/16 = 50%")).toEqual([]);
+  expect(arithmeticWarnings("120.5 + 34.2 + 7.3 = 150")[0]).toContain("162");
+  expect(arithmeticWarnings("10 + 3 * 4 = 52")[0]).toContain("22");
   expect(unitDefinitionWarnings("原文口径为 billion CNY，即亿元人民币")[0]).toContain("10 亿元人民币");
   expect(unitDefinitionWarnings("1 billion USD = 1 亿美元")).toHaveLength(1);
   expect(unitDefinitionWarnings("1 billion CNY = 10亿元人民币；2 billion CNY = 20亿元；billion USD means 十亿美元")).toEqual([]);
