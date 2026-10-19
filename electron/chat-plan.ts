@@ -4,7 +4,7 @@ import { evidenceTokens } from "./chat-evidence";
 
 export interface SourceProfile { id: string; title: string; opening: string }
 export interface EvidenceQuery { query: string; sourceIds: string[] }
-export interface ResearchPlan { question: string; sourceIds: string[]; compare: boolean; queries: EvidenceQuery[]; allSources?: boolean; ambiguous?: boolean }
+export interface ResearchPlan { question: string; sourceIds: string[]; compare: boolean; queries: EvidenceQuery[]; allSources?: boolean; ambiguous?: boolean; lockedFocus?: boolean }
 export type ResearchConsult = (messages: Array<{ role: string; content: string }>, stage: "plan" | "review") => Promise<string>;
 export const broadQuestion = /summari[sz]|overview|compare|contrast|main (?:finding|result)|method|conclusion|总结|概括|概述|比较|对比|异同|区别|不同|主要|方法|结论|全文|综述|摘要/iu;
 const collectionQuestion = /(?:these|all|selected|each|several|five|papers|articles|documents).{0,30}(?:differ|compar|contrast|defin|summar)|(?:这几|这些|各篇|五篇|每篇|所有|几篇|多篇).{0,30}(?:文|定义|区别|不同|金额|损失|比较)|(?:五篇|各篇|每篇|所有).{0,20}(?:金额|定义|比较|区别)/iu;
@@ -39,8 +39,15 @@ export function namedSources(question: string, profiles: SourceProfile[]): strin
   }).map(profile => profile.id);
 }
 export function localResearchPlan(question: string, profiles: SourceProfile[], previous: string[], previousFocus: string[]): ResearchPlan {
-  const named = namedSources(question, profiles), allSources = collectionQuestion.test(question), compare = allSources || comparison.test(question), known = new Set(profiles.map(profile => profile.id));
+  const named = namedSources(question, profiles), allSources = collectionQuestion.test(question), known = new Set(profiles.map(profile => profile.id));
   const newReference = changedSubject.test(question), prior = previousFocus.filter(id => known.has(id));
+  const responseReference = /上(?:一|个)?(?:表|回答)|前(?:一|个)?(?:表|回答)|刚才.{0,8}(?:表|回答)|上述(?:表|回答)|(?:previous|preceding|that)\s+(?:table|answer)/iu.test(question);
+  const responseOperation = /换(?:成|算)|单位|排版|整理|翻译|改写|重新|复核|检查|convert|reformat|translate|rewrite|check/iu.test(question);
+  const otherDocument = /(?:另一|其他|新的一?|不同).{0,12}(?:篇|文献|文章|论文)|(?:other|another|different|new)\s+(?:paper|study|article|document)/iu.test(question);
+  const lockedFocus = !!(prior.length && !named.length && !allSources && !otherDocument && responseReference && responseOperation);
+  // Checking two columns or changing currency does not compare/switch source documents.
+  const compare = lockedFocus ? prior.length > 1 : allSources || comparison.test(question);
+  if (lockedFocus) return { question: `${previous.at(-1)?.slice(0, 700) ?? ""}\n${question}`.slice(-1500), sourceIds: prior, compare, queries: [], lockedFocus: true, ambiguous: false };
   const inherited = !named.length && !compare && !newReference && referential.test(question) ? prior : [];
   let focus = allSources || compare && named.length < 2 ? profiles.map(profile => profile.id) : compare ? [...new Set([...named, ...prior])] : named.length ? named : inherited;
   // An unresolved comparison must search the selection, not silently compare only one paper.
@@ -62,17 +69,18 @@ export function validatedQueries(value: unknown, allowed: Set<string>, limit = 3
   });
 }
 export function readResearchPlan(text: string, fallback: ResearchPlan, profiles: SourceProfile[], originalQuestion = fallback.question): ResearchPlan | undefined {
-  const value = object(text), allowed = new Set(profiles.map(profile => profile.id));
+  const value = object(text), allowed = new Set(fallback.lockedFocus ? fallback.sourceIds : profiles.map(profile => profile.id));
   if (!value || typeof value.question !== "string" || !value.question.trim() || value.question.length > 1500 || !Array.isArray(value.sourceIds) || typeof value.compare !== "boolean") return;
   const ids = [...new Set<string>(value.sourceIds.filter((id: unknown): id is string => typeof id === "string" && allowed.has(id)))].slice(0, 12);
   // Keep explicitly named local matches even when a model omits them.
   const named = namedSources(originalQuestion, profiles);
   // A surname shared by multiple papers is a set of candidates, not multiple explicit requests.
   const explicit = fallback.allSources ? fallback.sourceIds : fallback.compare ? named : fallback.ambiguous ? [] : named;
-  const compare = fallback.compare || value.compare;
+  const compare = fallback.lockedFocus ? fallback.compare : fallback.compare || value.compare;
   let resolved = ids.length ? [...new Set([...explicit, ...ids])] : fallback.sourceIds;
+  if (fallback.lockedFocus) resolved = fallback.sourceIds;
   if (compare && resolved.length < 2 && profiles.length > 1) resolved = fallback.sourceIds.length > 1 ? fallback.sourceIds : profiles.map(profile => profile.id);
-  return { ...fallback, question: value.question, sourceIds: resolved, compare, ambiguous: !ids.length && fallback.ambiguous, queries: validatedQueries(value.queries, allowed) };
+  return { ...fallback, question: fallback.lockedFocus ? fallback.question : value.question, sourceIds: resolved, compare, ambiguous: !ids.length && fallback.ambiguous, queries: validatedQueries(value.queries, allowed) };
 }
 export function planMessages(question: string, profiles: SourceProfile[], previous: string[], previousFocus: string[], fallback: ResearchPlan) {
   const byId = new Map(profiles.map(profile => [profile.id, profile]));

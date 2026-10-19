@@ -39,6 +39,20 @@ it("allows a comparison planner to narrow a candidate collection but preserves a
   expect(readResearchPlan(output, all, paperProfiles)!.sourceIds).toHaveLength(5);
 });
 
+it("keeps table conversion and column checks in the previous source scope without blocking explicit paper switches", () => {
+  const profiles = [{ id: "file:ownership", title: "Insurance.pdf", opening: "Ramos et al. Insurance exposure." }, { id: "file:macro", title: "Transport.pdf", opening: "Keller et al. Transport losses." }];
+  const previous = ["Investor study: list insurer and government losses in a table."];
+  for (const question of ["把刚才这张表换成人民币，并检查原值与换算列是否一致。", "Convert that table to CNY and check the columns."]) {
+    const plan = localResearchPlan(question, profiles, previous, ["file:ownership"]);
+    expect(plan).toMatchObject({ compare: false, sourceIds: ["file:ownership"], lockedFocus: true });
+    expect(plan.question).toContain("government losses");
+    const noisy = readResearchPlan(JSON.stringify({ question: "Compare all papers", sourceIds: profiles.map(p => p.id), compare: true, queries: [{ query: "Other study", sourceIds: ["file:macro"] }] }), plan, profiles, question)!;
+    expect(noisy.sourceIds).toEqual(["file:ownership"]); expect(noisy.compare).toBe(false); expect(noisy.queries).toEqual([]);
+  }
+  expect(localResearchPlan("把上表改为另一篇文献的结果，再比较各篇。", profiles, previous, ["file:ownership"]).lockedFocus).not.toBe(true);
+  expect(localResearchPlan("上表与所有文献的金额有什么不同？", profiles, previous, ["file:ownership"]).allSources).toBe(true);
+});
+
 it("prioritizes named sources in a bounded catalogue even when a comparison selects thousands of papers", () => {
   const profiles = [...Array.from({ length: 100 }, (_, i) => ({ id: String(i), title: `Item ${i}`, opening: "Unrelated text." })), ...paperProfiles];
   const question = "Mercure 的结论与其他文章矛盾吗？", fallback = localResearchPlan(question, profiles, [], []);
