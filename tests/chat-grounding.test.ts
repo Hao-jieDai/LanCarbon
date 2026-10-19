@@ -48,6 +48,16 @@ it("prepares sources automatically, isolates the chat scope, persists evidence a
   expect((await f.chats.get(chat.id)).messages.at(-1)!.grounding!.evidence[0].chunk.text).toBe(hit.chunk.text);
   await expect(f.grounder.open(chat, reply.id, "S999")).rejects.toThrow("not part");
 });
+it("combines method constraints and same-paper unit context before generation without additional model calls", async () => {
+  const f = await fixture();
+  f.notes[0].content = "# Scope\n\nOur study covers food processing, freight and buildings.\n\n# Method\n\nThe allocation method selects the cheapest technology per site and ranks the candidates.\n\n# Limitations\n\nThe model assumes static assignments because of infrastructure lock-in. Switching is future research.\n\n# Financial exposure\n\nAn upper bound of US$713 billion measures potential losses in financial firms.\n\n" + Array.from({ length: 45 }, (_, i) => `## Background ${i}\n\n${"Economic conditions differ across locations and years. ".repeat(12)}`).join("\n\n") + "\n\n# Discussion\n\nExposure of US$713 is discussed alongside collateral losses.";
+  const chat: AIChat = { ...f.chat, sourceScope: { ...emptyKnowledgeScope(), noteIds: ["a"] }, messages: [{ id: "q", role: "user", status: "complete", content: "Why does the allocation help and how much does it cost?", createdAt: new Date().toISOString() }] };
+  vi.mocked(f.retrieval.search).mockImplementation(async () => ({ hits: (await f.store.corpus()).filter(hit => hit.source.id === "note:a" && hit.chunk.text.includes("Exposure of US$713")).map(hit => ({ ...hit, score: 1, retrieval: "keyword" as const })), warnings: [], mode: "keyword" }));
+  const result = await f.grounder.prepare(chat, new AbortController().signal, () => {});
+  const text = result.grounding.evidence.map(hit => hit.chunk.text).join("\n");
+  expect(text).toContain("static assignments"); expect(text).toContain("US$713 billion"); expect(text).toContain("cheapest technology");
+  expect(text).not.toContain("SecretOutsideSelection"); expect(f.fetcher).not.toHaveBeenCalled(); expect(result.grounding.research!.modelChecks).toBe(0);
+});
 it("does not search other cached sources after selection changes and refuses deleted-only scope without a Chat request", async () => {
   const f = await fixture(); await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Summarize this paper"); await f.settled();
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["b"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Summarize this paper"); const second = await f.settled();
@@ -170,11 +180,12 @@ it("skips paid planning/review for a resolved focused follow-up with usable cove
 });
 
 it("persists a corrected cited amount without another API request and keeps original reasoning intact", async () => {
-  const f = await fixture(); f.notes[0].content = "Results: the national total is CNY 28.4 billion.";
-  f.fetcher.mockImplementation(async () => new Response(JSON.stringify({ choices: [{ message: { content: "全国损失为28.4亿元人民币 [S1]。", reasoning_content: "Original provider thinking stays unchanged." } }], usage: { prompt_tokens: 50, completion_tokens: 15 } }), { headers: { "content-type": "application/json" } }));
+  const f = await fixture(); f.notes[0].content = "Results: the national total is CNY 28.4 billion. The companies hold US$41 billion.";
+  f.fetcher.mockImplementation(async () => new Response(JSON.stringify({ choices: [{ message: { content: "全国损失为28.4亿元人民币；公司持有US$41亿 [S1]。", reasoning_content: "Original provider thinking stays unchanged." } }], usage: { prompt_tokens: 50, completion_tokens: 15 } }), { headers: { "content-type": "application/json" } }));
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "全国损失多少钱？");
   const chat = await f.settled(), reply = chat.messages.at(-1)!;
   expect(reply.content).toContain("284亿元人民币"); expect(reply.reasoning).toBe("Original provider thinking stays unchanged.");
+  expect(reply.content).toContain("US\\$410亿");
   expect(reply.grounding!.warnings.some(w => w.startsWith("Unit corrected"))).toBe(true); expect(reply.grounding!.warnings.some(w => w.startsWith("Amount needs checking"))).toBe(false);
   expect(f.fetcher).toHaveBeenCalledTimes(1); expect((await f.chats.get(chat.id)).messages.at(-1)!.content).toBe(reply.content);
 });

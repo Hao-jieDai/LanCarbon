@@ -13,7 +13,7 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
 
-Version 2.4.8 adds offline English/Chinese OCR for scanned and mixed PDFs, sharing page text between reading and document questions. The PDF OCR menu supports page retry, document preparation and cancellation; recognized text supports selection, search and translation, with a bounded 64 MB cache. Document answers adapt evidence and structure to the question, retain recent user context, normalize citations and correct unambiguous cited currency-unit mistakes in final prose without another model call. Original files, personal writing and existing model connections are preserved.
+Version 2.4.9 adds **Export to Note** for complete chat snapshots with optional Thinking and cited excerpts, preserving editable Markdown, LaTeX and per-reply source locations. Future replies use direct academic language and portable LaTeX formulae; Chat, Copy and both exports share the same formatting. Document questions now reserve relevant method constraints and study-scope passages, and supplement incomplete monetary units from the same document within the existing evidence budget. These local checks add no model requests; existing model connections, personal writing and source files are preserved.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -56,6 +56,10 @@ SiliconFlow uses base address `https://api.siliconflow.cn/v1`; OpenRouter uses `
 Keys remain encrypted for the current Windows account in **Config/ai-settings.json**; only masked previews reach the interface. Moving to another Windows account may require re-entry. Back up the complete LanCarbon home folder, including Config, Cache and Library, together with any separately selected Data location. Conversations are local in **Data/Research/Chats/chats.json**. Switching to Notes or Books lets generation continue; closing LanCarbon stops it and preserves partial replies. Chat submits your conversation text and response guidelines; Notes, Books and Library files are not automatically attached. PDF and EPUB reading are available in Library; retrieval and literature workflows follow separately.
 
 Use **Export PDF** beside the chat title to save the entire conversation. **Include Thinking** is checked by default and exports all saved reasoning, even when collapsed on screen; disable it for answers only. **Include cited evidence excerpts** adds the original passages referenced by each reply. Model names, timestamps, source titles and locations remain included; citation labels belong to their own reply. Wait for generation to finish or stop it first. Export is offline, makes no model request and defaults to the **PDFs** folder. Stopped/error replies retain their partial status; exporting does not delete the chat.
+
+Chat replies use Markdown with LaTeX: `$...$` for inline formulae and `$$` on separate lines for displayed formulae. **Copy** preserves this source; paste it into a Note and use **Preview** to render the formulae. Standard LaTeX delimiters are normalized for reading and copying. Plain-text equations in an old reply are not guessed or automatically rewritten; ask for a LaTeX version if needed.
+
+Use **Export to Note** beside the chat title to save the complete conversation as a new editable Note and open its Preview. **Include Thinking** and **Include cited evidence excerpts** work as in PDF export. Each export creates an independent snapshot with the conversation title, questions, answers, model names, timestamps and source locations. Citation links lead to that reply’s source entries inside the Note; identical labels in different replies stay separate. Thinking and original excerpts are preserved as literal text. Wait for generation to finish or stop it first. Export happens locally without a model request. Subsequent chat messages do not automatically change an exported Note.
 
 ### Retrieval models
 
@@ -247,7 +251,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
-2.4.8 加入本地中英文 OCR，扫描 PDF 与混合 PDF 的识别文字可供阅读和资料问答共用。PDF 的 OCR 菜单支持重新识别当前页、准备全文及停止；识别文字支持选取、搜索和翻译，缓存上限为 64 MB。资料问答按问题类型组织证据和答案，保留近期用户问题上下文，统一引用格式，并直接修正有明确引用依据的币种单位换算错误，无须增加模型调用。保留原文件、个人写作及现有模型配置。
+2.4.9 新增 **Export to Note**，可将完整聊天保存为可编辑笔记，选择是否包含 Thinking 和引用摘录，并保留 Markdown、LaTeX 与逐轮来源位置。后续回答采用直接明确的学术表达及可复制的 LaTeX 公式，聊天、Copy 和两种导出共用格式处理。资料问答补充相关方法限制与研究范围原文，并在既有证据预算内查找同篇文献中带完整金额单位的段落；这些本地检查不增加模型请求。现有模型连接、个人写作和原文件保持完整。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
@@ -321,6 +325,10 @@ SiliconFlow 地址为 `https://api.siliconflow.cn/v1`，OpenRouter 地址为 `ht
 密钥仍使用当前 Windows 账户加密，保存在 **Config/ai-settings.json**，界面只接收掩码。迁移 Windows 账户后可能需要重填；备份时保留完整 LanCarbon 文件夹（包括 Config、Cache 和 Library），另选的数据目录也需同时备份。会话位于 **Data/Research/Chats/chats.json**；切到 Notes 或 Books 后生成继续，关闭软件会停止生成并保存已有回复。Chat 提交会话文字与回答规范，Notes、Books 和 Library 文件不会自动附加。PDF 和 EPUB 可在 Library 内阅读；检索与文献工作流另行提供。
 
 点击聊天标题旁的 **Export PDF** 导出完整会话。默认勾选 **Include Thinking**，即使界面已折叠也会完整导出已保存的推理内容；取消勾选则只导出问答。**Include cited evidence excerpts** 可附加每条回复实际引用的原文摘录。逐条保留模型名称、时间及来源位置，各轮引用编号互不混淆。请先等待生成完成或停止生成；导出在本机完成，不调用模型，默认保存到 **PDFs** 文件夹。停止或失败的回复保留未完成标记，导出不会删除聊天。
+
+聊天正文使用 Markdown，公式使用 LaTeX：行内公式用 `$...$`，独立公式用单独成行的 `$$`。**Copy** 保留这些源码，粘贴到 Note 后在 **Preview** 中呈现公式。常见 LaTeX 分隔符会统一处理以便阅读与复制；旧回答中的普通文本公式不会被猜测重写，如需转换可明确要求模型提供 LaTeX 版本。
+
+点击聊天标题旁的 **Export to Note**，将完整聊天保存为新的可编辑 Note，并直接打开其预览。**Include Thinking** 与 **Include cited evidence excerpts** 的作用与 PDF 导出相同。每次导出创建独立快照，保留会话标题、问题、回答、模型名称、时间与来源位置；引用链接跳到笔记内对应回复的来源说明，不同轮次的相同编号互不混淆。Thinking 和原文摘录按原始文字保留。请先等待生成结束或停止生成；保存全程在本机完成，不调用模型，后续聊天不会自动改动已导出的 Note。
 
 ### Library 资料导入
 

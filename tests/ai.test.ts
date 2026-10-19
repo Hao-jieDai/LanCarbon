@@ -17,6 +17,18 @@ beforeEach(async () => { root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarb
 afterEach(async () => { vi.useRealTimers(); await fs.rm(root, { recursive: true, force: true }); });
 
 describe("AI settings and conversations", () => {
+  it("applies academic LaTeX output rules to existing custom settings without changing saved preferences or Thinking", async () => {
+    const settings = new AISettingsStore(root, codec); await settings.save(config()); await settings.savePreferences("Use brief Chinese explanations.");
+    const before = await fs.readFile(path.join(root, "ai-settings.json"));
+    const store = new AIChatStore(root), fetcher = vi.fn().mockImplementation(async () => sse("Formula \\(x_i^2\\).\n\n\\[y=\\frac{a}{b}\\]"));
+    const service = new AIService(settings, () => store, new AIClient(fetcher), () => {}), chat = await store.create("siliconflow", config().models[0].id);
+    await service.send(chat.id, "siliconflow", config().models[0].id, "Give a formula.");
+    await vi.waitFor(async () => expect((await store.get(chat.id)).messages.at(-1)?.status).toBe("complete"));
+    const system = JSON.parse(fetcher.mock.calls[0][1].body).messages[0].content;
+    expect(system).toContain("Use brief Chinese explanations."); expect(system).toContain("metaphors"); expect(system).toContain("LaTeX");
+    const reply = (await store.get(chat.id)).messages.at(-1)!; expect(reply.content).toContain("$x_i^2$"); expect(reply.content).toContain("$$\ny=\\frac{a}{b}\n$$"); expect(reply.reasoning).toBe("Provided reasoning");
+    expect(await fs.readFile(path.join(root, "ai-settings.json"))).toEqual(before); expect(fetcher).toHaveBeenCalledTimes(1); await service.shutdown();
+  });
   it("encrypts keys, keeps them out of public records, preserves blank keys and supports re-entry on another Windows account", async () => {
     const store = new AISettingsStore(root, codec); const saved = await store.save(config());
     expect(saved[0].hasKey).toBe(true); expect(JSON.stringify(saved)).not.toContain(secret);

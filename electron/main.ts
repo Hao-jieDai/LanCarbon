@@ -21,6 +21,7 @@ import { OcrStore } from "./ocr-store";
 import type { KnowledgeScope } from "../src/shared/knowledge";
 import { MAX_ASSET_BYTES, resourceUsages, type AssetConflictChoice } from "../src/shared/assets";
 import { exportChatPdf, exportPagePdf, pdfFileName } from "./pdf-exporter";
+import { chatNote } from "../src/shared/chatNote";
 import { withoutResources } from "../src/shared/removeResourceReferences";
 import { exportBookToDirectory } from "./book-exporter";
 import { bookSourceHash, buildBookForPublication, buildBookInParent, preflightBook } from "./book-builder";
@@ -323,7 +324,7 @@ app.whenReady().then(async () => {
   shutdownKnowledge = async () => { await stopReaderOcr(); await Promise.all([...retrievalStores.values()].map(manager => manager.shutdown())); await Promise.all([...knowledgeStores.values()].map(manager => manager.stop(false))); knowledgeExtractor?.idle(); };
   const libraryChanged = () => { mainWindow?.webContents.send("library:changed"); knowledgeStores.get(dataDirectory)?.requestRefresh(); };
   const syncEdits = async () => { const disk = await libraryStore().synchronize(); const edited = await edits().sync(); const result = { changed: disk.changed || edited.changed, errors: [...disk.errors, ...edited.errors] }; if (result.changed) libraryChanged(); return result; };
-  flushExternal = async () => { await syncEdits(); await shutdownKnowledge(); await reader().flush(); await epub().flush(); await balances().flush(); };
+  flushExternal = async () => { await noteExports; await syncEdits(); await shutdownKnowledge(); await reader().flush(); await epub().flush(); await balances().flush(); };
   let scanningExternal = false;
   externalTimer = setInterval(() => { if (scanningExternal) return; scanningExternal = true; void syncEdits().catch(() => undefined).finally(() => { scanningExternal = false; }); }, 3000);
   externalTimer.unref();
@@ -679,6 +680,19 @@ app.whenReady().then(async () => {
     return environmentManager.install(id);
   });
   let pdfExporting = false;
+  let noteExports: Promise<unknown> = Promise.resolve();
+  aiHandler("ai:export-note", async (id: string, options: import("../src/shared/ai").ChatPdfOptions) => {
+    const targetStore = store, chatStore = chats(), targetData = dataDirectory;
+    const work = noteExports.catch(() => undefined).then(async () => {
+      const note = chatNote(await chatStore.get(id), options);
+      const { workspace } = await targetStore.loadWorkspace();
+      const next = { ...workspace, notes: [...workspace.notes, note] };
+      await targetStore.saveWorkspace(next);
+      knowledgeStores.get(targetData)?.requestRefresh();
+      return { workspace: next, noteId: note.id };
+    });
+    noteExports = work.catch(() => undefined); return work;
+  });
   aiHandler("ai:export-pdf", async (id: string, options: import("../src/shared/ai").ChatPdfOptions) => {
     if (pdfExporting) throw Error("A PDF export is already in progress");
     if (typeof id !== "string" || !options || typeof options.includeThinking !== "boolean" || typeof options.includeEvidence !== "boolean") throw Error("Invalid chat PDF options");

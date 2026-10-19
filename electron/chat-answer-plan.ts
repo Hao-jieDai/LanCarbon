@@ -20,9 +20,13 @@ export function answerInstructions(task: AnswerTask): string {
     answer: "Answer the current question first, explain enough to make it useful, and stop when it is answered. Choose paragraphs, an example, a table or a formula according to the task; do not force a fixed sequence of headings." })[task];
 }
 /** Reserve methodological evidence per relevant source for metric questions; no external/model calls. */
-export function methodCoverage(corpus: KnowledgeHit[], ids: string[], task: AnswerTask): KnowledgeHit[][] {
-  if (!["definition", "writing"].includes(task)) return [];
-  const groups = [/(?:defin|measur|quantif|net present value|cash flow|future profit|accounting|NPV|定义|度量|衡量|净现值|现金流)/iu, /(?:baseline|counterfactual|business.as.usual|pass.through|assum|limitation|ownership|基准|假设|局限|所有权)/iu];
+export function methodCoverage(corpus: KnowledgeHit[], ids: string[], task: AnswerTask, question = ""): KnowledgeHit[][] {
+  if (task === "ranking") return [];
+  const mechanism = task === "mechanism" || /为什么|为何|机制|如何.*(?:选择|调整|切换)|\bwhy\b|\bmechanism\b|how.{0,25}(?:select|switch|allocat)/iu.test(question);
+  if (!["definition", "writing", "comparison"].includes(task) && !mechanism) return [];
+  const groups = mechanism
+    ? [/(?:method|algorithm|decision|select|rank|allocat|cost|方法|规则|选择|排序|分配)/iu, /(?:limitation|assum|static|fixed|switch|lock.in|future research|局限|假设|静态|固定|切换|锁定|未来研究)/iu]
+    : [/(?:defin|measur|quantif|net present value|cash flow|future profit|accounting|NPV|定义|度量|衡量|净现值|现金流)/iu, /(?:baseline|counterfactual|business.as.usual|pass.through|assum|limitation|ownership|基准|假设|局限|所有权)/iu];
   return ids.slice(0, 12).map(id => {
     const candidates = corpus.filter(hit => hit.source.id === id && !bibliography(hit));
     const chosen = groups.flatMap(pattern => candidates.map(hit => ({ hit, score: (hit.chunk.text.match(new RegExp(pattern.source, "giu")) ?? []).length + (pattern.test(hit.chunk.anchor.heading ?? "") ? 3 : 0) })).filter(item => item.score > 0).sort((a, b) => b.score - a.score).slice(0, 1).map(item => item.hit));

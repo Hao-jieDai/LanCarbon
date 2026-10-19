@@ -1,6 +1,8 @@
 import type { ChatGrounding, ChatSourceCatalogue, CitationTarget } from "./grounding";
 import type { KnowledgeScope } from "./knowledge";
 import type { AIModelPrice, AIModelPriceInput, AIUsagePage, AIUsageQuery } from "./aiUsage";
+import type { WorkspaceFile } from "./types";
+import { CHAT_OUTPUT_GUIDELINES } from "./chatText";
 export type AIProviderKind = "siliconflow" | "openrouter" | "others";
 // Retrieval roles use their own settings; Chat connections retain their Chat-only model lists.
 export type AIModelPurpose = "chat" | "embedding" | "rerank";
@@ -32,6 +34,7 @@ export interface AIDesktopApi {
   renameChat(id: string, title: string): Promise<AIResult<{ chat: AIChat }>>;
   deleteChat(id: string): Promise<AIResult<object>>;
   exportPdf(id: string, options: ChatPdfOptions): Promise<ChatPdfResult>;
+  exportNote(id: string, options: ChatPdfOptions): Promise<AIResult<{ workspace: WorkspaceFile; noteId: string }>>;
   send(id: string, providerId: string, modelId: string, text: string, retry?: boolean): Promise<AIResult<{ chat: AIChat }>>;
   stop(id: string): Promise<AIResult<object>>;
   onChat(callback: (chat: AIChat) => void): () => void;
@@ -44,7 +47,7 @@ export interface AIDesktopApi {
   saveExchangeRate(usdToCny: number): Promise<AIResult<{ usdToCny: number }>>;
   onUsageChanged(callback: () => void): () => void;
 }
-export const DEFAULT_AI_SYSTEM_PROMPT = `Use a professional, accurate, calm, neutral and concise academic style. Answer in the user's language unless requested otherwise. Do not use emoji, decorative icons, exaggerated praise or promotional language. Give the main answer first and use clear paragraphs; use headings, lists, tables, code or mathematics only when they improve understanding. Distinguish established facts, assumptions, interpretations and uncertainty. Do not invent citations, quotations, sources, data or capabilities. State relevant limitations briefly and ask for essential missing information. Follow the user's specific task and requested format.`;
+export const DEFAULT_AI_SYSTEM_PROMPT = `Use a professional, accurate, calm, neutral and concise academic style. Answer in the user's language unless requested otherwise. Do not use emoji, decorative icons, exaggerated praise or promotional language. Give the main answer first and use clear paragraphs; use headings, lists, tables, code or mathematics only when they improve understanding. Distinguish established facts, assumptions, interpretations and uncertainty. Do not invent citations, quotations, sources, data or capabilities. State relevant limitations briefly and ask for essential missing information. Follow the user's specific task and requested format.\n\n${CHAT_OUTPUT_GUIDELINES}`;
 export const AI_PRESETS = {
   siliconflow: { name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", modelId: "deepseek-ai/DeepSeek-V4-Pro", modelName: "DeepSeek V4 Pro" },
   openrouter: { name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", modelId: "openai/gpt-6-luna", modelName: "GPT-6 Luna" },
