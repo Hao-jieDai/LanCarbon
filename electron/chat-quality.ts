@@ -48,8 +48,11 @@ function amounts(text: string): Amount[] {
   return result;
 }
 /** Deterministic unit equivalents alongside verbatim context; no inferred scenario/metric associations. */
-export function quantityNotes(hit: KnowledgeHit, includeContext = true): string[] {
-  return amounts(hit.chunk.text).filter(item => item.factor >= 1e6).slice(0, 3).map(item => `${item.original.trim()} = ${Number((item.value * item.factor / 1e8).toPrecision(12))} ${item.currency === "CNY" ? "亿元人民币" : "亿美元"}.${includeContext ? ` Original context: ${item.context}` : ""}`);
+export function quantityNotes(hit: KnowledgeHit, includeContext = true, convertToCny = false): string[] {
+  return amounts(hit.chunk.text).filter(item => item.factor >= 1e6).slice(0, convertToCny ? 8 : 3).map(item => {
+    const value = Number((item.value * item.factor / 1e8).toPrecision(12));
+    return `${item.original.trim()} = ${value} ${item.currency === "CNY" ? "亿元人民币" : "亿美元"}.${convertToCny && item.currency === "USD" ? ` CNY = ${value} × e 亿元人民币 (e CNY/USD; symbolic).` : ""}${includeContext ? ` Original context: ${item.context}` : ""}`;
+  });
 }
 /** Flag only exact-mantissa, same-currency scale conflicts in cited passages. Never silently rewrite scientific claims. */
 export function quantityWarnings(text: string, evidence: ChatEvidence[]): string[] {

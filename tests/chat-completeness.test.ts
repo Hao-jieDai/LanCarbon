@@ -3,6 +3,7 @@ import { expect, it } from "vitest";
 import { methodCoverage, answerTask } from "../electron/chat-answer-plan";
 import { scopeCoverage, unitCompanions } from "../electron/chat-completeness";
 import { chooseEvidence } from "../electron/chat-evidence";
+import { quantityNotes } from "../electron/chat-quality";
 import type { KnowledgeHit } from "../src/shared/knowledge";
 function hit(id: string, text: string, sourceId = "a"): KnowledgeHit { return { fingerprint: "v1", source: { id: `file:${sourceId}`, entityId: sourceId, title: `${sourceId}.pdf`, kind: "file", format: "pdf", fingerprint: "v1", locations: [], attachments: [], tags: [], systemManaged: false }, chunk: { id, text, anchor: { kind: "pdf", page: 3 } } }; }
 it("keeps selection rules and static constraints together even when a why question also asks for amounts", () => {
@@ -50,4 +51,14 @@ it("retains metric-scope enumerations in figure captions alongside general study
   }
   const method = hit("horizon", "The valuation period is 12 years, discounted at 5% against the counterfactual baseline.");
   expect(methodCoverage([method], ["file:a"], "calculation", "比较几篇金额换算后能否相加？").flat()).toContainEqual(method);
+});
+it("computes symbolic CNY equivalents before applying an unspecified exchange rate", () => {
+  const source = hit("shipping", "Freight exposure is USD 12.6 million; the reserve is CNY 3.75 billion.");
+  const aids = quantityNotes(source, false, true);
+  expect(aids).toContain("USD 12.6 million = 0.126 亿美元. CNY = 0.126 × e 亿元人民币 (e CNY/USD; symbolic).");
+  expect(aids).toContain("CNY 3.75 billion = 37.5 亿元人民币.");
+  expect(quantityNotes(source, false).join(" ")).not.toContain("CNY/USD");
+  const several = hit("several", "US$1.6 trillion, US$42 billion, US$87 billion, US$1.75 trillion and US$438 billion.");
+  expect(quantityNotes(several, false, true)).toHaveLength(5);
+  expect(quantityNotes(several, false, true).at(-1)).toContain("4380 × e 亿元人民币");
 });

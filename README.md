@@ -15,7 +15,7 @@ LanCarbon is a Windows desktop application for writing ordinary Markdown Notes a
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
-Version 2.4.11 fixes cited monetary conversions when factual results appear beside examples or model assumptions. Amounts use their local citations; incidental figures receive the same checks as headline results. Scope evidence now retains sector lists in captions, while response guidance preserves valuation qualifiers, overlapping statistical categories and agreement with table arithmetic, and limits unsolicited monetary calculations in qualitative explanations. Existing formula coverage, model connections, personal writing and exports remain available; no additional model service is introduced.
+Version 2.4.11 fixes cited monetary conversions when factual results appear beside examples or model assumptions. Amounts use their local citations; incidental figures receive the same checks as headline results. Scope evidence now retains sector lists in captions, while response guidance preserves valuation qualifiers, overlapping statistical categories and agreement with table arithmetic, and limits unsolicited monetary calculations in qualitative explanations. Requested currency conversions receive symbolic unit aids before an exchange rate is supplied; formula explanations retain the original baseline/scenario associations. Existing formula coverage, model connections, personal writing and exports remain available; no additional model service is introduced.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -255,7 +255,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
-2.4.11 修复真实金额与列举、模型假设混排时漏作单位换算的问题，按具体金额定位引用，并同样检查附带数字。范围取证补充图注中的部门清单；回答规范保留估值条件，避免将不同统计分组误认为包含关系，并核对归因与表格计算是否一致，限制在定性解释中额外推算金额。沿用公式取证、现有模型配置、个人写作与导出，不增加模型服务。
+2.4.11 修复真实金额与列举、模型假设混排时漏作单位换算的问题，按具体金额定位引用，并同样检查附带数字。范围取证补充图注中的部门清单；回答规范保留估值条件，避免将不同统计分组误认为包含关系，并核对归因与表格计算是否一致，限制在定性解释中额外推算金额。请求换币时先提供单位换算后的符号汇率辅助；公式说明保留原文的基准与情景对应关系。沿用公式取证、现有模型配置、个人写作与导出，不增加模型服务。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

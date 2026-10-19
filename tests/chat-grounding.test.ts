@@ -76,6 +76,7 @@ it("includes a mixed question's omitted formula and definition in the actual gen
   expect(payload.questionEvidence.some((q: { citations: string[] }) => q.citations.includes(equation.citation))).toBe(true);
   expect(JSON.stringify(body)).not.toContain("SecretOutsideSelection");
   expect(JSON.stringify(body)).toContain("do not introduce a nonnegative truncation");
+  expect(JSON.stringify(body)).toContain("never reverse these associations");
   expect(JSON.stringify(body)).toContain("equivalent parenthetical disclaimers");
 });
 it("supplies compact unit aids for incidental amounts in non-monetary questions and preserves semantic qualifiers", async () => {
@@ -94,6 +95,13 @@ it("supplies compact unit aids for incidental amounts in non-monetary questions 
   const finalRequest = JSON.parse(prepared.messages.at(-1)!.content);
   expect(finalRequest.consistencyCheck).toContain("gains in GDP do not offset asset wealth losses");
   expect(finalRequest.latestQuestion).toBe("Who bears the risk?");
+  for (const question of ["把金额换成人民币", "Convert the exposure to CNY"]) {
+    const converted = await f.grounder.prepare({ ...chat, messages: [{ ...chat.messages[0], content: question }] }, new AbortController().signal, () => {});
+    const convertedPayload = JSON.parse(converted.messages[1].content);
+    const notes = convertedPayload.evidence.flatMap((hit: { unitEquivalents?: string[] }) => hit.unitEquivalents ?? []);
+    expect(notes.join(" ")).toContain("7130 × e 亿元人民币");
+    expect(notes.join(" ")).toContain("e CNY/USD; symbolic");
+  }
   expect(f.fetcher).not.toHaveBeenCalled();
 });
 it("does not search other cached sources after selection changes and refuses deleted-only scope without a Chat request", async () => {
