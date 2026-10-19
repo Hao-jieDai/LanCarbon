@@ -39,3 +39,15 @@ it("adds exact same-document unit-bearing passages and preserves bounds without 
   const euro = hit("euro", "EUR 52 was reported."), euroFull = hit("euro-full", "EUR 52 million is an annual revenue estimate.");
   expect(unitCompanions([euroFull], [[euro]], ["file:a"])).toEqual([[euroFull]]);
 });
+it("retains metric-scope enumerations in figure captions alongside general study descriptions", () => {
+  for (const caption of ["Fig. 4: Value losses for farming, freight and buildings in the transition scenario.", "Figure 7 shows financial exposure across shipping, aviation and rail under the baseline."]) {
+    const population = hit("population", "Our supply model covers agriculture, transport and industry. Study population and data set are described here.");
+    const generic = hit("generic", "Our study analyses transport costs. Further results are in supplementary data.");
+    const original = hit("caption", caption);
+    const groups = scopeCoverage([generic, population, original], ["file:a"], "Compare the scope of these studies", "comparison");
+    expect(groups[0][0]).toEqual(original); expect(groups.flat()).toContainEqual(population);
+    expect(chooseEvidence([generic, population, original], groups, ["file:a"], true).map(h => h.chunk.id)).toContain("caption");
+  }
+  const method = hit("horizon", "The valuation period is 12 years, discounted at 5% against the counterfactual baseline.");
+  expect(methodCoverage([method], ["file:a"], "calculation", "比较几篇金额换算后能否相加？").flat()).toContainEqual(method);
+});

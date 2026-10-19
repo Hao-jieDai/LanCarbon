@@ -13,12 +13,14 @@ export function scopeCoverage(corpus: KnowledgeHit[], ids: string[], question: s
       const scopeHeading = /(?:scope|study area|data set|dataset|study population|supply model|研究范围|研究对象|样本范围)/iu.test((hit.chunk.anchor.heading ?? "") + " " + text.slice(0, 130));
       const enumeration = /(?:\bfor\b|\bof\b|cover|includ|compris|supply|研究|包括|涵盖)[^.!?。！？]{0,140}[,，][^.!?。！？]{0,100}(?:\band\b|以及|和|及|与)/iu.test(text);
       const populationList = /\b(?:supply|production|population|sample|assets?|facilities|sectors?|industries|resources?)\b[^.!?]{0,65}\b(?:of|for|includes?|covers?)\b[^.!?]{0,100},[^.!?]{0,80}\band\b/iu.test(text);
+      const metricScope = /\b(?:loss(?:es)?|exposure|value|costs?|impacts?)\b[^.!?]{0,45}\b(?:for|of|across|in)\b[^.!?]{0,100},[^.!?]{0,80}\band\b|(?:损失|风险|价值|成本).{0,30}(?:涵盖|包括|涉及).{0,80}[、，].{0,60}(?:和|以及|与)/iu.test(text);
       const frontMatter = /\b(?:Department|University|Correspondence|Author contributions)\b|作者单位|通讯作者/iu.test(text.slice(0, 250));
-      return { hit, populationList, score: (describesStudy ? 5 : 0) + (scopeHeading ? 6 : 0) + (enumeration ? 4 : 0) + (populationList ? 12 : 0) - (frontMatter ? 8 : 0) - index / 1000 };
+      return { hit, populationList, metricScope, score: (describesStudy ? 5 : 0) + (scopeHeading ? 6 : 0) + (enumeration ? 4 : 0) + (populationList ? 12 : 0) + (metricScope ? 14 : 0) - (frontMatter ? 8 : 0) - index / 1000 };
     }).sort((a, b) => b.score - a.score);
     if (!ranked.length) return [];
     const population = ranked.find(item => item.populationList);
-    return [[...new Map([ranked[0].hit, ...(population ? [population.hit] : [])].map(hit => [hit.chunk.id, hit])).values()]];
+    const metric = ranked.find(item => item.metricScope);
+    return [[...new Map([...(metric ? [metric.hit] : []), ranked[0].hit, ...(population ? [population.hit] : [])].map(hit => [hit.chunk.id, hit])).values()]];
   });
 }
 

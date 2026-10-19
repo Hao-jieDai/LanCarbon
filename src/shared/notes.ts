@@ -8,7 +8,7 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.10";
+export const RELEASE_VERSION = "2.4.11";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
@@ -16,7 +16,7 @@ Welcome to **LanCarbon**, an offline-first desktop application for writing Notes
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
-Version 2.4.10 fixes missed equations and definitions in questions that also ask about mechanisms or limitations. Original formulae, defining text and nearby variable descriptions receive independent evidence coverage within the existing context budget, without additional model requests. Future replies express inference through calibrated wording and avoid repetitive self-referential disclaimers while retaining necessary scientific conditions, citations and material evidence gaps. Existing model connections, personal writing, source files and chat exports are preserved.
+Version 2.4.11 fixes cited monetary conversions when factual results appear beside examples or model assumptions. Amounts use their local citations; incidental figures receive the same checks as headline results. Scope evidence now retains sector lists in captions, while response guidance preserves valuation qualifiers, overlapping statistical categories and agreement with table arithmetic. Existing formula coverage, model connections, personal writing and exports remain available; no additional model service is introduced.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -259,7 +259,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
-2.4.10 修复同时询问机制、限制时漏选公式和定义的问题。在既有上下文预算内，分别保留原始公式、定义与邻近变量说明，不增加模型请求。后续回答通过恰当措辞表达推断，减少重复的自我说明，同时保留必要科学条件、引用及实质证据缺口。现有模型连接、个人写作、原文件和聊天导出保持完整。
+2.4.11 修复真实金额与列举、模型假设混排时漏作单位换算的问题，按具体金额定位引用，并同样检查附带数字。范围取证补充图注中的部门清单；回答规范保留估值条件，避免将不同统计分组误认为包含关系，并核对归因与表格计算是否一致。沿用公式取证、现有模型配置、个人写作与导出，不增加模型服务。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

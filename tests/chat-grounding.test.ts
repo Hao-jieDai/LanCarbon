@@ -78,6 +78,24 @@ it("includes a mixed question's omitted formula and definition in the actual gen
   expect(JSON.stringify(body)).toContain("do not introduce a nonnegative truncation");
   expect(JSON.stringify(body)).toContain("equivalent parenthetical disclaimers");
 });
+it("supplies compact unit aids for incidental amounts in non-monetary questions and preserves semantic qualifiers", async () => {
+  const f = await fixture();
+  f.notes[0].content = "# Scope\n\nOur analysis covers farming, freight and buildings.\n\n# Ownership\n\nThe financial sector has an upper-bound exposure of US$713 billion over a 12-year valuation horizon. Listed companies span financial and nonfinancial industries. Location alone cannot describe all investors' risk; local workers remain affected.";
+  const chat: AIChat = { ...f.chat, sourceScope: { ...emptyKnowledgeScope(), noteIds: ["a"] }, messages: [{ id: "q", role: "user", status: "complete", content: "Who bears the risk?", createdAt: new Date().toISOString() }] };
+  const prepared = await f.grounder.prepare(chat, new AbortController().signal, () => {});
+  const payload = JSON.parse(prepared.messages[1].content);
+  const money = payload.evidence.find((hit: { text: string }) => hit.text.includes("US$713 billion"));
+  expect(money.unitEquivalents).toContain("US$713 billion = 7130 亿美元.");
+  expect(money.unitEquivalents.join(" ")).not.toContain("Original context:");
+  expect(money.text).toContain("12-year valuation horizon");
+  expect(prepared.messages[0].content).toContain("explicit evidence of set inclusion");
+  expect(prepared.messages[0].content).toContain("location is irrelevant");
+  expect(prepared.messages[0].content).toContain("displayed arithmetic");
+  const finalRequest = JSON.parse(prepared.messages.at(-1)!.content);
+  expect(finalRequest.consistencyCheck).toContain("gains in GDP do not offset asset wealth losses");
+  expect(finalRequest.latestQuestion).toBe("Who bears the risk?");
+  expect(f.fetcher).not.toHaveBeenCalled();
+});
 it("does not search other cached sources after selection changes and refuses deleted-only scope without a Chat request", async () => {
   const f = await fixture(); await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Summarize this paper"); await f.settled();
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["b"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Summarize this paper"); const second = await f.settled();

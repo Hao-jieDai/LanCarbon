@@ -33,3 +33,35 @@ it("adapts evidence and response structure to questions rather than always listi
   expect(methodCoverage([background, method], [background.source.id], "ranking")).toEqual([]);
   expect(methodCoverage([background, method], ["file:excluded"], "definition")).toEqual([]);
 });
+it("checks factual enumerations, incidental amounts and reported assumptions without changing invented examples", () => {
+  const hits = [evidence("The reported total is CNY 28.4 billion; northern facilities account for CNY 6.3 billion."), evidence("Under the model's 90% pass-through assumption, company losses are US$64 billion.", "b", "S2")];
+  expect(repairCitedUnits("全国损失28.4亿元人民币[S1]，例如北区6.3亿元人民币[S1]。", hits).text).toBe("全国损失284亿元人民币[S1]，例如北区63亿元人民币[S1]。");
+  expect(repairCitedUnits("模型假设成本可转嫁90%，估计企业损失为US$64亿[S2]。", hits).text).toContain("US$640亿");
+  expect(repairCitedUnits("在成本转嫁90%的假设下，企业损失为US$64亿[S2]。", hits).text).toContain("US$640亿");
+  expect(repairCitedUnits("The model assuming 90% pass-through reports US$64亿[S2].", hits).text).toContain("US$640亿");
+  const mixed = "报告损失为28.4亿元人民币[S1]。假设一家企业损失28.4亿元人民币[S1]，其收入减少。";
+  expect(repairCitedUnits(mixed, hits).text).toBe("报告损失为284亿元人民币[S1]。假设一家企业损失28.4亿元人民币[S1]，其收入减少。");
+  expect(repairCitedUnits("损失28.4亿元人民币[S1]，假设一家企业损失6.3亿元人民币[S1]。", hits).text).toBe("损失284亿元人民币[S1]，假设一家企业损失6.3亿元人民币[S1]。");
+  for (const text of ["例如一家企业损失28.4亿元人民币[S1]。", "假设一家企业退出。其损失28.4亿元人民币[S1]。", "A hypothetical firm loses CNY 28.4 亿[S1]."]) expect(repairCitedUnits(text, hits).corrections).toEqual([]);
+  expect(repairCitedUnits("假设一家企业退出。原文报告损失28.4亿元人民币[S1]。", hits).text).toContain("284亿元");
+  expect(repairCitedUnits("核心判断不涉及金额；另有US\\$64亿[S2]。", hits).text).toContain("US\\$640亿");
+  expect(repairCitedUnits("核心判断不涉及金额；另有$64$亿美元[S2]。", hits).text).toContain("$640$亿美元");
+  expect(repairCitedUnits("全国$28.4$亿元人民币[S1]。", hits).text).toContain("$284$亿元人民币");
+  expect(repairCitedUnits("持有US\\$ $41$–$67$亿[S1]。", [evidence("US$41 to US$67 billion.")]).text).toContain("US\\$ $410$–$670$亿");
+  const building = [evidence("Building exposure is CNY 3.75 trillion.")];
+  expect(repairCitedUnits("建筑业为3.75亿元人民币[S1]。", building).text).toContain("37500亿元人民币");
+  for (const text of ["例如一座楼损失3.75亿元人民币[S1]。", "Assume a firm loses CNY 3.75 亿[S1].", "3.75亿元人民币（假设值）[S1]。", "假定一家企业退出，其损失3.75亿元人民币[S1]。"]) expect(repairCitedUnits(text, building).corrections).toEqual([]);
+});
+it("binds independently cited metrics to their own sentences, clauses and table rows", () => {
+  const hits = [evidence("Transport loses CNY 28.4 billion."), evidence("Agriculture loses CNY 28.4 million.", "b", "S2")];
+  for (const separator of ["；", "。", "\n", "; "]) {
+    const text = `第一项为28.4亿元人民币[S1]${separator}第二项为28.4亿元人民币[S2]。`;
+    expect(repairCitedUnits(text, hits).text).toBe(`第一项为284亿元人民币[S1]${separator}第二项为0.284亿元人民币[S2]。`);
+  }
+  expect(repairCitedUnits("甲28.4亿元人民币[S1]，乙28.4亿元人民币[S2]。", hits).text).toBe("甲284亿元人民币[S1]，乙0.284亿元人民币[S2]。");
+  expect(repairCitedUnits("甲28.4亿元人民币。[S1]\n乙28.4亿元人民币。[S2]", hits).corrections).toHaveLength(2);
+  expect(repairCitedUnits("| 甲 | 28.4亿元人民币 | [S1] |\n| 乙 | 28.4亿元人民币 | [S2] |", hits).text).toContain("0.284亿元");
+  expect(repairCitedUnits("28.4亿元人民币[S1][S2]", hits).corrections).toEqual([]);
+  expect(repairCitedUnits("未引用的28.4亿元人民币。另一句话只有引用[S1]。", hits).corrections).toEqual([]);
+  expect(repairCitedUnits("```text\n28.4亿元人民币[S1]\n```\n\n真实损失28.4亿元人民币[S1]", hits).text).toBe("```text\n28.4亿元人民币[S1]\n```\n\n真实损失284亿元人民币[S1]");
+});

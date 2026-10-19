@@ -11,10 +11,10 @@ export function answerTask(question: string): AnswerTask {
   return "answer";
 }
 export function answerInstructions(task: AnswerTask): string {
-  return ({ definition: "Compare the actual metrics: what is lost, relative to which baseline, whose loss, and what is included/excluded. Use a compact comparison table if helpful. Do not replace this explanation with an inventory of amounts. A clearly labelled hypothetical example can explain the distinction.",
+  return ({ definition: "Compare the actual metrics: what is lost, relative to which baseline, whose loss, and what is included/excluded. Use a compact comparison table if helpful. Explain the reported definitions; do not add an inventory of monetary results or a hypothetical worked example unless requested. Cash-flow/wealth losses and GDP/employment changes must stay distinct even when one paper reports both.",
     mechanism: "Answer why/how directly, then explain the mechanism as connected steps. Use only numbers that help that explanation. Attribute implemented mechanisms to the paper; express an inference or proposed extension through calibrated wording in the sentence without a repetitive disclaimer.",
     comparison: "Start with the direct judgment, identify the exact dimensions that resolve the comparison, then explain their implications. Use only relevant papers. Avoid repeating unrelated results or declaring a missing excerpt from an unrelated paper.",
-    calculation: "Give the requested available values in one consistent set of units, show necessary arithmetic, and bind each amount to its metric/scenario. A currency conversion needs an explicit rate; if absent offer a symbolic conversion or a clearly labelled illustrative rate, never pretend to have looked up a rate.",
+    calculation: "Give the requested available values in one consistent set of units, show necessary arithmetic, and bind each amount to its metric/scenario. Convert currencies only when requested, with an explicit rate; if absent use a symbolic conversion or ask for the rate. Do not add an unsolicited exchange-rate example. Check incidental amounts as carefully as the main answer.",
     writing: "Provide the requested writing support, including a coherent editable draft paragraph when useful. Use citations and calibrated wording to convey evidence versus interpretation naturally; add a separate explanation only if a material distinction needs clarification. Distinguish ownership allocation, behavioural transmission and macro simulation; do not claim separate studies prove an entire causal chain. Do not substitute only a checklist of instructions or unrelated monetary results for the requested prose.",
     ranking: "Identify whether the selected materials contain the individual-level data needed for the ranking. A provincial/sector total or a reference to an unseen supplement cannot establish entity rankings or confirm the supplement's granularity. State the concrete missing fields once and the next usable step. Omit unrelated totals and percentages.",
     answer: "Answer the current question first, explain enough to make it useful, and stop when it is answered. Choose paragraphs, an example, a table or a formula according to the task; do not force a fixed sequence of headings." })[task];
@@ -23,10 +23,11 @@ export function answerInstructions(task: AnswerTask): string {
 export function methodCoverage(corpus: KnowledgeHit[], ids: string[], task: AnswerTask, question = ""): KnowledgeHit[][] {
   if (task === "ranking") return [];
   const mechanism = task === "mechanism" || /为什么|为何|机制|如何.*(?:选择|调整|切换)|\bwhy\b|\bmechanism\b|how.{0,25}(?:select|switch|allocat)/iu.test(question);
-  if (!["definition", "writing", "comparison"].includes(task) && !mechanism) return [];
+  const comparison = /比较|对比|不同|区别|各篇|几篇|\bcompar|\bdiffer|\bstudies\b/iu.test(question);
+  if (!["definition", "writing", "comparison"].includes(task) && !mechanism && !comparison) return [];
   const groups = mechanism
     ? [/(?:method|algorithm|decision|select|rank|allocat|cost|方法|规则|选择|排序|分配)/iu, /(?:limitation|assum|static|fixed|switch|lock.in|future research|局限|假设|静态|固定|切换|锁定|未来研究)/iu]
-    : [/(?:defin|measur|quantif|net present value|cash flow|future profit|accounting|NPV|定义|度量|衡量|净现值|现金流)/iu, /(?:baseline|counterfactual|business.as.usual|pass.through|assum|limitation|ownership|基准|假设|局限|所有权)/iu];
+    : [/(?:defin|measur|quantif|net present value|cash flow|future profit|accounting|NPV|定义|度量|衡量|净现值|现金流)/iu, /(?:baseline|counterfactual|business.as.usual|pass.through|assum|limitation|ownership|discount|horizon|valuation period|time period|基准|假设|局限|所有权|折现|估值期|期限)/iu];
   return ids.slice(0, 12).map(id => {
     const candidates = corpus.filter(hit => hit.source.id === id && !bibliography(hit));
     const chosen = groups.flatMap(pattern => candidates.map(hit => ({ hit, score: (hit.chunk.text.match(new RegExp(pattern.source, "giu")) ?? []).length + (pattern.test(hit.chunk.anchor.heading ?? "") ? 3 : 0) })).filter(item => item.score > 0).sort((a, b) => b.score - a.score).slice(0, 1).map(item => item.hit));
