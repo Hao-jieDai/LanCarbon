@@ -96,4 +96,6 @@ it("honours monetary column units without confusing counts or crossing currency 
   const fixed = repairCitedUnits(text, hits);
   expect(fixed.text).toContain("| A | 520 | $520e$ 亿元 | 52 |"); expect(fixed.text).toContain("| B | $34000$ |");
   expect(repairCitedUnits(fixed.text, hits).corrections).toEqual([]);
+  const shared = "**Transport [S1]**\n\n| Metric | 原值（亿美元） | 人民币（万亿元） |\n|---|---|---|\n| A | 52 | $52e$ |";
+  expect(repairCitedUnits(shared, hits).text).toContain("| A | 520 | $0.052e$ |");
 });

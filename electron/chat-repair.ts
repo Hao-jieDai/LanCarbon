@@ -89,7 +89,10 @@ function repairTableConversions(text: string, evidence: ChatEvidence[], correcti
     const cells = tableCells(block.text), headers = block.table.headers;
     if (cells.length !== headers.length) continue;
     const target = headers.findIndex(header => /人民币|\bCNY\b|\bRMB\b/iu.test(header));
-    if (target < 0 || !/亿元/u.test(cells[target])) continue;
+    if (target < 0) continue;
+    // The target unit may appear in each cell or once in the column heading.
+    const targetUnit = (cells[target].match(/万亿|千亿|百亿|百万|亿|万/u) ?? headers[target].match(/万亿|千亿|百亿|百万|亿|万/u))?.[0];
+    if (!targetUnit) continue;
     const sourceCells = blockAmounts(block).filter(amount => amount.currency === "USD");
     const coefficients = [...cells[target].matchAll(/([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:\\times\s*|\*\s*)?e\b/gu)];
     if (sourceCells.length !== coefficients.length || !sourceCells.length || sourceCells.some(amount => amount.values.length !== 1)) continue;
@@ -100,11 +103,11 @@ function repairTableConversions(text: string, evidence: ChatEvidence[], correcti
     if (!sourceCells.every(amount => originals.some(original => original.currency === "USD" && original.values.length === 1 && Math.abs(original.values[0] * original.factor - amount.values[0] * amount.factor) < Math.max(1, Math.abs(amount.values[0] * amount.factor) * 1e-8)))) continue;
     let cell = cells[target];
     for (let i = coefficients.length - 1; i >= 0; i--) {
-      const coefficient = coefficients[i], expected = Number((sourceCells[i].values[0] * sourceCells[i].factor / 1e8).toPrecision(12));
+      const coefficient = coefficients[i], expected = Number((sourceCells[i].values[0] * sourceCells[i].factor / factors[targetUnit]).toPrecision(12));
       const actual = Number(coefficient[1].replace(/,/g, "").replace("−", "-"));
       if (actual === expected || corrections.length >= 24) continue;
       cell = cell.slice(0, coefficient.index!) + coefficient[0].replace(coefficient[1], String(expected)) + cell.slice(coefficient.index! + coefficient[0].length);
-      corrections.push(`Unit corrected using cited table original: ${coefficient[0]} → ${expected}e (亿元人民币; e CNY/USD).`);
+      corrections.push(`Unit corrected using cited table original: ${coefficient[0]} → ${expected}e (${targetUnit}元人民币; e CNY/USD).`);
     }
     if (cell === cells[target]) continue;
     // Locate this particular column even if two cells contain identical text.
