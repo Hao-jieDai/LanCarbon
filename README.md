@@ -13,6 +13,8 @@
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
 
+**Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
+
 Version 2.4.9 adds **Export to Note** for complete chat snapshots with optional Thinking and cited excerpts, preserving editable Markdown, LaTeX and per-reply source locations. Future replies use direct academic language and portable LaTeX formulae; Chat, Copy and both exports share the same formatting. Document questions now reserve relevant method constraints and study-scope passages, and supplement incomplete monetary units from the same document within the existing evidence budget. These local checks add no model requests; existing model connections, personal writing and source files are preserved.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
@@ -250,6 +252,8 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 ### LanCarbon 是什么？
 
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
+
+**工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
 2.4.9 新增 **Export to Note**，可将完整聊天保存为可编辑笔记，选择是否包含 Thinking 和引用摘录，并保留 Markdown、LaTeX 与逐轮来源位置。后续回答采用直接明确的学术表达及可复制的 LaTeX 公式，聊天、Copy 和两种导出共用格式处理。资料问答补充相关方法限制与研究范围原文，并在既有证据预算内查找同篇文献中带完整金额单位的段落；这些本地检查不增加模型请求。现有模型连接、个人写作和原文件保持完整。
 

@@ -8,12 +8,59 @@ import { NotesStore } from "../electron/storage";
 import { createBook, createEmptyWorkspace } from "../src/shared/books";
 import { createNote } from "../src/shared/notes";
 import { MANAGED_TUTORIAL_BOOK_ID } from "../src/shared/managedTutorial";
+import { withAssetCatalog } from "../electron/asset-catalog-lock";
 import type { WorkspaceFile } from "../src/shared/types";
 
 describe("NotesStore 工作区存储", () => {
   let directory: string;
   beforeEach(async () => { directory = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-store-")); });
   afterEach(async () => { vi.restoreAllMocks(); await fs.rm(directory, { recursive: true, force: true }); });
+  it("serializes tutorial refresh and later saves so stale tutorial synchronization cannot discard a new Note", async () => {
+    const starter = path.join(process.cwd(), "resources", "starter-content"), file = path.join(directory, "notes.json");
+    const originalNote = createNote({ id: "original", content: "Original writing" }), added = createNote({ id: "added", content: "Added while tutorial loads" });
+    await fs.writeFile(file, JSON.stringify(createEmptyWorkspace([originalNote])));
+    const read = fs.readFile, store = new NotesStore(directory, starter); let enter!: () => void, release!: () => void, held = false;
+    const entered = new Promise<void>(resolve => { enter = resolve; }), gate = new Promise<void>(resolve => { release = resolve; });
+    vi.spyOn(fs, "readFile").mockImplementation((async (...args: any[]) => {
+      if (!held && String(args[0]) === path.join(starter, "notes.json")) { held = true; enter(); await gate; }
+      return (read as (...args: any[]) => Promise<any>)(...args);
+    }) as typeof fs.readFile);
+    const loading = store.loadWorkspace(); await entered;
+    const saving = store.saveWorkspace(createEmptyWorkspace([originalNote, added]));
+    await new Promise(resolve => setTimeout(resolve, 40)); release(); await Promise.all([loading, saving]);
+    const final = await store.loadWorkspace(); expect(final.workspace.notes.find(note => note.id === added.id)?.content).toBe(added.content);
+    expect(final.workspace.notes.find(note => note.id === originalNote.id)?.content).toBe(originalNote.content);
+    expect(final.workspace.books.some(book => book.id === MANAGED_TUTORIAL_BOOK_ID)).toBe(true);
+  });
+  it("retries transient Windows sharing failures atomically and retains the old file on persistent failure", async () => {
+    const store = new NotesStore(directory), file = path.join(directory, "notes.json"), old = createEmptyWorkspace([createNote({ id: "memo", content: "old" })]); await store.saveWorkspace(old);
+    const bytes = await fs.readFile(file), rename = fs.rename; let attempts = 0;
+    const spy = vi.spyOn(fs, "rename").mockImplementation(async (from, to) => {
+      if (String(to) === file && attempts++ < 2) { expect(await fs.readFile(file)).toEqual(bytes); throw Object.assign(Error("File is busy"), { code: "EPERM" }); }
+      return rename(from, to);
+    });
+    await store.saveWorkspace(createEmptyWorkspace([createNote({ id: "memo", content: "new" })])); expect(attempts).toBe(3);
+    const updated = await fs.readFile(file); spy.mockImplementation(async () => { throw Object.assign(Error("Still busy"), { code: "EACCES" }); });
+    await expect(store.saveWorkspace(old)).rejects.toThrow("Still busy"); expect(await fs.readFile(file)).toEqual(updated);
+    expect((await fs.readdir(directory)).filter(name => name.endsWith(".tmp"))).toEqual([]);
+  });
+  it("does not interpret read permission failures as corrupt or empty user data", async () => {
+    const file = path.join(directory, "notes.json"), bytes = JSON.stringify(createEmptyWorkspace([createNote({ id: "retained", content: "Keep me" })])); await fs.writeFile(file, bytes);
+    const read = fs.readFile; const spy = vi.spyOn(fs, "readFile").mockImplementation((async (...args: any[]) => {
+      if (String(args[0]) === file) throw Object.assign(Error("Sharing denied"), { code: "EPERM" });
+      return (read as (...args: any[]) => Promise<any>)(...args);
+    }) as typeof fs.readFile);
+    await expect(new NotesStore(directory).loadWorkspace()).rejects.toThrow("Sharing denied"); spy.mockRestore();
+    expect(await fs.readFile(file, "utf8")).toBe(bytes); expect(await fs.readdir(directory)).toEqual(["notes.json"]);
+  });
+  it("keeps resource-first lock ordering for a resource operation that reads the workspace", async () => {
+    const store = new NotesStore(directory); await store.saveWorkspace(createEmptyWorkspace([createNote({ id: "retained" })]));
+    let enter!: () => void, release!: () => void;
+    const entered = new Promise<void>(resolve => { enter = resolve; }), gate = new Promise<void>(resolve => { release = resolve; });
+    const owner = withAssetCatalog(directory, async () => { enter(); await gate; return store.loadWorkspace(); });
+    await entered; const outside = store.loadWorkspace(); release();
+    const results = await Promise.all([owner, outside]); expect(results.every(result => result.workspace.notes.some(note => note.id === "retained"))).toBe(true);
+  }, 2000);
   it("refuses newer workspace formats without renaming, replacing or discarding their Books", async () => {
     const file = path.join(directory, "notes.json");
     const bytes = JSON.stringify({ version: 3, notes: [{ id: "future" }], books: [{ id: "future-book" }], research: { retained: true } });

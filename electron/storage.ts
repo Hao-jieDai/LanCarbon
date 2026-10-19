@@ -1,6 +1,6 @@
 import { promises as fs } from "node:fs";
 import { withAssetCatalog } from "./asset-catalog-lock";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
 import { createEmptyWorkspace, MAX_BOOK_PAGES, MAX_BOOKS, normalizeBooks, validateWorkspace } from "../src/shared/books";
 import { normalizeNotes } from "../src/shared/notes";
@@ -11,6 +11,17 @@ import { ASSET_ID, type Asset } from "../src/shared/assets";
 
 class ManagedStarterSyncError extends Error {}
 class UnsupportedWorkspaceVersionError extends Error {}
+class InvalidWorkspaceFileError extends Error {}
+
+async function renameWorkspace(from: string, to: string): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    try { await fs.rename(from, to); return; }
+    catch (error) {
+      if (attempt >= 5 || !["EPERM", "EACCES", "EBUSY"].includes((error as NodeJS.ErrnoException).code ?? "")) throw error;
+      await new Promise(resolve => setTimeout(resolve, 25 * 2 ** attempt));
+    }
+  }
+}
 
 function assertSupportedVersion(parsed: unknown): void {
   if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
@@ -29,7 +40,19 @@ export class NotesStore {
     this.preferencesPath = path.join(dataDirectory, "window.json");
   }
 
+  private serial<T>(action: () => Promise<T>): Promise<T> {
+    // Always acquire the resource lock first: asset deletion may call back into this store.
+    return withAssetCatalog(this.dataDirectory, () => {
+      const work = this.writeQueue.then(action);
+      this.writeQueue = work.then(() => undefined, () => undefined); return work;
+    });
+  }
+
   async loadWorkspace(): Promise<{ workspace: WorkspaceFile; isFirstRun: boolean; migrated: boolean }> {
+    return this.serial(() => this.loadWorkspaceUnlocked());
+  }
+
+  private async loadWorkspaceUnlocked(): Promise<{ workspace: WorkspaceFile; isFirstRun: boolean; migrated: boolean }> {
     try {
       const raw = await fs.readFile(this.notesPath, "utf8");
       const parsed = JSON.parse(raw) as Partial<WorkspaceFile> & { version?: number };
@@ -52,13 +75,15 @@ export class NotesStore {
         const managed = await this.syncManagedStarter(createEmptyWorkspace(normalizeNotes(parsed)));
         return { workspace: managed.workspace, isFirstRun: false, migrated: true };
       }
-      throw new Error("Unrecognized workspace file version");
+      throw new InvalidWorkspaceFileError("Unrecognized workspace file version");
     } catch (error) {
       if (error instanceof ManagedStarterSyncError || error instanceof UnsupportedWorkspaceVersionError) throw error;
       if ((error as NodeJS.ErrnoException).code === "ENOENT") {
         const starter = await this.loadStarterContent();
         return { workspace: starter ?? createEmptyWorkspace(), isFirstRun: true, migrated: false };
       }
+      // Sharing/permission failures are not corrupt JSON and must never produce an empty workspace.
+      if (!(error instanceof SyntaxError || error instanceof InvalidWorkspaceFileError)) throw error;
       await this.backupCorruptedFile();
       return { workspace: createEmptyWorkspace(), isFirstRun: false, migrated: false };
     }
@@ -165,9 +190,7 @@ export class NotesStore {
     const workspace: WorkspaceFile = { version: 2, notes: normalizeNotes(candidate.notes), books: candidate.books };
     const workspaceErrors = validateWorkspace(workspace);
     if (workspaceErrors.length) throw new TypeError(workspaceErrors.join("\n"));
-    const write = this.writeQueue.then(() => this.writeWorkspaceFile(workspace));
-    this.writeQueue = write.catch(() => undefined);
-    return write;
+    return this.serial(() => this.writeWorkspaceFile(workspace));
   }
 
   private hasValidBookShape(books: unknown[]): books is WorkspaceFile["books"] {
@@ -227,9 +250,11 @@ export class NotesStore {
         if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
       }
     }
-    const temporaryPath = `${this.notesPath}.tmp`;
-    await fs.writeFile(temporaryPath, JSON.stringify(workspace, null, 2), "utf8");
-    await fs.rename(temporaryPath, this.notesPath);
+    const temporaryPath = `${this.notesPath}.${randomUUID()}.tmp`;
+    try {
+      await fs.writeFile(temporaryPath, JSON.stringify(workspace, null, 2), { encoding: "utf8", flag: "wx" });
+      await renameWorkspace(temporaryPath, this.notesPath);
+    } finally { await fs.rm(temporaryPath, { force: true }).catch(() => undefined); }
   }
 
   async loadWindowPreferences(): Promise<WindowPreferences | null> {
@@ -255,9 +280,9 @@ export class NotesStore {
 
   private async backupCorruptedFile(): Promise<void> {
     try {
-      await fs.rename(this.notesPath, `${this.notesPath}.corrupt-${Date.now()}`);
-    } catch {
-      // The file may have disappeared between read and backup.
+      await renameWorkspace(this.notesPath, `${this.notesPath}.corrupt-${Date.now()}`);
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     }
   }
 }
