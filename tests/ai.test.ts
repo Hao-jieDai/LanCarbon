@@ -26,6 +26,7 @@ describe("AI settings and conversations", () => {
     await vi.waitFor(async () => expect((await store.get(chat.id)).messages.at(-1)?.status).toBe("complete"));
     const system = JSON.parse(fetcher.mock.calls[0][1].body).messages[0].content;
     expect(system).toContain("Use brief Chinese explanations."); expect(system).toContain("metaphors"); expect(system).toContain("LaTeX");
+    expect(system).toContain("calibrated wording"); expect(system).toContain("self-referential disclaimers"); expect(system).toContain("necessary scientific conditions and citations");
     const reply = (await store.get(chat.id)).messages.at(-1)!; expect(reply.content).toContain("$x_i^2$"); expect(reply.content).toContain("$$\ny=\\frac{a}{b}\n$$"); expect(reply.reasoning).toBe("Provided reasoning");
     expect(await fs.readFile(path.join(root, "ai-settings.json"))).toEqual(before); expect(fetcher).toHaveBeenCalledTimes(1); await service.shutdown();
   });

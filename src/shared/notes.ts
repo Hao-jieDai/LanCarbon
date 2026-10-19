@@ -8,7 +8,7 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.9";
+export const RELEASE_VERSION = "2.4.10";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
@@ -16,7 +16,7 @@ Welcome to **LanCarbon**, an offline-first desktop application for writing Notes
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
-Version 2.4.9 adds **Export to Note** for complete chat snapshots with optional Thinking and cited excerpts, preserving editable Markdown, LaTeX and per-reply source locations. Future replies use direct academic language and portable LaTeX formulae; Chat, Copy and both exports share the same formatting. Document questions now reserve relevant method constraints and study-scope passages, and supplement incomplete monetary units from the same document within the existing evidence budget. These local checks add no model requests; existing model connections, personal writing and source files are preserved.
+Version 2.4.10 fixes missed equations and definitions in questions that also ask about mechanisms or limitations. Original formulae, defining text and nearby variable descriptions receive independent evidence coverage within the existing context budget, without additional model requests. Future replies express inference through calibrated wording and avoid repetitive self-referential disclaimers while retaining necessary scientific conditions, citations and material evidence gaps. Existing model connections, personal writing, source files and chat exports are preserved.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -259,7 +259,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
-2.4.9 新增 **Export to Note**，可将完整聊天保存为可编辑笔记，选择是否包含 Thinking 和引用摘录，并保留 Markdown、LaTeX 与逐轮来源位置。后续回答采用直接明确的学术表达及可复制的 LaTeX 公式，聊天、Copy 和两种导出共用格式处理。资料问答补充相关方法限制与研究范围原文，并在既有证据预算内查找同篇文献中带完整金额单位的段落；这些本地检查不增加模型请求。现有模型连接、个人写作和原文件保持完整。
+2.4.10 修复同时询问机制、限制时漏选公式和定义的问题。在既有上下文预算内，分别保留原始公式、定义与邻近变量说明，不增加模型请求。后续回答通过恰当措辞表达推断，减少重复的自我说明，同时保留必要科学条件、引用及实质证据缺口。现有模型连接、个人写作、原文件和聊天导出保持完整。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

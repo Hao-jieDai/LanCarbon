@@ -58,6 +58,26 @@ it("combines method constraints and same-paper unit context before generation wi
   expect(text).toContain("static assignments"); expect(text).toContain("US$713 billion"); expect(text).toContain("cheapest technology");
   expect(text).not.toContain("SecretOutsideSelection"); expect(f.fetcher).not.toHaveBeenCalled(); expect(result.grounding.research!.modelChecks).toBe(0);
 });
+it("includes a mixed question's omitted formula and definition in the actual generation payload without extra model checks", async () => {
+  const f = await fixture();
+  f.notes[0].title = "TreatmentTrial";
+  f.notes[0].content = "# Treatment study\n\nThe intervention selects treatment groups under a static allocation rule.\n\n# Risk definition\n\nRelative risk is defined as treated event probability divided by control event probability.\n\n# Equation\n\nRR = p_treated / p_control\n\nwhere p is event probability; this ratio is not an absolute risk difference.\n\n" + Array.from({ length: 45 }, (_, i) => `## Discussion ${i}\n\n${"The treatment allocation selects options and ranks cost effectiveness. ".repeat(15)}`).join("\n\n") + "\n\n# Limitations\n\nThe model assumes fixed assignments. Technology switching is future research.";
+  const scope = { ...emptyKnowledgeScope(), noteIds: ["a"] };
+  vi.mocked(f.retrieval.search).mockImplementation(async () => ({ hits: (await f.store.corpus()).filter(hit => hit.source.id === "note:a" && hit.chunk.text.includes("cost effectiveness")).map(hit => ({ ...hit, score: 1, retrieval: "keyword" as const })), warnings: [], mode: "keyword" }));
+  await f.service.setSources(f.chat.id, scope);
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "TreatmentTrial 的干预方案为什么有效？请用 LaTeX 写出风险比公式，并说明是否能动态切换。");
+  const reply = (await f.settled()).messages.at(-1)!;
+  expect(reply.status).toBe("complete"); expect(f.fetcher).toHaveBeenCalledTimes(1);
+  expect(reply.grounding!.research!.modelChecks).toBe(0);
+  const body = JSON.parse(f.fetcher.mock.calls[0][1]!.body as string);
+  const payload = JSON.parse(body.messages.find((m: { content: string }) => m.content.startsWith('{"selectedSources":')).content);
+  const equation = payload.evidence.find((e: { text: string }) => e.text.includes("RR = p_treated / p_control"));
+  expect(equation).toBeTruthy(); expect(payload.evidence.some((e: { text: string }) => e.text.includes("Relative risk is defined"))).toBe(true);
+  expect(payload.questionEvidence.some((q: { citations: string[] }) => q.citations.includes(equation.citation))).toBe(true);
+  expect(JSON.stringify(body)).not.toContain("SecretOutsideSelection");
+  expect(JSON.stringify(body)).toContain("do not introduce a nonnegative truncation");
+  expect(JSON.stringify(body)).toContain("equivalent parenthetical disclaimers");
+});
 it("does not search other cached sources after selection changes and refuses deleted-only scope without a Chat request", async () => {
   const f = await fixture(); await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Summarize this paper"); await f.settled();
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["b"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Summarize this paper"); const second = await f.settled();
