@@ -105,3 +105,17 @@ it("does not use isolated chart labels as proof that another entity's total has 
   const text = "全球更严格情景的总损失是2.7万亿美元[S1]。";
   expect(repairCitedUnits(text, [chart]).corrections).toEqual([]);
 });
+
+it("repairs shared English scales and separately repeated range endpoints, without trusting a generated parenthesis", () => {
+  const hits = [evidence("Transport operators hold upwards of US$53 and US$17 billion under the two scenarios. Regional exposure ranges from US$26 to US$48 billion.")];
+  const text = "两种情景分别为US$53亿（530亿美元）和US$17亿（170亿美元）[S1]。地区为US$26亿至US$48亿（260亿至480亿美元）[S1]。";
+  const fixed = repairCitedUnits(text, hits);
+  expect(fixed.text).toBe("两种情景分别为US$530亿（530亿美元）和US$170亿（170亿美元）[S1]。地区为US$260亿至US$480亿（260亿至480亿美元）[S1]。");
+  expect(fixed.corrections).toHaveLength(4); expect(repairCitedUnits(fixed.text, hits).corrections).toEqual([]);
+  const crop = [evidence("Crop exposure is CNY 6,200, CNY 1,300 and CNY 800 million.")];
+  expect(repairCitedUnits("作物分别损失CNY 6,200亿、CNY 1,300亿和CNY 800亿[S1]。", crop).text).toBe("作物分别损失CNY 62亿、CNY 13亿和CNY 8亿[S1]。");
+  for (const source of ["USD 53 and CNY 17 billion.", "US$53 facilities and US$17 billion.", "Capacity (GW)\nUS$53 and US$17 billion\nFig. 7 | Operators."]) {
+    expect(repairCitedUnits("US$53亿[S1]。", [evidence(source)]).corrections).toEqual([]);
+  }
+  expect(repairCitedUnits("US$53亿[S1]。", [evidence("US$53 million and US$17 billion.")]).text).toBe("US$0.53亿[S1]。");
+});

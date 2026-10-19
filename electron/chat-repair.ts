@@ -1,5 +1,5 @@
 import { mapCitations, type ChatEvidence } from "../src/shared/grounding";
-import { isolatedFigureAmount, monetaryBlocks, monetaryLabels, tableCells, type ClaimBlock } from "./chat-claims";
+import { isolatedFigureAmount, monetaryBlocks, monetaryLabels, sharedScaleAmounts, tableCells, type ClaimBlock } from "./chat-claims";
 interface Amount { raw: string; start: number; values: number[]; factor: number; currency: string; digits: string[]; chineseHeader?: boolean }
 const factors: Record<string, number> = { trillion: 1e12, billion: 1e9, million: 1e6, 万亿: 1e12, 千亿: 1e11, 百亿: 1e10, 亿: 1e8, 百万: 1e6, 万: 1e4 };
 function amounts(text: string): Amount[] {
@@ -14,7 +14,13 @@ function amounts(text: string): Amount[] {
 }
 
 function supportedAmounts(hit: ChatEvidence): Amount[] {
-  return amounts(hit.chunk.text).filter(amount => !isolatedFigureAmount(hit.chunk.text, amount.start, amount.raw.length));
+  const text = hit.chunk.text;
+  const shared = sharedScaleAmounts(text), chartLists = shared.filter(amount => isolatedFigureAmount(text, amount.spanStart, amount.spanLength));
+  const originals = amounts(text).filter(amount => !isolatedFigureAmount(text, amount.start, amount.raw.length) && !chartLists.some(list => amount.start >= list.spanStart && amount.start < list.spanStart + list.spanLength));
+  // Repeated target units split a source range into two separately written claims.
+  const endpoints = originals.filter(amount => amount.values.length === 2).flatMap(amount => amount.values.map((value, i) => ({ ...amount, values: [value], digits: [amount.digits[i]] })));
+  const coordinated = shared.filter(amount => !isolatedFigureAmount(text, amount.spanStart, amount.spanLength)).map(amount => ({ raw: amount.original, start: amount.start, values: [amount.value], digits: [amount.digits], factor: amount.factor, currency: amount.currency }));
+  return [...originals, ...endpoints, ...coordinated];
 }
 
 /** A numeric-only table cell may declare its monetary unit once in its column header. */

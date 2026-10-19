@@ -39,6 +39,15 @@ it("supplies exact unit equivalents with verbatim scenario context without inven
   expect(notes).toContain("14000 亿美元"); expect(notes).toContain("3390 亿元人民币"); expect(notes).toContain("medium realignment"); expect(notes).not.toContain("Severe");
   expect(quantityNotes(hit("Capacity is 339.0 billion kWh; 2020 base year; population 1.4 billion."))).toEqual([]);
 });
+
+it("preserves both members of shared-scale results in arithmetic aids and unit diagnostics", () => {
+  const original = hit("Transport exposure is US$53 and US$17 billion under separate scenarios.");
+  const notes = quantityNotes(original).join("\n");
+  expect(notes).toContain("530 亿美元"); expect(notes).toContain("170 亿美元");
+  expect(quantityWarnings("两情景分别为US$53亿和US$17亿[S1]。", [original])).toHaveLength(2);
+  expect(quantityWarnings("两情景分别为US$530亿和US$170亿[S1]。", [original])).toEqual([]);
+  expect(quantityNotes(hit("USD 53 and CNY 17 billion.")).join("\n")).not.toContain("530 亿美元");
+});
 it("flags the observed billion-to-yi mistakes with exact cited originals, avoiding FX and coincidental uncited amounts", () => {
   const originals = [hit("National losses are 339.0 billion CNY; regional losses 133.91 billion CNY and 127.13 billion CNY.")];
   const issues = quantityWarnings("全国为339.0亿元，两个省分别为133.91亿元与127.13亿元。[S1]", originals);

@@ -1,6 +1,6 @@
 import type { KnowledgeHit } from "../src/shared/knowledge";
 import { citedLabels, type ChatEvidence } from "../src/shared/grounding";
-import { isolatedFigureAmount, monetaryBlocks, monetaryLabels } from "./chat-claims";
+import { isolatedFigureAmount, monetaryBlocks, monetaryLabels, sharedScaleAmounts } from "./chat-claims";
 
 /** Conservative bibliography detection; citations in ordinary prose are not a bibliography. */
 export function bibliography(hit: KnowledgeHit): boolean {
@@ -48,7 +48,10 @@ function amounts(text: string): Amount[] {
     const unit = match[3].toLowerCase(), factor = ({ trillion: 1e12, billion: 1e9, million: 1e6, 万亿: 1e12, 千亿: 1e11, 百亿: 1e10, 亿: 1e8, 百万: 1e6, 万: 1e4 } as Record<string, number>)[unit];
     result.push({ original: match[0], start: match.index!, value: Number(match[2].replace(/,/g, "")), factor, currency, context: text.slice(Math.max(0, match.index! - 110), match.index! + match[0].length + 110).replace(/\s+/g, " ") });
   }
-  return result;
+  for (const item of sharedScaleAmounts(text)) {
+    if (!result.some(value => value.start === item.start && value.value === item.value && value.factor === item.factor)) result.push({ original: item.original, start: item.start, value: item.value, factor: item.factor, currency: item.currency, context: text.slice(Math.max(0, item.spanStart - 110), item.spanStart + item.spanLength + 110).replace(/\s+/g, " ") });
+  }
+  return result.sort((a, b) => a.start - b.start);
 }
 /** Deterministic unit equivalents alongside verbatim context; no inferred scenario/metric associations. */
 export function quantityNotes(hit: KnowledgeHit, includeContext = true, convertToCny = false): string[] {

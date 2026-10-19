@@ -56,6 +56,23 @@ export function monetaryLabels(block: ClaimBlock, position: number, length: numb
 
 export { tableCells };
 
+/** A coordinated monetary list can declare its English scale once at the end.
+ * Explicit, uniform currency markers keep counts and mixed-currency lists out. */
+export function sharedScaleAmounts(text: string): Array<{ original: string; start: number; digits: string; value: number; factor: number; currency: "USD" | "CNY"; spanStart: number; spanLength: number }> {
+  const currency = String.raw`(?:CNY|RMB|USD|US\\?\$)`, number = String.raw`[+−-]?\d+(?:,\d{3})*(?:\.\d+)?`;
+  const expression = new RegExp(`${currency}\\s*${number}(?:\\s*(?:,\\s*(?:(?:and|or)\\s+)?|and\\s+|or\\s+|to\\s+|[-–—~～至])\\s*(?:${currency}\\s*)?${number}){1,7}\\s*(trillion|billion|million)\\b`, "giu");
+  const result: ReturnType<typeof sharedScaleAmounts> = [];
+  for (const match of text.matchAll(expression)) {
+    const markers = [...match[0].matchAll(new RegExp(currency, "giu"))].map(item => /CNY|RMB/iu.test(item[0]) ? "CNY" as const : "USD" as const);
+    if (new Set(markers).size !== 1) continue;
+    const factor = ({ trillion: 1e12, billion: 1e9, million: 1e6 } as Record<string, number>)[match[1].toLowerCase()];
+    for (const value of match[0].matchAll(new RegExp(`(?:${currency}\\s*)?(${number})`, "giu"))) {
+      result.push({ original: value[0] + ` ${match[1]} (shared scale)`, start: match.index! + value.index!, digits: value[1], value: Number(value[1].replace(/,/g, "").replace("−", "-")), factor, currency: markers[0], spanStart: match.index!, spanLength: match[0].length });
+    }
+  }
+  return result;
+}
+
 /** An isolated chart label lacks the entity/scenario binding needed for automatic repair. */
 export function isolatedFigureAmount(text: string, start: number, length: number): boolean {
   const from = text.lastIndexOf("\n", start - 1) + 1;
