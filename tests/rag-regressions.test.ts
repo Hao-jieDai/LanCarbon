@@ -42,7 +42,7 @@ it("allows a comparison planner to narrow a candidate collection but preserves a
 it("keeps table conversion and column checks in the previous source scope without blocking explicit paper switches", () => {
   const profiles = [{ id: "file:ownership", title: "Insurance.pdf", opening: "Ramos et al. Insurance exposure." }, { id: "file:macro", title: "Transport.pdf", opening: "Keller et al. Transport losses." }];
   const previous = ["Investor study: list insurer and government losses in a table."];
-  for (const question of ["把刚才这张表换成人民币，并检查原值与换算列是否一致。", "Convert that table to CNY and check the columns."]) {
+  for (const question of ["把刚才这张表换成人民币，并检查原值与换算列是否一致。", "把Ramos上一张表换成人民币，检查两列是否一致。", "Convert that table to CNY and check the columns.", "Check the table above and convert its amounts to CNY."]) {
     const plan = localResearchPlan(question, profiles, previous, ["file:ownership"]);
     expect(plan).toMatchObject({ compare: false, sourceIds: ["file:ownership"], lockedFocus: true });
     expect(plan.question).toContain("government losses");

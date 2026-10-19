@@ -16,7 +16,7 @@ Welcome to **LanCarbon**, an offline-first desktop application for writing Notes
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
-Version 2.4.12 extends monetary checks to tables with shared caption citations and verifies symbolic currency conversions against cited originals. Incomplete responses caused by output limits are saved as failed replies with an explanation and Retry, while retaining returned usage. Evidence diagnostics stay inside the expandable Evidence panel. Token activity uses eight color levels plus a separate zero-usage color, with distinct light and dark palettes. Existing model connections, personal writing and exports are preserved; no additional model service is introduced.
+Version 2.4.12 extends monetary checks to tables with shared caption citations and verifies symbolic currency conversions against cited originals. Comparisons retain each relevant paper's monetary results, and table-conversion follow-ups keep their resolved source scope. Pairwise savings against alternative scenarios are reported separately. Incomplete responses caused by output limits are saved as failed replies with an explanation and Retry, while retaining returned usage. Evidence diagnostics stay inside the expandable Evidence panel. Token activity uses eight color levels plus a separate zero-usage color, with distinct light and dark palettes. Existing model connections, personal writing and exports are preserved; no additional model service is introduced.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -259,7 +259,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
-2.4.12 将金额检查扩展到表格上方统一引用的形式，并依据原文检查符号汇率换算。输出额度耗尽等原因造成的不完整回复会保存为失败状态，显示原因并允许重试，返回用量仍正常记录。证据诊断保留在可展开的 Evidence 内。Token 热力图增加为八档颜色，零用量单独显示，并分别调整深浅主题配色。保留现有模型配置、个人写作与导出，不增加模型服务。
+2.4.12 将金额检查扩展到表格上方统一引用的形式，并依据原文检查符号汇率换算。文献比较优先保留各篇金额结果，表格换算追问沿用已解析的资料范围；相对不同互斥情景的节省额分别报告。输出额度耗尽等原因造成的不完整回复会保存为失败状态，显示原因并允许重试，返回用量仍正常记录。证据诊断保留在可展开的 Evidence 内。Token 热力图增加为八档颜色，零用量单独显示，并分别调整深浅主题配色。保留现有模型配置、个人写作与导出，不增加模型服务。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

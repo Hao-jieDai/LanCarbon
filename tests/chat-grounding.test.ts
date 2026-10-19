@@ -17,6 +17,7 @@ import { defaultAIProviders, type AIChat } from "../src/shared/ai";
 import { CHAT_EVIDENCE_MAX_CHUNKS } from "../src/shared/grounding";
 import { createNote } from "../src/shared/notes";
 import type { AIUsageEvent } from "../src/shared/aiUsage";
+import { financialAlternatives } from "./fixtures/rag-financial-cases";
 const roots: string[] = [], stores: KnowledgeStore[] = [];
 afterEach(async () => { for (const store of stores.splice(0)) await store.stop(); for (const root of roots.splice(0)) { if (!root.startsWith(os.tmpdir()) || !path.basename(root).startsWith("lancarbon-grounding-")) throw Error("Unsafe cleanup"); await fs.rm(root, { recursive: true, force: true }); } });
 async function fixture() {
@@ -238,6 +239,19 @@ it("retains each paper's totals after supplementary background searches without 
   for (const total of ["CNY 13.7 billion", "CNY 6.8 billion"]) expect(JSON.stringify(payload.evidence)).toContain(total);
   expect(JSON.stringify(payload)).not.toContain("SecretOutsideSelection");
   expect(prepared.grounding.research).toMatchObject({ modelChecks: 2, supplemented: true });
+});
+
+it("preserves alternative-world conditions and separate-comparison requirements in the actual answer context", async () => {
+  for (const sample of financialAlternatives) {
+    const f = await fixture(); f.notes[0].title = sample.title; f.notes[0].content = sample.original;
+    const scope = { ...emptyKnowledgeScope(), noteIds: ["a"] };
+    const prepared = await f.grounder.prepare({ ...f.chat, sourceScope: scope, messages: [{ id: "q", role: "user", status: "complete", content: sample.question, createdAt: new Date().toISOString() }] }, new AbortController().signal, () => {});
+    expect(prepared.grounding.evidence.map(hit => hit.chunk.text).join("\n")).toContain(sample.original);
+    const request = JSON.parse(prepared.messages.at(-1)!.content);
+    expect(request.responseRequirements).toContain("mutually exclusive baselines");
+    expect(prepared.messages[0].content).toContain("not additive parts of one total reduction");
+    expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
+  }
 });
 
 it("persists a corrected cited amount without another API request and keeps original reasoning intact", async () => {
