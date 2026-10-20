@@ -3,7 +3,11 @@ import { bibliography } from "./chat-quality";
 export type AnswerTask = "definition" | "mechanism" | "comparison" | "calculation" | "writing" | "ranking" | "answer";
 export function answerTask(question: string): AnswerTask {
   if (/写一段|撰写|写.*综述|综述.*(?:组织|写)|写作|\b(?:draft|write).{0,35}(?:paragraph|review|summary)/iu.test(question)) return "writing";
-  if (/(?:前|最高|最低|最大|最小).{0,12}(?:十|\d+|名单|排名)|\btop\s*\d+|\brank(?:ing)?\b/iu.test(question)) return "ranking";
+  if (/(?:前|最高|最低|最大|最小).{0,12}(?:十|\d+|名单|排名)|\btop\s*\d+|\brank(?:ing)?\b/iu.test(question)) {
+    const aggregate = /合计|累计|总额|对应的?金额|\b(?:total|combined|aggregate)/iu.test(question);
+    const individual = /逐家|逐个|每家|各自|精确金额|名单|排名|\b(?:list|rank|each|individual)/iu.test(question);
+    return aggregate && !individual ? "calculation" : "ranking";
+  }
   if (/定义|实际算的|算的.*(?:损失|指标)|计算口径|损失口径|衡量什么|度量|\bdefin|what.{0,20}(?:measur|calculat)/iu.test(question)) return "definition";
   if (/多少钱|差多少|少了多少|多了多少|金额|换算|总额|\b(?:how much|convert|amount|total cost)/iu.test(question)) return "calculation";
   if (/为什么|原因|怎么.*(?:会|发生)|机制|\b(?:why|how does|mechanism)/iu.test(question)) return "mechanism";

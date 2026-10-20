@@ -115,9 +115,61 @@ export function repairCitedUnits(text: string, evidence: ChatEvidence[]): { text
         if (replacement !== claim.raw) { output = output.slice(0, at) + replacement + output.slice(at + claim.raw.length); corrections.push(`Unit corrected using [${source.label}]: ${claim.raw.trim()} → ${replacement.trim()}${claim.chineseHeader ? ` (${block.table ? "table" : "shared"} unit: ${claim.currency}, factor ${claim.factor})` : ""}${source.derived ? " (difference of cited same-unit operands)" : ""}.`); }
       }
     }
-    return repairTableConversions(output, evidence, corrections);
+    return repairRepeatedCalculations(repairTableConversions(output, evidence, corrections), evidence, corrections);
   }).join("");
   return { text: result, corrections };
+}
+
+/** Reconcile a nearby repetition/calculation with verified cited operands.
+ * Earlier generated text supplies labels/layout only; every fact is re-proved from
+ * current originals. No arbitrary uncited claim or economic comparison is inferred. */
+function repairRepeatedCalculations(text: string, evidence: ChatEvidence[], corrections: string[]): string {
+  interface Fact { value: number; factor: number; currency: string; label: string; sourceId: string; derived: boolean; keys: string[] }
+  const same = (a: number, b: number) => Math.abs(a - b) <= Math.max(0.005, Math.abs(b) * 1e-10);
+  const keys = (block: string, at: number) => {
+    const local = block.slice(0, at).split(/[，,;；。\n]/u).at(-1)!.slice(-100);
+    return [...local.matchAll(/[A-Za-z][A-Za-z0-9_₂₀-]{1,30}/gu)].map(match => match[0].toLowerCase()).filter(key => !/^(?:cny|rmb|usd|us|billion|million|trillion|the|of|is|and|total|loss|losses)$/u.test(key));
+  };
+  let previous: Fact[] = [];
+  const edits: Array<{ at: number; raw: string; replacement: string; label: string; reason: string }> = [];
+  for (const block of monetaryBlocks(text)) {
+    if (/^\s*(?:#{1,6}\s|\*\*[^*\n]+\*\*\s*$)/u.test(block.text)) previous = [];
+    if (block.table) { previous = []; continue; }
+    const current: Fact[] = [];
+    const subtraction = /相减|差额|少(?:损失)?\s*\d|\bdifference\b|\bsubtract|\bless\s+than\b/iu.test(block.text);
+    const addition = /相加|\bsum\b|\badd/iu.test(block.text) && /得到|得出|合计|总共|\b(?:gives|equals|total)\b|[=＝]/iu.test(block.text);
+    for (const claim of blockAmounts(block)) {
+      if (claim.values.length !== 1 || hypotheticalAt(block.text, claim.start)) continue;
+      const labels = monetaryLabels(block, claim.start, claim.raw.length), entityKeys = keys(block.text, claim.start);
+      const originals = evidence.filter(hit => labels.has(hit.label) && (hit.chunk.anchor.method !== "ocr" || !hit.chunk.anchor.needsReview && (hit.chunk.anchor.confidence ?? 0) >= 80)).flatMap(hit => [...supportedAmounts(hit), ...(subtraction ? subtractionAmounts(hit) : [])].map(amount => ({ amount, label: hit.label, sourceId: hit.source.id })));
+      const verified = originals.filter(({amount}) => amount.values.length === 1 && amount.currency === claim.currency && same(amount.values[0] * amount.factor, claim.values[0] * claim.factor));
+      if (verified.length) {
+        const {amount, label, sourceId} = verified[0];
+        current.push({ value: amount.values[0], factor: amount.factor, currency: amount.currency, label, sourceId, derived: !!amount.derived, keys: entityKeys });
+        continue;
+      }
+      if (labels.size || !previous.length || !/[亿万]/u.test(claim.raw)) continue;
+      const candidates: Array<{ value: number; label: string; reason: string }> = [];
+      for (const fact of previous) if (fact.currency === claim.currency && same(fact.value, claim.values[0]) && fact.keys.some(key => entityKeys.includes(key))) candidates.push({value: fact.value * fact.factor, label: fact.label, reason: "repeated value revalidated from cited original"});
+      if (addition) {
+        const differences = previous.filter((fact, i) => fact.derived && previous.findIndex(other => other.derived && other.sourceId === fact.sourceId && same(other.value * other.factor, fact.value * fact.factor)) === i);
+        for (let i = 0; i < differences.length; i++) for (let j = i + 1; j < differences.length; j++) {
+          const a = differences[i], b = differences[j];
+          if (a.sourceId === b.sourceId && a.currency === claim.currency && b.currency === claim.currency && a.factor === b.factor && same(a.value + b.value, claim.values[0])) candidates.push({value: (a.value + b.value) * a.factor, label: a.label, reason: "sum of cited same-unit differences; arithmetic only"});
+        }
+      }
+      if (!candidates.length || candidates.some(candidate => !same(candidate.value, candidates[0].value)) || same(candidates[0].value, claim.values[0] * claim.factor)) continue;
+      const digits = Number((candidates[0].value / claim.factor).toPrecision(12)).toString();
+      edits.push({at: block.start + claim.start, raw: claim.raw, replacement: claim.raw.replace(claim.digits[0], digits), label: candidates[0].label, reason: candidates[0].reason});
+    }
+    if (blockAmounts(block).length || /^\s*(?:#{1,6}\s|\*\*)/u.test(block.text)) previous = current;
+  }
+  let output = text;
+  for (const edit of edits.sort((a,b)=>b.at-a.at).slice(0,24-corrections.length)) {
+    output = output.slice(0,edit.at)+edit.replacement+output.slice(edit.at+edit.raw.length);
+    corrections.push(`Unit corrected using [${edit.label}]: ${edit.raw.trim()} → ${edit.replacement.trim()} (${edit.reason}).`);
+  }
+  return output;
 }
 
 /** Symbolic USD -> CNY table columns use a fixed, unassigned e (CNY/USD).

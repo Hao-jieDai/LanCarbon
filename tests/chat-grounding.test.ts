@@ -254,13 +254,14 @@ it("keeps previously cited table rows in the actual follow-up payload despite re
     const first: AIChat = { ...f.chat, sourceScope: scope, messages: [{ id: "q1", role: "user", content: `${sample.title}: organize the detailed categories in a table.`, status: "complete", sourceScope: scope, createdAt: new Date().toISOString() }] };
     const initial = await f.grounder.prepare(first, new AbortController().signal, () => {}), row = initial.grounding.evidence.find(hit => hit.chunk.text.includes(sample.fact)); expect(row).toBeTruthy();
     followup = true;
-    const next: AIChat = { ...first, messages: [...first.messages, { id: "a1", role: "assistant", content: `| Category | Amount |\n|---|---|\n| Group A | 99999 [${row!.label}] |\n| Group B | 88888 [${row!.label}] |`, status: "complete", sourceScope: scope, grounding: initial.grounding, createdAt: new Date().toISOString() }, { id: "q2", role: "user", content: sample.question, status: "complete", sourceScope: scope, createdAt: new Date().toISOString() }] };
+    const next: AIChat = { ...first, messages: [...first.messages, { id: "a1", role: "assistant", content: `| Category | Amount |\n|---|---|\n| Group A | 99999 [${row!.label}] |\n| Group B | 88888 [${row!.label}] |\n| Group C | 77777 [${row!.label}] |`, status: "complete", sourceScope: scope, grounding: initial.grounding, createdAt: new Date().toISOString() }, { id: "q2", role: "user", content: sample.question, status: "complete", sourceScope: scope, createdAt: new Date().toISOString() }] };
     const prepared = await f.grounder.prepare(next, new AbortController().signal, () => {}), payload = JSON.parse(prepared.messages[1].content);
     expect(prepared.grounding.research!.focusSourceIds).toEqual(["note:a"]);
     expect(payload.evidence.some((hit: { text: string }) => hit.text.includes(sample.fact))).toBe(true);
     expect(JSON.stringify(payload)).not.toContain("99999"); expect(JSON.stringify(payload)).not.toContain("SecretOutsideSelection"); expect(f.fetcher).not.toHaveBeenCalled();
     const context = JSON.parse(prepared.messages.at(-1)!.content).dialogueContext;
-    expect(context.referencedTable.rows).toEqual(["Group A", "Group B"]); expect(JSON.stringify(prepared.messages)).not.toContain("99999");
+    expect(context.referencedTable.rows).toEqual(["Group A", "Group B", "Group C"]); expect(JSON.stringify(prepared.messages)).not.toContain("99999");
+    expect(prepared.messages[0].content).toContain("KEEP ALL 3 DATA ROWS"); expect(prepared.messages[0].content).toContain('"Group C"');
   }
 }, 15_000);
 
@@ -286,6 +287,18 @@ it("preserves alternative-world conditions and separate-comparison requirements 
     expect(request.responseRequirements).toContain("mutually exclusive baselines");
     expect(prepared.messages[0].content).toContain("not additive parts of one total reduction");
     expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
+  }
+});
+
+it("treats a top-group aggregate as a calculation and retains the source's gross-to-retained adjustment", async () => {
+  for(const fact of ["Transport gross charges are USD 85 billion; with 80% pass-through, the retained loss is USD 17 billion.", "Crop gross charges are CNY 60 billion; with 85% pass-through, the retained loss is CNY 9 billion."]){
+    const f=await fixture(); f.notes[0].content="# Results\n\n"+fact;
+    const chat: AIChat={...f.chat,sourceScope:{...emptyKnowledgeScope(),noteIds:["a"]},messages:[{id:"q",role:"user",content:"前12家公司的合计金额是多少？总新增成本与转嫁后留存损失是什么关系？",status:"complete",createdAt:new Date().toISOString()}]};
+    const prepared=await f.grounder.prepare(chat,new AbortController().signal,()=>{});
+    expect(prepared.messages[0].content).toContain("Current task: calculation");
+    expect(prepared.messages[0].content).toContain("unpassed portion of that base");
+    expect(prepared.messages[1].content).toContain(fact);
+    expect(f.fetcher).not.toHaveBeenCalled();
   }
 });
 

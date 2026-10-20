@@ -22,6 +22,19 @@ it("checks declared source subtractions without treating generated differences o
   expect(repairCitedUnits("以41.2亿元为基准，少27.5亿元（按原文数值相减）。比较原文[S1][S2]。", [...hits, evidence("An unrelated crop.", "b", "S2")]).corrections).toEqual([]);
   expect(repairCitedUnits("假设一家企业少27.5亿元（按原文数值相减）[S1]。", hits).corrections).toEqual([]);
 });
+it("revalidates nearby named repetitions and arithmetic on cited differences without giving arbitrary prose a citation", () => {
+  const hits = [evidence("Transport route C costs CNY 41.2 billion, A costs CNY 68.7 billion, B costs CNY 53.9 billion.")];
+  const text = "RouteC为41.2亿元人民币，RouteA为68.7亿元人民币，RouteB为53.9亿元人民币[S1]。RouteC分别少27.5亿元人民币和12.7亿元人民币[S1]。\n\n这两个差额不能相加，共同终点是RouteC的41.2亿元人民币，相加得到40.2亿元人民币没有单一比较口径。";
+  const fixed = repairCitedUnits(text,hits);
+  expect(fixed.text).toContain("共同终点是RouteC的412亿元人民币"); expect(fixed.text).toContain("得到402亿元人民币");
+  expect(repairCitedUnits(fixed.text,hits).corrections).toEqual([]);
+  const crop = "CropC为CNY 15.2 亿，CropA为CNY 24.8 亿[S1]。差额为CNY 9.6 亿[S1]。\n\nCropC仍是CNY 15.2 亿。";
+  expect(repairCitedUnits(crop,[evidence("Crop C costs CNY 15.2 billion; Crop A costs CNY 24.8 billion.")]).text).toContain("CropC仍是CNY 152 亿");
+  for (const tail of ["\n\nAnotherRoute为41.2亿元人民币。", "\n\n## Other section\n\nRouteC为41.2亿元人民币。", "\n\n假设一家企业的RouteC损失41.2亿元人民币。"]){
+    const result=repairCitedUnits(text.split("\n\n")[0]+tail,hits);
+    expect(result.text.endsWith(tail)).toBe(true);
+  }
+});
 it("does not change uncited/unsupported amounts, currency, code, hypotheses, ambiguous originals or low-confidence OCR", () => {
   const hit = evidence("Total CNY 28.4 billion.");
   for (const text of ["28.4亿元人民币", "CNY 999 亿 [S1]", "USD 28.4 亿 [S1]", "`CNY 28.4 亿` [S1]", "假设一家企业损失28.4亿元人民币。[S1]"]) expect(repairCitedUnits(text, [hit]).corrections).toEqual([]);
@@ -38,6 +51,9 @@ it("adapts evidence and response structure to questions rather than always listi
   expect(answerTask("这几篇实际算的损失有什么区别？")).toBe("definition");
   expect(answerTask("请写一段综述，解释这些研究之间的联系。")).toBe("writing");
   expect(answerTask("能列出损失最高的十家企业及精确金额吗？")).toBe("ranking");
+  expect(answerTask("前30家企业和两类基金对应的金额分别是多少？")).toBe("calculation");
+  expect(answerTask("What is the combined loss of the top 12 operators?")).toBe("calculation");
+  expect(answerTask("List the top 12 operators and each one's exact loss.")).toBe("ranking");
   expect(answerTask("为什么降低利用率可能比关闭更贵？")).toBe("mechanism");
   expect(answerInstructions("writing")).toContain("editable draft"); expect(answerInstructions("ranking")).toContain("unseen supplement");
   const background = evidence("Introduction: climate transition and investment.", "intro"), method = evidence("We define the metric as the difference in discounted net cash flow relative to the baseline.", "method");

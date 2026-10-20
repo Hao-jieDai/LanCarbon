@@ -3,7 +3,19 @@ import { expect, it } from "vitest";
 import { chooseEvidence, documentQuestions, evidenceTokens } from "../electron/chat-evidence";
 import { CHAT_EVIDENCE_MAX_CHUNKS } from "../src/shared/grounding";
 import type { KnowledgeHit } from "../src/shared/knowledge";
-import { followupEvidenceGroups, referencedTableShape } from "../electron/chat-context";
+import { followupEvidenceGroups, referencedTableShape, tableTransformRequirement } from "../electron/chat-context";
+
+it("keeps table rows when two are emphasised and allows only explicit subsets or removal", () => {
+  const rows=["Transport", "Agriculture", "Housing"];
+  for(const question of ["把表换成人民币，保留交通和农业两项", "Convert this table, retaining Transport and Agriculture", "不要只保留两行，换算整张表"]){
+    expect(tableTransformRequirement(question,rows)).toContain("KEEP ALL 3 DATA ROWS");
+    expect(tableTransformRequirement(question,rows)).toContain('"Housing"');
+  }
+  for(const question of ["只保留交通和农业两行", "Keep only Agriculture", "去掉住房这一行", "Exclude Housing"]){
+    expect(tableTransformRequirement(question,rows)).toContain("explicit subset/removal");
+    expect(tableTransformRequirement(question,rows)).not.toContain("KEEP ALL");
+  }
+});
 
 function passage(index: number, source = "paper"): KnowledgeHit {
   return { source: { id: `file:${source}`, entityId: source, kind: "file", title: source, format: "pdf", locations: [], attachments: [], tags: [], systemManaged: false, fingerprint: "a".repeat(64) }, fingerprint: "a".repeat(64), chunk: { id: String(index), text: `Passage ${index}. ` + "Background context. ".repeat(45), anchor: { kind: "pdf", page: Math.floor(index / 5) + 1 } } };
