@@ -3,6 +3,7 @@ import { expect, it } from "vitest";
 import { chooseEvidence, documentQuestions, evidenceTokens } from "../electron/chat-evidence";
 import { CHAT_EVIDENCE_MAX_CHUNKS } from "../src/shared/grounding";
 import type { KnowledgeHit } from "../src/shared/knowledge";
+import { followupEvidenceGroups } from "../electron/chat-context";
 
 function passage(index: number, source = "paper"): KnowledgeHit {
   return { source: { id: `file:${source}`, entityId: source, kind: "file", title: source, format: "pdf", locations: [], attachments: [], tags: [], systemManaged: false, fingerprint: "a".repeat(64) }, fingerprint: "a".repeat(64), chunk: { id: String(index), text: `Passage ${index}. ` + "Background context. ".repeat(45), anchor: { kind: "pdf", page: Math.floor(index / 5) + 1 } } };
@@ -60,4 +61,21 @@ it("includes neighbouring text with original anchors, excludes unselected source
   expect(selected.find(hit => hit.chunk.id === "102")!.chunk).toEqual(neighbour.chunk);
   expect(selected.every(hit => hit.source.id === "file:paper")).toBe(true);
   expect(selected.some(hit => hit.chunk.text === "Outdated facts")).toBe(false);
+});
+
+it("reserves cited fresh originals for a table follow-up before distracting monetary overview matches", () => {
+  const corpus = Array.from({ length: 80 }, (_, i) => passage(i, "transport"));
+  corpus[64].chunk.text = "Regional rail exposure is US$38 billion; municipal transit exposure is US$26 billion.";
+  corpus[70].chunk.text = "Insurance-sector upper-bound exposure is US$94 billion.";
+  const privateHit = passage(0, "private");
+  const evidence = [{ ...corpus[64], label: "S7" }, { ...corpus[70], label: "S9" }, { ...corpus[0], label: "S1" }, { ...privateHit, label: "S10" }];
+  const previous = { content: "Invented generated amount 99999. Table [S7][S9][S10].", grounding: { evidence } as any };
+  const kept = followupEvidenceGroups([...corpus, privateHit], previous, ["file:transport"]);
+  const selected = chooseEvidence(corpus, [...kept, ...Array.from({ length: 12 }, () => corpus.slice(0, 20))], ["file:transport"], false, ["file:transport"], 2200);
+  expect(selected.map(hit => hit.chunk.id)).toEqual(expect.arrayContaining(["64", "70"]));
+  expect(kept.flat().map(hit => hit.chunk.id)).toEqual(["64", "70"]);
+  expect(JSON.stringify(selected)).not.toContain("99999"); expect(selected.every(hit => hit.source.id === "file:transport")).toBe(true);
+  const changed = corpus.map(hit => hit.chunk.id === "64" ? { ...hit, fingerprint: "b".repeat(64) } : hit.chunk.id === "70" ? { ...hit, chunk: { ...hit.chunk, text: "Revised text" } } : hit);
+  expect(followupEvidenceGroups(changed, previous, ["file:transport"])).toEqual([]);
+  expect(followupEvidenceGroups([], previous, ["file:transport"])).toEqual([]);
 });

@@ -8,7 +8,7 @@ import type { RetrievalService } from "./retrieval-service";
 import { chooseEvidence, documentQuestions, evidenceKey } from "./chat-evidence";
 import { broadQuestion, localResearchPlan, planMessages, readResearchPlan, readReview, reviewMessages, sourceProfiles, type ResearchConsult } from "./chat-plan";
 import { arithmeticWarnings } from "./chat-checks";
-import { localEvidenceGroups } from "./chat-context";
+import { followupEvidenceGroups, localEvidenceGroups } from "./chat-context";
 import { bibliography, bibliographyQuestion, quantityNotes, quantityQuestion, quantityWarnings, resultCoverage, scenarioWarnings } from "./chat-quality";
 import { repairCitedUnits } from "./chat-repair";
 import { answerTask, answerInstructions, methodCoverage } from "./chat-answer-plan";
@@ -62,7 +62,8 @@ export class ChatGrounder {
       }
       signal.throwIfAborted(); progress("Finding evidence…");
       const previous = chat.messages.filter(message => message.role === "user" && scopeKey(message.sourceScope) === scopeKey(scope)).slice(-4, -1).map(message => message.content.slice(0, 350));
-      const earlier = chat.messages.filter(message => message.role === "assistant" && message.grounding && scopeKey(message.sourceScope) === scopeKey(scope)).at(-1)?.grounding;
+      const earlierMessage = chat.messages.filter(message => message.role === "assistant" && message.grounding && scopeKey(message.sourceScope) === scopeKey(scope)).at(-1);
+      const earlier = earlierMessage?.grounding;
       const savedFocus = earlier?.research?.focusSourceIds;
       const previousFocus = savedFocus?.length ? savedFocus : [...new Set(earlier?.evidence.map(hit => hit.source.id) ?? [])];
       const profiles = sourceProfiles(corpus);
@@ -134,7 +135,8 @@ export class ChatGrounder {
       groups.unshift(...unitCompanions(corpus, groups, required.length ? required : ids));
       const evidenceBudget = plan.compare || questions.length >= 3 ? 18_000 : broad ? 14_000 : quantityQuestion.test(question) ? 12_000 : 9_000;
       const evidenceIds = !plan.compare && required.length ? required : ids;
-      const selectEvidence = () => chooseEvidence(corpus, [...formal, ...coverage, ...groups], evidenceIds, broad, required, evidenceBudget, withBibliography);
+      const followup = plan.lockedFocus && earlierMessage ? followupEvidenceGroups(corpus, earlierMessage, evidenceIds) : [];
+      const selectEvidence = () => chooseEvidence(corpus, [...followup, ...formal, ...coverage, ...groups], evidenceIds, broad, required, evidenceBudget, withBibliography);
       let evidence = selectEvidence();
       let review: NonNullable<ChatGrounding["research"]>["review"] = "not-needed", supplemented = followups > 0;
       const missingFocus = required.some(id => !evidence.some(hit => hit.source.id === id && !bibliography(hit)));

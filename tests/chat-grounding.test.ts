@@ -241,6 +241,27 @@ it("retains each paper's totals after supplementary background searches without 
   expect(prepared.grounding.research).toMatchObject({ modelChecks: 2, supplemented: true });
 });
 
+it("keeps previously cited table rows in the actual follow-up payload despite renewed retrieval favouring totals", async () => {
+  for (const sample of [
+    { title: "TransportStudy", fact: "Public operators hold US$38 billion; insurers hold US$26 billion.", question: "把刚才这张表换成人民币，保留公共运营商和保险部门，请回到原文核对。" },
+    { title: "ClinicalStudy", fact: "Hospital spending is US$15 billion; community spending is US$9 billion.", question: "Convert the previous table to yuan without a fixed exchange rate, retaining both spending categories." }
+  ]) {
+    const f = await fixture(); f.notes[0].title = sample.title;
+    f.notes[0].content = "# " + sample.title + "\n\n" + Array.from({ length: 70 }, (_, i) => `## Background ${i}\n\nNational total loss is CNY 719 billion. ${"Aggregate results and economic conditions vary. ".repeat(22)}`).join("\n\n") + "\n\n# Detailed categories\n\n" + sample.fact;
+    const scope = { ...emptyKnowledgeScope(), noteIds: ["a", "b"] };
+    let followup = false;
+    vi.mocked(f.retrieval.search).mockImplementation(async (_query, ids) => ({ hits: (await f.store.corpus()).filter(hit => ids!.includes(hit.source.id) && (followup ? hit.chunk.text.includes("National total loss") : hit.chunk.text.includes(sample.fact))).slice(0, 20).map(hit => ({ ...hit, score: 1, retrieval: "keyword" as const })), warnings: [], mode: "keyword" }));
+    const first: AIChat = { ...f.chat, sourceScope: scope, messages: [{ id: "q1", role: "user", content: `${sample.title}: organize the detailed categories in a table.`, status: "complete", sourceScope: scope, createdAt: new Date().toISOString() }] };
+    const initial = await f.grounder.prepare(first, new AbortController().signal, () => {}), row = initial.grounding.evidence.find(hit => hit.chunk.text.includes(sample.fact)); expect(row).toBeTruthy();
+    followup = true;
+    const next: AIChat = { ...first, messages: [...first.messages, { id: "a1", role: "assistant", content: `Generated values are not evidence: 99999. Table [${row!.label}].`, status: "complete", sourceScope: scope, grounding: initial.grounding, createdAt: new Date().toISOString() }, { id: "q2", role: "user", content: sample.question, status: "complete", sourceScope: scope, createdAt: new Date().toISOString() }] };
+    const prepared = await f.grounder.prepare(next, new AbortController().signal, () => {}), payload = JSON.parse(prepared.messages[1].content);
+    expect(prepared.grounding.research!.focusSourceIds).toEqual(["note:a"]);
+    expect(payload.evidence.some((hit: { text: string }) => hit.text.includes(sample.fact))).toBe(true);
+    expect(JSON.stringify(payload)).not.toContain("99999"); expect(JSON.stringify(payload)).not.toContain("SecretOutsideSelection"); expect(f.fetcher).not.toHaveBeenCalled();
+  }
+}, 15_000);
+
 it("preserves alternative-world conditions and separate-comparison requirements in the actual answer context", async () => {
   for (const sample of financialAlternatives) {
     const f = await fixture(); f.notes[0].title = sample.title; f.notes[0].content = sample.original;

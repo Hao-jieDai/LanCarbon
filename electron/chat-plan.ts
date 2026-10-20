@@ -41,8 +41,8 @@ export function namedSources(question: string, profiles: SourceProfile[]): strin
 export function localResearchPlan(question: string, profiles: SourceProfile[], previous: string[], previousFocus: string[]): ResearchPlan {
   const named = namedSources(question, profiles), allSources = collectionQuestion.test(question), known = new Set(profiles.map(profile => profile.id));
   const newReference = changedSubject.test(question), prior = previousFocus.filter(id => known.has(id));
-  const responseReference = /上(?:一(?:张|个)?|个)?(?:表|回答)|前(?:一(?:张|个)?|个)?(?:表|回答)|刚才.{0,8}(?:表|回答)|上述(?:表|回答)|(?:previous|preceding|that)\s+(?:table|answer)|(?:table|answer)\s+above/iu.test(question);
-  const responseOperation = /换(?:成|算)|单位|排版|整理|翻译|改写|重新|复核|检查|convert|reformat|translate|rewrite|check/iu.test(question);
+  const responseReference = /上(?:一(?:张|个)?|个)?(?:表|回答)|前(?:一(?:张|个)?|个)?(?:表|回答)|刚才.{0,8}(?:表|回答)|上述(?:表|回答)|[这那](?:一)?张表|(?:previous|preceding|that|this)\s+(?:table|answer)|(?:table|answer)\s+above/iu.test(question);
+  const responseOperation = /换(?:成|算)|单位|排版|整理|翻译|改写|重新|复核|核对|检查|convert|reformat|translate|rewrite|check|verify|review/iu.test(question);
   const otherDocument = /(?:另一|其他|新的一?|不同).{0,12}(?:篇|文献|文章|论文)|(?:other|another|different|new)\s+(?:paper|study|article|document)/iu.test(question);
   const sameNamedFocus = named.length === 1 && prior.length === 1 && named[0] === prior[0];
   const lockedFocus = !!(prior.length && (!named.length || sameNamedFocus) && !allSources && !otherDocument && responseReference && responseOperation);

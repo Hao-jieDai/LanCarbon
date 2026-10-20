@@ -2,6 +2,22 @@ import type { KnowledgeHit } from "../src/shared/knowledge";
 import { keywordRanks } from "./retrieval-service";
 import { bibliography, bibliographyQuestion } from "./chat-quality";
 import { evidenceKey } from "./chat-evidence";
+import { citedLabels, type ChatGrounding } from "../src/shared/grounding";
+
+/** Table transformations retain the original passages actually cited last turn.
+ * Historical generated values are never copied into the evidence payload. */
+export function followupEvidenceGroups(corpus: KnowledgeHit[], previous: { content: string; grounding?: ChatGrounding }, sourceIds: string[]): KnowledgeHit[][] {
+  const allowed = new Set(sourceIds), current = new Map(corpus.filter(hit => allowed.has(hit.source.id)).map(hit => [evidenceKey(hit), hit]));
+  const cited = citedLabels(previous.content), seen = new Set<string>(), result: KnowledgeHit[][] = [];
+  for (const label of cited) {
+    const saved = previous.grounding?.evidence.find(hit => hit.label === label);
+    const fresh = saved && current.get(evidenceKey(saved));
+    if (!fresh || fresh.fingerprint !== saved!.fingerprint || fresh.chunk.text !== saved!.chunk.text || seen.has(evidenceKey(fresh))) continue;
+    seen.add(evidenceKey(fresh)); result.push([fresh]);
+    if (result.length >= 16) break;
+  }
+  return result;
+}
 
 /** Local lexical checks complement semantic ranking without making additional API requests.
  * Keep one group per user question so a small factual subpart is not crowded out by an overview.
