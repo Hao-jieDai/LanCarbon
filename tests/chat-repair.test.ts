@@ -119,3 +119,14 @@ it("repairs shared English scales and separately repeated range endpoints, witho
   }
   expect(repairCitedUnits("US$53亿[S1]。", [evidence("US$53 million and US$17 billion.")]).text).toBe("US$0.53亿[S1]。");
 });
+
+it("checks every member of a Chinese monetary list using locally declared original currencies", () => {
+  const hits = [evidence("Crop strategy C has the lowest loss (41.2 billion CNY), below strategy A (68.7 billion) and B (53.9 billion).")];
+  const result = repairCitedUnits("三种策略分别为68.7、53.9和412亿元人民币[S1]。", hits);
+  expect(result.text).toBe("三种策略分别为687、539和412亿元人民币[S1]。"); expect(result.corrections).toHaveLength(2);
+  expect(repairCitedUnits(result.text, hits).corrections).toEqual([]);
+  expect(repairCitedUnits("支出2.6万元人民币[S1]。", [evidence("Expense is CNY 2.6 million.")]).text).toBe("支出260万元人民币[S1]。");
+  for (const source of ["CNY 41.2 billion. A count (68.7 billion).", "CNY 41.2 billion and USD 5 million; A (68.7 billion).", "Population (68.7 billion).", "CNY 41.2 billion; energy (68.7 billion kWh).", "Capacity (GW)\nCNY 41.2 billion\n(68.7 billion)\nFig. 8 | Operators."]){
+    expect(repairCitedUnits("68.7亿元人民币[S1]。", [evidence(source)]).corrections).toEqual([]);
+  }
+});

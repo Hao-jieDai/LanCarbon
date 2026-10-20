@@ -1,6 +1,6 @@
 import type { KnowledgeHit } from "../src/shared/knowledge";
 import { citedLabels, type ChatEvidence } from "../src/shared/grounding";
-import { isolatedFigureAmount, monetaryBlocks, monetaryLabels, sharedScaleAmounts } from "./chat-claims";
+import { chineseListAmounts, isolatedFigureAmount, monetaryBlocks, monetaryLabels, parenthesizedMoney, sharedScaleAmounts } from "./chat-claims";
 
 /** Conservative bibliography detection; citations in ordinary prose are not a bibliography. */
 export function bibliography(hit: KnowledgeHit): boolean {
@@ -37,7 +37,7 @@ export function resultCoverage(corpus: KnowledgeHit[], sourceIds: string[], prev
   }).filter(group => group.length);
 }
 
-interface Amount { original: string; start: number; value: number; factor: number; currency: "CNY" | "USD"; context: string }
+interface Amount { original: string; start: number; value: number; factor: number; currency: "CNY" | "USD"; context: string; sharedChinese?: boolean }
 function amounts(text: string): Amount[] {
   const result: Amount[] = [];
   const expression = /(?:(CNY|RMB|USD|US\\?\$)\s*)?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(trillion|billion|million|万亿|千亿|百亿|亿|百万|万)[ \t]*(CNY|RMB|USD|US\\?\$|美元|人民币|元|dollars)?/giu;
@@ -50,6 +50,9 @@ function amounts(text: string): Amount[] {
   }
   for (const item of sharedScaleAmounts(text)) {
     if (!result.some(value => value.start === item.start && value.value === item.value && value.factor === item.factor)) result.push({ original: item.original, start: item.start, value: item.value, factor: item.factor, currency: item.currency, context: text.slice(Math.max(0, item.spanStart - 110), item.spanStart + item.spanLength + 110).replace(/\s+/g, " ") });
+  }
+  for (const item of [...chineseListAmounts(text), ...parenthesizedMoney(text)]) {
+    if (!result.some(value => item.start >= value.start && item.start < value.start + value.original.length)) result.push({ original: item.raw, start: item.start, value: item.value, factor: item.factor, currency: item.currency, sharedChinese: !/[()（）]/u.test(item.raw), context: text.slice(Math.max(0, item.start - 110), item.start + item.raw.length + 110).replace(/\s+/g, " ") });
   }
   return result.sort((a, b) => a.start - b.start);
 }
@@ -71,7 +74,7 @@ export function quantityWarnings(text: string, evidence: ChatEvidence[]): string
     for (const claim of amounts(paragraph)) {
       // Two English amounts sharing digits may describe different entities or scenarios.
       // A scale-translation check cannot assert that those amounts must be equal.
-      if (!/[亿万]/u.test(claim.original)) continue;
+      if (!claim.sharedChinese && !/[亿万]/u.test(claim.original)) continue;
       const labels = monetaryLabels(block, claim.start, claim.original.length);
       const originals = evidence.filter(hit => labels.has(hit.label)).flatMap(hit => amounts(hit.chunk.text).filter(item => !isolatedFigureAmount(hit.chunk.text, item.start, item.original.length)).map(item => ({ ...item, label: hit.label })));
       const compatible = originals.filter(item => item.currency === claim.currency);

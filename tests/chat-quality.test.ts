@@ -47,6 +47,9 @@ it("preserves both members of shared-scale results in arithmetic aids and unit d
   expect(quantityWarnings("两情景分别为US$53亿和US$17亿[S1]。", [original])).toHaveLength(2);
   expect(quantityWarnings("两情景分别为US$530亿和US$170亿[S1]。", [original])).toEqual([]);
   expect(quantityNotes(hit("USD 53 and CNY 17 billion.")).join("\n")).not.toContain("530 亿美元");
+  const crops = hit("Crop C loses 41.2 billion CNY, below A (68.7 billion) and B (53.9 billion).");
+  expect(quantityNotes(crops).join("\n")).toContain("687 亿元人民币");
+  expect(quantityWarnings("三者为68.7、53.9和412亿元人民币[S1]。", [crops])).toHaveLength(2);
 });
 it("flags the observed billion-to-yi mistakes with exact cited originals, avoiding FX and coincidental uncited amounts", () => {
   const originals = [hit("National losses are 339.0 billion CNY; regional losses 133.91 billion CNY and 127.13 billion CNY.")];

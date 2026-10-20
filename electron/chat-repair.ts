@@ -1,5 +1,5 @@
 import { mapCitations, type ChatEvidence } from "../src/shared/grounding";
-import { isolatedFigureAmount, monetaryBlocks, monetaryLabels, sharedScaleAmounts, tableCells, type ClaimBlock } from "./chat-claims";
+import { chineseListAmounts, isolatedFigureAmount, monetaryBlocks, monetaryLabels, parenthesizedMoney, sharedScaleAmounts, tableCells, type ClaimBlock } from "./chat-claims";
 interface Amount { raw: string; start: number; values: number[]; factor: number; currency: string; digits: string[]; chineseHeader?: boolean }
 const factors: Record<string, number> = { trillion: 1e12, billion: 1e9, million: 1e6, 万亿: 1e12, 千亿: 1e11, 百亿: 1e10, 亿: 1e8, 百万: 1e6, 万: 1e4 };
 function amounts(text: string): Amount[] {
@@ -7,10 +7,14 @@ function amounts(text: string): Amount[] {
   // original delimiters so a repair changes digits only, including copied/exported LaTeX.
   const readable = text.replace(/(?<!\\)\$([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)\$/gu, (_match, digits: string) => ` ${digits} `);
   const expression = /(?:(CNY|RMB|USD|US\\?\$)\s*)?([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\s*(?:to|[-–—~～至])\s*(?:CNY|RMB|USD|US\\?\$)?\s*([+−-]?\d+(?:,\d{3})*(?:\.\d+)?))?\s*(trillion|billion|million|万亿|千亿|百亿|百万|亿|万)[ \t]*(CNY|RMB|USD|US\\?\$|美元|人民币|元(?:人民币)?|dollars)?/giu;
-  return [...readable.matchAll(expression)].flatMap(match => {
+  const result: Amount[] = [...readable.matchAll(expression)].flatMap(match => {
     const currencyText = ((match[1] ?? "") + (match[5] ?? "")).replaceAll("\\", ""), currency = /CNY|RMB|人民币|^元$/iu.test(currencyText) ? "CNY" : /USD|US\$|美元|dollars/iu.test(currencyText) ? "USD" : "";
     return currency ? [{ raw: text.slice(match.index!, match.index! + match[0].length), start: match.index!, values: [match[2], ...(match[3] ? [match[3]] : [])].map(s => Number(s.replace(/,/g, "").replace("−", "-"))), digits: [match[2], ...(match[3] ? [match[3]] : [])], factor: factors[match[4].toLowerCase()], currency }] : [];
   });
+  for (const item of chineseListAmounts(readable)) {
+    if (!result.some(amount => item.start >= amount.start && item.start < amount.start + amount.raw.length)) result.push({ raw: text.slice(item.start, item.start + item.raw.length), start: item.start, values: [item.value], digits: [item.digits], factor: item.factor, currency: item.currency, chineseHeader: true });
+  }
+  return result.sort((a, b) => a.start - b.start);
 }
 
 function supportedAmounts(hit: ChatEvidence): Amount[] {
@@ -20,7 +24,8 @@ function supportedAmounts(hit: ChatEvidence): Amount[] {
   // Repeated target units split a source range into two separately written claims.
   const endpoints = originals.filter(amount => amount.values.length === 2).flatMap(amount => amount.values.map((value, i) => ({ ...amount, values: [value], digits: [amount.digits[i]] })));
   const coordinated = shared.filter(amount => !isolatedFigureAmount(text, amount.spanStart, amount.spanLength)).map(amount => ({ raw: amount.original, start: amount.start, values: [amount.value], digits: [amount.digits], factor: amount.factor, currency: amount.currency }));
-  return [...originals, ...endpoints, ...coordinated];
+  const parenthesized = parenthesizedMoney(text).filter(amount => !isolatedFigureAmount(text, amount.start, amount.raw.length)).map(amount => ({ raw: amount.raw, start: amount.start, values: [amount.value], digits: [amount.digits], factor: amount.factor, currency: amount.currency }));
+  return [...originals, ...endpoints, ...coordinated, ...parenthesized];
 }
 
 /** A numeric-only table cell may declare its monetary unit once in its column header. */
@@ -82,7 +87,7 @@ export function repairCitedUnits(text: string, evidence: ChatEvidence[]): { text
         let replacement = claim.raw, offset = 0;
         for (const [i, digits] of claim.digits.entries()) { const start = replacement.indexOf(digits, offset); if (start < 0) break; const value = Number((claim.values[i] * ratio).toPrecision(12)).toString(); replacement = replacement.slice(0, start) + value + replacement.slice(start + digits.length); offset = start + value.length; }
         const at = block.start + claim.start;
-        if (replacement !== claim.raw) { output = output.slice(0, at) + replacement + output.slice(at + claim.raw.length); corrections.push(`Unit corrected using [${source.label}]: ${claim.raw.trim()} → ${replacement.trim()}${claim.chineseHeader ? ` (table unit: ${claim.currency}, factor ${claim.factor})` : ""}.`); }
+        if (replacement !== claim.raw) { output = output.slice(0, at) + replacement + output.slice(at + claim.raw.length); corrections.push(`Unit corrected using [${source.label}]: ${claim.raw.trim()} → ${replacement.trim()}${claim.chineseHeader ? ` (${block.table ? "table" : "shared"} unit: ${claim.currency}, factor ${claim.factor})` : ""}.`); }
       }
     }
     return repairTableConversions(output, evidence, corrections);
