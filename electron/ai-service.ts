@@ -82,9 +82,9 @@ export class AIService {
           try {
             await this.client.complete(provider, key, modelId, messages, controller.signal, (content, reasoning) => {
               length += content.length + reasoning.length;
-              if (length > 40_000) throw Error("Source check response limit reached");
+              if (length > (stage === "plan" ? 40_000 : 100_000)) throw Error("Source check response limit reached");
               output += content; reasoningText += reasoning;
-            }, false, () => {}, { maxTokens: stage === "plan" ? 1400 : 6000, disableThinking: true, timeoutMs: stage === "plan" ? 90_000 : 120_000, maxRetries: 0, ...(stage === "review" ? { onFinish: (reason: string) => { reply.finishReason = reason; } } : {}) });
+            }, false, () => {}, { maxTokens: stage === "plan" ? 1400 : 16384, disableThinking: stage === "plan", timeoutMs: stage === "plan" ? 90_000 : 600_000, maxRetries: 0, ...(stage === "review" ? { onFinish: (reason: string) => { reply.finishReason = reason; } } : {}) });
             return output;
           } catch (error) {
             if (stage === "review" && output) reply.content += "\n\n---\n\nSource review (incomplete)\n\n" + output;
@@ -103,7 +103,7 @@ export class AIService {
             // Evidence/history remain data in their original user-message roles.
             context = [{ ...context[0], content: context[0].content + "\n\n" + prepared.messages[0].content }, ...prepared.messages.slice(1)];
             await chatStore.update(id, saved => { const message = saved.messages.find(message => message.id === reply.id); if (message) message.grounding = prepared.grounding; });
-            progress("Answering from selected sources…");
+            progress(needsAnswerReview ? "Drafting from selected sources…" : "Answering from selected sources…");
           }
           controller.signal.throwIfAborted();
           await this.client.complete(provider, key, modelId, context, controller.signal, (content, reasoning) => {
@@ -111,7 +111,7 @@ export class AIService {
             if (reply.content.length + reply.reasoning.length > 1_000_000) { controller.abort(); throw new Error("Response size limit reached"); }
             if (!updateTimer) updateTimer = setTimeout(() => { updateTimer = undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, 120);
             if (!persistTimer) persistTimer = setTimeout(() => { persistTimer = undefined; const snapshot = { ...reply }; void chatStore.update(id, saved => { const index = saved.messages.findIndex(message => message.id === reply.id); if (index >= 0) saved.messages[index] = snapshot; }).catch(() => controller.abort()); }, 800);
-          }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, { onFinish: reason => { reply.finishReason = reason; } });
+          }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, { ...(needsAnswerReview ? { disableThinking: true, maxTokens: 6000, timeoutMs: 120_000, maxRetries: 0 } : {}), onFinish: reason => { reply.finishReason = reason; } });
           if (needsAnswerReview && reply.grounding) {
             progress("Checking answer against sources…");
             try {

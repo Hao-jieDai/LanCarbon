@@ -416,5 +416,8 @@ it("retains the draft, partial revised text, Thinking and fees when finalization
   expect(f.fetcher).toHaveBeenCalledTimes(2);
   expect(f.usage.filter(event=>event.type==="finish").map(event=>event.type==="finish"&&event.usage.totalTokens)).toEqual([100,100]);
   const revised=JSON.parse(f.fetcher.mock.calls[1][1]!.body as string);
-  expect(revised.max_tokens).toBe(6000); expect(revised.model).toBe("fixture-model");
+  expect(revised.max_tokens).toBe(16384); expect(revised.model).toBe("fixture-model");
+  const draft=JSON.parse(f.fetcher.mock.calls[0][1]!.body as string); expect(draft.max_tokens).toBe(6000);
+  expect(draft.enable_thinking).toBeUndefined(); // Fixture model does not advertise DeepSeek thinking support.
+  expect(revised.enable_thinking).toBeUndefined();
 });
