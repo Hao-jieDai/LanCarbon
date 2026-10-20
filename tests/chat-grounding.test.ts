@@ -120,8 +120,8 @@ it("includes a mixed question's omitted formula and definition before direct gen
   expect(equation).toBeTruthy(); expect(payload.evidence.some((e: { text: string }) => e.text.includes("Relative risk is defined"))).toBe(true);
   expect(payload.questionEvidence.some((q: { citations: string[] }) => q.citations.includes(equation.citation))).toBe(true);
   expect(JSON.stringify(body)).not.toContain("SecretOutsideSelection");
-  expect(JSON.stringify(body)).toContain("do not introduce a nonnegative truncation");
-  expect(JSON.stringify(body)).toContain("or reverse these associations");
+  expect(JSON.stringify(body)).toContain("Preserve variables, signs, units and constraints");
+  expect(JSON.stringify(body)).toContain("comparison direction");
   expect(JSON.stringify(body)).toContain("self-referential disclaimers");
 });
 it("supplies compact unit aids for incidental amounts in non-monetary questions and preserves semantic qualifiers", async () => {
@@ -134,11 +134,11 @@ it("supplies compact unit aids for incidental amounts in non-monetary questions 
   expect(money.unitEquivalents).toContain("US$713 billion = 7130 亿美元.");
   expect(money.unitEquivalents.join(" ")).not.toContain("Original context:");
   expect(money.text).toContain("12-year valuation horizon");
-  expect(prepared.messages[0].content).toContain("explicit evidence of set inclusion");
-  expect(prepared.messages[0].content).toContain("not the only factor");
-  expect(prepared.messages[0].content).toContain("displayed arithmetic");
+  expect(prepared.messages[0].content).toContain("Do not infer relationships between groups");
+  expect(money.text).toContain("upper-bound exposure");
+  expect(prepared.messages[0].content).toContain("Numeric aids support arithmetic, not scientific attribution");
   const finalRequest = JSON.parse(prepared.messages.at(-1)!.content);
-  expect(prepared.messages[0].content).toContain("gains in GDP do not offset asset wealth losses");
+  expect(prepared.messages[0].content).not.toContain("GDP");
   expect(finalRequest).not.toHaveProperty("consistencyCheck");
   expect(finalRequest.latestQuestion).toBe("Who bears the risk?");
   for (const question of ["把金额换成人民币", "Convert the exposure to CNY"]) {
@@ -341,8 +341,8 @@ it("preserves alternative-world conditions and separate-comparison requirements 
     const request = JSON.parse(prepared.messages.at(-1)!.content);
     expect(request.tasks).toContain("calculation");
     expect(request).not.toHaveProperty("responseRequirements");
-    expect(prepared.messages[0].content).toContain("mutually exclusive baselines");
-    expect(prepared.messages[0].content).toContain("not additive parts of one total reduction");
+    expect(prepared.messages[0].content).toContain("Separate comparisons with different baselines");
+    expect(prepared.messages[0].content).toContain("Do not infer relationships between groups or combine different measures");
     expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
   }
 });
@@ -353,7 +353,7 @@ it("treats a top-group aggregate as a calculation and retains the source's gross
     const chat: AIChat={...f.chat,sourceScope:{...emptyKnowledgeScope(),noteIds:["a"]},messages:[{id:"q",role:"user",content:"前12家公司的合计金额是多少？总新增成本与转嫁后留存损失是什么关系？",status:"complete",createdAt:new Date().toISOString()}]};
     const prepared=await f.grounder.prepare(chat,new AbortController().signal,()=>{});
     expect(JSON.parse(prepared.messages.at(-1)!.content).tasks).toContain("calculation");
-    expect(prepared.messages[0].content).toContain("unpassed portion of that base");
+    expect(prepared.messages[0].content).toContain("actual subject, measure, scope and reference case");
     expect(prepared.messages[1].content).toContain(fact);
     expect(f.fetcher).not.toHaveBeenCalled();
   }
@@ -441,4 +441,40 @@ it("allows paraphrasing PDF line-wrap hyphens without demanding a verbatim audit
   expect(f.fetcher).toHaveBeenCalledTimes(1);
   const request = JSON.parse(f.fetcher.mock.calls[0][1]!.body as string);
   expect(request.response_format).toBeUndefined(); expect(JSON.parse(request.messages.at(-1).content)).not.toHaveProperty("proposedDraft");
+});
+
+
+it.each([
+  { title: "ClinicalTrial", question: "ClinicalTrial: 请解释风险差，并写出公式。", text: "# Definition\n\nRisk difference is defined as treated event probability minus control event probability.\n\n# Equation\n\nRD = p_treated - p_control\n\nwhere p is event probability; negative differences are retained.", formula: "RD = p_treated - p_control" },
+  { title: "RecyclingStudy", question: "RecyclingStudy: 回收产率的公式是什么，干质量和湿质量能混用吗？", text: "# Definition\n\nProduct yield is defined as recovered dry product mass divided by dry feed mass.\n\n# Equation\n\nY = m_product / m_feed\n\nwhere m is dry mass; wet mass cannot be substituted.", formula: "Y = m_product / m_feed" }
+])("passes each selected discipline's originals to one answer without financial audit instructions: $title", async ({ title, question, text, formula }) => {
+  const f = await fixture(); f.notes[0].title = title; f.notes[0].content = text;
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", question);
+  const reply = (await f.settled()).messages.at(-1)!;
+  expect(reply.status).toBe("complete"); expect(f.fetcher).toHaveBeenCalledTimes(1);
+  const request = JSON.parse(f.fetcher.mock.calls[0][1]!.body as string);
+  const originals = JSON.parse(request.messages.find((m: { content: string }) => m.content.startsWith('{"selectedSources":')).content);
+  expect(originals.evidence.some((e: { text: string }) => e.text.includes(formula))).toBe(true);
+  expect(originals.evidence.every((e: { sourceId: string }) => e.sourceId === "note:a")).toBe(true);
+  expect(request.messages[0].content).not.toMatch(/GDP|cost pass-through|NPV|discounted future profits|verify-and-finalize/);
+  expect(JSON.stringify(originals)).not.toContain("SecretOutsideSelection");
+});
+
+it("reads legacy audit fields unchanged and excludes them from later direct answers", async () => {
+  const f = await fixture(); await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Paper A: describe the findings"); await f.settled();
+  await f.chats.update(f.chat.id, saved => {
+    const previous = saved.messages.at(-1)!;
+    previous.content = "DeprecatedLegacyAnswer";
+    Object.assign(previous.grounding!.research!, { answerRevision: "failed", failedReview: "LegacyPrivateAudit", modelChecks: 2 });
+  });
+  const restored = await new AIChatStore(f.root).get(f.chat.id);
+  expect(restored.messages.at(-1)!.grounding!.research).toMatchObject({ answerRevision: "failed", failedReview: "LegacyPrivateAudit", modelChecks: 2 });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Paper A: explain the method");
+  const reply = (await f.settled()).messages.at(-1)!;
+  expect(reply.status).toBe("complete"); expect(reply.grounding!.research!.answerRevision).toBeUndefined();
+  expect(f.fetcher).toHaveBeenCalledTimes(2);
+  expect(f.fetcher.mock.calls.at(-1)![1]!.body).not.toMatch(/LegacyPrivateAudit|DeprecatedLegacyAnswer/);
+  expect((await new AIChatStore(f.root).get(f.chat.id)).messages[1].content).toBe("DeprecatedLegacyAnswer");
 });
