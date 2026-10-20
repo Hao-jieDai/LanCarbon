@@ -14,6 +14,20 @@ export const bibliographyQuestion = /参考文献|文献列表|bibliograph|refer
 export const quantityQuestion = /金额|多少钱|少了多少|多了多少|差多少|减少多少|总(?:额|损失|量)|(?:损失|费用|成本).{0,25}(?:换算|比较|合|严重)|(?:amount|total|how much|monetary|billion|trillion|million|currency|人民币|亿元|万亿|美元|\bCNY\b|\bUSD\b)/iu;
 const money = /(?:\d[\d,.]*\s*(?:万亿|亿|百万|千亿|billion|trillion|million)|(?:CNY|USD|RMB|US\$)\s*[\d,.]+|[\d,.]+\s*(?:CNY|USD|RMB))/iu;
 
+/** Comparisons need the studies' reported findings as well as their definitions.
+ * Reserve at most two original result/abstract passages per relevant source. */
+export function comparativeResultCoverage(corpus: KnowledgeHit[], sourceIds: string[]): KnowledgeHit[][] {
+  const finding = /\bwe\s+(?:find|show|demonstrate|estimate)|\bour\s+(?:results|findings)\b|\bresults\s+(?:show|indicate|suggest|reveal)|\bfindings\s+(?:show|indicate|suggest|reveal)|结果(?:表明|显示|说明)|研究发现|本文发现/iu;
+  return sourceIds.slice(0, 12).map(id => {
+    const score = (hit: KnowledgeHit) => {
+      const reports = finding.test(hit.chunk.text), heading = hit.chunk.anchor.heading ?? "";
+      const abstract = /abstract|summary|摘要|总结/iu.test(heading) || hit.chunk.anchor.kind === "pdf" && hit.chunk.anchor.page === 1 && reports;
+      return (abstract ? 12 : 0) + (reports ? 5 : 0) + (/findings|results|conclusion|结果|结论/iu.test(heading) ? 4 : 0);
+    };
+    return corpus.filter(hit => hit.source.id === id && !bibliography(hit) && score(hit) > 0).sort((a, b) => score(b) - score(a)).slice(0, 2);
+  }).filter(group => group.length);
+}
+
 /** Fresh original passages, never historical assistant claims. Useful when an abstract ranking misses result tables. */
 export function resultCoverage(corpus: KnowledgeHit[], sourceIds: string[], previous: ChatEvidence[], question: string): KnowledgeHit[][] {
   if (!quantityQuestion.test(question)) return [];

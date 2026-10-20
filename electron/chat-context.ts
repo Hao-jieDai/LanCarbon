@@ -3,6 +3,26 @@ import { keywordRanks } from "./retrieval-service";
 import { bibliography, bibliographyQuestion } from "./chat-quality";
 import { evidenceKey } from "./chat-evidence";
 import { citedLabels, type ChatGrounding } from "../src/shared/grounding";
+import { tableCells } from "./chat-claims";
+
+/** Only layout is carried forward: generated cell values remain outside RAG evidence. */
+export function referencedTableShape(text: string): { columns: string[]; rows: string[] } | undefined {
+  let shape: ReturnType<typeof referencedTableShape>;
+  const clean = (cell: string, limit: number) => cell.replace(/\[S\d+\]|[*`]/gu, "").trim().slice(0, limit);
+  const lines = text.split("\n");
+  for (let i = 0; i + 1 < lines.length; i++) {
+    if (!lines[i].includes("|")) continue;
+    const columns = tableCells(lines[i]);
+    if (columns.length < 2 || !tableCells(lines[i + 1]).every(cell => /^\s*:?-{3,}:?\s*$/u.test(cell))) continue;
+    const rows: string[] = [];
+    for (let at = i + 2; at < lines.length && lines[at].includes("|") && rows.length < 24; at++) {
+      const row = clean(tableCells(lines[at])[0] ?? "", 140);
+      if (row && !/\d[^\n]{0,15}(?:billion|million|trillion|亿元|亿美元)|(?:CNY|RMB|USD|US\\?\$)\s*\d/iu.test(row)) rows.push(row);
+    }
+    if (rows.length) shape = { columns: columns.slice(0, 10).map(column => clean(column, 80)), rows };
+  }
+  return shape;
+}
 
 /** Table transformations retain the original passages actually cited last turn.
  * Historical generated values are never copied into the evidence payload. */

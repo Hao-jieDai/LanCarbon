@@ -254,12 +254,26 @@ it("keeps previously cited table rows in the actual follow-up payload despite re
     const first: AIChat = { ...f.chat, sourceScope: scope, messages: [{ id: "q1", role: "user", content: `${sample.title}: organize the detailed categories in a table.`, status: "complete", sourceScope: scope, createdAt: new Date().toISOString() }] };
     const initial = await f.grounder.prepare(first, new AbortController().signal, () => {}), row = initial.grounding.evidence.find(hit => hit.chunk.text.includes(sample.fact)); expect(row).toBeTruthy();
     followup = true;
-    const next: AIChat = { ...first, messages: [...first.messages, { id: "a1", role: "assistant", content: `Generated values are not evidence: 99999. Table [${row!.label}].`, status: "complete", sourceScope: scope, grounding: initial.grounding, createdAt: new Date().toISOString() }, { id: "q2", role: "user", content: sample.question, status: "complete", sourceScope: scope, createdAt: new Date().toISOString() }] };
+    const next: AIChat = { ...first, messages: [...first.messages, { id: "a1", role: "assistant", content: `| Category | Amount |\n|---|---|\n| Group A | 99999 [${row!.label}] |\n| Group B | 88888 [${row!.label}] |`, status: "complete", sourceScope: scope, grounding: initial.grounding, createdAt: new Date().toISOString() }, { id: "q2", role: "user", content: sample.question, status: "complete", sourceScope: scope, createdAt: new Date().toISOString() }] };
     const prepared = await f.grounder.prepare(next, new AbortController().signal, () => {}), payload = JSON.parse(prepared.messages[1].content);
     expect(prepared.grounding.research!.focusSourceIds).toEqual(["note:a"]);
     expect(payload.evidence.some((hit: { text: string }) => hit.text.includes(sample.fact))).toBe(true);
     expect(JSON.stringify(payload)).not.toContain("99999"); expect(JSON.stringify(payload)).not.toContain("SecretOutsideSelection"); expect(f.fetcher).not.toHaveBeenCalled();
+    const context = JSON.parse(prepared.messages.at(-1)!.content).dialogueContext;
+    expect(context.referencedTable.rows).toEqual(["Group A", "Group B"]); expect(JSON.stringify(prepared.messages)).not.toContain("99999");
   }
+}, 15_000);
+
+it("includes each compared study's actual conclusions when retrieval only returns methods", async () => {
+  const f = await fixture();
+  const facts = ["Our results show public operators bear the largest transport risk.", "Our results show private households bear the largest crop risk."];
+  for (let i = 0; i < 2; i++) f.notes[i].content = "# Methods\n\n" + Array.from({ length: 65 }, (_, j) => `## Method ${j}\n\n${"We apply a regression with regional variables and alternative methods. ".repeat(22)}`).join("\n\n") + "\n\n# Conclusions\n\n" + facts[i];
+  const scope = { ...emptyKnowledgeScope(), noteIds: ["a", "b"] };
+  vi.mocked(f.retrieval.search).mockImplementation(async (_query, ids) => ({ hits: (await f.store.corpus()).filter(hit => ids!.includes(hit.source.id) && hit.chunk.text.includes("regional variables")).slice(0, 20).map(hit => ({ ...hit, score: 1, retrieval: "keyword" as const })), warnings: [], mode: "keyword" }));
+  const chat: AIChat = { ...f.chat, sourceScope: scope, messages: [{ id: "q", role: "user", status: "complete", sourceScope: scope, content: "比较这两篇的定义和主要结论，它们是否相互矛盾？", createdAt: new Date().toISOString() }] };
+  const prepared = await f.grounder.prepare(chat, new AbortController().signal, () => {}), payload = JSON.parse(prepared.messages[1].content);
+  for (const fact of facts) expect(JSON.stringify(payload.evidence)).toContain(fact);
+  expect(JSON.stringify(payload)).not.toContain("SecretOutsideSelection"); expect(f.fetcher).not.toHaveBeenCalled();
 }, 15_000);
 
 it("preserves alternative-world conditions and separate-comparison requirements in the actual answer context", async () => {

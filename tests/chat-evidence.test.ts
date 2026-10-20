@@ -3,7 +3,7 @@ import { expect, it } from "vitest";
 import { chooseEvidence, documentQuestions, evidenceTokens } from "../electron/chat-evidence";
 import { CHAT_EVIDENCE_MAX_CHUNKS } from "../src/shared/grounding";
 import type { KnowledgeHit } from "../src/shared/knowledge";
-import { followupEvidenceGroups } from "../electron/chat-context";
+import { followupEvidenceGroups, referencedTableShape } from "../electron/chat-context";
 
 function passage(index: number, source = "paper"): KnowledgeHit {
   return { source: { id: `file:${source}`, entityId: source, kind: "file", title: source, format: "pdf", locations: [], attachments: [], tags: [], systemManaged: false, fingerprint: "a".repeat(64) }, fingerprint: "a".repeat(64), chunk: { id: String(index), text: `Passage ${index}. ` + "Background context. ".repeat(45), anchor: { kind: "pdf", page: Math.floor(index / 5) + 1 } } };
@@ -78,4 +78,11 @@ it("reserves cited fresh originals for a table follow-up before distracting mone
   const changed = corpus.map(hit => hit.chunk.id === "64" ? { ...hit, fingerprint: "b".repeat(64) } : hit.chunk.id === "70" ? { ...hit, chunk: { ...hit.chunk, text: "Revised text" } } : hit);
   expect(followupEvidenceGroups(changed, previous, ["file:transport"])).toEqual([]);
   expect(followupEvidenceGroups([], previous, ["file:transport"])).toEqual([]);
+});
+
+it("carries the referenced table's row labels without reusing generated numeric cells", () => {
+  const text = "| Old | Value |\n|---|---|\n| Earlier | 123 |\n\n| Category | USD yi |\n|---|---|\n| Public operators [S7] | 99999 |\n| Insurers | 88888 |";
+  expect(referencedTableShape(text)).toEqual({ columns: ["Category", "USD yi"], rows: ["Public operators", "Insurers"] });
+  expect(JSON.stringify(referencedTableShape(text))).not.toContain("99999");
+  expect(referencedTableShape("No table is present.")).toBeUndefined();
 });

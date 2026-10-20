@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { expect, it } from "vitest";
-import { bibliography, quantityNotes, quantityWarnings, resultCoverage, scenarioWarnings } from "../electron/chat-quality";
+import { bibliography, comparativeResultCoverage, quantityNotes, quantityWarnings, resultCoverage, scenarioWarnings } from "../electron/chat-quality";
 import { chooseEvidence } from "../electron/chat-evidence";
 import type { ChatEvidence } from "../src/shared/grounding";
 function hit(text: string, id = "result", source = "file:alpha"): ChatEvidence {
@@ -12,6 +12,16 @@ it("excludes dense bibliographies from factual answers but supports questions ab
   expect(bibliography(references)).toBe(true); expect(bibliography(hit("Smith (2020) reports a different model. Results depend on policy."))).toBe(false);
   expect(chooseEvidence([references, result], [[references, result]], [result.source.id], true).map(item => item.chunk.id)).toEqual(["result"]);
   expect(chooseEvidence([references, result], [[references]], [result.source.id], true, [], 9000, true).some(item => item.chunk.id === "refs")).toBe(true);
+});
+
+it("keeps actual non-monetary comparison findings ahead of method/background passages", () => {
+  const abstract = hit("We find public transport operators bear the largest burden.", "abstract"); abstract.chunk.anchor = { kind: "pdf", page: 1 };
+  const method = hit("We estimate cost using a panel regression.", "method"); method.chunk.anchor = { kind: "pdf", page: 4, heading: "Methods" };
+  const result = hit("Our results show private households bear the largest burden.", "result", "file:beta");
+  const outside = hit("We find an unrelated result.", "outside", "file:private");
+  const groups = comparativeResultCoverage([method, outside, abstract, result], ["file:alpha", "file:beta"]);
+  expect(groups[0][0]).toBe(abstract); expect(groups[1][0]).toBe(result); expect(groups.flat()).not.toContain(outside);
+  expect(groups.every(group => group.length <= 2)).toBe(true);
 });
 it("checks explicit monetary scenario bindings without treating discussion of multiple scenarios as a contradiction", () => {
   const medium = hit("Each bar shows the US$1.4 trillion losses from medium expectations realignment.");
