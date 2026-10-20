@@ -22,7 +22,9 @@ async function mock(app: ElectronApplication) {
     }
     if (endpoint.endsWith("/chat/completions")) {
       const payload = request.messages.find((message: any) => message.role === "user" && message.content.startsWith('{"selectedSources":'));
-      const evidence = payload ? JSON.parse(payload.content).evidence : [], content = evidence.length ? evidence.map((item: any) => `${item.source}: ${item.text.slice(0, 80)} [${item.citation}]`).join("\n\n") : "Ordinary chat response.";
+      const evidence = payload ? JSON.parse(payload.content).evidence : []; let content = evidence.length ? evidence.map((item: any) => `${item.source}: ${item.text.slice(0, 80)} [${item.citation}]`).join("\n\n") : "Ordinary chat response.";
+      const last=request.messages.at(-1).content, input=JSON.parse(last.startsWith("{")?last:"{}");
+      if(input.operation==="verify-and-finalize")content=JSON.stringify({checks:input.questionParts.map((part:any)=>({part:part.id,task:"Requested fact",finding:"Original checked",status:"supported",quotes:[{citation:evidence[0].citation,text:evidence[0].text}]})),answer:content});
       return new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 60, completion_tokens: 20, total_tokens: 80 } }), { headers: { "content-type": "application/json" } });
     }
     throw Error("Unexpected network request");
@@ -161,7 +163,11 @@ test("enhanced document questions record model checks and render grouped citatio
         if (!String(url).endsWith("/chat/completions")) return original(url, init);
         (globalThis as any).groundedCalls.push({ endpoint: String(url), request });
         const input = JSON.parse(request.messages.at(-1).content.startsWith("{") ? request.messages.at(-1).content : "{}");
-        const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare the selected papers' loss definitions", sourceIds: input.catalogue.map((p: any) => p.id), compare: true, queries: [] }) : "The definitions differ ［S1，S2］.";
+        let content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare the selected papers' loss definitions", sourceIds: input.catalogue.map((p: any) => p.id), compare: true, queries: [] }) : "The definitions differ ［S1，S2］.";
+        if(input.operation==="verify-and-finalize") {
+          const original=JSON.parse(request.messages.find((message:any)=>message.content.startsWith('{"selectedSources":')).content).evidence[0];
+          content=JSON.stringify({checks:input.questionParts.map((part:any)=>({part:part.id,task:"Comparison",finding:"Source checked",status:"supported",quotes:[{citation:original.citation,text:original.text}]})),answer:content});
+        }
         return new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 70, completion_tokens: 25 } }), { headers: { "content-type": "application/json" } });
       };
     });

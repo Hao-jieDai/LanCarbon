@@ -20,6 +20,10 @@ import type { AIUsageEvent } from "../src/shared/aiUsage";
 import { financialAlternatives } from "./fixtures/rag-financial-cases";
 const roots: string[] = [], stores: KnowledgeStore[] = [];
 afterEach(async () => { for (const store of stores.splice(0)) await store.stop(); for (const root of roots.splice(0)) { if (!root.startsWith(os.tmpdir()) || !path.basename(root).startsWith("lancarbon-grounding-")) throw Error("Unsafe cleanup"); await fs.rm(root, { recursive: true, force: true }); } });
+function checkedAnswer(messages: Array<{role:string;content:string}>, answer: string) {
+  const input=JSON.parse(messages.at(-1)!.content), original=JSON.parse(messages.find(message=>message.content.startsWith('{"selectedSources":'))!.content).evidence.find((item:{text:string})=>item.text.trim().length>=12);
+  return JSON.stringify({checks:input.questionParts.map((part:{id:string})=>({part:part.id,task:"Requested comparison",finding:"Original source checked",status:"supported",quotes:[{citation:original.citation,text:original.text}]})),answer});
+}
 async function fixture() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-grounding-")); roots.push(root);
   const notes = [createNote({ id: "a", title: "Paper A", content: "# Carbon policy\n\nCoal investment falls by 12 percent.\n\n# Methods\n\nPanel data.\n\n# Conclusion\n\nTransition risk matters." }), createNote({ id: "b", title: "Paper B", content: "# Carbon policy\n\nCoal investment falls by 7 percent.\n\n# Methods\n\nA simulation.\n\n# Conclusion\n\nResults vary by region." }), createNote({ id: "private", title: "Private unselected", content: "SecretOutsideSelection" })];
@@ -30,7 +34,11 @@ async function fixture() {
   const grounder = new ChatGrounder(() => store, () => retrieval, async () => false);
   const chats = new AIChatStore(root), settings = new AISettingsStore(root, { available: () => true, encrypt: value => Buffer.from(value), decrypt: value => value.toString() });
   await settings.save({ ...defaultAIProviders()[0], apiKey: "fixture-key-private", models: [{ id: "fixture-model", name: "Fixture", purpose: "chat" }], defaultModel: "fixture-model" });
-  const fetcher = vi.fn<typeof fetch>(async () => new Response(JSON.stringify({ choices: [{ message: { content: "A reports 12 percent [S1]. B differs [S2]." } }], usage: { prompt_tokens: 50, completion_tokens: 15, total_tokens: 65 } }), { headers: { "content-type": "application/json" } }));
+  const fetcher = vi.fn<typeof fetch>(async (_url,init) => {
+    const request=JSON.parse(init!.body as string), last=request.messages.at(-1).content;
+    const content="A reports 12 percent [S1]. B differs [S2].";
+    return new Response(JSON.stringify({choices:[{message:{content:last.includes('"operation":"verify-and-finalize"')?checkedAnswer(request.messages,content):content}}],usage:{prompt_tokens:50,completion_tokens:15,total_tokens:65}}),{headers:{"content-type":"application/json"}});
+  });
   const usage: AIUsageEvent[] = [];
   const service = new AIService(settings, () => chats, new AIClient(fetcher, async event => { usage.push(event); }), () => {}, grounder), chat = await chats.create("siliconflow", "fixture-model");
   const settled = async () => { const deadline = Date.now() + 10_000; while (Date.now() < deadline) { const current = await chats.get(chat.id); if (current.messages.at(-1)?.status !== "streaming") return current; await new Promise(resolve => setTimeout(resolve, 5)); } throw Error("Not settled"); };
@@ -237,7 +245,7 @@ it("uses the selected chat model for bounded planning/review, supplements a miss
   });
   f.fetcher.mockImplementation(async (_url, init) => {
     const body = JSON.parse(init!.body as string), prompt = body.messages[0].content;
-    const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare facility and investor loss definitions", sourceIds: ["note:a", "note:b"], compare: true, queries: [{query: "aggregate present value investor wealth",sourceIds:["note:b"]}] }) : JSON.parse(body.messages.at(-1).content).operation === "verify-and-finalize" ? "The reviewed metrics differ ［S1，S2］. 4821.6 - 3139.2 = 1682.4." : "Draft has incorrect arithmetic: 4821.6 - 3139.2 = 1672.4.";
+    const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare facility and investor loss definitions", sourceIds: ["note:a", "note:b"], compare: true, queries: [{query: "aggregate present value investor wealth",sourceIds:["note:b"]}] }) : JSON.parse(body.messages.at(-1).content).operation === "verify-and-finalize" ? checkedAnswer(body.messages, "The reviewed metrics differ ［S1，S2］. 4821.6 - 3139.2 = 1682.4.") : "Draft has incorrect arithmetic: 4821.6 - 3139.2 = 1672.4.";
     return new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 100, completion_tokens: 20 } }), { headers: { "content-type": "application/json" } });
   });
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a", "b"] });
@@ -420,4 +428,19 @@ it("retains the draft, partial revised text, Thinking and fees when finalization
   const draft=JSON.parse(f.fetcher.mock.calls[0][1]!.body as string); expect(draft.max_tokens).toBe(6000);
   expect(draft.enable_thinking).toBeUndefined(); // Fixture model does not advertise DeepSeek thinking support.
   expect(revised.enable_thinking).toBeUndefined();
+});
+
+it("does not replace a draft with a revision backed by invented citations and still records both requests", async () => {
+  const f=await fixture();f.notes[0].content+="\n\n"+Array.from({length:45},(_,i)=>`Additional method ${i}. Regional assumptions differ.`).join("\n\n");
+  f.fetcher.mockImplementation(async(_url,init)=>{
+    const body=JSON.parse(init!.body as string), input=JSON.parse(body.messages.at(-1).content);
+    const content=input.operation==="verify-and-finalize"?JSON.stringify({checks:[{part:"Q1",task:"Requested method",finding:"Invented proof",status:"supported",quotes:[{citation:"S999",text:"Private unselected clinical statement."}]}],answer:"Unsupported revision"}):"Original draft [S1]";
+    return new Response(JSON.stringify({choices:[{message:{content}}],usage:{prompt_tokens:15,completion_tokens:10}}),{headers:{"content-type":"application/json"}});
+  });
+  await f.service.setSources(f.chat.id,{...emptyKnowledgeScope(),noteIds:["a"]});
+  await f.service.send(f.chat.id,"siliconflow","fixture-model","Paper A: explain methods");
+  const reply=(await f.settled()).messages.at(-1)!;
+  expect(reply.status).toBe("error");expect(reply.content.startsWith("Original draft")).toBe(true);
+  expect(reply.error).toContain("verifiable original");expect(reply.grounding!.research!.answerRevision).toBe("failed");
+  expect(f.usage.filter(event=>event.type==="finish")).toHaveLength(2);
 });

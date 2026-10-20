@@ -1,7 +1,7 @@
 import { aiModelName, type AIModel, type AIProvider } from "../src/shared/ai";
 import { randomUUID } from "node:crypto";
 import { parseAIUsage, type AIReportedUsage, type AIUsageEvent, type AIUsagePurpose } from "../src/shared/aiUsage";
-export interface AICompletionOptions { purpose?: AIUsagePurpose; maxTokens?: number; temperature?: number; disableThinking?: boolean; timeoutMs?: number; maxRetries?: number; onFinish?(reason: string): void }
+export interface AICompletionOptions { purpose?: AIUsagePurpose; maxTokens?: number; temperature?: number; disableThinking?: boolean; thinkingBudget?: number; timeoutMs?: number; maxRetries?: number; onFinish?(reason: string): void }
 
 export function redactAIError(error: unknown, key = ""): string {
   let text = error instanceof Error ? error.message : String(error);
@@ -52,6 +52,7 @@ export class AIClient {
     } catch (error) { throw new Error(redactAIError(error, key)); }
   }
   async complete(provider: AIProvider, key: string, modelId: string, messages: Array<{ role: string; content: string }>, signal: AbortSignal, onDelta: (content: string, reasoning: string) => void, test = false, onProgress: (message: string) => void = () => {}, options: AICompletionOptions = {}): Promise<void> {
+    if (options.thinkingBudget !== undefined && (!Number.isInteger(options.thinkingBudget) || options.thinkingBudget < 128 || options.thinkingBudget > 32768)) throw Error("Invalid thinking budget");
     const controller = new AbortController();
     const abort = () => controller.abort(signal.reason);
     signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort();
@@ -93,7 +94,7 @@ export class AIClient {
     };
     await this.track({ type: "start", request: { id: requestId, startedAt: new Date().toISOString(), providerId: provider.id, providerName: provider.name, baseUrl: provider.baseUrl, modelId, modelName: provider.models.find(model => model.id === modelId)?.name ?? aiModelName(modelId), purpose: options.purpose ?? (test ? "test" : "chat"), attempt } });
     try {
-      const response = await this.fetcher(`${provider.baseUrl}/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(provider.kind === "openrouter" ? { "X-OpenRouter-Title": "LanCarbon" } : {}) }, redirect: "error", signal: controller.signal, body: JSON.stringify({ model: modelId, messages, stream: true, ...(test ? { max_tokens: 128 } : {}), ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}), ...(options.temperature !== undefined ? { temperature: options.temperature } : {}), ...((test || options.disableThinking) && provider.kind === "siliconflow" && /DeepSeek-V[34]/.test(modelId) ? { enable_thinking: false } : {}) }) });
+      const response = await this.fetcher(`${provider.baseUrl}/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(provider.kind === "openrouter" ? { "X-OpenRouter-Title": "LanCarbon" } : {}) }, redirect: "error", signal: controller.signal, body: JSON.stringify({ model: modelId, messages, stream: true, ...(test ? { max_tokens: 128 } : {}), ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}), ...(options.temperature !== undefined ? { temperature: options.temperature } : {}), ...(options.thinkingBudget !== undefined && provider.kind === "siliconflow" && /DeepSeek-V(?:3\.[12]|4)/.test(modelId) && !options.disableThinking ? { thinking_budget: options.thinkingBudget } : {}), ...((test || options.disableThinking) && provider.kind === "siliconflow" && /DeepSeek-V[34]/.test(modelId) ? { enable_thinking: false } : {}) }) });
       if (!response.ok) { const detail = await response.text(); try { captureUsage(JSON.parse(detail).usage); } catch { /* Plain-text service errors have no usage metadata. */ } throw statusError(response.status, detail, response.headers); }
       touch();
       let received = false, finished = false, finishReason = "";

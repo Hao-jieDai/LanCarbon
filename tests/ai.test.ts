@@ -177,3 +177,17 @@ describe("model switching and bounded retries", () => {
     for (const status of [401, 402, 403, 404]) { const fetcher = vi.fn().mockResolvedValue(new Response("blocked", { status })); await expect(new AIClient(fetcher).complete(defaultAIProviders()[1], secret, "model", [], new AbortController().signal, () => {})).rejects.toThrow(`HTTP ${status}`); expect(fetcher).toHaveBeenCalledTimes(1); }
   });
 });
+
+it("bounds documented SiliconFlow reasoning without sending its vendor field to other connections", async () => {
+  const fetcher=vi.fn().mockImplementation(async()=>sse("Checked")), client=new AIClient(fetcher);
+  for (const [provider,model,options,expected] of [
+    [defaultAIProviders()[0],"deepseek-ai/DeepSeek-V4.1-Flash",{thinkingBudget:8192},8192],
+    [defaultAIProviders()[0],"deepseek-ai/DeepSeek-V4.1-Flash",{thinkingBudget:8192,disableThinking:true},undefined],
+    [defaultAIProviders()[1],"fixture-model",{thinkingBudget:8192},undefined]
+  ] as const) {
+    await client.complete(provider,secret,model,[],new AbortController().signal,()=>{},false,()=>{},options);
+    expect(JSON.parse(fetcher.mock.calls.at(-1)![1].body).thinking_budget).toBe(expected);
+  }
+  for(const thinkingBudget of [0,32769,NaN,3.5])await expect(client.complete(defaultAIProviders()[0],secret,"fixture",[],new AbortController().signal,()=>{},false,()=>{},{thinkingBudget})).rejects.toThrow("Invalid thinking budget");
+  expect(fetcher).toHaveBeenCalledTimes(3);
+});

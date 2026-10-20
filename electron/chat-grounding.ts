@@ -126,14 +126,14 @@ export class ChatGrounder {
       for (const group of formalGroups) questionGroups[group.questionIndex].push(...group.hits);
       const local = await localEvidenceGroups(corpus, questions, !plan.compare && required.length ? required : ids, signal);
       local.forEach((hits, index) => questionGroups[index].push(...hits));
-      groups.unshift(...methods, ...local); groups.push(...coverage);
+      groups.unshift(...local); groups.push(...coverage);
       groups.unshift(...scopeCoverage(corpus, required.length ? required : ids, question, tasks));
       groups.unshift(...unitCompanions(corpus, groups, required.length ? required : ids));
       const evidenceBudget = plan.compare || questions.length >= 3 ? 18_000 : broad ? 14_000 : quantityQuestion.test(question) ? 12_000 : 9_000;
       const evidenceIds = !plan.compare && required.length ? required : ids;
       const followup = plan.lockedFocus && earlierMessage ? followupEvidenceGroups(corpus, earlierMessage, evidenceIds) : [];
       const referencedTable = plan.lockedFocus && earlierMessage ? referencedTableShape(earlierMessage.content) : undefined;
-      const selectEvidence = () => chooseEvidence(corpus, [...followup, ...formal, ...outcomes, ...coverage, ...groups], evidenceIds, broad, required, evidenceBudget, withBibliography);
+      const selectEvidence = () => chooseEvidence(corpus, [...followup, ...methods, ...formal, ...outcomes, ...coverage, ...groups], evidenceIds, broad, required, evidenceBudget, withBibliography);
       let evidence = selectEvidence();
       const supplemented = followups > 0;
       // Local definition/result/formula coverage and planned targeted searches run

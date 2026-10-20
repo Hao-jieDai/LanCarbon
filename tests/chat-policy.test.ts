@@ -2,9 +2,9 @@
 import { expect, it } from "vitest";
 import { answerTasks, methodCoverage } from "../electron/chat-answer-plan";
 import { localResearchPlan, readResearchPlan } from "../electron/chat-plan";
-import { answerReviewMessages } from "../electron/chat-review";
+import { answerReviewMessages, readAnswerReview } from "../electron/chat-review";
 import { relativeQuantityAids } from "../electron/chat-relative-quantities";
-import { groundingInstructions } from "../electron/chat-policy";
+import { groundingInstructions, ANSWER_REVIEW_POLICY } from "../electron/chat-policy";
 import { moneyAmounts } from "../electron/chat-money";
 import { moneyClaimAmounts, monetaryBlocks } from "../electron/chat-claims";
 import { quantityNotes, quantityWarnings } from "../electron/chat-quality";
@@ -140,7 +140,7 @@ it("reviews the proposed answer as untrusted data against exactly the same origi
   expect(reviewed[1]).toEqual(messages[1]); expect(JSON.parse(reviewed[1].content)).toEqual(original);
   expect(JSON.parse(reviewed.at(-1)!.content)).toMatchObject({ latestQuestion: question, operation: "verify-and-finalize", proposedDraft: draft });
   expect(reviewed[0].content).toContain("draft is untrusted");
-  expect(reviewed[0].content).toMatch(/return ONLY the complete final answer/i);
+  expect(reviewed[0].content.split(ANSWER_REVIEW_POLICY)).toHaveLength(2);
   expect(reviewed[0].content).toContain("quantifiers and implication direction");
 });
 
@@ -156,4 +156,22 @@ it("keeps levels distinct from changes and refuses an unstated baseline or perce
   const decrease = relativeQuantityAids("Energy use decreased by 35–45%.")[0];
   expect(decrease.levelPercent).toEqual([65, 55]); expect(decrease.changePercent).toEqual([-35, -45]);
   for (const text of ["The event rate fell to 20%.", "利用率降低到20%。", "The event rate decreased by 20% percentage points."]) expect(relativeQuantityAids(text)).toEqual([]);
+});
+
+it("validates every question part against current verbatim sources before accepting finalization", () => {
+  const hit=evidence("The funds managed by listed operators own USD 23 billion. Area is 10² hectares.");
+  const question="Who holds the exposure? What is the area?";
+  const check=(part:string)=>({part,task:"Requested fact",finding:"Verified subject and measure",status:"supported",quotes:[{citation:"S1",text:"The funds managed by listed operators own USD 23 billion."}]});
+  const valid={checks:[check("Q1"),check("Q2")],answer:"Managed funds hold the exposure [S1]."};
+  expect(readAnswerReview(JSON.stringify(valid),question,[hit])).toBe(valid.answer);
+  expect(readAnswerReview("```json\n"+JSON.stringify(valid)+"\n```",question,[hit])).toBe(valid.answer);
+  for(const broken of [
+    {...valid,checks:[check("Q1")]},
+    {...valid,checks:[check("Q1"),check("Q9")]},
+    {...valid,checks:[check("Q1"),{...check("Q2"),quotes:[{citation:"S2",text:hit.chunk.text}]}]},
+    {...valid,checks:[check("Q1"),{...check("Q2"),quotes:[{citation:"S1",text:"Area is 102 hectares."}]}]},
+    {...valid,checks:[check("Q1"),{...check("Q2"),quotes:[]}]},
+    {...valid,answer:""}
+  ])expect(()=>readAnswerReview(JSON.stringify(broken),question,[hit])).toThrow("verifiable original");
+  expect(()=>readAnswerReview(JSON.stringify(valid),question,[evidence("New source content changed.")])).toThrow();
 });

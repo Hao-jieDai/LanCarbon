@@ -62,3 +62,28 @@ it("computes symbolic CNY equivalents before applying an unspecified exchange ra
   expect(quantityNotes(several, false, true)).toHaveLength(5);
   expect(quantityNotes(several, false, true).at(-1)).toContain("4380 × e 亿元人民币");
 });
+
+it("preserves an explicit paired counterfactual over dense parameter or secondary-survey text", () => {
+  for(const [question,relation] of [
+    ["比较交通研究如何定义损失", "Here we estimate differences in operator income assuming either no road toll or a toll consistent with the policy scenario."],
+    ["Compare how clinical studies define treatment effects", "We calculate changes in patient outcomes between the untreated control group and the intervention scenario."]
+  ]) {
+    const baseline=hit("paired",relation), parameters=hit("parameters","Our model estimates costs, method assumptions, discount rates and the allocation cost parameters. ".repeat(8));
+    const review=hit("review","Previous studies compare baseline and counterfactual differences with and without different treatments. ".repeat(8));
+    const groups=methodCoverage([parameters,review,baseline,hit("private","Private unselected baseline.","private")],["file:a"],answerTasks(question),question);
+    expect(groups.flat()).toContainEqual(baseline);
+    expect(chooseEvidence([parameters,review,baseline],groups,["file:a"],true).some(item=>item.chunk.id==="paired")).toBe(true);
+    expect(groups.flat().some(item=>item.source.id==="file:private")).toBe(false);
+  }
+});
+
+it("reserves each primary definition and counterfactual before a dense overview consumes context", () => {
+  const corpus=Array.from({length:5},(_,i)=>[
+    hit(`definition-${i}`,"We operationalize treatment loss as a change in discounted future income relative to the counterfactual baseline.",String(i)),
+    hit(`baseline-${i}`,"Here we estimate differences in household income assuming either no intervention or the policy intervention.",String(i)),
+    ...Array.from({length:12},(_,j)=>hit(`overview-${i}-${j}`,"Earlier results and general methods use parameters and total costs. ".repeat(16),String(i)))
+  ]).flat(),ids=[...new Set(corpus.map(h=>h.source.id))];
+  const methods=methodCoverage(corpus,ids,["definition","comparison"],"Compare actual definitions and baselines");
+  const selected=chooseEvidence(corpus,[...methods,...ids.map(id=>corpus.filter(h=>h.source.id===id&&h.chunk.id.startsWith("overview")))],ids,true,ids,8000);
+  for(const id of ids)for(const type of ["definition","baseline"])expect(selected.some(h=>h.source.id===id&&h.chunk.id.startsWith(type))).toBe(true);
+});

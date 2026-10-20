@@ -19,6 +19,18 @@ export function definitionScore(text: string): number {
   return (own ? 6 : 0) + (direct ? 16 : 0) + (relation ? 8 : 0) + (outcome ? 8 : 0) + Math.min(5, (t.match(/present value|future profit|cash flow|NPV|净现值|现金流|基准/giu) ?? []).length) - (survey ? 8 : 0);
 }
 
+/** Find the study's actual paired counterfactual, not a dense paragraph of generic parameters. */
+export function counterfactualScore(text: string): number {
+  const t = text.replace(/\s+/gu, " ");
+  const own = /\b(?:here\s+)?we\b.{0,70}\b(?:estimat|calculat|compar|quantif|measur)|(?:本文|本研究).{0,50}(?:评估|计算|测算|比较)/iu.test(t);
+  const named = /\b(?:baseline|counterfactual|control (?:group|scenario)|business.as.usual)\b|基准情景|对照组|反事实/iu.test(t);
+  const paired = /\b(?:with(?:out)?|either|no)\b[^.!?]{0,200}\b(?:versus|with(?:out)?|or|relative to|compared (?:to|with))\b|(?:基准|对照|无干预).{0,100}(?:与|相比|减去|差异)/iu.test(t);
+  const difference = /\b(?:differences?|different|changes?|relative|pairing)\b|差额|差值|变化|之差/iu.test(t);
+  const relation = /\b(?:assum|compar|measur|calculat|estimat|quantif)\w*[^.!?]{0,250}\b(?:relative|against|between|assuming|either|without)\b|(?:计算|测算|定义).{0,100}(?:差|相比|减去)/iu.test(t);
+  const secondary = /previous studies|earlier studies|文献综述|已有研究/iu.test(t) && !own;
+  return (own ? 6 : 0) + (named ? 5 : 0) + (paired && difference ? 10 : 0) + (relation ? 8 : 0) - (secondary ? 12 : 0);
+}
+
 /** Independent intents: a definition, calculation and explanation may all be requested. */
 export function answerTasks(question: string): AnswerTask[] {
   const tasks: AnswerTask[] = [];
@@ -45,10 +57,13 @@ export function methodCoverage(corpus: KnowledgeHit[], ids: string[], tasks: rea
   const groups: RegExp[] = [];
   if (mechanism) groups.push(/(?:method|algorithm|decision|select|rank|allocat|cost|方法|规则|选择|排序|分配)/iu, /(?:limitation|assum|static|fixed|switch|lock.in|future research|局限|假设|静态|固定|切换|锁定|未来研究)/iu);
   if (!mechanism || tasks.includes("definition") || comparison) groups.push(/(?:defin|measur|quantif|net present value|cash flow|future profit|accounting|NPV|定义|度量|衡量|净现值|现金流)/iu, /(?:baseline|counterfactual|business.as.usual|pass.through|assum|limitation|ownership|discount|horizon|valuation period|time period|基准|假设|局限|所有权|折现|估值期|期限)/iu);
-  return ids.slice(0, 12).map(id => {
+  return ids.slice(0, 12).flatMap(id => {
     const candidates = corpus.filter(hit => hit.source.id === id && !bibliography(hit));
     const definitions = tasks.includes("definition") ? candidates.map(hit => ({ hit, score: definitionScore(hit.chunk.text) })).filter(item => item.score >= 8).sort((a, b) => b.score - a.score).slice(0, 2).map(item => item.hit) : [];
+    const counterfactual = candidates.map(hit => ({hit,score:counterfactualScore(hit.chunk.text)})).filter(item => item.score >= 14).sort((a,b)=>b.score-a.score).slice(0,1).map(item=>item.hit);
     const chosen = groups.flatMap(pattern => candidates.map(hit => ({ hit, score: (hit.chunk.text.replace(/\s+/g, " ").match(new RegExp(pattern.source, "giu")) ?? []).length + (pattern.test(hit.chunk.anchor.heading ?? "") ? 3 : 0) })).filter(item => item.score > 0).sort((a, b) => b.score - a.score).slice(0, 1).map(item => item.hit));
-    return [...new Map([...definitions, ...chosen].map(hit => [hit.chunk.id, hit])).values()];
-  }).filter(group => group.length > 0);
+    const primary = [...new Map([...definitions, ...counterfactual].map(hit => [hit.chunk.id, hit])).values()];
+    const reserved = new Set(primary.map(hit => hit.chunk.id)), remaining = chosen.filter(hit => !reserved.has(hit.chunk.id));
+    return [...primary.map(hit => [hit]), ...(remaining.length ? [remaining] : [])];
+  });
 }
