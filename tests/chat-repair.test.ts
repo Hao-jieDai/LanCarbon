@@ -10,6 +10,18 @@ it("corrects exact cited currency scales and ranges in final prose while retaini
   expect(result.text).toContain("284亿元人民币"); expect(result.text).toContain("US$410–670亿"); expect(result.text).toContain("[S1]"); expect(result.corrections).toHaveLength(2);
   expect(repairCitedUnits(result.text, hits)).toEqual({ text: result.text, corrections: [] });
 });
+it("checks declared source subtractions without treating generated differences or unrelated citations as originals", () => {
+  const hits = [evidence("Transport route C loses 41.2 billion CNY, below A (68.7 billion) and B (53.9 billion).")];
+  const text = "以41.2亿元为基准，路线C比A少27.5亿元，比B少12.7亿元（按原文数值相减）。相对降幅不同[S1]。";
+  const fixed = repairCitedUnits(text, hits);
+  expect(fixed.text).toBe("以412亿元为基准，路线C比A少275亿元，比B少127亿元（按原文数值相减）。相对降幅不同[S1]。");
+  expect(fixed.corrections).toHaveLength(3); expect(repairCitedUnits(fixed.text, hits).corrections).toEqual([]);
+  expect(repairCitedUnits("作物两路径的差额为CNY 9.6 亿[S1]。", [evidence("Crop A costs CNY 24.8 billion; B costs CNY 15.2 billion.")]).text).toContain("CNY 96 亿");
+  expect(repairCitedUnits("其他指标CNY 9.6 亿[S1]。", [evidence("Crop A costs CNY 24.8 billion; B costs CNY 15.2 billion.")]).corrections).toEqual([]);
+  for (const source of ["A costs CNY 24.8 billion; B costs USD 15.2 billion.", "A costs CNY 24.8 billion; B costs CNY 15.2 million.", "Capacity (GW)\nCNY 24.8 billion\nCNY 15.2 billion\nFig. 2 | Crops."]) expect(repairCitedUnits("差额为CNY 9.6 亿[S1]。", [evidence(source)]).corrections).toEqual([]);
+  expect(repairCitedUnits("以41.2亿元为基准，少27.5亿元（按原文数值相减）。比较原文[S1][S2]。", [...hits, evidence("An unrelated crop.", "b", "S2")]).corrections).toEqual([]);
+  expect(repairCitedUnits("假设一家企业少27.5亿元（按原文数值相减）[S1]。", hits).corrections).toEqual([]);
+});
 it("does not change uncited/unsupported amounts, currency, code, hypotheses, ambiguous originals or low-confidence OCR", () => {
   const hit = evidence("Total CNY 28.4 billion.");
   for (const text of ["28.4亿元人民币", "CNY 999 亿 [S1]", "USD 28.4 亿 [S1]", "`CNY 28.4 亿` [S1]", "假设一家企业损失28.4亿元人民币。[S1]"]) expect(repairCitedUnits(text, [hit]).corrections).toEqual([]);

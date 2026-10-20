@@ -63,5 +63,9 @@ it("flags arithmetic disagreements without executing code, rewriting facts or re
   expect(arithmeticWarnings("Difference: 3958.4 - 3390.3 = 558.1.")[0]).toContain("568.1");
   expect(arithmeticWarnings("约 558.1 亿元（3958.4 − 3390.3）")[0]).toContain("568.1");
   expect(arithmeticWarnings("3958.4−3390.3=568.1; 1 / 3 ≈ 33.3%; 2 * 4 = 8; 3 + 7 = 10")).toEqual([]);
+  for (const space of [" ", "\u00a0", "\u202f"]) {
+    expect(arithmeticWarnings(`12${space}450.25 + 1${space}320.5 + 915 = 14${space}685.75`)).toEqual([]);
+    expect(arithmeticWarnings(`12${space}450.25 + 1${space}320.5 + 915 = 14${space}680.75`)[0]).toContain("14685.75");
+  }
   expect(arithmeticWarnings("The years 2030–2040 are a range; `9 - 3 = 4` is code.")).toEqual([]);
 });

@@ -1,6 +1,6 @@
-import { mapCitations, type ChatEvidence } from "../src/shared/grounding";
+import { citedLabels, mapCitations, type ChatEvidence } from "../src/shared/grounding";
 import { chineseListAmounts, isolatedFigureAmount, monetaryBlocks, monetaryLabels, parenthesizedMoney, sharedScaleAmounts, tableCells, type ClaimBlock } from "./chat-claims";
-interface Amount { raw: string; start: number; values: number[]; factor: number; currency: string; digits: string[]; chineseHeader?: boolean }
+interface Amount { raw: string; start: number; values: number[]; factor: number; currency: string; digits: string[]; chineseHeader?: boolean; derived?: boolean }
 const factors: Record<string, number> = { trillion: 1e12, billion: 1e9, million: 1e6, 万亿: 1e12, 千亿: 1e11, 百亿: 1e10, 亿: 1e8, 百万: 1e6, 万: 1e4 };
 function amounts(text: string): Amount[] {
   // Numeric-only inline math is formatting, not a different amount. Keep offsets and
@@ -26,6 +26,22 @@ function supportedAmounts(hit: ChatEvidence): Amount[] {
   const coordinated = shared.filter(amount => !isolatedFigureAmount(text, amount.spanStart, amount.spanLength)).map(amount => ({ raw: amount.original, start: amount.start, values: [amount.value], digits: [amount.digits], factor: amount.factor, currency: amount.currency }));
   const parenthesized = parenthesizedMoney(text).filter(amount => !isolatedFigureAmount(text, amount.start, amount.raw.length)).map(amount => ({ raw: amount.raw, start: amount.start, values: [amount.value], digits: [amount.digits], factor: amount.factor, currency: amount.currency }));
   return [...originals, ...endpoints, ...coordinated, ...parenthesized];
+}
+
+/** A cited subtraction can be checked even when the paper reports only its operands.
+ * Keep the original currency/scale and require an exact, uniquely scaled difference.
+ * These arithmetic candidates do not establish that two scenarios should be compared. */
+function subtractionAmounts(hit: ChatEvidence): Amount[] {
+  const originals = supportedAmounts(hit).filter(amount => amount.values.length === 1 && amount.values[0] >= 0);
+  const distinct = originals.filter((amount, i) => originals.findIndex(other => other.currency === amount.currency && other.factor === amount.factor && other.values[0] === amount.values[0]) === i).slice(0, 12);
+  const result: Amount[] = [];
+  for (let i = 0; i < distinct.length; i++) for (let j = i + 1; j < distinct.length; j++) {
+    const a = distinct[i], b = distinct[j];
+    if (a.currency !== b.currency || a.factor !== b.factor) continue;
+    const value = Number(Math.abs(a.values[0] - b.values[0]).toPrecision(12));
+    if (value) result.push({ ...a, raw: `difference between ${a.raw} and ${b.raw}`, values: [value], digits: [String(value)], derived: true });
+  }
+  return result;
 }
 
 /** A numeric-only table cell may declare its monetary unit once in its column header. */
@@ -71,13 +87,22 @@ export function repairCitedUnits(text: string, evidence: ChatEvidence[]): { text
     let output = part;
     for (const block of monetaryBlocks(part).reverse()) {
       const paragraph = block.text;
+      const subtraction = !block.table && /相减|差额|少(?:损失)?\s*\d|\bdifference\b|\bsubtract|\bless\s+than\b/iu.test(paragraph);
+      // A declared calculation may cite its original operands in the next sentence
+      // of the same paragraph. Do not extend ordinary prose or multi-source citations.
+      const paragraphLabels = citedLabels(paragraph);
+      const paragraphHits = evidence.filter(hit => paragraphLabels.has(hit.label));
+      const declaredCalculation = subtraction && /按原文数值相减|由(?:原文|报告|论文|所引)[^。！？\n]{0,24}(?:相减|计算)|(?:calculated|computed)\s+(?:by subtracting|from\s+(?:the\s+)?(?:source|original))/iu.test(paragraph)
+        && paragraphHits.length > 0 && new Set(paragraphHits.map(hit => hit.source.id)).size === 1
+        && [...paragraphLabels].every(label => paragraphHits.some(hit => hit.label === label));
       for (const claim of blockAmounts(block).reverse()) {
         const suffix = paragraph.slice(claim.start + claim.raw.length).split(/[。！？\n]/u, 1)[0];
         if (!(claim.chineseHeader || /[亿万]/u.test(claim.raw)) || corrections.length >= 24 || hypotheticalAt(paragraph, claim.start) || /^[ \t]*[（(]\s*(?:假设|假定|示例|hypothetical)/iu.test(suffix)) continue;
-        const labels = monetaryLabels(block, claim.start, claim.raw.length);
+        let labels = monetaryLabels(block, claim.start, claim.raw.length);
+        if (!labels.size && declaredCalculation) labels = paragraphLabels;
         if (block.table && !/\[S\d+\]/u.test(paragraph) && new Set(evidence.filter(hit => labels.has(hit.label)).map(hit => hit.source.id)).size !== 1) continue;
         // Low-confidence OCR is not an authoritative basis for silently changing a value.
-        const originals = evidence.filter(hit => labels.has(hit.label) && (hit.chunk.anchor.method !== "ocr" || !hit.chunk.anchor.needsReview && (hit.chunk.anchor.confidence ?? 0) >= 80)).flatMap(hit => supportedAmounts(hit).map(amount => ({ ...amount, label: hit.label })));
+        const originals = evidence.filter(hit => labels.has(hit.label) && (hit.chunk.anchor.method !== "ocr" || !hit.chunk.anchor.needsReview && (hit.chunk.anchor.confidence ?? 0) >= 80)).flatMap(hit => [...supportedAmounts(hit), ...(subtraction ? subtractionAmounts(hit) : [])].map(amount => ({ ...amount, label: hit.label })));
         const compatible = originals.filter(item => item.currency === claim.currency && item.values.length === claim.values.length);
         if (compatible.some(item => item.values.every((value, i) => Math.abs(value * item.factor - claim.values[i] * claim.factor) <= Math.max(0.005 * claim.factor, Math.abs(value * item.factor) * 1e-8)))) continue;
         const matching = compatible.filter(item => item.values.every((value, i) => value === claim.values[i]));
@@ -87,7 +112,7 @@ export function repairCitedUnits(text: string, evidence: ChatEvidence[]): { text
         let replacement = claim.raw, offset = 0;
         for (const [i, digits] of claim.digits.entries()) { const start = replacement.indexOf(digits, offset); if (start < 0) break; const value = Number((claim.values[i] * ratio).toPrecision(12)).toString(); replacement = replacement.slice(0, start) + value + replacement.slice(start + digits.length); offset = start + value.length; }
         const at = block.start + claim.start;
-        if (replacement !== claim.raw) { output = output.slice(0, at) + replacement + output.slice(at + claim.raw.length); corrections.push(`Unit corrected using [${source.label}]: ${claim.raw.trim()} → ${replacement.trim()}${claim.chineseHeader ? ` (${block.table ? "table" : "shared"} unit: ${claim.currency}, factor ${claim.factor})` : ""}.`); }
+        if (replacement !== claim.raw) { output = output.slice(0, at) + replacement + output.slice(at + claim.raw.length); corrections.push(`Unit corrected using [${source.label}]: ${claim.raw.trim()} → ${replacement.trim()}${claim.chineseHeader ? ` (${block.table ? "table" : "shared"} unit: ${claim.currency}, factor ${claim.factor})` : ""}${source.derived ? " (difference of cited same-unit operands)" : ""}.`); }
       }
     }
     return repairTableConversions(output, evidence, corrections);
