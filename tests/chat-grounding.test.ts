@@ -82,20 +82,13 @@ it("sends one contract and keeps method, definition and amount evidence for a co
   expect(JSON.stringify(messages)).not.toContain("SecretOutsideSelection");
 });
 
-it("uses the existing bounded coverage check to focus verified original quotes, not generated factual summaries", async () => {
+it("reserves the remaining model check for the answer without reviewing the same excerpts twice", async () => {
   const f = await fixture(); f.notes[0].content += "\n\n" + Array.from({ length: 45 }, (_, i) => `Background section ${i}. Evidence is selected locally.`).join("\n\n");
   const question = "Compare carbon investment", scope = { ...emptyKnowledgeScope(), noteIds: ["a", "b"] };
-  const consult = vi.fn(async (messages: Array<{ content: string }>, stage: string) => {
-    if (stage === "plan") return JSON.stringify({ question, sourceIds: ["note:a", "note:b"], compare: true, queries: [] });
-    const input = JSON.parse(messages[1].content), hit = input.reviewedExcerpts.find((hit: { passages: Array<{ text: string }> }) => hit.passages.some(part => part.text.length >= 20));
-    return JSON.stringify({ sufficient: true, queries: [], evidenceFocus: [{ aspectId: input.requestedAspects[0].id, passageIds: [hit.passages.find((part: { text: string }) => part.text.length >= 20).id] }] });
-  });
+  const consult = vi.fn(async () => JSON.stringify({ question, sourceIds: ["note:a", "note:b"], compare: true, queries: [] }));
   const prepared = await f.grounder.prepare({ ...f.chat, sourceScope: scope, messages: [{ id: "q", role: "user", status: "complete", content: question, createdAt: "now" }] }, new AbortController().signal, () => {}, consult);
-  const request = JSON.parse(prepared.messages.at(-1)!.content);
-  expect(consult).toHaveBeenCalledTimes(2); expect(f.fetcher).not.toHaveBeenCalled();
-  expect(request.evidenceFocus).toHaveLength(1);
-  const focused = request.evidenceFocus[0].passages[0], hit = prepared.grounding.evidence.find(hit => hit.label === focused.citation)!;
-  expect(hit.source.id).toBe(focused.sourceId); expect(hit.chunk.text).toContain(focused.quote);
+  expect(consult).toHaveBeenCalledTimes(1); expect(consult.mock.calls[0]).toHaveLength(2);
+  expect(prepared.answerReview).toBe(true); expect(prepared.grounding.research!.modelChecks).toBe(1);
   expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
 });
 
@@ -106,7 +99,7 @@ it("supplies relative-level aids with the original baseline and no additional ca
   expect(aids[0]).toMatchObject({ relation: "remaining-level", levelPercent: [35], changePercent: [-65] });
   expect(aids[0].context).toContain("2018年水平"); expect(f.fetcher).not.toHaveBeenCalled();
 });
-it("includes a mixed question's omitted formula and definition in the actual generation payload without extra model checks", async () => {
+it("includes a mixed question's omitted formula and definition before the bounded answer check", async () => {
   const f = await fixture();
   f.notes[0].title = "TreatmentTrial";
   f.notes[0].content = "# Treatment study\n\nThe intervention selects treatment groups under a static allocation rule.\n\n# Risk definition\n\nRelative risk is defined as treated event probability divided by control event probability.\n\n# Equation\n\nRR = p_treated / p_control\n\nwhere p is event probability; this ratio is not an absolute risk difference.\n\n" + Array.from({ length: 45 }, (_, i) => `## Discussion ${i}\n\n${"The treatment allocation selects options and ranks cost effectiveness. ".repeat(15)}`).join("\n\n") + "\n\n# Limitations\n\nThe model assumes fixed assignments. Technology switching is future research.";
@@ -115,8 +108,8 @@ it("includes a mixed question's omitted formula and definition in the actual gen
   await f.service.setSources(f.chat.id, scope);
   await f.service.send(f.chat.id, "siliconflow", "fixture-model", "TreatmentTrial 的干预方案为什么有效？请用 LaTeX 写出风险比公式，并说明是否能动态切换。");
   const reply = (await f.settled()).messages.at(-1)!;
-  expect(reply.status).toBe("complete"); expect(f.fetcher).toHaveBeenCalledTimes(1);
-  expect(reply.grounding!.research!.modelChecks).toBe(0);
+  expect(reply.status).toBe("complete"); expect(f.fetcher).toHaveBeenCalledTimes(2);
+  expect(reply.grounding!.research!.modelChecks).toBe(1);
   const body = JSON.parse(f.fetcher.mock.calls[0][1]!.body as string);
   const payload = JSON.parse(body.messages.find((m: { content: string }) => m.content.startsWith('{"selectedSources":')).content);
   const equation = payload.evidence.find((e: { text: string }) => e.text.includes("RR = p_treated / p_control"));
@@ -244,7 +237,7 @@ it("uses the selected chat model for bounded planning/review, supplements a miss
   });
   f.fetcher.mockImplementation(async (_url, init) => {
     const body = JSON.parse(init!.body as string), prompt = body.messages[0].content;
-    const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare facility and investor loss definitions", sourceIds: ["note:a", "note:b"], compare: true, queries: [] }) : body.messages.some((message: { content: string }) => message.content.includes('"reviewedExcerpts":')) ? JSON.stringify({ sufficient: false, queries: [{ query: "aggregate present value investor wealth", sourceIds: ["note:b"] }] }) : "The retrieved metrics differ ［S1，S2］. 4821.6 - 3139.2 = 1672.4.";
+    const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare facility and investor loss definitions", sourceIds: ["note:a", "note:b"], compare: true, queries: [{query: "aggregate present value investor wealth",sourceIds:["note:b"]}] }) : JSON.parse(body.messages.at(-1).content).operation === "verify-and-finalize" ? "The reviewed metrics differ ［S1，S2］. 4821.6 - 3139.2 = 1682.4." : "Draft has incorrect arithmetic: 4821.6 - 3139.2 = 1672.4.";
     return new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 100, completion_tokens: 20 } }), { headers: { "content-type": "application/json" } });
   });
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a", "b"] });
@@ -252,34 +245,35 @@ it("uses the selected chat model for bounded planning/review, supplements a miss
   const result = await f.settled(), reply = result.messages.at(-1)!;
   expect(reply.status).toBe("complete"); expect(f.fetcher).toHaveBeenCalledTimes(3);
   expect(JSON.stringify(JSON.parse(f.fetcher.mock.calls.at(-1)![1]!.body as string))).toContain("1.73 trillion");
-  expect(reply.grounding!.research).toMatchObject({ modelChecks: 2, supplemented: true, review: "limited" });
-  expect(reply.grounding!.warnings.some(text => text.includes("1682.4"))).toBe(true);
+  expect(reply.grounding!.research).toMatchObject({ modelChecks: 2, supplemented: true, review: "not-needed", answerRevision: "applied" });
+  expect(reply.content).toContain("1682.4"); expect(reply.grounding!.warnings.some(text => text.includes("1682.4"))).toBe(false);
   expect(reply.grounding!.warnings.some(text => text.includes("did not supply valid"))).toBe(false);
   const starts = f.usage.filter(event => event.type === "start"); expect(starts).toHaveLength(3);
   expect(starts.every(event => event.type === "start" && event.request.modelId === "fixture-model" && event.request.purpose === "chat")).toBe(true);
   expect(JSON.stringify(f.fetcher.mock.calls)).not.toContain("SecretOutsideSelection");
   expect((await new AIChatStore(f.root).get(result.id)).messages.at(-1)!.grounding).toEqual(reply.grounding);
 });
-it("cancels during a model evidence review without starting a final answer", async () => {
+it("preserves the draft and records cancellation when its source review is stopped", async () => {
   const f = await fixture(); f.notes[0].content += "\n\n" + Array.from({ length: 45 }, (_, i) => `Detailed method ${i}. Investment assumptions.`).join("\n\n");
   let reviewing = false;
   f.fetcher.mockImplementation(async (_url, init) => {
     const request = JSON.parse(init!.body as string);
-    if (request.messages.some((message: { content: string }) => message.content.includes('"reviewedExcerpts":'))) {
+    if (request.messages.some((message: { content: string }) => message.content.includes('"operation":"verify-and-finalize"'))) {
       reviewing = true; await new Promise<void>(resolve => init!.signal!.addEventListener("abort", () => resolve(), { once: true })); throw Error("aborted");
     }
     return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ question: "Summarize methods", sourceIds: ["note:a"], compare: false, queries: [] }) } }] }), { headers: { "content-type": "application/json" } });
   });
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Compare these papers' definitions");
   await vi.waitFor(() => expect(reviewing).toBe(true)); await f.service.stop(f.chat.id);
-  expect((await f.settled()).messages.at(-1)!.status).toBe("stopped"); expect(f.fetcher).toHaveBeenCalledTimes(2);
+  expect((await f.settled()).messages.at(-1)!.status).toBe("stopped"); expect(f.fetcher).toHaveBeenCalledTimes(3);
+  const reply = (await f.settled()).messages.at(-1)!; expect(reply.content).not.toBe(""); expect(reply.grounding!.research!.answerRevision).toBe("failed");
 });
-it("skips paid planning/review for a resolved focused follow-up with usable coverage", async () => {
+it("skips unnecessary planning but checks the actual answer for a large focused source", async () => {
   const f = await fixture(); f.notes[0].content = "Alvarez. Investment losses.\n\n" + Array.from({ length: 45 }, (_, i) => `Result ${i}: total losses are ${i + 1}.2 billion CNY.`).join("\n\n");
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] });
   await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Alvarez: total losses是多少？");
   const saved = await f.settled(); expect(saved.messages.at(-1)!.status).toBe("complete");
-  expect(f.fetcher).toHaveBeenCalledTimes(1); expect(saved.messages.at(-1)!.grounding!.research).toMatchObject({ modelChecks: 0, review: "not-needed" });
+  expect(f.fetcher).toHaveBeenCalledTimes(2); expect(saved.messages.at(-1)!.grounding!.research).toMatchObject({ modelChecks: 1, review: "not-needed", answerRevision: "applied" });
   expect(JSON.stringify(f.fetcher.mock.calls)).toContain("unitEquivalents");
 });
 
@@ -295,7 +289,7 @@ it("retains each paper's totals after supplementary background searches without 
   const payload = JSON.parse(prepared.messages[1].content);
   for (const total of ["CNY 13.7 billion", "CNY 6.8 billion"]) expect(JSON.stringify(payload.evidence)).toContain(total);
   expect(JSON.stringify(payload)).not.toContain("SecretOutsideSelection");
-  expect(prepared.grounding.research).toMatchObject({ modelChecks: 2, supplemented: true });
+  expect(prepared.grounding.research).toMatchObject({ modelChecks: 1, supplemented: true });
 });
 
 it("keeps previously cited table rows in the actual follow-up payload despite renewed retrieval favouring totals", async () => {
@@ -401,6 +395,26 @@ it("retrieves both sides of a natural contradiction question even when the plann
   const prepared = await f.grounder.prepare(chat, new AbortController().signal, () => {}, consult);
   expect(new Set(prepared.grounding.research!.focusSourceIds)).toEqual(new Set(["note:a", "note:b"]));
   expect(new Set(prepared.grounding.evidence.map(hit => hit.source.id))).toEqual(new Set(["note:a", "note:b"]));
-  expect(consult).toHaveBeenCalledTimes(2); expect(f.fetcher).not.toHaveBeenCalled();
+  expect(consult).toHaveBeenCalledTimes(1); expect(f.fetcher).not.toHaveBeenCalled();
   expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
+});
+
+it("retains the draft, partial revised text, Thinking and fees when finalization reaches its limit", async () => {
+  const f = await fixture(); f.notes[0].content += "\n\n" + Array.from({ length: 45 }, (_, i) => `Method ${i}. Costs and assumptions differ.`).join("\n\n");
+  f.fetcher.mockImplementation(async (_url, init) => {
+    const request = JSON.parse(init!.body as string), input = JSON.parse(request.messages.at(-1).content), reviewing = input.operation === "verify-and-finalize";
+    const frame = { choices: [{message: {content: reviewing ? "Partial source correction" : "Original draft [S1]", reasoning_content: reviewing ? "Review thinking" : "Original thinking"}, finish_reason: reviewing ? "length" : "stop" }], usage:{prompt_tokens:80,completion_tokens:20} };
+    return new Response(JSON.stringify(frame), {headers:{"content-type":"application/json"}});
+  });
+  await f.service.setSources(f.chat.id, {...emptyKnowledgeScope(),noteIds:["a"]});
+  await f.service.send(f.chat.id,"siliconflow","fixture-model","Paper A: explain the method");
+  const reply=(await f.settled()).messages.at(-1)!;
+  expect(reply.status).toBe("error"); expect(reply.finishReason).toBe("length");
+  expect(reply.content).toContain("Original draft");expect(reply.content).toContain("Partial source correction");
+  expect(reply.reasoning).toContain("Original thinking");expect(reply.reasoning).toContain("Review thinking");
+  expect(reply.grounding!.research).toMatchObject({modelChecks:1,answerRevision:"failed"});
+  expect(f.fetcher).toHaveBeenCalledTimes(2);
+  expect(f.usage.filter(event=>event.type==="finish").map(event=>event.type==="finish"&&event.usage.totalTokens)).toEqual([100,100]);
+  const revised=JSON.parse(f.fetcher.mock.calls[1][1]!.body as string);
+  expect(revised.max_tokens).toBe(6000); expect(revised.model).toBe("fixture-model");
 });

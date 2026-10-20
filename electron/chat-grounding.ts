@@ -6,21 +6,20 @@ import { validKnowledgeScope } from "./knowledge-sources";
 import type { KnowledgeStore } from "./knowledge-store";
 import type { RetrievalService } from "./retrieval-service";
 import { chooseEvidence, documentQuestions, evidenceKey } from "./chat-evidence";
-import { broadQuestion, localResearchPlan, planMessages, readResearchPlan, readReview, reviewMessages, sourceProfiles, type ResearchConsult } from "./chat-plan";
+import { broadQuestion, localResearchPlan, planMessages, readResearchPlan, sourceProfiles, type ResearchConsult } from "./chat-plan";
 import { arithmeticWarnings } from "./chat-checks";
 import { followupEvidenceGroups, localEvidenceGroups, referencedTableShape, tableTransformRequirement } from "./chat-context";
-import { bibliography, bibliographyQuestion, comparativeResultCoverage, quantityNotes, quantityQuestion, quantityWarnings, resultCoverage, scenarioWarnings } from "./chat-quality";
+import { bibliographyQuestion, comparativeResultCoverage, quantityNotes, quantityQuestion, quantityWarnings, resultCoverage, scenarioWarnings } from "./chat-quality";
 import { repairCitedUnits } from "./chat-repair";
 import { answerTasks, methodCoverage } from "./chat-answer-plan";
 import { scopeCoverage, unitCompanions } from "./chat-completeness";
 import { formalEvidenceGroups } from "./chat-formal-evidence";
 export { chooseEvidence } from "./chat-evidence";
 
-import { focusEvidenceGroups, renderEvidenceFocus, type EvidenceFocus } from "./chat-review";
 import { groundingInstructions } from "./chat-policy";
 import { relativeQuantityAids } from "./chat-relative-quantities";
 
-export interface PreparedChat { grounding: ChatGrounding; messages: Array<{ role: string; content: string }> }
+export interface PreparedChat { grounding: ChatGrounding; messages: Array<{ role: string; content: string }>; answerReview: boolean }
 export class ChatGrounder {
   private queue: Promise<unknown> = Promise.resolve();
   constructor(private readonly knowledge: () => KnowledgeStore, private readonly retrieval: () => RetrievalService, private readonly semanticEnabled: () => Promise<boolean>) {}
@@ -136,35 +135,10 @@ export class ChatGrounder {
       const referencedTable = plan.lockedFocus && earlierMessage ? referencedTableShape(earlierMessage.content) : undefined;
       const selectEvidence = () => chooseEvidence(corpus, [...followup, ...formal, ...outcomes, ...coverage, ...groups], evidenceIds, broad, required, evidenceBudget, withBibliography);
       let evidence = selectEvidence();
-      let focus: EvidenceFocus[] = [];
-      let review: NonNullable<ChatGrounding["research"]>["review"] = "not-needed", supplemented = followups > 0;
-      const missingFocus = required.some(id => !evidence.some(hit => hit.source.id === id && !bibliography(hit)));
-      // A focused question with usable local coverage does not need two paid checks every turn.
-      const needsReview = enhanced && (plan.compare || plan.ambiguous || questions.length >= 3 || !!referencedTable || tasks.includes("calculation") && tasks.length > 1 || missingFocus || evidence.length < 3);
-      if (needsReview && evidence.length) {
-        progress("Checking evidence coverage…"); modelChecks++;
-        try {
-          const checked = readReview(await consult!(reviewMessages(question, evidence, required, profiles, plan.question), "review"), selected, question, evidence);
-          if (!checked) review = "unavailable";
-          else {
-            focus = checked.focus;
-            groups.unshift(...focusEvidenceGroups(focus, corpus));
-            review = checked.sufficient ? "sufficient" : "limited";
-            if (!checked.sufficient) for (const query of checked.queries) {
-              progress("Searching for missing evidence…");
-              const hits = await search(query.query, query.sourceIds, true);
-              if (hits.length) { groups.unshift(hits); supplemented = true; }
-            }
-            // Never call a second review or silently loop until the model approves itself.
-            groups.unshift(...unitCompanions(corpus, groups, evidenceIds));
-            // Supplemental overview matches must not displace the requested equation/definition.
-            evidence = selectEvidence();
-          }
-        } catch { signal.throwIfAborted(); review = "unavailable"; }
-        if (review === "limited") warnings.push("Evidence coverage has unresolved gaps. Supplementary searches are bounded; an omitted fact is not proof that the paper does not contain it.");
-        if (review === "unavailable") warnings.push("Evidence review unavailable; check the excerpts against the question.");
-      }
-      // Neighbour expansion/review may introduce an incomplete amount that was not in the initial seeds.
+      const supplemented = followups > 0;
+      // Local definition/result/formula coverage and planned targeted searches run
+      // before drafting. Reserve the remaining model check for the actual answer.
+      // Neighbour expansion may introduce an incomplete amount that was not in the initial seeds.
       const companions = unitCompanions(corpus, evidence.map(hit => [hit]), evidenceIds);
       if (companions.length) { groups.unshift(...companions); evidence = selectEvidence(); }
       if (!evidence.length) throw Error("No supporting passages were found. Try a specific term from the document, or configure and enable Embedding in AI Settings → Retrieval for cross-language questions.");
@@ -174,10 +148,10 @@ export class ChatGrounder {
       if (corpus.some(hit => !included.has(`${hit.source.id}:${hit.chunk.id}`))) warnings.push("This answer uses selected excerpts; it is not a full-text audit of every page.");
       const questionEvidence = questions.map((text, index) => ({ question: text, citations: evidence.filter(hit => questionGroups[index].some(candidate => evidenceKey(candidate) === evidenceKey(hit))).map(hit => hit.label) }));
       for (const [index, item] of questionEvidence.entries()) if (!item.citations.length) warnings.push(`Question ${index + 1}: no matching ranked passages; check the available context before drawing a conclusion.`);
-      const grounding: ChatGrounding = { scope, sourceIds: ids, evidence, warnings: [...new Set(warnings)].slice(0, 90), mode, research: { focusSourceIds: required, searches, modelChecks, supplemented, review } };
+      const grounding: ChatGrounding = { scope, sourceIds: ids, evidence, warnings: [...new Set(warnings)].slice(0, 90), mode, research: { focusSourceIds: required, searches, modelChecks, supplemented, review: "not-needed" } };
       const convertToCny = /(?:换(?:算|成)|折(?:算|合)|统一).{0,35}(?:人民币|CNY|RMB)|(?:convert|express).{0,40}(?:CNY|RMB|yuan)/iu.test(question);
       const emittedUnits = new Set<string>(); let unitCharacters = 0;
-      return { grounding, messages: [
+      return { grounding, answerReview: enhanced, messages: [
         { role: "system", content: groundingInstructions(tasks, referencedTable ? tableTransformRequirement(question, referencedTable.rows) : undefined) },
         { role: "user", content: JSON.stringify({ selectedSources: view.sources.filter(source => represented.has(source.id)).slice(0, 24).map(source => ({ id: source.id, title: source.title })), selectionSummary: { sourcesWithExcerpts: represented.size, excerpts: evidence.length }, missingRelevantSources: required.filter(id => !represented.has(id)).slice(0, 12).map(id => ({ id, title: sources.get(id)!.title })), questionEvidence, evidence: evidence.map(hit => {
           // Incidental amounts need the same arithmetic aids as explicitly requested totals.
@@ -195,7 +169,7 @@ export class ChatGrounder {
           });
           return { citation: hit.label, source: hit.source.title, sourceId: hit.source.id, anchor: hit.chunk.anchor, text: hit.chunk.text, ...(units.length ? { unitEquivalents: units } : {}), ...(relative.length ? { relativeQuantityAids: relative } : {}) };
         }) }) },
-        { role: "user", content: JSON.stringify({ dialogueContext: { recentUserQuestions: previous, currentFocus: required.slice(0, 24).map(id => ({ id, title: sources.get(id)?.title })), ...(referencedTable ? { referencedTable } : {}) }, latestQuestion: question, resolvedRetrievalQuestion: plan.question, tasks, ...(focus.length ? { evidenceFocus: renderEvidenceFocus(focus, evidence) } : {}) }) }
+        { role: "user", content: JSON.stringify({ dialogueContext: { recentUserQuestions: previous, currentFocus: required.slice(0, 24).map(id => ({ id, title: sources.get(id)?.title })), ...(referencedTable ? { referencedTable } : {}) }, latestQuestion: question, resolvedRetrievalQuestion: plan.question, tasks }) }
       ] };
     });
     this.queue = work.catch(() => undefined); progress("Preparing document question…");

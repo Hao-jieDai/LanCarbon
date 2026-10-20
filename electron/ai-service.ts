@@ -1,3 +1,4 @@
+import { answerReviewMessages } from "./chat-review";
 import { randomUUID } from "node:crypto";
 import type { AIChat, AIMessage, AIProvider } from "../src/shared/ai";
 import { AISettingsStore, AIChatStore } from "./ai-storage";
@@ -73,18 +74,31 @@ export class AIService {
         let updateTimer: NodeJS.Timeout | undefined;
         let persistTimer: NodeJS.Timeout | undefined;
         const progress = (text: string) => { reply.progress = text || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); };
+        let needsAnswerReview = false, auxiliaryCalls = 0;
+        const consult = async (messages: Array<{ role: string; content: string }>, stage: "plan" | "review") => {
+          if (++auxiliaryCalls > 2) throw Error("Auxiliary model check limit reached");
+          if (stage === "review" && reply.grounding?.research) reply.grounding.research.modelChecks = auxiliaryCalls;
+          let output = "", reasoningText = "", length = 0;
+          try {
+            await this.client.complete(provider, key, modelId, messages, controller.signal, (content, reasoning) => {
+              length += content.length + reasoning.length;
+              if (length > 40_000) throw Error("Source check response limit reached");
+              output += content; reasoningText += reasoning;
+            }, false, () => {}, { maxTokens: stage === "plan" ? 1400 : 6000, disableThinking: true, timeoutMs: stage === "plan" ? 90_000 : 120_000, maxRetries: 0, ...(stage === "review" ? { onFinish: (reason: string) => { reply.finishReason = reason; } } : {}) });
+            return output;
+          } catch (error) {
+            if (stage === "review" && output) reply.content += "\n\n---\n\nSource review (incomplete)\n\n" + output;
+            throw error;
+          } finally {
+            if (stage === "review" && reasoningText) reply.reasoning = (reply.reasoning ? reply.reasoning + "\n\n---\nSource review\n\n" : "") + reasoningText;
+          }
+        };
         try {
           if (hasChatSources(chat.sourceScope)) {
             if (!this.grounder) throw Error("Document questions are unavailable.");
-            const prepared = await this.grounder.prepare(chat, controller.signal, progress, async (messages, stage) => {
-              let output = "", length = 0;
-              await this.client.complete(provider, key, modelId, messages, controller.signal, (content, reasoning) => {
-                length += content.length + reasoning.length;
-                if (length > 40_000) throw Error("Evidence check response limit reached");
-                output += content;
-              }, false, () => {}, { maxTokens: stage === "plan" ? 1400 : 1800, disableThinking: true, timeoutMs: 90_000, maxRetries: 0 });
-              return output;
-            }); reply.grounding = prepared.grounding;
+            const prepared = await this.grounder.prepare(chat, controller.signal, progress, consult);
+            needsAnswerReview = prepared.answerReview;
+            reply.grounding = prepared.grounding;
             // One system message: presentation preferences plus the document contract.
             // Evidence/history remain data in their original user-message roles.
             context = [{ ...context[0], content: context[0].content + "\n\n" + prepared.messages[0].content }, ...prepared.messages.slice(1)];
@@ -98,6 +112,17 @@ export class AIService {
             if (!updateTimer) updateTimer = setTimeout(() => { updateTimer = undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, 120);
             if (!persistTimer) persistTimer = setTimeout(() => { persistTimer = undefined; const snapshot = { ...reply }; void chatStore.update(id, saved => { const index = saved.messages.findIndex(message => message.id === reply.id); if (index >= 0) saved.messages[index] = snapshot; }).catch(() => controller.abort()); }, 800);
           }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, { onFinish: reason => { reply.finishReason = reason; } });
+          if (needsAnswerReview && reply.grounding) {
+            progress("Checking answer against sources…");
+            try {
+              const reviewed = await consult(answerReviewMessages(context, reply.content), "review");
+              reply.content = reviewed;
+              if (reply.grounding.research) reply.grounding.research.answerRevision = "applied";
+            } catch (error) {
+              if (reply.grounding.research) reply.grounding.research.answerRevision = "failed";
+              throw error;
+            }
+          }
           if (reply.grounding && this.grounder) { try { progress("Checking answer…"); reply.content = await this.grounder.finish(reply.grounding, reply.content); } catch { reply.content = chatMarkdown(reply.content); throw Error("The reply was generated, but local consistency checks failed. Its text is retained."); } }
           reply.content = chatMarkdown(reply.content);
           reply.status = controller.signal.aborted ? "stopped" : "complete";

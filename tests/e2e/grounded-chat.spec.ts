@@ -161,7 +161,7 @@ test("enhanced document questions record model checks and render grouped citatio
         if (!String(url).endsWith("/chat/completions")) return original(url, init);
         (globalThis as any).groundedCalls.push({ endpoint: String(url), request });
         const input = JSON.parse(request.messages.at(-1).content.startsWith("{") ? request.messages.at(-1).content : "{}");
-        const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare the selected papers' loss definitions", sourceIds: input.catalogue.map((p: any) => p.id), compare: true, queries: [] }) : Array.isArray(input.reviewedExcerpts) ? JSON.stringify({ sufficient: true, queries: [], evidenceFocus: [{ aspectId: input.requestedAspects[0].id, passageIds: [input.reviewedExcerpts[0].passages[0].id] }] }) : "The definitions differ ［S1，S2］.";
+        const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare the selected papers' loss definitions", sourceIds: input.catalogue.map((p: any) => p.id), compare: true, queries: [] }) : "The definitions differ ［S1，S2］.";
         return new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 70, completion_tokens: 25 } }), { headers: { "content-type": "application/json" } });
       };
     });
@@ -179,7 +179,7 @@ test("enhanced document questions record model checks and render grouped citatio
     await expect(page.locator('.ai-message-assistant a[href$="-S1"]')).toHaveCount(1); await expect(page.locator('.ai-message-assistant a[href$="-S2"]')).toHaveCount(1);
     await page.locator(".chat-evidence summary").click(); await expect(page.locator(".chat-evidence")).toContainText("2 model checks");
     const saved = await page.evaluate(() => window.notesDesktop.ai!.chats()); if (!saved.ok) throw Error(saved.error);
-    expect(saved.chats[0].messages.at(-1)!.grounding!.research).toMatchObject({ modelChecks: 2, review: "sufficient" });
+    expect(saved.chats[0].messages.at(-1)!.grounding!.research).toMatchObject({ modelChecks: 2, review: "not-needed", answerRevision: "applied" });
     const usage = await page.evaluate(() => window.notesDesktop.ai!.usage()); if (!usage.ok) throw Error(usage.error);
     expect(usage.usage.records.filter(item => item.purpose === "chat")).toHaveLength(3);
     await page.screenshot({ path: info.outputPath("enhanced-chat.png") });

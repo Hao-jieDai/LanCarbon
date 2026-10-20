@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { expect, it } from "vitest";
-import { localResearchPlan, planMessages, readResearchPlan, readReview, reviewMessages, sourceProfiles } from "../electron/chat-plan";
+import { localResearchPlan, planMessages, readResearchPlan, validatedQueries, sourceProfiles } from "../electron/chat-plan";
 import { arithmeticWarnings } from "../electron/chat-checks";
 import { citedLabels, mapCitations } from "../src/shared/grounding";
 import { chooseEvidence, evidenceTokens } from "../electron/chat-evidence";
@@ -28,8 +28,8 @@ it("rejects malformed planning and out-of-selection searches without broadening 
   const profiles = sourceProfiles(corpus()), plan = localResearchPlan("Compare definitions", profiles, [], []);
   expect(readResearchPlan("No JSON", plan, profiles)).toBeUndefined();
   expect(readResearchPlan('{"sourceIds":[]}', plan, profiles)).toBeUndefined();
-  const review = readReview(JSON.stringify({ sufficient: false, queries: [{ query: "private material", sourceIds: ["file:secret"] }, { query: "discounted cash flows", sourceIds: ["file:1"] }] }), new Set(["file:1"]));
-  expect(review!.queries).toEqual([{ query: "discounted cash flows", sourceIds: ["file:1"] }]);
+  const review = validatedQueries( [{ query: "private material", sourceIds: ["file:secret"] }, { query: "discounted cash flows", sourceIds: ["file:1"] }], new Set(["file:1"]));
+  expect(review).toEqual([{ query: "discounted cash flows", sourceIds: ["file:1"] }]);
   expect(JSON.stringify(planMessages("question", profiles, [], [], plan))).not.toContain("file:secret");
 });
 it("bounds transmitted catalogues and focus lists even for a large selected collection", () => {
@@ -37,18 +37,15 @@ it("bounds transmitted catalogues and focus lists even for a large selected coll
   const ids = profiles.map(p => p.id), fallback = localResearchPlan("比较所有文献的定义", profiles, [], ids);
   const planned = JSON.parse(planMessages("比较所有文献的定义", profiles, [], ids, fallback)[1].content);
   expect(planned.catalogue).toHaveLength(24); expect(planned.previousFocus).toHaveLength(24); expect(planned.catalogueTotal).toBe(2000);
-  const reviewed = JSON.parse(reviewMessages("question", [], ids, profiles)[1].content);
-  expect(reviewed.focusSourceIds).toHaveLength(24); expect(reviewed.relevantSources).toHaveLength(24); expect(reviewed.focusTotal).toBe(2000);
+
 });
-it("reserves cross-paper evidence and gives a bounded reviewer excerpts from each paper", () => {
+it("reserves cross-paper evidence within the shared answer context budget", () => {
   const items = corpus(), ids = [...new Set(items.map(hit => hit.source.id))];
   const groups = [items.slice(0, 20), ...ids.map(id => items.filter(hit => hit.source.id === id).slice(3, 9))];
   const selected = chooseEvidence(items, groups, ids, true, ids, 22_000);
   expect(new Set(selected.map(hit => hit.source.id))).toEqual(new Set(ids));
   expect(selected.reduce((sum, hit) => sum + evidenceTokens(hit), 0)).toBeLessThanOrEqual(22_000);
-  const review = JSON.parse(reviewMessages("Compare all definitions and totals", selected, ids)[1].content);
-  expect(new Set(review.reviewedExcerpts.map((item: any) => item.sourceId))).toEqual(new Set(ids));
-  expect(review.reviewedCount).toBeLessThan(review.availableExcerpts);
+
 });
 it("opens grouped and full-width citations consistently while preserving code and escaped examples", () => {
   const input = "Supported ［S7，S18］ and [S1, S2] and [S3]. `［S9］`\n```text\n[S8]\n```\n\\[S5]";
