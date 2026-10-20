@@ -81,6 +81,31 @@ it("sends one contract and keeps method, definition and amount evidence for a co
   for (const text of ["Loss is defined", "method selects", "discount rate is fixed", "CNY 26.4 billion"]) expect(JSON.stringify(payload.evidence)).toContain(text);
   expect(JSON.stringify(messages)).not.toContain("SecretOutsideSelection");
 });
+
+it("uses the existing bounded coverage check to focus verified original quotes, not generated factual summaries", async () => {
+  const f = await fixture(); f.notes[0].content += "\n\n" + Array.from({ length: 45 }, (_, i) => `Background section ${i}. Evidence is selected locally.`).join("\n\n");
+  const question = "Compare carbon investment", scope = { ...emptyKnowledgeScope(), noteIds: ["a", "b"] };
+  const consult = vi.fn(async (messages: Array<{ content: string }>, stage: string) => {
+    if (stage === "plan") return JSON.stringify({ question, sourceIds: ["note:a", "note:b"], compare: true, queries: [] });
+    const hit = JSON.parse(messages[1].content).reviewedExcerpts.find((hit: { text: string }) => hit.text.length >= 20);
+    return JSON.stringify({ sufficient: true, queries: [], evidenceFocus: [{ aspect: "carbon investment", passages: [{ sourceId: hit.sourceId, citation: hit.citation, quote: hit.text }] }] });
+  });
+  const prepared = await f.grounder.prepare({ ...f.chat, sourceScope: scope, messages: [{ id: "q", role: "user", status: "complete", content: question, createdAt: "now" }] }, new AbortController().signal, () => {}, consult);
+  const request = JSON.parse(prepared.messages.at(-1)!.content);
+  expect(consult).toHaveBeenCalledTimes(2); expect(f.fetcher).not.toHaveBeenCalled();
+  expect(request.evidenceFocus).toHaveLength(1);
+  const focused = request.evidenceFocus[0].passages[0], hit = prepared.grounding.evidence.find(hit => hit.label === focused.citation)!;
+  expect(hit.source.id).toBe(focused.sourceId); expect(hit.chunk.text).toContain(focused.quote);
+  expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
+});
+
+it("supplies relative-level aids with the original baseline and no additional calls", async () => {
+  const f = await fixture(); f.notes[0].content = "# Methods\n\n运行小时数降低为2018年水平的35%，其余条件保持一致。";
+  const prepared = await f.grounder.prepare({ ...f.chat, sourceScope: { ...emptyKnowledgeScope(), noteIds: ["a"] }, messages: [{ id: "q", role: "user", status: "complete", content: "为什么利用小时数下降？", createdAt: "now" }] }, new AbortController().signal, () => {});
+  const aids = JSON.parse(prepared.messages[1].content).evidence.flatMap((hit: { relativeQuantityAids?: unknown[] }) => hit.relativeQuantityAids ?? []);
+  expect(aids[0]).toMatchObject({ relation: "remaining-level", levelPercent: [35], changePercent: [-65] });
+  expect(aids[0].context).toContain("2018年水平"); expect(f.fetcher).not.toHaveBeenCalled();
+});
 it("includes a mixed question's omitted formula and definition in the actual generation payload without extra model checks", async () => {
   const f = await fixture();
   f.notes[0].title = "TreatmentTrial";
@@ -142,6 +167,15 @@ it("keeps ordinary Chat unchanged and stops source preparation before any Chat c
   await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Summarize the paper");
   await vi.waitFor(() => expect(f.store.prepare).toHaveBeenCalled()); await expect(f.service.setSources(f.chat.id, emptyKnowledgeScope())).rejects.toThrow("Stop the reply"); await f.service.stop(f.chat.id);
   expect((await f.settled()).messages.at(-1)!.status).toBe("stopped"); expect(f.fetcher).toHaveBeenCalledTimes(1);
+});
+
+it("retains text and usage but reports a local check failure as an error rather than a successful answer", async () => {
+  const f = await fixture(); await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] });
+  vi.spyOn(f.grounder, "finish").mockRejectedValueOnce(Error("Synthetic check failure"));
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Explain this paper");
+  const reply = (await f.settled()).messages.at(-1)!;
+  expect(reply.status).toBe("error"); expect(reply.error).toContain("local consistency checks failed");
+  expect(reply.content).toContain("A reports 12 percent"); expect(f.usage.filter(event => event.type === "finish")).toHaveLength(1); expect(f.fetcher).toHaveBeenCalledTimes(1);
 });
 it("bounds broad evidence while covering each selected paper and reports unrecognized or missing citations", async () => {
   const f = await fixture(), chat: AIChat = { ...f.chat, sourceScope: { ...emptyKnowledgeScope(), noteIds: ["a", "b"] }, messages: [{ id: "question", role: "user", status: "complete", content: "Compare the conclusions", createdAt: new Date().toISOString() }] };
@@ -210,7 +244,7 @@ it("uses the selected chat model for bounded planning/review, supplements a miss
   });
   f.fetcher.mockImplementation(async (_url, init) => {
     const body = JSON.parse(init!.body as string), prompt = body.messages[0].content;
-    const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare facility and investor loss definitions", sourceIds: ["note:a", "note:b"], compare: true, queries: [] }) : prompt.startsWith("Check whether") ? JSON.stringify({ sufficient: false, queries: [{ query: "aggregate present value investor wealth", sourceIds: ["note:b"] }] }) : "The retrieved metrics differ ［S1，S2］. 4821.6 - 3139.2 = 1672.4.";
+    const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare facility and investor loss definitions", sourceIds: ["note:a", "note:b"], compare: true, queries: [] }) : body.messages.some((message: { content: string }) => message.content.includes('"reviewedExcerpts":')) ? JSON.stringify({ sufficient: false, queries: [{ query: "aggregate present value investor wealth", sourceIds: ["note:b"] }] }) : "The retrieved metrics differ ［S1，S2］. 4821.6 - 3139.2 = 1672.4.";
     return new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 100, completion_tokens: 20 } }), { headers: { "content-type": "application/json" } });
   });
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a", "b"] });
@@ -231,7 +265,7 @@ it("cancels during a model evidence review without starting a final answer", asy
   let reviewing = false;
   f.fetcher.mockImplementation(async (_url, init) => {
     const request = JSON.parse(init!.body as string);
-    if (request.messages[0].content.startsWith("Check whether")) {
+    if (request.messages.some((message: { content: string }) => message.content.includes('"reviewedExcerpts":'))) {
       reviewing = true; await new Promise<void>(resolve => init!.signal!.addEventListener("abort", () => resolve(), { once: true })); throw Error("aborted");
     }
     return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ question: "Summarize methods", sourceIds: ["note:a"], compare: false, queries: [] }) } }] }), { headers: { "content-type": "application/json" } });

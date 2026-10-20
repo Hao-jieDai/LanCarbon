@@ -50,6 +50,11 @@ it("supplies exact unit equivalents with verbatim scenario context without inven
   expect(quantityNotes(hit("Capacity is 339.0 billion kWh; 2020 base year; population 1.4 billion."))).toEqual([]);
 });
 
+it("recognizes a LaTeX arithmetic result before a monetary scale without assuming one unit", () => {
+  for (const reply of ["$24.8 - 15.2 = 9.6$ billion CNY，即96亿元人民币", "$36.7$ million USD means 0.367亿美元"]) expect(quantityWarnings(reply, [])).toEqual([]);
+  expect(quantityWarnings("$9.6$ billion CNY，即9.6亿元人民币", []).length).toBeGreaterThan(0);
+});
+
 it("preserves both members of shared-scale results in arithmetic aids and unit diagnostics", () => {
   const original = hit("Transport exposure is US$53 and US$17 billion under separate scenarios.");
   const notes = quantityNotes(original).join("\n");

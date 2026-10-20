@@ -56,7 +56,7 @@ it("adapts evidence and response structure to questions rather than always listi
   expect(answerTasks("What is the combined loss of the top 12 operators?")).toContain("calculation");
   expect(answerTasks("List the top 12 operators and each one's exact loss.")).toContain("ranking");
   expect(answerTasks("为什么降低利用率可能比关闭更贵？")).toContain("mechanism");
-  expect(groundingInstructions(["writing"])).toContain("editable draft"); expect(groundingInstructions(["ranking"])).toContain("unseen supplement");
+  expect(groundingInstructions(["writing"])).toContain("continuous paragraph"); expect(groundingInstructions(["ranking"])).toContain("unseen supplement");
   const background = evidence("Introduction: climate transition and investment.", "intro"), method = evidence("We define the metric as the difference in discounted net cash flow relative to the baseline.", "method");
   method.source = background.source;
   expect(methodCoverage([background, method], [background.source.id], ["definition"]).flat().map(hit => hit.chunk.id)).toContain("method");

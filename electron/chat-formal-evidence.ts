@@ -1,15 +1,14 @@
 import type { KnowledgeHit } from "../src/shared/knowledge";
 import { retrievalTerms } from "./retrieval-service";
 import { bibliography } from "./chat-quality";
+import { DEFINITION_REQUEST as definitionRequest, FORMULA_REQUEST as formulaRequest, definitionScore } from "./chat-answer-plan";
 import { evidenceKey } from "./chat-evidence";
 
-const formulaRequest = /公式|计算式|表达式|方程|数学形式|\b(?:formula(?:e|s)?|equations?|latex)\b|mathematical (?:expression|definition)/iu;
-const definitionRequest = /定义|计算口径|度量|衡量什么|如何计算|怎么计算|\bdefin|\boperationali[sz]|how.{0,25}(?:measur|calculat|quantif)/iu;
-const definitionText = /\b(?:defined? as|defin(?:e|ition)|quantif\w*|measur\w*|calculated? (?:as|using)|where\b|denotes?|represents?)|定义|计算为|计算方法|表示|其中/iu;
+const definitionText = /\b(?:defined? as|defin(?:e|ition)|operationali[sz]\w*|quantif\w*|measur\w*|calculated? (?:as|using)|where\b|denotes?|represents?)|定义|计算为|计算方法|表示|其中/iu;
 const symbols = /[=≔≡∝]|\\(?:frac|sum|prod)\b|[∑∏]/u;
 // Bilingual metric vocabulary, not study-specific answers. Used only to rank original text.
 const metricTerms = [
-  /损失|\bloss(?:es)?\b|\blost\b/iu,
+  /损失|搁浅|\bloss(?:es)?\b|\blost\b|\bstrand\w*/iu,
   /成本|费用|\bcosts?\b|\bexpenses?\b/iu,
   /风险|\brisks?\b|\bhazards?\b/iu,
   /利润|\bprofits?\b/iu,
@@ -56,7 +55,7 @@ export async function formalEvidenceGroups(corpus: KnowledgeHit[], questions: st
       for (const [index, hit] of items.entries()) {
         if (index % 128 === 0) { signal.throwIfAborted(); await new Promise<void>(resolve => setImmediate(resolve)); }
         const neighbours = [items[index - 2], items[index - 1], items[index + 1], items[index + 2]].filter((other): other is KnowledgeHit => !!other && near(hit, other));
-        const text = hit.chunk.text, context = [text, ...neighbours.map(other => other.chunk.text)].join(" ");
+        const text = hit.chunk.text.replace(/\s+/g, " "), context = [text, ...neighbours.map(other => other.chunk.text)].join(" ");
         const equation = symbols.test(text), definition = definitionText.test(text);
         if (request.formula ? !equation && !definition : !definition) continue;
         const contextTerms = terms(context), matches = [...wanted].filter(term => contextTerms.has(term)).length;
@@ -65,7 +64,7 @@ export async function formalEvidenceGroups(corpus: KnowledgeHit[], questions: st
         if (metrics.length && !metricMatches) continue;
         const heading = hit.chunk.anchor.heading ?? "";
         const pointerOnly = /supplement|appendix|补充材料|附录/iu.test(text) && !equation;
-        const score = metricMatches * 8 + Math.min(8, matches) + (equation ? request.formula ? 9 : 1 : 0) + (definition ? 4 : 0) + (/method|defin|formula|equation|方法|定义|公式/iu.test(heading) ? 2 : 0) - (pointerOnly ? 5 : 0);
+        const score = (request.formula ? 0 : definitionScore(text)) + metricMatches * 8 + Math.min(8, matches) + (equation ? request.formula ? 9 : 1 : 0) + (definition ? 4 : 0) + (/method|defin|formula|equation|方法|定义|公式/iu.test(heading) ? 2 : 0) - (pointerOnly ? 5 : 0);
         ranked.push({ hit, neighbours, score });
       }
       ranked.sort((a, b) => b.score - a.score);

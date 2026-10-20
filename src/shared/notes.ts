@@ -8,17 +8,15 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.12";
+export const RELEASE_VERSION = "2.4.13";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-**RAG maintenance:** Document-answer instructions now have one owner and are sent once. Compound questions retain their definition, calculation, mechanism and comparison requirements together; monetary aids, diagnostics and conservative repairs share one parser, including table-header units. Existing response preferences and source restrictions are preserved. Local checks verify these behaviours; complete real-model academic acceptance is a separate requirement before installation.
+Version 2.4.13 consolidates document-answer rules and keeps multiple requested tasks together. Definition passages and implicit cross-paper comparisons receive targeted coverage. The existing bounded evidence check can highlight verified original quotations and their conditions before generation. Monetary aids, diagnostics and conservative repairs share one parser; relative-percentage aids distinguish a remaining level from a reduction when the baseline is explicit. Saved response preferences are preserved while managed wording is assembled once. Unexpected local checking failures retain the reply and usage and report an error.
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
-
-Version 2.4.12 extends monetary checks to tables with shared caption citations and verifies symbolic currency conversions against cited originals. Comparisons retain each relevant paper's monetary results and reported findings, and table-conversion follow-ups keep their resolved source scope and revalidate the original passages cited in the previous table. Emphasising selected rows retains the whole table; an explicit subset or removal changes its rows. Pairwise savings against alternative scenarios are reported separately. Shared-scale monetary lists and separately repeated range endpoints are checked against their originals. Explicit cited subtractions, nearby named repetitions and sums of verified differences are checked using their original operands; arithmetic checks recognize grouped thousands. Incomplete responses caused by output limits are saved as failed replies with an explanation and Retry, while retaining returned usage. Evidence diagnostics stay inside the expandable Evidence panel. Token activity uses eight color levels plus a separate zero-usage color, with distinct light and dark palettes. Existing model connections, personal writing and exports are preserved; no additional model service is introduced.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -259,11 +257,9 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-**RAG 维护：** 资料回答规则统一管理并只发送一次；复合问题同时保留定义、计算、机制与比较要求，金额辅助、诊断和保守修正共用解析逻辑，包括表头单位。保留现有表达偏好和资料范围限制。本地检查验证上述行为，完整真实模型学术验收仍须在安装前单独完成。
+2.4.13 统一资料回答规则，同时保留复合问题的各项要求，并加强定义原文和隐含跨文献比较的取证。现有的有限覆盖检查可在生成前突出逐字验证的原文及其条件。金额辅助、诊断和保守修正共用解析逻辑；比例辅助在基准明确时区分剩余水平与减少幅度。保留用户表达偏好，内置规范只组装一次。本地检查异常时保留回答和用量，并明确报错。
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
-
-2.4.12 将金额检查扩展到表格上方统一引用的形式，并依据原文检查符号汇率换算。文献比较优先保留各篇金额结果与实际研究结论，表格换算追问沿用已解析的资料范围并保留上一张表实际引用且仍有效的原文；强调某些行仍保留全表，只有明确限定子集或删除才改变行范围；相对不同互斥情景的节省额分别报告。并列金额共享英文量级、范围端点分别重复单位的形式也按原文检查。明确引用原文的相减计算、邻近具名重复值与差额求和均重新核对原始操作数，算术检查支持千位分组空格。输出额度耗尽等原因造成的不完整回复会保存为失败状态，显示原因并允许重试，返回用量仍正常记录。证据诊断保留在可展开的 Evidence 内。Token 热力图增加为八档颜色，零用量单独显示，并分别调整深浅主题配色。保留现有模型配置、个人写作与导出，不增加模型服务。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

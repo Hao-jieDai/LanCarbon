@@ -94,7 +94,7 @@ export function quantityWarnings(text: string, evidence: ChatEvidence[]): string
 /** Check explicit English-to-Chinese unit definitions, not prose about different quantities. */
 export function unitDefinitionWarnings(text: string): string[] {
   const warnings = new Set<string>();
-  const pattern = /\b(?:(\d+(?:\.\d+)?|one)\s+)?(billion|million|trillion)\s*(CNY|RMB|USD|US\$)\s*[，,:：（(]*\s*(?:即|也就是|等于|=|means)\s*(?:(\d+(?:\.\d+)?|一|十|百|千)\s*)?(万亿|十亿|亿|百万|万)\s*(人民币|美元|元)/giu;
+  const pattern = /\b(?:(\d+(?:\.\d+)?|one)\$?\s+)?(billion|million|trillion)\s*(CNY|RMB|USD|US\$)\s*[，,:：（(]*\s*(?:即|也就是|等于|=|means)\s*(?:(\d+(?:\.\d+)?|一|十|百|千)\s*)?(万亿|十亿|亿|百万|万)\s*(人民币|美元|元)/giu;
   for (const match of text.replace(/```[\s\S]*?```|`[^`\n]*`/g, "").matchAll(pattern)) {
     const fromCurrency = /CNY|RMB/i.test(match[3]) ? "CNY" : "USD", toCurrency = match[6] === "美元" ? "USD" : "CNY";
     if (fromCurrency !== toCurrency) continue; // An FX claim needs an explicit exchange rate, not this check.

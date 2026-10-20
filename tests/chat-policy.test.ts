@@ -1,13 +1,16 @@
 // @vitest-environment node
 import { expect, it } from "vitest";
 import { answerTasks, methodCoverage } from "../electron/chat-answer-plan";
+import { localResearchPlan, readResearchPlan, readReview, reviewMessages } from "../electron/chat-plan";
+import { focusEvidenceGroups, renderEvidenceFocus } from "../electron/chat-review";
+import { relativeQuantityAids } from "../electron/chat-relative-quantities";
 import { groundingInstructions } from "../electron/chat-policy";
 import { moneyAmounts } from "../electron/chat-money";
 import { moneyClaimAmounts, monetaryBlocks } from "../electron/chat-claims";
 import { quantityNotes, quantityWarnings } from "../electron/chat-quality";
 import { repairCitedUnits } from "../electron/chat-repair";
 import { conversationMessages } from "../electron/ai-service";
-import { CHAT_OUTPUT_GUIDELINES } from "../src/shared/chatText";
+import { CHAT_OUTPUT_GUIDELINES, PREVIOUS_CHAT_OUTPUT_GUIDELINES, responseGuidelines } from "../src/shared/chatText";
 import { DEFAULT_AI_SYSTEM_PROMPT, defaultAIProviders, type AIChat } from "../src/shared/ai";
 import type { ChatEvidence } from "../src/shared/grounding";
 
@@ -95,4 +98,63 @@ it("refuses ambiguous currencies and retains source guards for inherited-scale a
     evidence("Capacity (GW)\nUS$26 and US$14 billion\nFig. 3 | Operators."),
     { ...hit, chunk: { ...hit.chunk, anchor: { kind: "pdf" as const, page: 3, method: "ocr" as const, confidence: 42 } } }
   ]) expect(repairCitedUnits("损失US$26亿[S1]。", [source]).corrections).toEqual([]);
+});
+
+it("replaces only exact managed paragraphs in memory while preserving user preferences", () => {
+  const preferences = "Use brief Chinese paragraphs. Keep my special terminology.";
+  const saved = preferences + "\n\n" + PREVIOUS_CHAT_OUTPUT_GUIDELINES;
+  const composed = responseGuidelines(saved);
+  expect(composed).toBe(preferences + "\n\n" + CHAT_OUTPUT_GUIDELINES);
+  expect(responseGuidelines(composed)).toBe(composed);
+  expect(responseGuidelines("Custom quotation: " + PREVIOUS_CHAT_OUTPUT_GUIDELINES)).toContain("Custom quotation: " + PREVIOUS_CHAT_OUTPUT_GUIDELINES);
+  expect(saved).toBe(preferences + "\n\n" + PREVIOUS_CHAT_OUTPUT_GUIDELINES);
+});
+
+it("prefers original operational definitions over dense secondary literature and generic variable definitions", () => {
+  for (const [question, primary, survey, variables] of [
+    ["比较各篇实际算的风险是什么", "We operationalize risk as the change in expected event probability under treatment relative to the baseline.", "Previous studies define and measure risk, costs, future profits, NPV and cash flow using alternative definitions.", "We define a variable as the present value of future profits. Where x denotes the share and NPV defines the model."],
+    ["How do these studies define transport losses?", "We operationalize loss as the effect of changed expectations on the present value of future profit streams.", "Earlier studies report different estimates of net present value, future profits, cash flow and accounting losses.", "We define an asset indexed by k as a share of future profits; where r denotes a variable."]
+  ]) {
+    const hit = evidence(primary), a = evidence(survey, "survey"), b = evidence(variables, "variables"); a.source = b.source = hit.source;
+    const groups = methodCoverage([a, b, hit], [hit.source.id], answerTasks(question), question);
+    expect(groups[0][0]).toEqual(hit);
+  }
+});
+
+it("preserves implicit coexistence comparisons instead of narrowing to the sole named study", () => {
+  const profiles = [{ id: "file:alpha", title: "Alvarez 2024", opening: "Macroeconomic gains" }, { id: "file:beta", title: "Bennett 2025", opening: "Hospital losses" }];
+  for (const question of ["Alvarez说经济受益，该如何同时理解医院的损失？", "How can Alvarez's economic gains coexist with hospital losses?"]) {
+    const plan = localResearchPlan(question, profiles, [], ["file:alpha"]);
+    expect(plan.compare).toBe(true); expect(new Set(plan.sourceIds)).toEqual(new Set(profiles.map(p => p.id)));
+    const resolved = readResearchPlan(JSON.stringify({ question, compare: false, sourceIds: ["file:alpha"] }), plan, profiles)!;
+    expect(resolved.sourceIds).toContain("file:beta");
+  }
+});
+
+it("accepts only current selected verbatim evidence, remaps citations and refuses invented facts or aspects", () => {
+  const first = evidence("The outcome is defined as a change in expected profits relative to the baseline."), excluded = evidence("Private excluded text.", "private", "S2");
+  const question = "Explain the outcome definition", payload = { sufficient: true, queries: [], evidenceFocus: [
+    { aspect: "outcome definition", passages: [{ sourceId: first.source.id, citation: "S1", quote: first.chunk.text }] },
+    { aspect: "outcome definition", passages: [{ sourceId: excluded.source.id, citation: "S2", quote: excluded.chunk.text }] },
+    { aspect: "outcome definition", passages: [{ sourceId: first.source.id, citation: "S1", quote: "Invented source fact, not in the original." }] },
+    { aspect: "Unrequested topic", passages: [{ sourceId: first.source.id, citation: "S1", quote: first.chunk.text }] }
+  ] };
+  const review = readReview(JSON.stringify(payload), new Set([first.source.id]), question, [first, excluded])!;
+  expect(review.focus).toHaveLength(1);
+  expect(focusEvidenceGroups(review.focus, [first])).toEqual([[first]]);
+  expect(renderEvidenceFocus(review.focus, [{ ...first, label: "S9" }])[0].passages[0].citation).toBe("S9");
+  expect(renderEvidenceFocus(review.focus, [{ ...first, fingerprint: "b".repeat(64) }])).toEqual([]);
+  expect(renderEvidenceFocus(review.focus, [])).toEqual([]);
+  const sent = reviewMessages(question, [first], [first.source.id]);
+  expect(sent[0].content).toContain("do NOT write an answer or factual summary");
+});
+
+it("keeps levels distinct from changes and refuses an unstated baseline or percentage-point conversion", () => {
+  const clinical = relativeQuantityAids("Dose is reduced to 20% of the original level.")[0];
+  expect(clinical.levelPercent).toEqual([20]); expect(clinical.changePercent).toEqual([-80]);
+  const transport = relativeQuantityAids("运行小时数降低为2018年水平的35%。")[0];
+  expect(transport.levelPercent).toEqual([35]); expect(transport.changePercent).toEqual([-65]);
+  const decrease = relativeQuantityAids("Energy use decreased by 35–45%.")[0];
+  expect(decrease.levelPercent).toEqual([65, 55]); expect(decrease.changePercent).toEqual([-35, -45]);
+  for (const text of ["The event rate fell to 20%.", "利用率降低到20%。", "The event rate decreased by 20% percentage points."]) expect(relativeQuantityAids(text)).toEqual([]);
 });

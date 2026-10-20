@@ -16,7 +16,9 @@ import { scopeCoverage, unitCompanions } from "./chat-completeness";
 import { formalEvidenceGroups } from "./chat-formal-evidence";
 export { chooseEvidence } from "./chat-evidence";
 
+import { focusEvidenceGroups, renderEvidenceFocus, type EvidenceFocus } from "./chat-review";
 import { groundingInstructions } from "./chat-policy";
+import { relativeQuantityAids } from "./chat-relative-quantities";
 
 export interface PreparedChat { grounding: ChatGrounding; messages: Array<{ role: string; content: string }> }
 export class ChatGrounder {
@@ -134,16 +136,19 @@ export class ChatGrounder {
       const referencedTable = plan.lockedFocus && earlierMessage ? referencedTableShape(earlierMessage.content) : undefined;
       const selectEvidence = () => chooseEvidence(corpus, [...followup, ...formal, ...outcomes, ...coverage, ...groups], evidenceIds, broad, required, evidenceBudget, withBibliography);
       let evidence = selectEvidence();
+      let focus: EvidenceFocus[] = [];
       let review: NonNullable<ChatGrounding["research"]>["review"] = "not-needed", supplemented = followups > 0;
       const missingFocus = required.some(id => !evidence.some(hit => hit.source.id === id && !bibliography(hit)));
       // A focused question with usable local coverage does not need two paid checks every turn.
-      const needsReview = enhanced && (plan.compare || plan.ambiguous || questions.length >= 3 || missingFocus || evidence.length < 3);
+      const needsReview = enhanced && (plan.compare || plan.ambiguous || questions.length >= 3 || !!referencedTable || tasks.includes("calculation") && tasks.length > 1 || missingFocus || evidence.length < 3);
       if (needsReview && evidence.length) {
         progress("Checking evidence coverage…"); modelChecks++;
         try {
-          const checked = readReview(await consult!(reviewMessages(plan.question, evidence, required, profiles), "review"), selected);
+          const checked = readReview(await consult!(reviewMessages(question, evidence, required, profiles, plan.question), "review"), selected, question, evidence);
           if (!checked) review = "unavailable";
           else {
+            focus = checked.focus;
+            groups.unshift(...focusEvidenceGroups(focus, corpus));
             review = checked.sufficient ? "sufficient" : "limited";
             if (!checked.sufficient) for (const query of checked.queries) {
               progress("Searching for missing evidence…");
@@ -183,9 +188,14 @@ export class ChatGrounder {
             if (emittedUnits.has(key) || unitCharacters + note.length > 6000) return false;
             emittedUnits.add(key); unitCharacters += note.length; return true;
           });
-          return { citation: hit.label, source: hit.source.title, sourceId: hit.source.id, anchor: hit.chunk.anchor, text: hit.chunk.text, ...(units.length ? { unitEquivalents: units } : {}) };
+          const relative = relativeQuantityAids(hit.chunk.text).filter(aid => {
+            const key = hit.source.id + ":relative:" + JSON.stringify(aid), length = JSON.stringify(aid).length;
+            if (emittedUnits.has(key) || unitCharacters + length > 6000) return false;
+            emittedUnits.add(key); unitCharacters += length; return true;
+          });
+          return { citation: hit.label, source: hit.source.title, sourceId: hit.source.id, anchor: hit.chunk.anchor, text: hit.chunk.text, ...(units.length ? { unitEquivalents: units } : {}), ...(relative.length ? { relativeQuantityAids: relative } : {}) };
         }) }) },
-        { role: "user", content: JSON.stringify({ dialogueContext: { recentUserQuestions: previous, currentFocus: required.slice(0, 24).map(id => ({ id, title: sources.get(id)?.title })), ...(referencedTable ? { referencedTable } : {}) }, latestQuestion: question, resolvedRetrievalQuestion: plan.question, tasks }) }
+        { role: "user", content: JSON.stringify({ dialogueContext: { recentUserQuestions: previous, currentFocus: required.slice(0, 24).map(id => ({ id, title: sources.get(id)?.title })), ...(referencedTable ? { referencedTable } : {}) }, latestQuestion: question, resolvedRetrievalQuestion: plan.question, tasks, ...(focus.length ? { evidenceFocus: renderEvidenceFocus(focus, evidence) } : {}) }) }
       ] };
     });
     this.queue = work.catch(() => undefined); progress("Preparing document question…");
