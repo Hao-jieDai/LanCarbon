@@ -1,6 +1,7 @@
 import type { KnowledgeHit } from "../src/shared/knowledge";
 import { citedLabels, type ChatEvidence } from "../src/shared/grounding";
-import { chineseListAmounts, isolatedFigureAmount, monetaryBlocks, monetaryLabels, parenthesizedMoney, sharedScaleAmounts } from "./chat-claims";
+import { isolatedFigureAmount, monetaryBlocks, monetaryLabels, moneyClaimAmounts, type ClaimBlock } from "./chat-claims";
+import { MONEY_SCALES, moneyAmounts } from "./chat-money";
 
 /** Conservative bibliography detection; citations in ordinary prose are not a bibliography. */
 export function bibliography(hit: KnowledgeHit): boolean {
@@ -51,30 +52,16 @@ export function resultCoverage(corpus: KnowledgeHit[], sourceIds: string[], prev
   }).filter(group => group.length);
 }
 
-interface Amount { original: string; start: number; value: number; factor: number; currency: "CNY" | "USD"; context: string; sharedChinese?: boolean }
-function amounts(text: string): Amount[] {
-  const result: Amount[] = [];
-  const expression = /(?:(CNY|RMB|USD|US\\?\$)\s*)?(\d+(?:,\d{3})*(?:\.\d+)?)\s*(trillion|billion|million|万亿|千亿|百亿|亿|百万|万)[ \t]*(CNY|RMB|USD|US\\?\$|美元|人民币|元|dollars)?/giu;
-  for (const match of text.matchAll(expression)) {
-    const currencyText = ((match[1] ?? "") + (match[4] ?? "")).replaceAll("\\", "");
-    const currency = /CNY|RMB|人民币|^元$/iu.test(currencyText) ? "CNY" : /USD|US\$|美元|dollars/iu.test(currencyText) ? "USD" : undefined;
-    if (!currency) continue; // Bare numbers may be counts, energy or emissions, not money.
-    const unit = match[3].toLowerCase(), factor = ({ trillion: 1e12, billion: 1e9, million: 1e6, 万亿: 1e12, 千亿: 1e11, 百亿: 1e10, 亿: 1e8, 百万: 1e6, 万: 1e4 } as Record<string, number>)[unit];
-    result.push({ original: match[0], start: match.index!, value: Number(match[2].replace(/,/g, "")), factor, currency, context: text.slice(Math.max(0, match.index! - 110), match.index! + match[0].length + 110).replace(/\s+/g, " ") });
-  }
-  for (const item of sharedScaleAmounts(text)) {
-    if (!result.some(value => value.start === item.start && value.value === item.value && value.factor === item.factor)) result.push({ original: item.original, start: item.start, value: item.value, factor: item.factor, currency: item.currency, context: text.slice(Math.max(0, item.spanStart - 110), item.spanStart + item.spanLength + 110).replace(/\s+/g, " ") });
-  }
-  for (const item of [...chineseListAmounts(text), ...parenthesizedMoney(text)]) {
-    if (!result.some(value => item.start >= value.start && item.start < value.start + value.original.length)) result.push({ original: item.raw, start: item.start, value: item.value, factor: item.factor, currency: item.currency, sharedChinese: !/[()（）]/u.test(item.raw), context: text.slice(Math.max(0, item.start - 110), item.start + item.raw.length + 110).replace(/\s+/g, " ") });
-  }
-  return result.sort((a, b) => a.start - b.start);
+interface Amount { original: string; start: number; value: number; factor: number; currency: "CNY" | "USD"; context: string; sharedChinese?: boolean; sharedSpan?: { start: number; length: number } }
+function amounts(text: string, block?: ClaimBlock): Amount[] {
+  return (block ? moneyClaimAmounts(block) : moneyAmounts(text)).flatMap(item => item.values.map(value => ({ original: item.raw, start: item.start, value, factor: item.factor, currency: item.currency, sharedChinese: item.sharedChinese, sharedSpan: item.sharedSpan, context: text.slice(Math.max(0, (item.sharedSpan?.start ?? item.start) - 110), (item.sharedSpan?.start ?? item.start) + (item.sharedSpan?.length ?? item.raw.length) + 110).replace(/\s+/g, " ") })));
 }
 /** Deterministic unit equivalents alongside verbatim context; no inferred scenario/metric associations. */
 export function quantityNotes(hit: KnowledgeHit, includeContext = true, convertToCny = false): string[] {
-  return amounts(hit.chunk.text).filter(item => item.factor >= 1e6).slice(0, convertToCny ? 8 : 3).map(item => {
-    const value = Number((item.value * item.factor / 1e8).toPrecision(12));
-    return `${item.original.trim()} = ${value} ${item.currency === "CNY" ? "亿元人民币" : "亿美元"}.${convertToCny && item.currency === "USD" ? ` CNY = ${value} × e 亿元人民币 (e CNY/USD; symbolic).` : ""}${includeContext ? ` Original context: ${item.context}` : ""}`;
+  return moneyAmounts(hit.chunk.text).filter(item => item.factor >= 1e6).slice(0, convertToCny ? 8 : 3).map(item => {
+    const value = item.values.map(value => Number((value * item.factor / 1e8).toPrecision(12))).join("–");
+    const context = hit.chunk.text.slice(Math.max(0, (item.sharedSpan?.start ?? item.start) - 110), (item.sharedSpan?.start ?? item.start) + (item.sharedSpan?.length ?? item.raw.length) + 110).replace(/\s+/g, " ");
+    return `${(item.notation ?? item.raw).trim()} = ${value} ${item.currency === "CNY" ? "亿元人民币" : "亿美元"}.${convertToCny && item.currency === "USD" ? ` CNY = ${item.values.length > 1 ? `(${value})` : value} × e 亿元人民币 (e CNY/USD; symbolic).` : ""}${includeContext ? ` Original context: ${context}` : ""}`;
   });
 }
 /** Flag only exact-mantissa, same-currency scale conflicts in cited passages. Never silently rewrite scientific claims. */
@@ -85,12 +72,12 @@ export function quantityWarnings(text: string, evidence: ChatEvidence[]): string
   for (const originalBlock of monetaryBlocks(plain)) {
     const block = { ...originalBlock, text: originalBlock.text.replace(/\*\*/g, "") };
     const paragraph = block.text;
-    for (const claim of amounts(paragraph)) {
+    for (const claim of amounts(paragraph, block)) {
       // Two English amounts sharing digits may describe different entities or scenarios.
       // A scale-translation check cannot assert that those amounts must be equal.
       if (!claim.sharedChinese && !/[亿万]/u.test(claim.original)) continue;
       const labels = monetaryLabels(block, claim.start, claim.original.length);
-      const originals = evidence.filter(hit => labels.has(hit.label)).flatMap(hit => amounts(hit.chunk.text).filter(item => !isolatedFigureAmount(hit.chunk.text, item.start, item.original.length)).map(item => ({ ...item, label: hit.label })));
+      const originals = evidence.filter(hit => labels.has(hit.label)).flatMap(hit => amounts(hit.chunk.text).filter(item => !isolatedFigureAmount(hit.chunk.text, item.sharedSpan?.start ?? item.start, item.sharedSpan?.length ?? item.original.length)).map(item => ({ ...item, label: hit.label })));
       const compatible = originals.filter(item => item.currency === claim.currency);
       const actual = claim.value * claim.factor;
       if (compatible.some(item => Math.abs(item.value * item.factor - actual) <= Math.max(0.005 * claim.factor, actual * 0.001))) continue;
@@ -112,8 +99,8 @@ export function unitDefinitionWarnings(text: string): string[] {
     const fromCurrency = /CNY|RMB/i.test(match[3]) ? "CNY" : "USD", toCurrency = match[6] === "美元" ? "USD" : "CNY";
     if (fromCurrency !== toCurrency) continue; // An FX claim needs an explicit exchange rate, not this check.
     const prefix = match[4] ? ({ 一: 1, 十: 10, 百: 100, 千: 1000 } as Record<string, number>)[match[4]] ?? Number(match[4]) : 1;
-    const factor = ({ 万亿: 1e12, 十亿: 1e9, 亿: 1e8, 百万: 1e6, 万: 1e4 } as Record<string, number>)[match[5]];
-    const expected = ({ billion: 1e9, million: 1e6, trillion: 1e12 } as Record<string, number>)[match[2].toLowerCase()], value = !match[1] || /^one$/i.test(match[1]) ? 1 : Number(match[1]);
+    const factor = MONEY_SCALES[match[5]];
+    const expected = MONEY_SCALES[match[2].toLowerCase()], value = !match[1] || /^one$/i.test(match[1]) ? 1 : Number(match[1]);
     if (Number.isFinite(prefix) && Math.abs(prefix * factor - expected * value) > 0.000001) warnings.add(`Amount needs checking: ${match[0]}. 1 ${match[2]} ${match[3]} = ${expected / 1e8} ${fromCurrency === "CNY" ? "亿元人民币" : "亿美元"}. Check the unit definition against the displayed amounts.`);
   }
   return [...warnings].slice(0, 3);

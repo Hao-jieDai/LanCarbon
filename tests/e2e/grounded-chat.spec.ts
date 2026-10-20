@@ -55,6 +55,10 @@ test("Chat automatically prepares selected PDF/EPUB/Note/Book evidence, navigate
     await expect(page.locator(".ai-message-assistant > .usage-warning")).toHaveCount(0);
     await expect(page.getByText("Some evidence needs checking. See Evidence below.", { exact: true })).toHaveCount(0);
     const calls = await app.evaluate(() => (globalThis as any).groundedCalls); expect(calls.some((call: any) => call.endpoint.endsWith("/embeddings"))).toBe(true);
+    const generated = calls.find((call: any) => call.endpoint.endsWith("/chat/completions") && call.request.messages.some((message: any) => message.content.startsWith('{"selectedSources":'))).request.messages;
+    expect(generated.filter((message: any) => message.role === "system")).toHaveLength(1);
+    expect(generated[0].content.match(/For comparisons:/g)).toHaveLength(1);
+    expect(JSON.parse(generated.at(-1).content)).not.toHaveProperty("responseRequirements");
     const reranks = calls.filter((call: any) => call.endpoint.endsWith("/rerank"));
     // Two initial subquestions plus at most six targeted supplements; comparisons can verify each source.
     expect(reranks.length).toBeGreaterThanOrEqual(2); expect(reranks.length).toBeLessThanOrEqual(8);

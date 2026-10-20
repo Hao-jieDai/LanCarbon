@@ -1,6 +1,6 @@
 {
   "name": "lancarbon",
-  "version": "2.4.12",
+  "version": "2.4.13",
   "description": "A focused offline notes and Jupyter Book desktop app",
   "main": "dist-electron/electron/main.js",
   "author": "LanCarbon",
@@ -11,7 +11,7 @@
     "build": "node scripts/prepare-pdf.cjs && node scripts/prepare-ocr.cjs && npm run typecheck && vite build && tsc -p tsconfig.electron.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:rag": "vitest run tests/rag-regressions.test.ts tests/chat-research.test.ts tests/chat-evidence.test.ts tests/chat-quality.test.ts tests/chat-repair.test.ts tests/chat-grounding.test.ts tests/retrieval.test.ts tests/chat-completeness.test.ts tests/chat-formal-evidence.test.ts tests/storage.test.ts",
+    "test:rag": "vitest run tests/rag-regressions.test.ts tests/chat-research.test.ts tests/chat-evidence.test.ts tests/chat-policy.test.ts tests/chat-quality.test.ts tests/chat-repair.test.ts tests/chat-grounding.test.ts tests/retrieval.test.ts tests/chat-completeness.test.ts tests/chat-formal-evidence.test.ts tests/storage.test.ts",
     "test:e2e": "npm run build && playwright test",
     "clean:installers": "node scripts/clean-installers.cjs",
     "dist": "npm run build && node scripts/build-installer.cjs"

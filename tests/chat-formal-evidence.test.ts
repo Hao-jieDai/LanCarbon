@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { expect, it } from "vitest";
 import { formalEvidenceGroups } from "../electron/chat-formal-evidence";
-import { answerTask } from "../electron/chat-answer-plan";
+import { answerTasks } from "../electron/chat-answer-plan";
 import { chooseEvidence, evidenceTokens } from "../electron/chat-evidence";
 import type { KnowledgeHit } from "../src/shared/knowledge";
 
@@ -21,7 +21,7 @@ it.each([
   expect(formal.flatMap(group => group.hits).find(hit => hit.chunk.id === "equation")!.chunk.text).toBe(equation);
 });
 it.each(["为什么该方案稳定？另外损失怎么计算？", "Why is the intervention effective? How is loss quantified?"])("retains a definition when the main task remains a mechanism: %s", async question => {
-  expect(answerTask(question)).toBe("mechanism");
+  expect(answerTasks(question)).toContain("mechanism");
   const definition = hit("definition", "Loss is defined as the decrease in expected annual revenue relative to the control baseline.");
   const formal = await formalEvidenceGroups([hit("overview", "The method selects and ranks interventions by cost."), definition], [question], ["file:selected"], new AbortController().signal);
   expect(formal.flatMap(group => group.hits)).toContainEqual(definition);

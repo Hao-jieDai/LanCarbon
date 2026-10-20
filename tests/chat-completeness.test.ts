@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { expect, it } from "vitest";
-import { methodCoverage, answerTask } from "../electron/chat-answer-plan";
+import { methodCoverage, answerTasks } from "../electron/chat-answer-plan";
 import { scopeCoverage, unitCompanions } from "../electron/chat-completeness";
 import { chooseEvidence } from "../electron/chat-evidence";
 import { quantityNotes } from "../electron/chat-quality";
@@ -12,21 +12,21 @@ it("keeps selection rules and static constraints together even when a why questi
     ["Why does the mixed treatment help, and how much does it cost?", "Our algorithm selects a treatment per patient under the clinical allocation rule.", "The model assumes fixed treatment assignments. Future research could allow switching after relapse."]
   ]) {
     const corpus = [hit("background", "Study introduction."), hit("method", method), hit("limit", limit)];
-    const groups = methodCoverage(corpus, ["file:a"], answerTask(question), question);
+    const groups = methodCoverage(corpus, ["file:a"], answerTasks(question), question);
     const evidence = chooseEvidence(corpus, groups, ["file:a"], false);
     expect(evidence.map(h => h.chunk.id)).toEqual(expect.arrayContaining(["method", "limit"]));
-    expect(methodCoverage(corpus, ["file:excluded"], "mechanism", question)).toEqual([]);
+    expect(methodCoverage(corpus, ["file:excluded"], ["mechanism"], question)).toEqual([]);
   }
 });
 it("reserves original scope descriptions in multi-study comparisons without manufacturing sector labels", () => {
   const a = hit("scope", "Our analysis covers agriculture, transport and manufacturing. We assess their scenario-specific costs.");
   const b = hit("scope", "This study focuses on dairy farms and estimates losses under a different baseline.", "b");
-  const groups = scopeCoverage([a, b, hit("outside", "Private excluded scope", "private")], ["file:a", "file:b"], "把几篇金额换算后能比较哪个行业吗？", "calculation");
+  const groups = scopeCoverage([a, b, hit("outside", "Private excluded scope", "private")], ["file:a", "file:b"], "把几篇金额换算后能比较哪个行业吗？", ["calculation"]);
   expect(groups.flat()).toEqual([a, b]);
-  expect(scopeCoverage([a], ["file:a"], "Top 10 firms", "ranking")).toEqual([]);
+  expect(scopeCoverage([a], ["file:a"], "Top 10 firms", ["ranking"])).toEqual([]);
   const header = hit("header", "Department of Chemistry, University A. Correspondence to the authors.");
   const caption = hit("caption", "Figure 2. Scenario-specific value losses for farming, freight and buildings under common assumptions.");
-  expect(scopeCoverage([header, caption], ["file:a"], "Compare industry coverage", "comparison").flat()).toEqual([caption]);
+  expect(scopeCoverage([header, caption], ["file:a"], "Compare industry coverage", ["comparison"]).flat()).toEqual([caption]);
 });
 it("adds exact same-document unit-bearing passages and preserves bounds without merging amounts into facts", () => {
   const seed = hit("fragment", "Financial exposure of US$713 is compared with another estimate.");
@@ -45,12 +45,12 @@ it("retains metric-scope enumerations in figure captions alongside general study
     const population = hit("population", "Our supply model covers agriculture, transport and industry. Study population and data set are described here.");
     const generic = hit("generic", "Our study analyses transport costs. Further results are in supplementary data.");
     const original = hit("caption", caption);
-    const groups = scopeCoverage([generic, population, original], ["file:a"], "Compare the scope of these studies", "comparison");
+    const groups = scopeCoverage([generic, population, original], ["file:a"], "Compare the scope of these studies", ["comparison"]);
     expect(groups[0][0]).toEqual(original); expect(groups.flat()).toContainEqual(population);
     expect(chooseEvidence([generic, population, original], groups, ["file:a"], true).map(h => h.chunk.id)).toContain("caption");
   }
   const method = hit("horizon", "The valuation period is 12 years, discounted at 5% against the counterfactual baseline.");
-  expect(methodCoverage([method], ["file:a"], "calculation", "比较几篇金额换算后能否相加？").flat()).toContainEqual(method);
+  expect(methodCoverage([method], ["file:a"], answerTasks("比较几篇金额换算后能否相加？"), "比较几篇金额换算后能否相加？").flat()).toContainEqual(method);
 });
 it("computes symbolic CNY equivalents before applying an unspecified exchange rate", () => {
   const source = hit("shipping", "Freight exposure is USD 12.6 million; the reserve is CNY 3.75 billion.");

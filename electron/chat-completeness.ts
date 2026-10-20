@@ -3,8 +3,8 @@ import type { AnswerTask } from "./chat-answer-plan";
 import { bibliography } from "./chat-quality";
 
 /** Source scope is original text, never an inferred sector classification. */
-export function scopeCoverage(corpus: KnowledgeHit[], ids: string[], question: string, task: AnswerTask): KnowledgeHit[][] {
-  if (task === "ranking" || !(["definition", "comparison", "writing"].includes(task) || /行业|部门|范围|各篇|几篇|\b(?:sector|scope|industr|studies|compar)/iu.test(question))) return [];
+export function scopeCoverage(corpus: KnowledgeHit[], ids: string[], question: string, tasks: readonly AnswerTask[]): KnowledgeHit[][] {
+  if (!(tasks.some(task => ["definition", "comparison", "writing"].includes(task)) || /行业|部门|范围|各篇|几篇|\b(?:sector|scope|industr|studies|compar)/iu.test(question))) return [];
   return ids.slice(0, 12).flatMap(id => {
     const candidates = corpus.filter(hit => hit.source.id === id && !bibliography(hit)).slice(0, 120);
     const ranked = candidates.map((hit, index) => {

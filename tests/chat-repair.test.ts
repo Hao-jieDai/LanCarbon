@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { expect, it } from "vitest";
 import { repairCitedUnits } from "../electron/chat-repair";
-import { answerTask, answerInstructions, methodCoverage } from "../electron/chat-answer-plan";
+import { answerTasks, methodCoverage } from "../electron/chat-answer-plan";
+import { groundingInstructions } from "../electron/chat-policy";
 import { mapCitations, type ChatEvidence } from "../src/shared/grounding";
 function evidence(text: string, id = "a", label = "S1"): ChatEvidence { return { label, fingerprint: "a".repeat(64), source: { id: `file:${id}`, entityId: id, title: `${id}.pdf`, kind: "file", format: "pdf", fingerprint: "a".repeat(64), locations: [], attachments: [], tags: [], systemManaged: false }, chunk: { id, text, anchor: { kind: "pdf", page: 4 } } }; }
 it("corrects exact cited currency scales and ranges in final prose while retaining the target unit and an audit", () => {
@@ -48,19 +49,19 @@ it("does not change uncited/unsupported amounts, currency, code, hypotheses, amb
   expect(mapCitations("Equation (S2) and 公式（S3） remain labels. A finding (S1)." )).toBe("Equation (S2) and 公式（S3） remain labels. A finding [S1].");
 });
 it("adapts evidence and response structure to questions rather than always listing monetary results", () => {
-  expect(answerTask("这几篇实际算的损失有什么区别？")).toBe("definition");
-  expect(answerTask("请写一段综述，解释这些研究之间的联系。")).toBe("writing");
-  expect(answerTask("能列出损失最高的十家企业及精确金额吗？")).toBe("ranking");
-  expect(answerTask("前30家企业和两类基金对应的金额分别是多少？")).toBe("calculation");
-  expect(answerTask("What is the combined loss of the top 12 operators?")).toBe("calculation");
-  expect(answerTask("List the top 12 operators and each one's exact loss.")).toBe("ranking");
-  expect(answerTask("为什么降低利用率可能比关闭更贵？")).toBe("mechanism");
-  expect(answerInstructions("writing")).toContain("editable draft"); expect(answerInstructions("ranking")).toContain("unseen supplement");
+  expect(answerTasks("这几篇实际算的损失有什么区别？")).toContain("definition");
+  expect(answerTasks("请写一段综述，解释这些研究之间的联系。")).toContain("writing");
+  expect(answerTasks("能列出损失最高的十家企业及精确金额吗？")).toContain("ranking");
+  expect(answerTasks("前30家企业和两类基金对应的金额分别是多少？")).toContain("calculation");
+  expect(answerTasks("What is the combined loss of the top 12 operators?")).toContain("calculation");
+  expect(answerTasks("List the top 12 operators and each one's exact loss.")).toContain("ranking");
+  expect(answerTasks("为什么降低利用率可能比关闭更贵？")).toContain("mechanism");
+  expect(groundingInstructions(["writing"])).toContain("editable draft"); expect(groundingInstructions(["ranking"])).toContain("unseen supplement");
   const background = evidence("Introduction: climate transition and investment.", "intro"), method = evidence("We define the metric as the difference in discounted net cash flow relative to the baseline.", "method");
   method.source = background.source;
-  expect(methodCoverage([background, method], [background.source.id], "definition").flat().map(hit => hit.chunk.id)).toContain("method");
-  expect(methodCoverage([background, method], [background.source.id], "ranking")).toEqual([]);
-  expect(methodCoverage([background, method], ["file:excluded"], "definition")).toEqual([]);
+  expect(methodCoverage([background, method], [background.source.id], ["definition"]).flat().map(hit => hit.chunk.id)).toContain("method");
+  expect(methodCoverage([background, method], [background.source.id], ["ranking"])).toEqual([]);
+  expect(methodCoverage([background, method], ["file:excluded"], ["definition"])).toEqual([]);
 });
 it("checks factual enumerations, incidental amounts and reported assumptions without changing invented examples", () => {
   const hits = [evidence("The reported total is CNY 28.4 billion; northern facilities account for CNY 6.3 billion."), evidence("Under the model's 90% pass-through assumption, company losses are US$64 billion.", "b", "S2")];

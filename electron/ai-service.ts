@@ -85,7 +85,9 @@ export class AIService {
               }, false, () => {}, { maxTokens: stage === "plan" ? 1400 : 1800, disableThinking: true, timeoutMs: 90_000, maxRetries: 0 });
               return output;
             }); reply.grounding = prepared.grounding;
-            context = [context[0], ...prepared.messages];
+            // One system message: presentation preferences plus the document contract.
+            // Evidence/history remain data in their original user-message roles.
+            context = [{ ...context[0], content: context[0].content + "\n\n" + prepared.messages[0].content }, ...prepared.messages.slice(1)];
             await chatStore.update(id, saved => { const message = saved.messages.find(message => message.id === reply.id); if (message) message.grounding = prepared.grounding; });
             progress("Answering from selected sources…");
           }

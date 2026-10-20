@@ -1,31 +1,14 @@
 import { citedLabels, mapCitations, type ChatEvidence } from "../src/shared/grounding";
-import { chineseListAmounts, isolatedFigureAmount, monetaryBlocks, monetaryLabels, parenthesizedMoney, sharedScaleAmounts, tableCells, type ClaimBlock } from "./chat-claims";
-interface Amount { raw: string; start: number; values: number[]; factor: number; currency: string; digits: string[]; chineseHeader?: boolean; derived?: boolean }
-const factors: Record<string, number> = { trillion: 1e12, billion: 1e9, million: 1e6, 万亿: 1e12, 千亿: 1e11, 百亿: 1e10, 亿: 1e8, 百万: 1e6, 万: 1e4 };
-function amounts(text: string): Amount[] {
-  // Numeric-only inline math is formatting, not a different amount. Keep offsets and
-  // original delimiters so a repair changes digits only, including copied/exported LaTeX.
-  const readable = text.replace(/(?<!\\)\$([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)\$/gu, (_match, digits: string) => ` ${digits} `);
-  const expression = /(?:(CNY|RMB|USD|US\\?\$)\s*)?([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\s*(?:to|[-–—~～至])\s*(?:CNY|RMB|USD|US\\?\$)?\s*([+−-]?\d+(?:,\d{3})*(?:\.\d+)?))?\s*(trillion|billion|million|万亿|千亿|百亿|百万|亿|万)[ \t]*(CNY|RMB|USD|US\\?\$|美元|人民币|元(?:人民币)?|dollars)?/giu;
-  const result: Amount[] = [...readable.matchAll(expression)].flatMap(match => {
-    const currencyText = ((match[1] ?? "") + (match[5] ?? "")).replaceAll("\\", ""), currency = /CNY|RMB|人民币|^元$/iu.test(currencyText) ? "CNY" : /USD|US\$|美元|dollars/iu.test(currencyText) ? "USD" : "";
-    return currency ? [{ raw: text.slice(match.index!, match.index! + match[0].length), start: match.index!, values: [match[2], ...(match[3] ? [match[3]] : [])].map(s => Number(s.replace(/,/g, "").replace("−", "-"))), digits: [match[2], ...(match[3] ? [match[3]] : [])], factor: factors[match[4].toLowerCase()], currency }] : [];
-  });
-  for (const item of chineseListAmounts(readable)) {
-    if (!result.some(amount => item.start >= amount.start && item.start < amount.start + amount.raw.length)) result.push({ raw: text.slice(item.start, item.start + item.raw.length), start: item.start, values: [item.value], digits: [item.digits], factor: item.factor, currency: item.currency, chineseHeader: true });
-  }
-  return result.sort((a, b) => a.start - b.start);
-}
+import { isolatedFigureAmount, monetaryBlocks, monetaryLabels, moneyClaimAmounts as blockAmounts, tableCells } from "./chat-claims";
+import { MONEY_SCALES as factors, moneyAmounts, type MoneyAmount } from "./chat-money";
+type Amount = MoneyAmount & { derived?: boolean };
+function amounts(text: string): Amount[] { return moneyAmounts(text); }
 
 function supportedAmounts(hit: ChatEvidence): Amount[] {
   const text = hit.chunk.text;
-  const shared = sharedScaleAmounts(text), chartLists = shared.filter(amount => isolatedFigureAmount(text, amount.spanStart, amount.spanLength));
-  const originals = amounts(text).filter(amount => !isolatedFigureAmount(text, amount.start, amount.raw.length) && !chartLists.some(list => amount.start >= list.spanStart && amount.start < list.spanStart + list.spanLength));
-  // Repeated target units split a source range into two separately written claims.
+  const originals = amounts(text).filter(amount => !isolatedFigureAmount(text, amount.sharedSpan?.start ?? amount.start, amount.sharedSpan?.length ?? amount.raw.length));
   const endpoints = originals.filter(amount => amount.values.length === 2).flatMap(amount => amount.values.map((value, i) => ({ ...amount, values: [value], digits: [amount.digits[i]] })));
-  const coordinated = shared.filter(amount => !isolatedFigureAmount(text, amount.spanStart, amount.spanLength)).map(amount => ({ raw: amount.original, start: amount.start, values: [amount.value], digits: [amount.digits], factor: amount.factor, currency: amount.currency }));
-  const parenthesized = parenthesizedMoney(text).filter(amount => !isolatedFigureAmount(text, amount.start, amount.raw.length)).map(amount => ({ raw: amount.raw, start: amount.start, values: [amount.value], digits: [amount.digits], factor: amount.factor, currency: amount.currency }));
-  return [...originals, ...endpoints, ...coordinated, ...parenthesized];
+  return [...originals, ...endpoints];
 }
 
 /** A cited subtraction can be checked even when the paper reports only its operands.
@@ -44,24 +27,6 @@ function subtractionAmounts(hit: ChatEvidence): Amount[] {
   return result;
 }
 
-/** A numeric-only table cell may declare its monetary unit once in its column header. */
-function blockAmounts(block: ClaimBlock): Amount[] {
-  const result = amounts(block.text);
-  if (!block.table) return result;
-  const cells = tableCells(block.text);
-  if (cells.length !== block.table.headers.length) return result;
-  const trimmed = block.text.trim();
-  let at = block.text.indexOf(trimmed) + (trimmed.startsWith("|") ? 1 : 0);
-  for (const [i, cell] of cells.entries()) {
-    const header = block.table.headers[i];
-    const currency = /CNY|RMB|人民币|亿元|万元/iu.test(header) ? "CNY" : /USD|US\\?\$|美元/iu.test(header) ? "USD" : "";
-    const unit = header.match(/trillion|billion|million|万亿|千亿|百亿|百万|亿|万/iu)?.[0].toLowerCase();
-    const number = cell.match(/^\s*(?:\*\*|\$)?([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\*\*|\$)?\s*(?:\[S\d+\]\s*)*$/u);
-    if (currency && unit && number) result.push({ raw: number[1], start: at + cell.indexOf(number[1]), values: [Number(number[1].replace(/,/g, "").replace("−", "-"))], factor: factors[unit], currency, digits: [number[1]], chineseHeader: /[亿万]/u.test(unit) });
-    at += cell.length + 1;
-  }
-  return result.sort((a, b) => a.start - b.start);
-}
 /** Protect invented examples, not a paper's reported modelling assumptions or factual enumerations. */
 function hypotheticalAt(paragraph: string, position: number): boolean {
   let hypothetical = false;
@@ -97,7 +62,7 @@ export function repairCitedUnits(text: string, evidence: ChatEvidence[]): { text
         && [...paragraphLabels].every(label => paragraphHits.some(hit => hit.label === label));
       for (const claim of blockAmounts(block).reverse()) {
         const suffix = paragraph.slice(claim.start + claim.raw.length).split(/[。！？\n]/u, 1)[0];
-        if (!(claim.chineseHeader || /[亿万]/u.test(claim.raw)) || corrections.length >= 24 || hypotheticalAt(paragraph, claim.start) || /^[ \t]*[（(]\s*(?:假设|假定|示例|hypothetical)/iu.test(suffix)) continue;
+        if (!(claim.sharedChinese || /[亿万]/u.test(claim.raw)) || corrections.length >= 24 || hypotheticalAt(paragraph, claim.start) || /^[ \t]*[（(]\s*(?:假设|假定|示例|hypothetical)/iu.test(suffix)) continue;
         let labels = monetaryLabels(block, claim.start, claim.raw.length);
         if (!labels.size && declaredCalculation) labels = paragraphLabels;
         if (block.table && !/\[S\d+\]/u.test(paragraph) && new Set(evidence.filter(hit => labels.has(hit.label)).map(hit => hit.source.id)).size !== 1) continue;
@@ -112,7 +77,7 @@ export function repairCitedUnits(text: string, evidence: ChatEvidence[]): { text
         let replacement = claim.raw, offset = 0;
         for (const [i, digits] of claim.digits.entries()) { const start = replacement.indexOf(digits, offset); if (start < 0) break; const value = Number((claim.values[i] * ratio).toPrecision(12)).toString(); replacement = replacement.slice(0, start) + value + replacement.slice(start + digits.length); offset = start + value.length; }
         const at = block.start + claim.start;
-        if (replacement !== claim.raw) { output = output.slice(0, at) + replacement + output.slice(at + claim.raw.length); corrections.push(`Unit corrected using [${source.label}]: ${claim.raw.trim()} → ${replacement.trim()}${claim.chineseHeader ? ` (${block.table ? "table" : "shared"} unit: ${claim.currency}, factor ${claim.factor})` : ""}${source.derived ? " (difference of cited same-unit operands)" : ""}.`); }
+        if (replacement !== claim.raw) { output = output.slice(0, at) + replacement + output.slice(at + claim.raw.length); corrections.push(`Unit corrected using [${source.label}]: ${claim.raw.trim()} → ${replacement.trim()}${claim.sharedChinese ? ` (${block.table ? "table" : "shared"} unit: ${claim.currency}, factor ${claim.factor})` : ""}${source.derived ? " (difference of cited same-unit operands)" : ""}.`); }
       }
     }
     return repairRepeatedCalculations(repairTableConversions(output, evidence, corrections), evidence, corrections);

@@ -14,6 +14,8 @@ export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
+**RAG maintenance:** Document-answer instructions now have one owner and are sent once. Compound questions retain their definition, calculation, mechanism and comparison requirements together; monetary aids, diagnostics and conservative repairs share one parser, including table-header units. Existing response preferences and source restrictions are preserved. Local checks verify these behaviours; complete real-model academic acceptance is a separate requirement before installation.
+
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
 Version 2.4.12 extends monetary checks to tables with shared caption citations and verifies symbolic currency conversions against cited originals. Comparisons retain each relevant paper's monetary results and reported findings, and table-conversion follow-ups keep their resolved source scope and revalidate the original passages cited in the previous table. Emphasising selected rows retains the whole table; an explicit subset or removal changes its rows. Pairwise savings against alternative scenarios are reported separately. Shared-scale monetary lists and separately repeated range endpoints are checked against their originals. Explicit cited subtractions, nearby named repetitions and sums of verified differences are checked using their original operands; arithmetic checks recognize grouped thousands. Incomplete responses caused by output limits are saved as failed replies with an explanation and Retry, while retaining returned usage. Evidence diagnostics stay inside the expandable Evidence panel. Token activity uses eight color levels plus a separate zero-usage color, with distinct light and dark palettes. Existing model connections, personal writing and exports are preserved; no additional model service is introduced.
@@ -256,6 +258,8 @@ Export is optional in this workflow. It creates a separate source copy and is no
 # LanCarbon ${RELEASE_VERSION}
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
+
+**RAG 维护：** 资料回答规则统一管理并只发送一次；复合问题同时保留定义、计算、机制与比较要求，金额辅助、诊断和保守修正共用解析逻辑，包括表头单位。保留现有表达偏好和资料范围限制。本地检查验证上述行为，完整真实模型学术验收仍须在安装前单独完成。
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
