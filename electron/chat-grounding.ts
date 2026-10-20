@@ -19,7 +19,7 @@ export { chooseEvidence } from "./chat-evidence";
 import { groundingInstructions } from "./chat-policy";
 import { relativeQuantityAids } from "./chat-relative-quantities";
 
-export interface PreparedChat { grounding: ChatGrounding; messages: Array<{ role: string; content: string }>; answerReview: boolean }
+export interface PreparedChat { grounding: ChatGrounding; messages: Array<{ role: string; content: string }> }
 export class ChatGrounder {
   private queue: Promise<unknown> = Promise.resolve();
   constructor(private readonly knowledge: () => KnowledgeStore, private readonly retrieval: () => RetrievalService, private readonly semanticEnabled: () => Promise<boolean>) {}
@@ -136,8 +136,8 @@ export class ChatGrounder {
       const selectEvidence = () => chooseEvidence(corpus, [...followup, ...methods, ...formal, ...outcomes, ...coverage, ...groups], evidenceIds, broad, required, evidenceBudget, withBibliography);
       let evidence = selectEvidence();
       const supplemented = followups > 0;
-      // Local definition/result/formula coverage and planned targeted searches run
-      // before drafting. Reserve the remaining model check for the actual answer.
+      // Local coverage and bounded planned searches supply the originals before
+      // the single answer generation; no second model rewrite follows it.
       // Neighbour expansion may introduce an incomplete amount that was not in the initial seeds.
       const companions = unitCompanions(corpus, evidence.map(hit => [hit]), evidenceIds);
       if (companions.length) { groups.unshift(...companions); evidence = selectEvidence(); }
@@ -151,7 +151,7 @@ export class ChatGrounder {
       const grounding: ChatGrounding = { scope, sourceIds: ids, evidence, warnings: [...new Set(warnings)].slice(0, 90), mode, research: { focusSourceIds: required, searches, modelChecks, supplemented, review: "not-needed" } };
       const convertToCny = /(?:换(?:算|成)|折(?:算|合)|统一).{0,35}(?:人民币|CNY|RMB)|(?:convert|express).{0,40}(?:CNY|RMB|yuan)/iu.test(question);
       const emittedUnits = new Set<string>(); let unitCharacters = 0;
-      return { grounding, answerReview: enhanced, messages: [
+      return { grounding, messages: [
         { role: "system", content: groundingInstructions(tasks, referencedTable ? tableTransformRequirement(question, referencedTable.rows) : undefined) },
         { role: "user", content: JSON.stringify({ selectedSources: view.sources.filter(source => represented.has(source.id)).slice(0, 24).map(source => ({ id: source.id, title: source.title })), selectionSummary: { sourcesWithExcerpts: represented.size, excerpts: evidence.length }, missingRelevantSources: required.filter(id => !represented.has(id)).slice(0, 12).map(id => ({ id, title: sources.get(id)!.title })), questionEvidence, evidence: evidence.map(hit => {
           // Incidental amounts need the same arithmetic aids as explicitly requested totals.

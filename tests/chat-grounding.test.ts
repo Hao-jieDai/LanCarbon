@@ -20,10 +20,6 @@ import type { AIUsageEvent } from "../src/shared/aiUsage";
 import { financialAlternatives } from "./fixtures/rag-financial-cases";
 const roots: string[] = [], stores: KnowledgeStore[] = [];
 afterEach(async () => { for (const store of stores.splice(0)) await store.stop(); for (const root of roots.splice(0)) { if (!root.startsWith(os.tmpdir()) || !path.basename(root).startsWith("lancarbon-grounding-")) throw Error("Unsafe cleanup"); await fs.rm(root, { recursive: true, force: true }); } });
-function checkedAnswer(messages: Array<{role:string;content:string}>, answer: string) {
-  const input=JSON.parse(messages.at(-1)!.content), original=JSON.parse(messages.find(message=>message.content.startsWith('{"selectedSources":'))!.content).evidence.find((item:{text:string})=>item.text.trim().length>=12);
-  return JSON.stringify({checks:input.questionParts.map((part:{id:string})=>({part:part.id,task:"Requested comparison",finding:"Original source checked",status:"supported",quotes:[{citation:original.citation,text:original.text}]})),answer});
-}
 async function fixture() {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-grounding-")); roots.push(root);
   const notes = [createNote({ id: "a", title: "Paper A", content: "# Carbon policy\n\nCoal investment falls by 12 percent.\n\n# Methods\n\nPanel data.\n\n# Conclusion\n\nTransition risk matters." }), createNote({ id: "b", title: "Paper B", content: "# Carbon policy\n\nCoal investment falls by 7 percent.\n\n# Methods\n\nA simulation.\n\n# Conclusion\n\nResults vary by region." }), createNote({ id: "private", title: "Private unselected", content: "SecretOutsideSelection" })];
@@ -35,9 +31,9 @@ async function fixture() {
   const chats = new AIChatStore(root), settings = new AISettingsStore(root, { available: () => true, encrypt: value => Buffer.from(value), decrypt: value => value.toString() });
   await settings.save({ ...defaultAIProviders()[0], apiKey: "fixture-key-private", models: [{ id: "fixture-model", name: "Fixture", purpose: "chat" }], defaultModel: "fixture-model" });
   const fetcher = vi.fn<typeof fetch>(async (_url,init) => {
-    const request=JSON.parse(init!.body as string), last=request.messages.at(-1).content;
+    void init;
     const content="A reports 12 percent [S1]. B differs [S2].";
-    return new Response(JSON.stringify({choices:[{message:{content:last.includes('"operation":"verify-and-finalize"')?checkedAnswer(request.messages,content):content}}],usage:{prompt_tokens:50,completion_tokens:15,total_tokens:65}}),{headers:{"content-type":"application/json"}});
+    return new Response(JSON.stringify({choices:[{message:{content:content}}],usage:{prompt_tokens:50,completion_tokens:15,total_tokens:65}}),{headers:{"content-type":"application/json"}});
   });
   const usage: AIUsageEvent[] = [];
   const service = new AIService(settings, () => chats, new AIClient(fetcher, async event => { usage.push(event); }), () => {}, grounder), chat = await chats.create("siliconflow", "fixture-model");
@@ -90,13 +86,13 @@ it("sends one contract and keeps method, definition and amount evidence for a co
   expect(JSON.stringify(messages)).not.toContain("SecretOutsideSelection");
 });
 
-it("reserves the remaining model check for the answer without reviewing the same excerpts twice", async () => {
+it("limits auxiliary use to source planning before preparing the single answer", async () => {
   const f = await fixture(); f.notes[0].content += "\n\n" + Array.from({ length: 45 }, (_, i) => `Background section ${i}. Evidence is selected locally.`).join("\n\n");
   const question = "Compare carbon investment", scope = { ...emptyKnowledgeScope(), noteIds: ["a", "b"] };
   const consult = vi.fn(async () => JSON.stringify({ question, sourceIds: ["note:a", "note:b"], compare: true, queries: [] }));
   const prepared = await f.grounder.prepare({ ...f.chat, sourceScope: scope, messages: [{ id: "q", role: "user", status: "complete", content: question, createdAt: "now" }] }, new AbortController().signal, () => {}, consult);
   expect(consult).toHaveBeenCalledTimes(1); expect(consult.mock.calls[0]).toHaveLength(2);
-  expect(prepared.answerReview).toBe(true); expect(prepared.grounding.research!.modelChecks).toBe(1);
+  expect(prepared.grounding.research!.modelChecks).toBe(1);
   expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
 });
 
@@ -107,7 +103,7 @@ it("supplies relative-level aids with the original baseline and no additional ca
   expect(aids[0]).toMatchObject({ relation: "remaining-level", levelPercent: [35], changePercent: [-65] });
   expect(aids[0].context).toContain("2018年水平"); expect(f.fetcher).not.toHaveBeenCalled();
 });
-it("includes a mixed question's omitted formula and definition before the bounded answer check", async () => {
+it("includes a mixed question's omitted formula and definition before direct generation", async () => {
   const f = await fixture();
   f.notes[0].title = "TreatmentTrial";
   f.notes[0].content = "# Treatment study\n\nThe intervention selects treatment groups under a static allocation rule.\n\n# Risk definition\n\nRelative risk is defined as treated event probability divided by control event probability.\n\n# Equation\n\nRR = p_treated / p_control\n\nwhere p is event probability; this ratio is not an absolute risk difference.\n\n" + Array.from({ length: 45 }, (_, i) => `## Discussion ${i}\n\n${"The treatment allocation selects options and ranks cost effectiveness. ".repeat(15)}`).join("\n\n") + "\n\n# Limitations\n\nThe model assumes fixed assignments. Technology switching is future research.";
@@ -116,8 +112,8 @@ it("includes a mixed question's omitted formula and definition before the bounde
   await f.service.setSources(f.chat.id, scope);
   await f.service.send(f.chat.id, "siliconflow", "fixture-model", "TreatmentTrial 的干预方案为什么有效？请用 LaTeX 写出风险比公式，并说明是否能动态切换。");
   const reply = (await f.settled()).messages.at(-1)!;
-  expect(reply.status).toBe("complete"); expect(f.fetcher).toHaveBeenCalledTimes(2);
-  expect(reply.grounding!.research!.modelChecks).toBe(1);
+  expect(reply.status).toBe("complete"); expect(f.fetcher).toHaveBeenCalledTimes(1);
+  expect(reply.grounding!.research!.modelChecks).toBe(0);
   const body = JSON.parse(f.fetcher.mock.calls[0][1]!.body as string);
   const payload = JSON.parse(body.messages.find((m: { content: string }) => m.content.startsWith('{"selectedSources":')).content);
   const equation = payload.evidence.find((e: { text: string }) => e.text.includes("RR = p_treated / p_control"));
@@ -235,7 +231,7 @@ it("accepts and reloads more than twenty sources without leaking unselected writ
   expect(saved.messages.at(-1)!.grounding).toEqual(chat.messages.at(-1)!.grounding);
   expect(JSON.stringify(f.fetcher.mock.calls)).not.toContain("SecretOutsideSelection");
 });
-it("uses the selected chat model for bounded planning/review, supplements a missed result and records every paid request", async () => {
+it("uses one planning call and one answer, supplements evidence and records every request", async () => {
   const f = await fixture();
   f.notes[0].content = "Alvarez. Facility losses.\n\n" + Array.from({ length: 45 }, (_, i) => `Facility result ${i}. Investment loss at plant level.`).join("\n\n");
   f.notes[1].content = "Bennett. Investor losses.\n\n" + Array.from({ length: 45 }, (_, i) => i === 35 ? "Aggregate present value is 1.73 trillion; this is investor wealth, not GDP." : `Investor method ${i}. Ownership assumptions differ.`).join("\n\n");
@@ -245,43 +241,43 @@ it("uses the selected chat model for bounded planning/review, supplements a miss
   });
   f.fetcher.mockImplementation(async (_url, init) => {
     const body = JSON.parse(init!.body as string), prompt = body.messages[0].content;
-    const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare facility and investor loss definitions", sourceIds: ["note:a", "note:b"], compare: true, queries: [{query: "aggregate present value investor wealth",sourceIds:["note:b"]}] }) : JSON.parse(body.messages.at(-1).content).operation === "verify-and-finalize" ? checkedAnswer(body.messages, "The reviewed metrics differ ［S1，S2］. 4821.6 - 3139.2 = 1682.4.") : "Draft has incorrect arithmetic: 4821.6 - 3139.2 = 1672.4.";
+    const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare facility and investor loss definitions", sourceIds: ["note:a", "note:b"], compare: true, queries: [{query: "aggregate present value investor wealth",sourceIds:["note:b"]}] }) : "The metrics differ ［S1，S2］. 4821.6 - 3139.2 = 1672.4.";
     return new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 100, completion_tokens: 20 } }), { headers: { "content-type": "application/json" } });
   });
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a", "b"] });
   await f.service.send(f.chat.id, "siliconflow", "fixture-model", "这几篇文章的损失定义有什么不同？");
   const result = await f.settled(), reply = result.messages.at(-1)!;
-  expect(reply.status).toBe("complete"); expect(f.fetcher).toHaveBeenCalledTimes(3);
+  expect(reply.status).toBe("complete"); expect(f.fetcher).toHaveBeenCalledTimes(2);
   expect(JSON.stringify(JSON.parse(f.fetcher.mock.calls.at(-1)![1]!.body as string))).toContain("1.73 trillion");
-  expect(reply.grounding!.research).toMatchObject({ modelChecks: 2, supplemented: true, review: "not-needed", answerRevision: "applied" });
-  expect(reply.content).toContain("1682.4"); expect(reply.grounding!.warnings.some(text => text.includes("1682.4"))).toBe(false);
+  expect(reply.grounding!.research).toMatchObject({ modelChecks: 1, supplemented: true, review: "not-needed" });
+  expect(reply.content).toContain("1672.4"); expect(reply.grounding!.warnings.some(text => text.includes("1682.4"))).toBe(true); // Arithmetic diagnostic does not regenerate or invent a corrected scientific conclusion.
   expect(reply.grounding!.warnings.some(text => text.includes("did not supply valid"))).toBe(false);
-  const starts = f.usage.filter(event => event.type === "start"); expect(starts).toHaveLength(3);
+  const starts = f.usage.filter(event => event.type === "start"); expect(starts).toHaveLength(2);
   expect(starts.every(event => event.type === "start" && event.request.modelId === "fixture-model" && event.request.purpose === "chat")).toBe(true);
   expect(JSON.stringify(f.fetcher.mock.calls)).not.toContain("SecretOutsideSelection");
   expect((await new AIChatStore(f.root).get(result.id)).messages.at(-1)!.grounding).toEqual(reply.grounding);
 });
-it("preserves the draft and records cancellation when its source review is stopped", async () => {
-  const f = await fixture(); f.notes[0].content += "\n\n" + Array.from({ length: 45 }, (_, i) => `Detailed method ${i}. Investment assumptions.`).join("\n\n");
-  let reviewing = false;
-  f.fetcher.mockImplementation(async (_url, init) => {
-    const request = JSON.parse(init!.body as string);
-    if (request.messages.some((message: { content: string }) => message.content.includes('"operation":"verify-and-finalize"'))) {
-      reviewing = true; await new Promise<void>(resolve => init!.signal!.addEventListener("abort", () => resolve(), { once: true })); throw Error("aborted");
-    }
-    return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ question: "Summarize methods", sourceIds: ["note:a"], compare: false, queries: [] }) } }] }), { headers: { "content-type": "application/json" } });
-  });
-  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] }); await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Compare these papers' definitions");
-  await vi.waitFor(() => expect(reviewing).toBe(true)); await f.service.stop(f.chat.id);
-  expect((await f.settled()).messages.at(-1)!.status).toBe("stopped"); expect(f.fetcher).toHaveBeenCalledTimes(3);
-  const reply = (await f.settled()).messages.at(-1)!; expect(reply.content).not.toBe(""); expect(reply.grounding!.research!.answerRevision).toBe("failed");
+it("stops direct document generation and retains its partial text, Thinking and usage without another call", async () => {
+  const f = await fixture(); let started = false;
+  f.fetcher.mockImplementation(async (_url, init) => new Response(new ReadableStream<Uint8Array>({ start(controller) {
+    controller.enqueue(new TextEncoder().encode('data: '+JSON.stringify({choices:[{delta:{content:"Partial answer [S1]",reasoning_content:"Original thinking"}}],usage:{prompt_tokens:80,completion_tokens:20}})+'\n\n'));
+    init!.signal!.addEventListener("abort", () => controller.error(Error("aborted")), { once: true }); started = true;
+  } })));
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Paper A: explain the method");
+  await vi.waitFor(() => expect(started).toBe(true));
+  await vi.waitFor(async () => expect((await f.chats.get(f.chat.id)).messages.at(-1)!.content).toContain("Partial answer"), { timeout: 3000 });
+  await f.service.stop(f.chat.id); const reply = (await f.settled()).messages.at(-1)!;
+  expect(reply).toMatchObject({ status: "stopped", content: "Partial answer [S1]", reasoning: "Original thinking" });
+  expect(f.fetcher).toHaveBeenCalledTimes(1); expect(reply.grounding!.research!.answerRevision).toBeUndefined();
+  expect(f.usage.filter(event => event.type === "finish")).toMatchObject([{ status: "stopped", usage: { totalTokens: 100 } }]);
 });
-it("skips unnecessary planning but checks the actual answer for a large focused source", async () => {
+it("answers a large focused source once while retaining local quantity aids", async () => {
   const f = await fixture(); f.notes[0].content = "Alvarez. Investment losses.\n\n" + Array.from({ length: 45 }, (_, i) => `Result ${i}: total losses are ${i + 1}.2 billion CNY.`).join("\n\n");
   await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] });
   await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Alvarez: total losses是多少？");
   const saved = await f.settled(); expect(saved.messages.at(-1)!.status).toBe("complete");
-  expect(f.fetcher).toHaveBeenCalledTimes(2); expect(saved.messages.at(-1)!.grounding!.research).toMatchObject({ modelChecks: 1, review: "not-needed", answerRevision: "applied" });
+  expect(f.fetcher).toHaveBeenCalledTimes(1); expect(saved.messages.at(-1)!.grounding!.research).toMatchObject({ modelChecks: 0, review: "not-needed" });
   expect(JSON.stringify(f.fetcher.mock.calls)).toContain("unitEquivalents");
 });
 
@@ -399,7 +395,7 @@ it("retrieves both sides of a natural contradiction question even when the plann
   f.notes[1].content = "Bennett et al. Industry.\n\n" + Array.from({ length: 35 }, (_, i) => `Factory value loss result ${i}.`).join("\n\n");
   const scope = { ...emptyKnowledgeScope(), noteIds: ["a", "b"] }, question = "Alvarez 说经济受益，Bennett 却有工厂损失。这是不是矛盾？";
   const chat: AIChat = { ...f.chat, sourceScope: scope, messages: [{ id: "q", role: "user", content: question, sourceScope: scope, status: "complete", createdAt: new Date().toISOString() }] };
-  const consult = vi.fn(async (_messages: Array<{ role: string; content: string }>, stage: "plan" | "review") => stage === "plan" ? JSON.stringify({ question, sourceIds: ["note:a"], compare: false, queries: [] }) : JSON.stringify({ sufficient: true, queries: [] }));
+  const consult = vi.fn(async (_messages: Array<{ role: string; content: string }>, stage: "plan") => stage === "plan" ? JSON.stringify({ question, sourceIds: ["note:a"], compare: false, queries: [] }) : JSON.stringify({ sufficient: true, queries: [] }));
   const prepared = await f.grounder.prepare(chat, new AbortController().signal, () => {}, consult);
   expect(new Set(prepared.grounding.research!.focusSourceIds)).toEqual(new Set(["note:a", "note:b"]));
   expect(new Set(prepared.grounding.evidence.map(hit => hit.source.id))).toEqual(new Set(["note:a", "note:b"]));
@@ -407,41 +403,42 @@ it("retrieves both sides of a natural contradiction question even when the plann
   expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
 });
 
-it("retains the draft, partial revised text, Thinking and fees when finalization reaches its limit", async () => {
-  const f = await fixture(); f.notes[0].content += "\n\n" + Array.from({ length: 45 }, (_, i) => `Method ${i}. Costs and assumptions differ.`).join("\n\n");
-  f.fetcher.mockImplementation(async (_url, init) => {
-    const request = JSON.parse(init!.body as string), input = JSON.parse(request.messages.at(-1).content), reviewing = input.operation === "verify-and-finalize";
-    const frame = { choices: [{message: {content: reviewing ? "Partial source correction" : "Original draft [S1]", reasoning_content: reviewing ? "Review thinking" : "Original thinking"}, finish_reason: reviewing ? "length" : "stop" }], usage:{prompt_tokens:80,completion_tokens:20} };
-    return new Response(JSON.stringify(frame), {headers:{"content-type":"application/json"}});
-  });
-  await f.service.setSources(f.chat.id, {...emptyKnowledgeScope(),noteIds:["a"]});
-  await f.service.send(f.chat.id,"siliconflow","fixture-model","Paper A: explain the method");
-  const reply=(await f.settled()).messages.at(-1)!;
-  expect(reply.status).toBe("error"); expect(reply.finishReason).toBe("length");
-  expect(reply.content).toContain("Original draft");expect(reply.grounding!.research!.failedReview).toContain("Partial source correction");
-  expect(reply.content).not.toContain("Partial source correction");
-  expect(reply.reasoning).toContain("Original thinking");expect(reply.reasoning).toContain("Review thinking");
-  expect(reply.grounding!.research).toMatchObject({modelChecks:1,answerRevision:"failed"});
-  expect(f.fetcher).toHaveBeenCalledTimes(2);
-  expect(f.usage.filter(event=>event.type==="finish").map(event=>event.type==="finish"&&event.usage.totalTokens)).toEqual([100,100]);
-  const revised=JSON.parse(f.fetcher.mock.calls[1][1]!.body as string);
-  expect(revised.max_tokens).toBe(16384); expect(revised.model).toBe("fixture-model");
-  const draft=JSON.parse(f.fetcher.mock.calls[0][1]!.body as string); expect(draft.max_tokens).toBe(6000);
-  expect(draft.enable_thinking).toBeUndefined(); // Fixture model does not advertise DeepSeek thinking support.
-  expect(revised.enable_thinking).toBeUndefined();
+it("retains a truncated direct reply, Thinking and fees without rewriting or retrying it", async () => {
+  const f = await fixture();
+  f.fetcher.mockImplementation(async () => new Response(JSON.stringify({ choices: [{ message: { content: "Partial answer [S1]", reasoning_content: "Original thinking" }, finish_reason: "length" }], usage: { prompt_tokens: 80, completion_tokens: 20 } }), { headers: { "content-type": "application/json" } }));
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Paper A: explain the method");
+  const reply = (await f.settled()).messages.at(-1)!;
+  expect(reply).toMatchObject({ status: "error", finishReason: "length", content: "Partial answer [S1]", reasoning: "Original thinking" });
+  expect(reply.error).toContain("output limit"); expect(reply.grounding!.research!.answerRevision).toBeUndefined();
+  expect(f.fetcher).toHaveBeenCalledTimes(1);
+  expect(f.usage.filter(event => event.type === "finish")).toMatchObject([{ status: "error", usage: { totalTokens: 100 } }]);
+  const request = JSON.parse(f.fetcher.mock.calls[0][1]!.body as string);
+  expect(request.max_tokens).toBe(16384); expect(request.response_format).toBeUndefined(); expect(request.enable_thinking).toBeUndefined();
 });
 
-it("does not replace a draft with a revision backed by invented citations and still records both requests", async () => {
-  const f=await fixture();f.notes[0].content+="\n\n"+Array.from({length:45},(_,i)=>`Additional method ${i}. Regional assumptions differ.`).join("\n\n");
-  f.fetcher.mockImplementation(async(_url,init)=>{
-    const body=JSON.parse(init!.body as string), input=JSON.parse(body.messages.at(-1).content);
-    const content=input.operation==="verify-and-finalize"?JSON.stringify({checks:[{part:"Q1",task:"Requested method",finding:"Invented proof",status:"supported",quotes:[{citation:"S999",text:"Private unselected clinical statement."}]}],answer:"Unsupported revision"}):"Original draft [S1]";
-    return new Response(JSON.stringify({choices:[{message:{content}}],usage:{prompt_tokens:15,completion_tokens:10}}),{headers:{"content-type":"application/json"}});
-  });
-  await f.service.setSources(f.chat.id,{...emptyKnowledgeScope(),noteIds:["a"]});
-  await f.service.send(f.chat.id,"siliconflow","fixture-model","Paper A: explain methods");
-  const reply=(await f.settled()).messages.at(-1)!;
-  expect(reply.status).toBe("error");expect(reply.content.startsWith("Original draft")).toBe(true);
-  expect(reply.error).toContain("verifiable original");expect(reply.grounding!.research!.answerRevision).toBe("failed");
-  expect(f.usage.filter(event=>event.type==="finish")).toHaveLength(2);
+it("keeps citation diagnostics without calling a model to rewrite unsupported references", async () => {
+  const f = await fixture();
+  f.fetcher.mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: "An unsupported claim [S999]." } }], usage: { prompt_tokens: 15, completion_tokens: 10 } }), { headers: { "content-type": "application/json" } }));
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Paper A: explain methods");
+  const reply = (await f.settled()).messages.at(-1)!;
+  expect(reply.content).toBe("An unsupported claim [S999].");
+  expect(reply.grounding!.warnings).toContain("The reply contains an unrecognized citation. Only the saved evidence entries below can be opened.");
+  await expect(f.grounder.open(await f.chats.get(f.chat.id), reply.id, "S999")).rejects.toThrow("not part");
+  expect(f.fetcher).toHaveBeenCalledTimes(1); expect(f.usage.filter(event => event.type === "finish")).toHaveLength(1);
+});
+
+it("allows paraphrasing PDF line-wrap hyphens without demanding a verbatim audit protocol", async () => {
+  const f = await fixture(); f.notes[0].content = "# Method\n\nThe output is evaluated at histor-\nical levels under each scenario.";
+  const answer = "Output is evaluated at historical levels [S1].";
+  f.fetcher.mockResolvedValue(new Response(JSON.stringify({ choices: [{ message: { content: answer, reasoning_content: "Read the source." }, finish_reason: "stop" }], usage: { prompt_tokens: 30, completion_tokens: 12 } }), { headers: { "content-type": "application/json" } }));
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a"] });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Paper A: explain the method");
+  const reply = (await f.settled()).messages.at(-1)!;
+  expect(reply).toMatchObject({ status: "complete", content: answer, reasoning: "Read the source." });
+  expect(reply.grounding!.evidence.map(hit => hit.chunk.text).join("\n")).toContain("histor-\nical");
+  expect(f.fetcher).toHaveBeenCalledTimes(1);
+  const request = JSON.parse(f.fetcher.mock.calls[0][1]!.body as string);
+  expect(request.response_format).toBeUndefined(); expect(JSON.parse(request.messages.at(-1).content)).not.toHaveProperty("proposedDraft");
 });

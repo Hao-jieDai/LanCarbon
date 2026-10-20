@@ -1,4 +1,3 @@
-import { answerReviewMessages, readAnswerReview } from "./chat-review";
 import { randomUUID } from "node:crypto";
 import type { AIChat, AIMessage, AIProvider } from "../src/shared/ai";
 import { AISettingsStore, AIChatStore } from "./ai-storage";
@@ -74,36 +73,27 @@ export class AIService {
         let updateTimer: NodeJS.Timeout | undefined;
         let persistTimer: NodeJS.Timeout | undefined;
         const progress = (text: string) => { reply.progress = text || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); };
-        let needsAnswerReview = false, auxiliaryCalls = 0;
-        const consult = async (messages: Array<{ role: string; content: string }>, stage: "plan" | "review") => {
-          if (++auxiliaryCalls > 2) throw Error("Auxiliary model check limit reached");
-          if (stage === "review" && reply.grounding?.research) reply.grounding.research.modelChecks = auxiliaryCalls;
-          let output = "", reasoningText = "", length = 0;
-          try {
-            await this.client.complete(provider, key, modelId, messages, controller.signal, (content, reasoning) => {
-              length += content.length + reasoning.length;
-              if (length > (stage === "plan" ? 40_000 : 400_000)) throw Error("Source check response limit reached");
-              output += content; reasoningText += reasoning;
-            }, false, () => {}, { maxTokens: stage === "plan" ? 1400 : 16384, disableThinking: stage === "plan", ...(stage === "review" ? { thinkingBudget: 8192, ...(provider.kind === "siliconflow" ? { responseFormat: "json_object" as const } : {}) } : {}), timeoutMs: stage === "plan" ? 90_000 : 600_000, maxRetries: 0, ...(stage === "review" ? { onFinish: (reason: string) => { reply.finishReason = reason; } } : {}) });
-            return output;
-          } catch (error) {
-            if (stage === "review" && output && reply.grounding?.research) reply.grounding.research.failedReview = output;
-            throw error;
-          } finally {
-            if (stage === "review" && reasoningText) reply.reasoning = (reply.reasoning ? reply.reasoning + "\n\n---\nSource review\n\n" : "") + reasoningText;
-          }
+        let planningCalls = 0;
+        const consult = async (messages: Array<{ role: string; content: string }>) => {
+          if (++planningCalls > 1) throw Error("Question planning call limit reached");
+          let output = "", length = 0;
+          await this.client.complete(provider, key, modelId, messages, controller.signal, (content, reasoning) => {
+            length += content.length + reasoning.length;
+            if (length > 40_000) throw Error("Question planning response limit reached");
+            output += content;
+          }, false, () => {}, { maxTokens: 1400, disableThinking: true, timeoutMs: 90_000, maxRetries: 0 });
+          return output;
         };
         try {
           if (hasChatSources(chat.sourceScope)) {
             if (!this.grounder) throw Error("Document questions are unavailable.");
             const prepared = await this.grounder.prepare(chat, controller.signal, progress, consult);
-            needsAnswerReview = prepared.answerReview;
             reply.grounding = prepared.grounding;
             // One system message: presentation preferences plus the document contract.
             // Evidence/history remain data in their original user-message roles.
             context = [{ ...context[0], content: context[0].content + "\n\n" + prepared.messages[0].content }, ...prepared.messages.slice(1)];
             await chatStore.update(id, saved => { const message = saved.messages.find(message => message.id === reply.id); if (message) message.grounding = prepared.grounding; });
-            progress(needsAnswerReview ? "Drafting from selected sources…" : "Answering from selected sources…");
+            progress("Answering from selected sources…");
           }
           controller.signal.throwIfAborted();
           await this.client.complete(provider, key, modelId, context, controller.signal, (content, reasoning) => {
@@ -111,19 +101,7 @@ export class AIService {
             if (reply.content.length + reply.reasoning.length > 1_000_000) { controller.abort(); throw new Error("Response size limit reached"); }
             if (!updateTimer) updateTimer = setTimeout(() => { updateTimer = undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, 120);
             if (!persistTimer) persistTimer = setTimeout(() => { persistTimer = undefined; const snapshot = { ...reply }; void chatStore.update(id, saved => { const index = saved.messages.findIndex(message => message.id === reply.id); if (index >= 0) saved.messages[index] = snapshot; }).catch(() => controller.abort()); }, 800);
-          }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, { ...(needsAnswerReview ? { disableThinking: true, maxTokens: 6000, timeoutMs: 120_000, maxRetries: 0 } : {}), onFinish: reason => { reply.finishReason = reason; } });
-          if (needsAnswerReview && reply.grounding) {
-            progress("Checking answer against sources…");
-            try {
-              const reviewed = await consult(answerReviewMessages(context, reply.content), "review");
-              try { reply.content = readAnswerReview(reviewed, chat.messages.filter(message => message.role === "user").at(-1)!.content, reply.grounding.evidence); }
-              catch (error) { if (reply.grounding.research) reply.grounding.research.failedReview = reviewed; throw error; }
-              if (reply.grounding.research) reply.grounding.research.answerRevision = "applied";
-            } catch (error) {
-              if (reply.grounding.research) reply.grounding.research.answerRevision = "failed";
-              throw error;
-            }
-          }
+          }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, { ...(reply.grounding ? { maxTokens: 16384, thinkingBudget: 8192, timeoutMs: 600_000, maxRetries: 0 } : {}), onFinish: reason => { reply.finishReason = reason; } });
           if (reply.grounding && this.grounder) { try { progress("Checking answer…"); reply.content = await this.grounder.finish(reply.grounding, reply.content); } catch { reply.content = chatMarkdown(reply.content); throw Error("The reply was generated, but local consistency checks failed. Its text is retained."); } }
           reply.content = chatMarkdown(reply.content);
           reply.status = controller.signal.aborted ? "stopped" : "complete";

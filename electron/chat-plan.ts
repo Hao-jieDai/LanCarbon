@@ -5,7 +5,7 @@ import { COMPARISON_REQUEST as comparison } from "./chat-answer-plan";
 export interface SourceProfile { id: string; title: string; opening: string }
 export interface EvidenceQuery { query: string; sourceIds: string[] }
 export interface ResearchPlan { question: string; sourceIds: string[]; compare: boolean; queries: EvidenceQuery[]; allSources?: boolean; ambiguous?: boolean; lockedFocus?: boolean }
-export type ResearchConsult = (messages: Array<{ role: string; content: string }>, stage: "plan" | "review") => Promise<string>;
+export type ResearchConsult = (messages: Array<{ role: string; content: string }>, stage: "plan") => Promise<string>;
 export const broadQuestion = /summari[sz]|overview|compare|contrast|main (?:finding|result)|method|conclusion|总结|概括|概述|比较|对比|异同|区别|不同|主要|方法|结论|全文|综述|摘要/iu;
 const collectionQuestion = /(?:these|all|selected|each|several|five|papers|articles|documents).{0,30}(?:differ|compar|contrast|defin|summar)|(?:这几|这些|各篇|五篇|每篇|所有|几篇|多篇).{0,30}(?:文|定义|区别|不同|金额|损失|比较)|(?:五篇|各篇|每篇|所有).{0,20}(?:金额|定义|比较|区别)/iu;
 const referential = /^(?:那|那么|所以|它|他们|它们|这(?:篇|个|些)|其(?:中|实)?|再看|接着|why|what about|so\b|then\b|does (?:it|that)|and\b)|\b(?:it|its|they|their|this paper|that paper)\b/iu;
