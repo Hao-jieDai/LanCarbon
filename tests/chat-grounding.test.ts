@@ -87,8 +87,8 @@ it("uses the existing bounded coverage check to focus verified original quotes, 
   const question = "Compare carbon investment", scope = { ...emptyKnowledgeScope(), noteIds: ["a", "b"] };
   const consult = vi.fn(async (messages: Array<{ content: string }>, stage: string) => {
     if (stage === "plan") return JSON.stringify({ question, sourceIds: ["note:a", "note:b"], compare: true, queries: [] });
-    const hit = JSON.parse(messages[1].content).reviewedExcerpts.find((hit: { text: string }) => hit.text.length >= 20);
-    return JSON.stringify({ sufficient: true, queries: [], evidenceFocus: [{ aspect: "carbon investment", passages: [{ sourceId: hit.sourceId, citation: hit.citation, quote: hit.text }] }] });
+    const input = JSON.parse(messages[1].content), hit = input.reviewedExcerpts.find((hit: { passages: Array<{ text: string }> }) => hit.passages.some(part => part.text.length >= 20));
+    return JSON.stringify({ sufficient: true, queries: [], evidenceFocus: [{ aspectId: input.requestedAspects[0].id, passageIds: [hit.passages.find((part: { text: string }) => part.text.length >= 20).id] }] });
   });
   const prepared = await f.grounder.prepare({ ...f.chat, sourceScope: scope, messages: [{ id: "q", role: "user", status: "complete", content: question, createdAt: "now" }] }, new AbortController().signal, () => {}, consult);
   const request = JSON.parse(prepared.messages.at(-1)!.content);

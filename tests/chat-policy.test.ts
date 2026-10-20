@@ -2,7 +2,7 @@
 import { expect, it } from "vitest";
 import { answerTasks, methodCoverage } from "../electron/chat-answer-plan";
 import { localResearchPlan, readResearchPlan, readReview, reviewMessages } from "../electron/chat-plan";
-import { focusEvidenceGroups, renderEvidenceFocus } from "../electron/chat-review";
+import { focusEvidenceGroups, renderEvidenceFocus, reviewPassages } from "../electron/chat-review";
 import { relativeQuantityAids } from "../electron/chat-relative-quantities";
 import { groundingInstructions } from "../electron/chat-policy";
 import { moneyAmounts } from "../electron/chat-money";
@@ -134,10 +134,10 @@ it("preserves implicit coexistence comparisons instead of narrowing to the sole 
 it("accepts only current selected verbatim evidence, remaps citations and refuses invented facts or aspects", () => {
   const first = evidence("The outcome is defined as a change in expected profits relative to the baseline."), excluded = evidence("Private excluded text.", "private", "S2");
   const question = "Explain the outcome definition", payload = { sufficient: true, queries: [], evidenceFocus: [
-    { aspect: "outcome definition", passages: [{ sourceId: first.source.id, citation: "S1", quote: first.chunk.text }] },
-    { aspect: "outcome definition", passages: [{ sourceId: excluded.source.id, citation: "S2", quote: excluded.chunk.text }] },
-    { aspect: "outcome definition", passages: [{ sourceId: first.source.id, citation: "S1", quote: "Invented source fact, not in the original." }] },
-    { aspect: "Unrequested topic", passages: [{ sourceId: first.source.id, citation: "S1", quote: first.chunk.text }] }
+    { aspectId: "Q1", passageIds: ["S1:P1"] },
+    { aspectId: "Q1", passageIds: ["S2:P1"] },
+    { aspectId: "Q1", passageIds: ["S999:P1"] },
+    { aspectId: "Q99", passageIds: ["S1:P1"] }
   ] };
   const review = readReview(JSON.stringify(payload), new Set([first.source.id]), question, [first, excluded])!;
   expect(review.focus).toHaveLength(1);
@@ -157,4 +157,18 @@ it("keeps levels distinct from changes and refuses an unstated baseline or perce
   const decrease = relativeQuantityAids("Energy use decreased by 35–45%.")[0];
   expect(decrease.levelPercent).toEqual([65, 55]); expect(decrease.changePercent).toEqual([-35, -45]);
   for (const text of ["The event rate fell to 20%.", "利用率降低到20%。", "The event rate decreased by 20% percentage points."]) expect(relativeQuantityAids(text)).toEqual([]);
+});
+
+it("selects bounded original passage IDs without losing quantifiers or normalizing numeric symbols", () => {
+  const hit = evidence("We define expected yield risk as a decline relative to the baseline. Some farms may become unprofitable. Area is 10² hectares. " + "The selected sites retain their original conditions. ".repeat(14));
+  const parts = reviewPassages(hit);
+  expect(parts.length).toBeGreaterThan(1);
+  expect(parts.every(part => part.text.length <= 360)).toBe(true);
+  expect(parts.map(part => part.text).join(" ")).toContain("Some farms may become unprofitable");
+  expect(parts.map(part => part.text).join(" ")).toContain("10²");
+  const question = "Explain expected yield risk", review = readReview(JSON.stringify({ sufficient: true, queries: [], evidenceFocus: [{ aspectId: "Q1", passageIds: [parts[0].id] }] }), new Set([hit.source.id]), question, [hit])!;
+  const output = renderEvidenceFocus(review.focus, [hit]);
+  expect(output[0].passages[0].quote).toContain("Some farms");
+  expect(output[0].passages[0].quote).not.toContain("102 hectares");
+  expect(groundingInstructions(["definition"])).toContain("Preserve quantifiers and implication direction");
 });

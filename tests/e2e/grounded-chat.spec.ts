@@ -161,7 +161,7 @@ test("enhanced document questions record model checks and render grouped citatio
         if (!String(url).endsWith("/chat/completions")) return original(url, init);
         (globalThis as any).groundedCalls.push({ endpoint: String(url), request });
         const input = JSON.parse(request.messages.at(-1).content.startsWith("{") ? request.messages.at(-1).content : "{}");
-        const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare the selected papers' loss definitions", sourceIds: input.catalogue.map((p: any) => p.id), compare: true, queries: [] }) : Array.isArray(input.reviewedExcerpts) ? JSON.stringify({ sufficient: true, queries: [] }) : "The definitions differ ［S1，S2］.";
+        const content = prompt.startsWith("Plan evidence") ? JSON.stringify({ question: "Compare the selected papers' loss definitions", sourceIds: input.catalogue.map((p: any) => p.id), compare: true, queries: [] }) : Array.isArray(input.reviewedExcerpts) ? JSON.stringify({ sufficient: true, queries: [], evidenceFocus: [{ aspectId: input.requestedAspects[0].id, passageIds: [input.reviewedExcerpts[0].passages[0].id] }] }) : "The definitions differ ［S1，S2］.";
         return new Response(JSON.stringify({ choices: [{ message: { content } }], usage: { prompt_tokens: 70, completion_tokens: 25 } }), { headers: { "content-type": "application/json" } });
       };
     });
