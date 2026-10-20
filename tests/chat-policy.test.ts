@@ -167,6 +167,7 @@ it("validates every question part against current verbatim sources before accept
   expect(readAnswerReview("```json\n"+JSON.stringify(valid)+"\n```",question,[hit])).toBe(valid.answer);
   for(const broken of [
     {...valid,checks:[check("Q1")]},
+    {...valid,checks:[check("Q1"),check("Q1")]},
     {...valid,checks:[check("Q1"),check("Q9")]},
     {...valid,checks:[check("Q1"),{...check("Q2"),quotes:[{citation:"S2",text:hit.chunk.text}]}]},
     {...valid,checks:[check("Q1"),{...check("Q2"),quotes:[{citation:"S1",text:"Area is 102 hectares."}]}]},

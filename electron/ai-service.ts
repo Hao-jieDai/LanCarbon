@@ -84,10 +84,10 @@ export class AIService {
               length += content.length + reasoning.length;
               if (length > (stage === "plan" ? 40_000 : 400_000)) throw Error("Source check response limit reached");
               output += content; reasoningText += reasoning;
-            }, false, () => {}, { maxTokens: stage === "plan" ? 1400 : 16384, disableThinking: stage === "plan", ...(stage === "review" ? { thinkingBudget: 8192 } : {}), timeoutMs: stage === "plan" ? 90_000 : 600_000, maxRetries: 0, ...(stage === "review" ? { onFinish: (reason: string) => { reply.finishReason = reason; } } : {}) });
+            }, false, () => {}, { maxTokens: stage === "plan" ? 1400 : 16384, disableThinking: stage === "plan", ...(stage === "review" ? { thinkingBudget: 8192, ...(provider.kind === "siliconflow" ? { responseFormat: "json_object" as const } : {}) } : {}), timeoutMs: stage === "plan" ? 90_000 : 600_000, maxRetries: 0, ...(stage === "review" ? { onFinish: (reason: string) => { reply.finishReason = reason; } } : {}) });
             return output;
           } catch (error) {
-            if (stage === "review" && output) reply.content += "\n\n---\n\nSource review (incomplete)\n\n" + output;
+            if (stage === "review" && output && reply.grounding?.research) reply.grounding.research.failedReview = output;
             throw error;
           } finally {
             if (stage === "review" && reasoningText) reply.reasoning = (reply.reasoning ? reply.reasoning + "\n\n---\nSource review\n\n" : "") + reasoningText;
@@ -117,7 +117,7 @@ export class AIService {
             try {
               const reviewed = await consult(answerReviewMessages(context, reply.content), "review");
               try { reply.content = readAnswerReview(reviewed, chat.messages.filter(message => message.role === "user").at(-1)!.content, reply.grounding.evidence); }
-              catch (error) { reply.content += "\n\n---\n\nSource check (incomplete)\n\n" + reviewed; throw error; }
+              catch (error) { if (reply.grounding.research) reply.grounding.research.failedReview = reviewed; throw error; }
               if (reply.grounding.research) reply.grounding.research.answerRevision = "applied";
             } catch (error) {
               if (reply.grounding.research) reply.grounding.research.answerRevision = "failed";

@@ -4,7 +4,7 @@ export interface ChatEvidence extends KnowledgeHit { label: string }
 export interface ChatGrounding {
   scope: KnowledgeScope; sourceIds: string[]; evidence: ChatEvidence[];
   warnings: string[]; mode: "keyword" | "hybrid" | "reranked";
-  research?: { answerRevision?: "applied" | "failed"; focusSourceIds: string[]; searches: number; modelChecks: number; supplemented: boolean; review: "sufficient" | "limited" | "unavailable" | "not-needed" };
+  research?: { failedReview?: string; answerRevision?: "applied" | "failed"; focusSourceIds: string[]; searches: number; modelChecks: number; supplemented: boolean; review: "sufficient" | "limited" | "unavailable" | "not-needed" };
 }
 export type ChatSourceCatalogue = Pick<KnowledgeView, "sources" | "books" | "folders">;
 export interface CitationTarget { source: KnowledgeSource; anchor: KnowledgeHit["chunk"]["anchor"]; excerpt: string; requestId: string }

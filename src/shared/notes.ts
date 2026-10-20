@@ -14,7 +14,7 @@ export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-Version 2.4.13 consolidates document-answer rules and keeps multiple requested tasks together. Definition passages, paired counterfactuals and implicit cross-paper comparisons receive targeted coverage. The existing bounded check now audits requested parts with verifiable original quotations before producing the final answer, followed by local unit and arithmetic checks; it uses the selected Chat model and does not add another service or raise the two-check limit. Monetary aids, diagnostics and conservative repairs share one parser; relative-percentage aids distinguish a remaining level from a reduction when the baseline is explicit. Saved response preferences are preserved while managed wording is assembled once. Unexpected local checking failures retain the reply and usage and report an error.
+Version 2.4.13 consolidates document-answer rules and keeps multiple requested tasks together. Definition passages, paired counterfactuals and implicit cross-paper comparisons receive targeted coverage. The existing bounded check now audits requested parts with verifiable original quotations before producing the final answer, followed by local unit and arithmetic checks; it uses the selected Chat model and does not add another service or raise the two-check limit. Monetary aids, diagnostics and conservative repairs share one parser; relative-percentage aids distinguish a remaining level from a reduction when the baseline is explicit. Saved response preferences are preserved while managed wording is assembled once. Unexpected local checking failures retain the reply and usage and report an error. Raw internal-check output is kept separately from the readable draft.
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
@@ -257,7 +257,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-2.4.13 统一资料回答规则，同时保留复合问题的各项要求，并加强操作定义、成对比较基准与隐含跨文献比较的取证。原有的有限检查改为生成后逐项核对请求，使用可验证的原文引语后整理最终回答，再进行本地单位和算术检查；沿用所选 Chat 模型，不新增服务或提高两次检查上限。金额辅助、诊断和保守修正共用解析逻辑；比例辅助在基准明确时区分剩余水平与减少幅度。保留用户表达偏好，内置规范只组装一次。本地检查异常时保留回答和用量，并明确报错。
+2.4.13 统一资料回答规则，同时保留复合问题的各项要求，并加强操作定义、成对比较基准与隐含跨文献比较的取证。原有的有限检查改为生成后逐项核对请求，使用可验证的原文引语后整理最终回答，再进行本地单位和算术检查；沿用所选 Chat 模型，不新增服务或提高两次检查上限。金额辅助、诊断和保守修正共用解析逻辑；比例辅助在基准明确时区分剩余水平与减少幅度。保留用户表达偏好，内置规范只组装一次。本地检查异常时保留回答和用量，并明确报错；内部核对原始输出另存，不混入可读草稿。
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 

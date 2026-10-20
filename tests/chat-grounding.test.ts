@@ -418,7 +418,8 @@ it("retains the draft, partial revised text, Thinking and fees when finalization
   await f.service.send(f.chat.id,"siliconflow","fixture-model","Paper A: explain the method");
   const reply=(await f.settled()).messages.at(-1)!;
   expect(reply.status).toBe("error"); expect(reply.finishReason).toBe("length");
-  expect(reply.content).toContain("Original draft");expect(reply.content).toContain("Partial source correction");
+  expect(reply.content).toContain("Original draft");expect(reply.grounding!.research!.failedReview).toContain("Partial source correction");
+  expect(reply.content).not.toContain("Partial source correction");
   expect(reply.reasoning).toContain("Original thinking");expect(reply.reasoning).toContain("Review thinking");
   expect(reply.grounding!.research).toMatchObject({modelChecks:1,answerRevision:"failed"});
   expect(f.fetcher).toHaveBeenCalledTimes(2);

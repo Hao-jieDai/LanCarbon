@@ -188,6 +188,8 @@ it("bounds documented SiliconFlow reasoning without sending its vendor field to 
     await client.complete(provider,secret,model,[],new AbortController().signal,()=>{},false,()=>{},options);
     expect(JSON.parse(fetcher.mock.calls.at(-1)![1].body).thinking_budget).toBe(expected);
   }
+  await client.complete(defaultAIProviders()[0],secret,"deepseek-ai/DeepSeek-V4.1-Flash",[],new AbortController().signal,()=>{},false,()=>{},{responseFormat:"json_object"});
+  expect(JSON.parse(fetcher.mock.calls.at(-1)![1].body).response_format).toEqual({type:"json_object"});
   for(const thinkingBudget of [0,32769,NaN,3.5])await expect(client.complete(defaultAIProviders()[0],secret,"fixture",[],new AbortController().signal,()=>{},false,()=>{},{thinkingBudget})).rejects.toThrow("Invalid thinking budget");
-  expect(fetcher).toHaveBeenCalledTimes(3);
+  expect(fetcher).toHaveBeenCalledTimes(4);
 });

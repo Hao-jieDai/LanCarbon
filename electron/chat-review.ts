@@ -4,7 +4,7 @@ import { documentQuestions } from "./chat-evidence";
 import { referencedTableShape } from "./chat-context";
 
 const parts = (question: string) => documentQuestions(question).map((text, index) => ({ id: `Q${index + 1}`, text }));
-const readable = (text: string) => text.replace(/ﬁ/gu, "fi").replace(/ﬂ/gu, "fl").replace(/\s+/gu, " ").trim();
+const readable = (text: string) => text.replace(/ﬁ/gu, "fi").replace(/ﬂ/gu, "fl").replace(/\s+/gu, "").trim();
 
 /** Originals stay unchanged; draft and previous table labels are never evidence. */
 export function answerReviewMessages(messages: Array<{ role: string; content: string }>, draft: string) {
@@ -20,11 +20,11 @@ export function readAnswerReview(text: string, question: string, evidence: ChatE
   const fail = () => { throw Error("The source check did not return a complete answer with verifiable original quotations. Its draft is retained; retry the reply."); };
   let value: any;
   try { value = JSON.parse(text.trim().replace(/^```(?:json)?\s*/iu, "").replace(/\s*```$/u, "")); } catch { return fail(); }
-  if (!value || typeof value.answer !== "string" || !value.answer.trim() || value.answer.length > 100_000 || !Array.isArray(value.checks) || !value.checks.length || value.checks.length > 32) return fail();
   const requested = new Set(parts(question).map(part => part.id)), covered = new Set<string>();
+  if (!value || typeof value.answer !== "string" || !value.answer.trim() || value.answer.length > 100_000 || !Array.isArray(value.checks) || value.checks.length !== requested.size) return fail();
   const original = new Map(evidence.map(hit => [hit.label, readable(hit.chunk.text)])); let quotations = 0;
   for (const check of value.checks) {
-    if (!check || !requested.has(check.part) || typeof check.task !== "string" || !check.task.trim() || check.task.length > 350 || typeof check.finding !== "string" || !check.finding.trim() || check.finding.length > 1500 || !["supported", "limited"].includes(check.status) || !Array.isArray(check.quotes) || check.quotes.length > 3 || check.status === "supported" && !check.quotes.length) return fail();
+    if (!check || !requested.has(check.part) || covered.has(check.part) || typeof check.finding !== "string" || !check.finding.trim() || check.finding.length > 1500 || !["supported", "limited"].includes(check.status) || !Array.isArray(check.quotes) || check.quotes.length > 8 || check.status === "supported" && !check.quotes.length) return fail();
     for (const quote of check.quotes) {
       if (!quote || typeof quote.citation !== "string" || typeof quote.text !== "string" || (readable(quote.text).length < 12 && readable(quote.text) !== original.get(quote.citation)) || quote.text.length > 1200 || !original.get(quote.citation)?.includes(readable(quote.text))) return fail();
       quotations++;
