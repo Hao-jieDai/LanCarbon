@@ -125,6 +125,18 @@ it("supplies relative-level aids with the original baseline and no additional ca
   expect(aids[0]).toMatchObject({ relation: "remaining-level", levelPercent: [35], changePercent: [-65] });
   expect(aids[0].context).toContain("2018年水平"); expect(f.fetcher).not.toHaveBeenCalled();
 });
+
+it.each([
+  { question: "Why did treatment improve outcomes?", baseline: "The main treatment changes medication dose only; staffing remains fixed.", sensitivity: "A separate sensitivity experiment varies staffing by 12 percent." },
+  { question: "为什么这个材料方案提高了效率？", baseline: "主要方案仅改变涂层厚度，环境温度固定。", sensitivity: "单独的敏感性试验改变环境温度，其结果不属于主要方案。" }
+])("retains the distinct baseline and sensitivity conditions for $question", async ({ question, baseline, sensitivity }) => {
+  const f = await fixture(); f.notes[0].content = `# Method\n\n${baseline}\n\n# Results\n\nThe primary outcome improved.\n\n# Sensitivity analysis\n\n${sensitivity}`;
+  const prepared = await f.grounder.prepare({ ...f.chat, sourceScope: { ...emptyKnowledgeScope(), noteIds: ["a"] }, messages: [{ id: "q", role: "user", status: "complete", content: question, createdAt: "now" }] }, new AbortController().signal, () => {});
+  const original = JSON.parse(prepared.messages[1].content).evidence.map((hit: { text: string }) => hit.text).join("\n");
+  expect(original).toContain(baseline); expect(original).toContain(sensitivity);
+  expect(prepared.messages[0].content).toContain("baseline assumptions, main intervention/scenario changes and separate sensitivity experiments distinct");
+  expect(f.fetcher).not.toHaveBeenCalled(); expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
+});
 it("includes a mixed question's omitted formula and definition before direct generation", async () => {
   const f = await fixture();
   f.notes[0].title = "TreatmentTrial";
