@@ -71,6 +71,26 @@ it("keeps reusable text from another chat while respecting each chat's individua
 it("bounds extracted text and keeps page anchors on overlapping windows", () => {
   const value = textChunks([{ text: "x".repeat(2_500_000), anchor: { kind: "pdf", page: 3 } }]); expect(value.limited).toBe(true); expect(value.chunks.length).toBeLessThanOrEqual(2000); expect(value.chunks.every(chunk => chunk.text.length <= 1200 && chunk.anchor.page === 3)).toBe(true);
 });
+it("keeps complete classifications and qualifications together across natural sentence boundaries", () => {
+  const cases = [
+    {prefix: "Clinical background evidence. ".repeat(38), sentence: "Risk categories are greater than 75 percent as extreme, 35-75 percent as high, 15-35 percent as high to moderate, and less than 15 percent as low."},
+    {prefix: "材料循环研究说明与测量背景。".repeat(84), sentence: "回收率超过85%为高水平，55%至85%为中高水平，25%至55%为中等水平，其余为低水平。"}
+  ];
+  for (const {prefix, sentence} of cases) {
+    const text = prefix + sentence + "\n" + "Further independent observations. ".repeat(25);
+    expect(text.slice(0, 1200)).toContain(sentence.slice(0, 15));
+    expect(text.slice(0, 1200)).not.toContain(sentence);
+    const value = textChunks([{text, anchor: {kind: "pdf", page: 8}}]);
+    expect(value.chunks.some(chunk => chunk.text.includes(sentence))).toBe(true);
+    expect(value.chunks.filter(chunk => chunk.text.includes(sentence.slice(0, 15))).every(chunk => chunk.text.includes(sentence))).toBe(true);
+    expect(value.chunks.every(chunk => chunk.text.length <= 1200 && text.includes(chunk.text) && chunk.anchor.page === 8)).toBe(true);
+    expect(value.limited).toBe(false);
+  }
+  const table = "Results\n" + Array.from({length: 100}, (_, i) => `Sample ${i}: measured concentration 14.73 mg/L`).join("\n");
+  const value = textChunks([{text: table, anchor: {kind: "pdf", page: 9}}]);
+  expect(value.chunks.every(chunk => chunk.text.length <= 1200)).toBe(true);
+  expect(value.chunks.some(chunk => chunk.text.includes("Sample 99: measured concentration 14.73 mg/L"))).toBe(true);
+});
 it("extracts EPUB paragraphs, heading and table positions while ignoring scripts", () => {
   const value = extractEpub(epubFixture({ "OEBPS/chapter.xhtml": '<html><head><title>Ignore title</title></head><body><h1 id="topic">Climate policy</h1><p>Carbon affects investment.<script>Ignore nested script</script></p><script>Do not index this</script><table><tr><td>Coal</td><td>20</td></tr></table></body></html>' }));
   expect(value.chunks.map(chunk => chunk.text)).toEqual(["Climate policy", "Carbon affects investment.", "Coal | 20"]); expect(value.chunks[1].anchor).toMatchObject({ kind: "epub", chapterIndex: 0, paragraph: 2, heading: "Climate policy" });

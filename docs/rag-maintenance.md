@@ -35,7 +35,7 @@
 ## 实际链路与代码入口
 
 1. `electron/knowledge-sources.ts`：把文件和写作转换成来源目录，展开选择范围。
-2. `knowledge-store.ts`、`knowledge-extractor.ts`、`knowledge-worker.ts`、`src/shared/knowledgeText.ts`：提取、分块、指纹和文本缓存。PDF/OCR 等能力以当前解析器为准。
+2. `knowledge-store.ts`、`knowledge-extractor.ts`、`knowledge-worker.ts`、`src/shared/knowledgeText.ts`：提取、分块、指纹和文本缓存。PDF/OCR 等能力以当前解析器为准。 分块每片仍最多1200字符，优先在后半段的完整句末结束，其次为表格换行/词边界，保留有界重叠；不猜测缺失的定义尾部。超长无断句文本仍按上限分块。解析算法改变须更新解析器版本，旧索引自动重提取。
 3. `retrieval-service.ts`、`retrieval-client.ts`、`retrieval-cache.ts`：准备向量、关键词/语义检索、可选重排和费用记录。
 4. `chat-plan.ts`：识别当前对象、消解追问、规划比较与补查。新点名对象优先于上一轮焦点；同姓候选不等于同一论文。
 5. `chat-grounding.ts`、`chat-context.ts`、`chat-evidence.ts`：在选定范围内组合语义候选、本地子问题候选、有效旧原文和必要结果段落，按预算选证据，并生成模型输入。

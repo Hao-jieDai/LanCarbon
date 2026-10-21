@@ -7,11 +7,27 @@ export function textChunks(blocks: Iterable<TextBlock>): { chunks: KnowledgeChun
     // Retain an explicit unreadable-glyph marker rather than silently turning
     // a potentially signed number into a positive one after OCR failure.
     const text = block.text.replace(/\u0000/g, "\uFFFD").trim(); if (!text) continue;
-    for (let offset = 0; offset < text.length; offset += 1040) {
+    for (let offset = 0; offset < text.length;) {
       if (chunks.length >= KNOWLEDGE_MAX_CHUNKS || characters >= KNOWLEDGE_MAX_TEXT) { limited = true; break outer; }
-      const piece = text.slice(offset, Math.min(offset + 1200, offset + KNOWLEDGE_MAX_TEXT - characters));
+      const maximum = Math.min(text.length, offset + 1200, offset + KNOWLEDGE_MAX_TEXT - characters);
+      let end = maximum;
+      if (maximum < text.length) {
+        const window = text.slice(offset, maximum);
+        // Prefer a complete sentence over an arbitrary window ending inside a
+        // definition or range label. Keep long sentences/tables bounded too.
+        const boundaries = [...window.matchAll(/[。！？]|[.!?](?=\s|$)/gu)].map(match => match.index! + 1).filter(position => position >= 600);
+        const line = window.lastIndexOf("\n");
+        if (boundaries.length) end = offset + boundaries.at(-1)!;
+        else if (line >= 800) end = offset + line;
+        else { const space = window.search(/\s\S{0,79}$/u); if (space >= 1040) end = offset + space; }
+      }
+      const piece = text.slice(offset, end);
       chunks.push({ id: String(chunks.length), text: piece, anchor: { ...block.anchor } }); characters += piece.length;
-      if (offset + 1200 >= text.length) break;
+      if (end >= text.length) break;
+      let next = Math.max(offset + 1, end - 160);
+      const space = text.slice(next, end).search(/\s/u);
+      if (space >= 0 && space < 80) next += space + 1;
+      offset = next;
     }
   }
   return { chunks, limited };
