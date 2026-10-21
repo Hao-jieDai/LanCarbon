@@ -147,6 +147,20 @@ it("honours monetary column units without confusing counts or crossing currency 
   expect(repairCitedUnits(shared, hits).text).toContain("| A | 520 | $0.052e$ |");
 });
 
+it.each([
+  { header: "十亿CNY", source: "CNY 82.6 billion", value: "82.6", yi: "826", target: "亿元" },
+  { header: "十亿美元", source: "US$2.7 billion", value: "2.7", yi: "27", target: "亿美元" },
+  { header: "千亿元人民币", source: "CNY 370 billion", value: "3.7", yi: "3700", target: "亿元" }
+])("preserves correct source and converted columns under a $header heading", ({ header, source, value, yi, target }) => {
+  const hits = [evidence(`Treatment or materials exposure is ${source}.`)];
+  const text = `**Results [S1]**\n\n| Case | Total (${header}) | Equivalent (${target}) | Count |\n|---|---|---|---|\n| A | ${value} | ${yi} | ${value} |`;
+  expect(repairCitedUnits(text, hits)).toEqual({ text, corrections: [] });
+});
+it("declines an unsupported compound scale instead of matching its smaller suffix", () => {
+  const text = "**Treatment [S1]**\n\n| Item | 千万元人民币 |\n|---|---|\n| A | 3.7 |";
+  expect(repairCitedUnits(text, [evidence("Treatment costs are CNY 37 million.")])).toEqual({ text, corrections: [] });
+});
+
 it("does not use isolated chart labels as proof that another entity's total has the wrong scale", () => {
   const chart = evidence("Company risks\nCapacity (GW)\nUS$2.7 billion\nUS$1.6 billion\nFig. 3 | Selected operators in a moderate scenario.");
   const text = "全球更严格情景的总损失是2.7万亿美元[S1]。";

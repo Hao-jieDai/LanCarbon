@@ -1,6 +1,6 @@
 import { citedLabels, mapCitations, type ChatEvidence } from "../src/shared/grounding";
 import { isolatedFigureAmount, monetaryBlocks, monetaryLabels, moneyClaimAmounts as blockAmounts, tableCells } from "./chat-claims";
-import { MONEY_SCALES as factors, moneyAmounts, type MoneyAmount } from "./chat-money";
+import { MONEY_SCALES as factors, CHINESE_MONEY_SCALE_PATTERN, moneyAmounts, type MoneyAmount } from "./chat-money";
 type Amount = MoneyAmount & { derived?: boolean };
 function amounts(text: string): Amount[] { return moneyAmounts(text); }
 
@@ -93,7 +93,7 @@ export function repairCitedUnits(text: string, evidence: ChatEvidence[]): { text
  * amount whose digits differ from every original amount. No entity/FX inference. */
 function repairCalculatedEquivalents(text: string, evidence: ChatEvidence[], corrections: string[]): string {
   const number = String.raw`[+−-]?\d+(?:,\d{3})*(?:\.\d+)?`;
-  const unit = "万亿|千亿|百亿|十亿|百万|亿|万", currency = "元人民币|人民币|美元|元";
+  const unit = CHINESE_MONEY_SCALE_PATTERN, currency = "元人民币|人民币|美元|元";
   const expression = new RegExp(`(?<![\\d.])(${number})\\s*([-−+])\\s*(${number})\\s*[=＝]\\s*(${number})\\s*(?:\\$|\\\\\\))?\\s*[（(]\\s*(${unit})\\s*(${currency})\\s*[）)]\\s*[，,]\\s*(?:即|折合|相当于|等于)\\s*(?:约)?\\s*(${number})\\s*(${unit})\\s*(${currency})`, "gu");
   const value = (digits: string) => Number(digits.replace(/,/g, "").replace("−", "-"));
   const same = (a: number, b: number) => Math.abs(a - b) <= Math.max(1e-8, Math.abs(b) * 1e-10);
@@ -187,7 +187,7 @@ function repairTableConversions(text: string, evidence: ChatEvidence[], correcti
     const target = headers.findIndex(header => /人民币|\bCNY\b|\bRMB\b/iu.test(header));
     if (target < 0) continue;
     // The target unit may appear in each cell or once in the column heading.
-    const targetUnit = (cells[target].match(/万亿|千亿|百亿|百万|亿|万/u) ?? headers[target].match(/万亿|千亿|百亿|百万|亿|万/u))?.[0];
+    const targetUnit = (cells[target].match(new RegExp(CHINESE_MONEY_SCALE_PATTERN, "u")) ?? headers[target].match(new RegExp(CHINESE_MONEY_SCALE_PATTERN, "u")))?.[0];
     if (!targetUnit) continue;
     const sourceCells = blockAmounts(block).filter(amount => amount.currency === "USD");
     const coefficients = [...cells[target].matchAll(/([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:\\times\s*|\*\s*)?e\b/gu)];

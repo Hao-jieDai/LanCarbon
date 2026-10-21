@@ -23,6 +23,14 @@ it("keeps actual non-monetary comparison findings ahead of method/background pas
   expect(groups[0][0]).toBe(abstract); expect(groups[1][0]).toBe(result); expect(groups.flat()).not.toContain(outside);
   expect(groups.every(group => group.length <= 2)).toBe(true);
 });
+it("uses the full Chinese monetary scale for inline aids and table diagnostics", () => {
+  const originals = [hit("Material exposure is CNY 3.7 十亿元; treatment exposure is 2.6 十亿美元.")];
+  const aids = quantityNotes(originals[0]).join(" ");
+  expect(aids).toContain("37 亿元人民币"); expect(aids).toContain("26 亿美元");
+  const table = "**Materials [S1]**\n\n| Item | Total (十亿CNY) |\n|---|---|\n| Exposure | 3.7 |";
+  expect(quantityWarnings(table, originals)).toEqual([]);
+  expect(quantityNotes(hit("Treatment costs are CNY 3.7 千万元."))).toEqual([]);
+});
 it.each(["Our analysis suggests improved treatment adherence.", "Our conclusions support longer material service lives."])("recognises original qualitative summaries without a results heading: %s", text => {
   const summary = hit(text, "summary"); summary.chunk.anchor = { kind: "pdf", page: 1 };
   const methods = hit("We estimate a regression using historical observations.", "methods");

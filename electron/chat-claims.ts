@@ -1,5 +1,5 @@
 import { citedLabels } from "../src/shared/grounding";
-import { MONEY_SCALES, moneyAmounts, type MoneyAmount } from "./chat-money";
+import { MONEY_SCALES, MONEY_SCALE_PATTERN, moneyAmounts, type MoneyAmount } from "./chat-money";
 
 export interface ClaimBlock { text: string; start: number; table?: { headers: string[]; labels: Set<string> } }
 const tableCells = (line: string) => line.trim().replace(/^\|/, "").replace(/\|$/, "").split(/(?<!\\)\|/u);
@@ -69,7 +69,7 @@ export function moneyClaimAmounts(block: ClaimBlock): MoneyAmount[] {
   for (const [i, cell] of cells.entries()) {
     const header = block.table.headers[i];
     const currency = /CNY|RMB|人民币|亿元|万元/iu.test(header) ? "CNY" : /USD|US\\?\$|美元/iu.test(header) ? "USD" : "";
-    const unit = header.match(/trillion|billion|million|万亿|千亿|百亿|百万|亿|万/iu)?.[0].toLowerCase();
+    const unit = header.match(new RegExp(MONEY_SCALE_PATTERN, "iu"))?.[0].toLowerCase();
     const number = cell.match(/^\s*(?:\*\*|\$)?([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\*\*|\$)?\s*(?:\[S\d+\]\s*)*$/u);
     if (currency && unit && number) result.push({ raw: number[1], start: at + cell.indexOf(number[1]), values: [Number(number[1].replace(/,/g, "").replace("−", "-"))], factor: MONEY_SCALES[unit], currency, digits: [number[1]], sharedChinese: /[亿万]/u.test(unit) });
     at += cell.length + 1;

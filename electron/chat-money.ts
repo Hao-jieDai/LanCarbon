@@ -2,6 +2,12 @@
  * A parsed amount does not establish its metric, entity, scenario or economic comparability.
  */
 export const MONEY_SCALES: Readonly<Record<string, number>> = { trillion: 1e12, billion: 1e9, million: 1e6, 万亿: 1e12, 千亿: 1e11, 百亿: 1e10, 十亿: 1e9, 亿: 1e8, 百万: 1e6, 万: 1e4 };
+// Longest units must win: independently matching 亿 inside 十亿 corrupts an
+// otherwise correct table. Inline text, column headings and conversions share it.
+const scalePattern = (units: string[]) => `(?<![十百千万亿])(?:${units.sort((a, b) => b.length - a.length).join("|")})(?![十百千万亿])`;
+export const MONEY_SCALE_PATTERN = scalePattern(Object.keys(MONEY_SCALES));
+export const CHINESE_MONEY_SCALE_PATTERN = scalePattern(Object.keys(MONEY_SCALES).filter(unit => /[亿万]/u.test(unit)));
+const englishScalePattern = Object.keys(MONEY_SCALES).filter(unit => /^[a-z]+$/u.test(unit)).sort((a, b) => b.length - a.length).join("|");
 export interface MoneyAmount {
   raw: string; start: number; values: number[]; digits: string[];
   factor: number; currency: "CNY" | "USD";
@@ -13,7 +19,7 @@ export interface MoneyAmount {
 export function moneyAmounts(text: string): MoneyAmount[] {
   // Preserve offsets when recognizing numeric-only inline math.
   const readable = text.replace(/(?<!\\)\$([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)\$/gu, (_match, digits: string) => ` ${digits} `);
-  const expression = /(?:(CNY|RMB|USD|US\\?\$)\s*)?([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\s*(?:to|[-–—~～至])\s*(CNY|RMB|USD|US\\?\$)?\s*([+−-]?\d+(?:,\d{3})*(?:\.\d+)?))?\s*(trillion|billion|million|万亿|千亿|百亿|百万|亿|万)[ \t]*(CNY|RMB|USD|US\\?\$|美元|人民币|元(?:人民币)?|dollars)?/giu;
+  const expression = new RegExp(String.raw`(?:(CNY|RMB|USD|US\\?\$)\s*)?([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\s*(?:to|[-–—~～至])\s*(CNY|RMB|USD|US\\?\$)?\s*([+−-]?\d+(?:,\d{3})*(?:\.\d+)?))?\s*(${MONEY_SCALE_PATTERN})[ \t]*(CNY|RMB|USD|US\\?\$|美元|人民币|元(?:人民币)?|dollars)?`, "giu");
   const result: MoneyAmount[] = [...readable.matchAll(expression)].flatMap(match => {
     const currencies = [match[1], match[3], match[6]].filter((value): value is string => !!value).map(value => /CNY|RMB|人民币|^元$/iu.test(value) ? "CNY" as const : "USD" as const);
     if (!currencies.length || new Set(currencies).size !== 1) return [];
@@ -36,7 +42,7 @@ export function moneyAmounts(text: string): MoneyAmount[] {
 /** Chinese coordinated amounts may share the final scale and currency. */
 export function chineseListAmounts(text: string): Array<{ raw: string; start: number; value: number; digits: string; factor: number; currency: "USD" | "CNY" }> {
   const number = String.raw`[+−-]?\d+(?:,\d{3})*(?:\.\d+)?`;
-  const expression = new RegExp(`(?<![\\d.])${number}(?:\\s*(?:、|,|，|和|及|与|[/／]|and\\s+)\\s*${number}){1,7}\\s*(万亿|千亿|百亿|百万|亿|万)\\s*(人民币|美元|元(?:人民币)?)`, "giu");
+  const expression = new RegExp(`(?<![\\d.])${number}(?:\\s*(?:、|,|，|和|及|与|[/／]|and\\s+)\\s*${number}){1,7}\\s*(${CHINESE_MONEY_SCALE_PATTERN})\\s*(人民币|美元|元(?:人民币)?)`, "giu");
   const result: ReturnType<typeof chineseListAmounts> = [];
   for (const match of text.matchAll(expression)) {
     if (/[/／]/u.test(match[0])) {
@@ -58,7 +64,7 @@ export function chineseListAmounts(text: string): Array<{ raw: string; start: nu
  * An intervening sentence, conflicting currency or non-monetary unit ends inference. */
 export function parenthesizedMoney(text: string): Array<{ raw: string; start: number; value: number; digits: string; factor: number; currency: "USD" | "CNY" }> {
   const result: ReturnType<typeof parenthesizedMoney> = [];
-  for (const match of text.matchAll(/[（(]\s*([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)\s*(trillion|billion|million)\s*[）)]/giu)) {
+  for (const match of text.matchAll(new RegExp(String.raw`[（(]\s*([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)\s*(${englishScalePattern})\s*[）)]`, "giu"))) {
     const from = Math.max(0, match.index! - 400);
     const prefix = text.slice(from, match.index!);
     const boundaries = [...prefix.matchAll(/[。！？!?]|(?<!\d)\.|\.(?!\d)/gu)];
@@ -74,7 +80,7 @@ export function parenthesizedMoney(text: string): Array<{ raw: string; start: nu
  * Explicit, uniform currency markers keep counts and mixed-currency lists out. */
 export function sharedScaleAmounts(text: string): Array<{ original: string; start: number; digits: string; value: number; factor: number; currency: "USD" | "CNY"; spanStart: number; spanLength: number; memberLength: number }> {
   const currency = String.raw`(?:CNY|RMB|USD|US\\?\$)`, number = String.raw`[+−-]?\d+(?:,\d{3})*(?:\.\d+)?`;
-  const expression = new RegExp(`${currency}\\s*${number}(?:\\s*(?:,\\s*(?:(?:and|or)\\s+)?|and\\s+|or\\s+|to\\s+|[-–—~～至])\\s*(?:${currency}\\s*)?${number}){1,7}\\s*(trillion|billion|million)\\b`, "giu");
+  const expression = new RegExp(`${currency}\\s*${number}(?:\\s*(?:,\\s*(?:(?:and|or)\\s+)?|and\\s+|or\\s+|to\\s+|[-–—~～至])\\s*(?:${currency}\\s*)?${number}){1,7}\\s*(${englishScalePattern})\\b`, "giu");
   const result: ReturnType<typeof sharedScaleAmounts> = [];
   for (const match of text.matchAll(expression)) {
     const markers = [...match[0].matchAll(new RegExp(currency, "giu"))].map(item => /CNY|RMB/iu.test(item[0]) ? "CNY" as const : "USD" as const);
