@@ -20,6 +20,19 @@ it("keeps table rows when two are emphasised and allows only explicit subsets or
 function passage(index: number, source = "paper"): KnowledgeHit {
   return { source: { id: `file:${source}`, entityId: source, kind: "file", title: source, format: "pdf", locations: [], attachments: [], tags: [], systemManaged: false, fingerprint: "a".repeat(64) }, fingerprint: "a".repeat(64), chunk: { id: String(index), text: `Passage ${index}. ` + "Background context. ".repeat(45), anchor: { kind: "pdf", page: Math.floor(index / 5) + 1 } } };
 }
+it.each(["clinical", "materials"])("reserves a direct %s finding and its context before automatic background groups", source => {
+  const corpus = Array.from({length: 70}, (_, i) => passage(i, source));
+  corpus[49].chunk.text = source === "clinical" ? "Treatment improves recovery but not mortality; these are distinct outcomes." : "Recovered material reduces energy demand, while upfront capital costs rise.";
+  corpus[50].chunk.text = "This result applies to the measured group. The following paragraph compares total expenditure with annual income.";
+  const primary = [[corpus[50], corpus[52], corpus[55]]];
+  const helpers = Array.from({length: 18}, (_, i) => [corpus[i], corpus[i + 1]]);
+  const selected = chooseEvidence(corpus, [...helpers, ...primary], [`file:${source}`], false, [`file:${source}`], 2200, false, primary);
+  expect(selected.some(h => h.chunk.id === "50")).toBe(true);
+  expect(selected.some(h => h.chunk.id === "49")).toBe(true);
+  expect(selected.reduce((sum, h) => sum + evidenceTokens(h), 0)).toBeLessThanOrEqual(2200);
+  const stale = {...corpus[49], fingerprint: "b".repeat(64)};
+  expect(chooseEvidence(corpus, helpers, [`file:${source}`], false, [], 2200, false, [[stale, passage(0, "private")]]).every(h => h.source.id === `file:${source}` && h.chunk.id !== "49")).toBe(true);
+});
 it("splits numbered Chinese/English questions without treating decimals as list markers or dropping later items", () => {
   const text = "请根据资料逐项回答并引用。\n\n1. **研究范围**\n多少座设施？折现率是多少？\n\n2. **技术路径**\n是否静态选择？\n\n3. **地区差异**\n两省有何不同？";
   expect(documentQuestions(text)).toEqual(["**研究范围**\n多少座设施？折现率是多少？", "**技术路径**\n是否静态选择？", "**地区差异**\n两省有何不同？"]);

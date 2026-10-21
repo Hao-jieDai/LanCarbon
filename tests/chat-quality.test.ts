@@ -23,6 +23,12 @@ it("keeps actual non-monetary comparison findings ahead of method/background pas
   expect(groups[0][0]).toBe(abstract); expect(groups[1][0]).toBe(result); expect(groups.flat()).not.toContain(outside);
   expect(groups.every(group => group.length <= 2)).toBe(true);
 });
+it.each(["Our analysis suggests improved treatment adherence.", "Our conclusions support longer material service lives."])("recognises original qualitative summaries without a results heading: %s", text => {
+  const summary = hit(text, "summary"); summary.chunk.anchor = { kind: "pdf", page: 1 };
+  const methods = hit("We estimate a regression using historical observations.", "methods");
+  const groups = comparativeResultCoverage([methods, summary], [summary.source.id]);
+  expect(groups[0][0]).toBe(summary);
+});
 it("checks explicit monetary scenario bindings without treating discussion of multiple scenarios as a contradiction", () => {
   const medium = hit("Each bar shows the US$1.4 trillion losses from medium expectations realignment.");
   expect(scenarioWarnings("严重情景的损失为1.4万亿美元。[S1]", [medium]).join(" ")).toContain("ties this amount to medium");

@@ -96,6 +96,28 @@ it("limits auxiliary use to source planning before preparing the single answer",
   expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
 });
 
+it.each(["clinical", "materials"])("executes a targeted %s query before generic source checks exhaust the allowance", async domain => {
+  const f = await fixture(), selected = ["a", "b", "c", "d", "e"];
+  for (const id of selected.slice(2)) f.notes.push(createNote({ id, title: `${domain} ${id}`, content: "" }));
+  for (const note of f.notes.filter(note => selected.includes(note.id))) note.content = Array.from({ length: 42 }, (_, i) => `## Background ${i}\n\n${"Historical methods and eligibility criteria vary across observations. ".repeat(15)}`).join("\n\n");
+  const finding = domain === "clinical" ? "Adherence improved despite unchanged admission criteria." : "Service life increased despite unchanged sampling criteria.";
+  f.notes[0].content += `\n\n# Reported outcome\n\n${finding}`;
+  const query = `${domain} targeted outcome`, question = "Compare the findings across these five papers", ids = selected.map(id => `note:${id}`);
+  const consult = vi.fn(async () => JSON.stringify({ question, sourceIds: ids, compare: true, queries: [{ query, sourceIds: ["note:a"] }] }));
+  vi.mocked(f.retrieval.search).mockImplementation(async (q, sourceIds) => {
+    const corpus = (await f.store.corpus()).filter(hit => sourceIds?.includes(hit.source.id));
+    const hits = q === query ? corpus.filter(hit => hit.chunk.text.includes(finding)) : corpus.filter(hit => hit.chunk.text.includes("Historical methods")).slice(0, 20);
+    return { hits: hits.map(hit => ({ ...hit, score: 1, retrieval: "keyword" as const })), warnings: [], mode: "keyword" };
+  });
+  const prepared = await f.grounder.prepare({ ...f.chat, sourceScope: { ...emptyKnowledgeScope(), noteIds: selected }, messages: [{ id: "q", role: "user", status: "complete", content: question, createdAt: "now" }] }, new AbortController().signal, () => {}, consult);
+  const calls = vi.mocked(f.retrieval.search).mock.calls;
+  expect(calls[1][0]).toBe(query); expect(calls[1][1]).toEqual(["note:a"]);
+  expect(calls).toHaveLength(7); expect(consult).toHaveBeenCalledTimes(1);
+  expect(prepared.grounding.evidence.some(hit => hit.chunk.text.includes(finding))).toBe(true);
+  expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
+  expect(f.fetcher).not.toHaveBeenCalled();
+});
+
 it("supplies relative-level aids with the original baseline and no additional calls", async () => {
   const f = await fixture(); f.notes[0].content = "# Methods\n\n运行小时数降低为2018年水平的35%，其余条件保持一致。";
   const prepared = await f.grounder.prepare({ ...f.chat, sourceScope: { ...emptyKnowledgeScope(), noteIds: ["a"] }, messages: [{ id: "q", role: "user", status: "complete", content: "为什么利用小时数下降？", createdAt: "now" }] }, new AbortController().signal, () => {});

@@ -18,7 +18,7 @@ const money = /(?:\d[\d,.]*\s*(?:万亿|亿|百万|千亿|billion|trillion|milli
 /** Comparisons need the studies' reported findings as well as their definitions.
  * Reserve at most two original result/abstract passages per relevant source. */
 export function comparativeResultCoverage(corpus: KnowledgeHit[], sourceIds: string[]): KnowledgeHit[][] {
-  const finding = /\bwe\s+(?:find|show|demonstrate|estimate)|\bour\s+(?:results|findings)\b|\bresults\s+(?:show|indicate|suggest|reveal)|\bfindings\s+(?:show|indicate|suggest|reveal)|结果(?:表明|显示|说明)|研究发现|本文发现/iu;
+  const finding = /\bwe\s+(?:find|show|demonstrate|estimate)|\bour\s+(?:results|findings|conclusions)\b|\b(?:results|findings|analysis)\s+(?:show|indicate|suggest|reveal)|结果(?:表明|显示|说明)|研究发现|本文发现/iu;
   return sourceIds.slice(0, 12).map(id => {
     const score = (hit: KnowledgeHit) => {
       const reports = finding.test(hit.chunk.text), heading = hit.chunk.anchor.heading ?? "";

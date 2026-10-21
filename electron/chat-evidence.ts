@@ -29,10 +29,11 @@ function adjacent(a: KnowledgeHit, b: KnowledgeHit): boolean {
 }
 
 /** Relevant evidence is reserved per question before adding neighbours or overview context. */
-export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][], sourceIds: string[], broad: boolean, requiredSourceIds: string[] = [], limitTokens = 30_000, includeBibliography = false): ChatEvidence[] {
+export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][], sourceIds: string[], broad: boolean, requiredSourceIds: string[] = [], limitTokens = 30_000, includeBibliography = false, primaryGroups: KnowledgeHit[][] = []): ChatEvidence[] {
   const allowed = new Set(sourceIds), current = new Map(corpus.filter(hit => allowed.has(hit.source.id)).map(hit => [evidenceKey(hit), hit]));
   const valid = (hit: KnowledgeHit) => { const latest = current.get(evidenceKey(hit)); return latest?.fingerprint === hit.fingerprint && latest.chunk.text === hit.chunk.text && (includeBibliography || !bibliography(latest)) ? latest : undefined; };
   const ranked = groups.map(group => group.flatMap(hit => { const latest = valid(hit); return latest ? [latest] : []; }));
+  const primary = primaryGroups.map(group => group.flatMap(hit => { const latest = valid(hit); return latest ? [latest] : []; }));
   const budget = Math.min(30_000, limitTokens, (broad ? 12_000 : 6_000) + Math.max(0, groups.length - 1) * 4_000 + Math.min(8, Math.max(0, sourceIds.length - 1)) * 1_000);
   const result: KnowledgeHit[] = [], seen = new Set<string>(), texts = new Set<string>(); let tokens = 0;
   const add = (hit?: KnowledgeHit) => {
@@ -41,6 +42,16 @@ export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][],
     if (seen.has(evidenceKey(hit)) || texts.has(textKey) || result.length >= CHAT_EVIDENCE_MAX_CHUNKS || tokens + evidenceTokens(hit) > budget) return;
     result.push(hit); seen.add(evidenceKey(hit)); texts.add(textKey); tokens += evidenceTokens(hit);
   };
+  const sources = new Map<string, KnowledgeHit[]>();
+  for (const hit of current.values()) { const siblings = sources.get(hit.source.id) ?? []; siblings.push(hit); sources.set(hit.source.id, siblings); }
+  // Actual user subquestions and explicit follow-ups have priority over
+  // automatically generated method/result/unit coverage groups. Otherwise a
+  // large number of helpers can fill the budget before a direct result's context.
+  for (let depth = 0; depth < 3; depth++) for (const group of primary) add(group[depth]);
+  for (const group of primary) for (const hit of group.slice(0, 2)) {
+    const siblings = sources.get(hit.source.id)!, index = siblings.findIndex(item => item.chunk.id === hit.chunk.id);
+    for (const neighbour of [siblings[index - 1], siblings[index + 1]]) if (neighbour && adjacent(hit, neighbour)) add(neighbour);
+  }
   // Reserve matches for EVERY question before any source coverage or neighbours.
   // Source count must not turn this into one arbitrary passage per source.
   for (let depth = 0; depth < 6; depth++) for (const group of ranked) add(group[depth]);
@@ -51,8 +62,6 @@ export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][],
   const reserved = requiredSourceIds.map(id => [...(direct.get(id)?.values() ?? [])]);
   for (let depth = 0; depth < 4; depth++) for (const candidates of reserved) add(candidates[depth]);
 
-  const sources = new Map<string, KnowledgeHit[]>();
-  for (const hit of current.values()) { const siblings = sources.get(hit.source.id) ?? []; siblings.push(hit); sources.set(hit.source.id, siblings); }
   // A short selected corpus can fit completely. Retain it instead of sampling away important details.
   const all = [...current.values()];
   if (sourceIds.length <= 3 && (broad || groups.length > 1) && all.length <= CHAT_EVIDENCE_MAX_CHUNKS && all.reduce((sum, hit) => sum + evidenceTokens(hit), 0) <= budget) {

@@ -105,13 +105,21 @@ export class ChatGrounder {
         groups.push(hits);
       }
       const questionGroups = groups.map(group => [...group]), required = plan.sourceIds.length ? plan.sourceIds : plan.compare ? ids : [];
+      const plannedGroups: KnowledgeHit[][] = [];
+      // Spend the bounded supplementary-search allowance on task-specific
+      // queries first. Generic per-paper coverage must not silently consume the
+      // allowance before the plan's targeted queries can run.
+      for (const query of plan.queries) {
+        if (followups >= 4) break;
+        const hits = await search(query.query, query.sourceIds, true);
+        if (hits.length) { groups.push(hits); plannedGroups.push(hits); }
+      }
       // A globally high-ranked paper cannot crowd out a named/comparison paper.
       if (corpus.length > 36) for (const id of required.slice(0, 6)) {
         if (groups.flat().filter(hit => hit.source.id === id).length >= 4 && !plan.compare) continue;
         progress("Checking evidence across relevant sources…");
         const hits = await search(plan.question, [id], true); if (hits.length) groups.push(hits);
       }
-      for (const query of plan.queries) { if (followups >= 4) break; const hits = await search(query.query, query.sourceIds, true); if (hits.length) groups.push(hits); }
       corpus = (await knowledge.corpus()).filter(hit => selected.has(hit.source.id));
       const broad = broadQuestion.test(question) || plan.compare;
       const withBibliography = bibliographyQuestion.test(question);
@@ -133,7 +141,7 @@ export class ChatGrounder {
       const evidenceIds = !plan.compare && required.length ? required : ids;
       const followup = plan.lockedFocus && earlierMessage ? followupEvidenceGroups(corpus, earlierMessage, evidenceIds) : [];
       const referencedTable = plan.lockedFocus && earlierMessage ? referencedTableShape(earlierMessage.content) : undefined;
-      const selectEvidence = () => chooseEvidence(corpus, [...followup, ...methods, ...formal, ...outcomes, ...coverage, ...groups], evidenceIds, broad, required, evidenceBudget, withBibliography);
+      const selectEvidence = () => chooseEvidence(corpus, [...followup, ...methods, ...formal, ...outcomes, ...coverage, ...groups], evidenceIds, broad, required, evidenceBudget, withBibliography, [...followup, ...outcomes, ...questionGroups, ...plannedGroups]);
       let evidence = selectEvidence();
       const supplemented = followups > 0;
       // Local coverage and bounded planned searches supply the originals before
