@@ -83,9 +83,45 @@ export function repairCitedUnits(text: string, evidence: ChatEvidence[]): { text
         if (replacement !== claim.raw) { output = output.slice(0, at) + replacement + output.slice(at + claim.raw.length); corrections.push(`Unit corrected using [${source.label}]: ${claim.raw.trim()} → ${replacement.trim()}${claim.sharedChinese ? ` (${block.table ? "table" : "shared"} unit: ${claim.currency}, factor ${claim.factor})` : ""}${source.derived ? " (difference of cited same-unit operands)" : ""}.`); }
       }
     }
-    return repairRepeatedCalculations(repairTableConversions(output, evidence, corrections), evidence, corrections);
+    return repairCalculatedEquivalents(repairRepeatedCalculations(repairTableConversions(output, evidence, corrections), evidence, corrections), evidence, corrections);
   }).join("");
   return { text: result, corrections };
+}
+
+/** Verify a written arithmetic equivalence against cited operands, not a matching
+ * mantissa. A correct subtraction can still be followed by a wrong converted
+ * amount whose digits differ from every original amount. No entity/FX inference. */
+function repairCalculatedEquivalents(text: string, evidence: ChatEvidence[], corrections: string[]): string {
+  const number = String.raw`[+−-]?\d+(?:,\d{3})*(?:\.\d+)?`;
+  const unit = "万亿|千亿|百亿|十亿|百万|亿|万", currency = "元人民币|人民币|美元|元";
+  const expression = new RegExp(`(?<![\\d.])(${number})\\s*([-−+])\\s*(${number})\\s*[=＝]\\s*(${number})\\s*(?:\\$|\\\\\\))?\\s*[（(]\\s*(${unit})\\s*(${currency})\\s*[）)]\\s*[，,]\\s*(?:即|折合|相当于|等于)\\s*(?:约)?\\s*(${number})\\s*(${unit})\\s*(${currency})`, "gu");
+  const value = (digits: string) => Number(digits.replace(/,/g, "").replace("−", "-"));
+  const same = (a: number, b: number) => Math.abs(a - b) <= Math.max(1e-8, Math.abs(b) * 1e-10);
+  const edits: Array<{ at: number; digits: string; replacement: string; label: string }> = [];
+  for (const block of monetaryBlocks(text)) {
+    if (block.table) continue;
+    const labels = citedLabels(block.text), hits = evidence.filter(hit => labels.has(hit.label));
+    if (!hits.length || new Set(hits.map(hit => hit.source.id)).size !== 1 || [...labels].some(label => !hits.some(hit => hit.label === label))) continue;
+    for (const match of block.text.matchAll(expression)) {
+      if (hypotheticalAt(block.text, match.index!)) continue;
+      const sourceCurrency = match[6] === "美元" ? "USD" : "CNY", targetCurrency = match[9] === "美元" ? "USD" : "CNY";
+      if (sourceCurrency !== targetCurrency) continue;
+      const a = value(match[1]), b = value(match[3]), result = value(match[4]), factor = factors[match[5]];
+      if (!same(match[2] === "+" ? a + b : a - b, result)) continue;
+      const proof = hits.find(hit => !hit.chunk.anchor.needsReview && (hit.chunk.anchor.method !== "ocr" || (hit.chunk.anchor.confidence ?? 0) >= 80) && [a, b].every(operand => supportedAmounts(hit).some(amount => amount.currency === sourceCurrency && amount.factor === factor && amount.values.length === 1 && same(amount.values[0], operand))));
+      if (!proof) continue;
+      const expected = Number((result * factor / factors[match[8]]).toPrecision(12));
+      if (!Number.isFinite(expected) || same(value(match[7]), expected)) continue;
+      const tail = new RegExp(`(${number})\\s*(?:${unit})\\s*(?:${currency})$`, "u").exec(match[0])!;
+      edits.push({ at: block.start + match.index! + tail.index, digits: match[7], replacement: String(expected), label: proof.label });
+    }
+  }
+  let output = text;
+  for (const edit of edits.sort((a,b) => b.at-a.at).slice(0, 24-corrections.length)) {
+    output = output.slice(0, edit.at) + edit.replacement + output.slice(edit.at + edit.digits.length);
+    corrections.push(`Unit corrected using [${edit.label}]: ${edit.digits} → ${edit.replacement} (arithmetic equivalence revalidated from cited same-unit operands).`);
+  }
+  return output;
 }
 
 /** Reconcile a nearby repetition/calculation with verified cited operands.

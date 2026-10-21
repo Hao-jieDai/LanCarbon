@@ -177,3 +177,15 @@ it("checks every member of a Chinese monetary list using locally declared origin
     expect(repairCitedUnits("68.7亿元人民币[S1]。", [evidence(source)]).corrections).toEqual([]);
   }
 });
+
+it.each([
+  { source: "Treatment costs are CNY 82.6 billion and CNY 29.4 billion.", text: "$82.6-29.4=53.2$（十亿元），即约0.532万亿元人民币。计算依据原文[S1]。", expected: "0.0532万亿元人民币" },
+  { source: "Material costs are US$84.3 billion and US$25.7 billion.", text: "$84.3-25.7=58.6$（十亿美元），即约5860亿美元。计算依据原文[S1]。", expected: "586亿美元" }
+])("checks an explicit converted arithmetic result using current originals: $source", ({ source, text, expected }) => {
+  const hits = [evidence(source)], fixed = repairCitedUnits(text, hits);
+  expect(fixed.text).toContain(expected); expect(fixed.corrections).toHaveLength(1);
+  expect(repairCitedUnits(fixed.text, hits)).toEqual({ text: fixed.text, corrections: [] });
+  for (const unsafe of [text.replace("[S1]", ""), `假设一家示例机构：${text}`, text.replace("十亿", "百万"), text.replace(/=53.2|=58.6/u, "=99"), `\`\`\`\n${text}\n\`\`\``]) expect(repairCitedUnits(unsafe, hits).corrections).toEqual([]);
+  expect(repairCitedUnits(text, [evidence(source.replace("billion", "million"))]).corrections).toEqual([]);
+  expect(repairCitedUnits(text, [{ ...hits[0], chunk: { ...hits[0].chunk, anchor: { kind: "pdf", page: 1, needsReview: true } } }]).corrections).toEqual([]);
+});
