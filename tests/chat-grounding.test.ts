@@ -458,6 +458,8 @@ it.each([
   expect(originals.evidence.some((e: { text: string }) => e.text.includes(formula))).toBe(true);
   expect(originals.evidence.every((e: { sourceId: string }) => e.sourceId === "note:a")).toBe(true);
   expect(request.messages[0].content).not.toMatch(/GDP|cost pass-through|NPV|discounted future profits|verify-and-finalize/);
+  expect(request.messages[0].content).toContain("Verify the question's premises and proposed labels against originals");
+  expect(request.messages[0].content).toContain("unless requested or essential to explain the answer");
   expect(JSON.stringify(originals)).not.toContain("SecretOutsideSelection");
 });
 
