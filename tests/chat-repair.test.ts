@@ -4,7 +4,24 @@ import { repairCitedUnits } from "../electron/chat-repair";
 import { answerTasks, methodCoverage } from "../electron/chat-answer-plan";
 import { groundingInstructions } from "../electron/chat-policy";
 import { mapCitations, type ChatEvidence } from "../src/shared/grounding";
+import { chineseListAmounts } from "../electron/chat-money";
 function evidence(text: string, id = "a", label = "S1"): ChatEvidence { return { label, fingerprint: "a".repeat(64), source: { id: `file:${id}`, entityId: id, title: `${id}.pdf`, kind: "file", format: "pdf", fingerprint: "a".repeat(64), locations: [], attachments: [], tags: [], systemManaged: false }, chunk: { id, text, anchor: { kind: "pdf", page: 4 } } }; }
+it("repairs every declared slash-list amount, retaining correct members and excluding ratios", () => {
+  const transport = [evidence("Rail costs CNY 12.6 billion; shipping CNY 8.2 billion; road CNY 5.4 billion.")];
+  const reply = "货运：12.6 / 8.2 / 54 亿元人民币（铁路、航运、公路）[S1]。";
+  const fixed = repairCitedUnits(reply, transport);
+  expect(fixed.text).toBe("货运：126 / 82 / 54 亿元人民币（铁路、航运、公路）[S1]。");
+  expect(fixed.corrections).toHaveLength(2);
+  expect(repairCitedUnits(fixed.text, transport).corrections).toEqual([]);
+  const crops = [evidence("Wheat costs USD 7.3 billion; corn USD 4.8 billion; rice USD 2.6 billion.")];
+  expect(repairCitedUnits("小麦、玉米、水稻分别为7.3／4.8／2.6亿美元[S1]。", crops).text).toBe("小麦、玉米、水稻分别为73／48／26亿美元[S1]。");
+  expect(chineseListAmounts("12.6 / 8.2亿元人民币")).toEqual([]);
+  expect(chineseListAmounts("12.6 / 8.2亿元人民币（铁路、航运、公路）")).toEqual([]);
+  expect(chineseListAmounts("1 / 8.2亿元人民币（比例）")).toEqual([]);
+  for (const text of ["12.6 / 8.2亿元人民币[S1]。", "`12.6 / 8.2 / 5.4亿元人民币（铁路、航运、公路）[S1]`", "假设一家企业依次损失12.6 / 8.2 / 5.4亿元人民币[S1]。"])
+    expect(repairCitedUnits(text, transport).corrections).toEqual([]);
+  expect(repairCitedUnits(reply, [evidence("Rail costs USD 12.6 billion; shipping USD 8.2 billion; road USD 5.4 billion.")]).corrections).toEqual([]);
+});
 it("corrects exact cited currency scales and ranges in final prose while retaining the target unit and an audit", () => {
   const hits = [evidence("The national total is CNY 28.4 billion. The selected companies hold US$41 to US$67 billion.")];
   const result = repairCitedUnits("全国为28.4亿元人民币（CNY 28.4 billion）[S1]。\n\n公司为US$41–67亿（S1）。", hits);

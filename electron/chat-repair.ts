@@ -61,6 +61,9 @@ export function repairCitedUnits(text: string, evidence: ChatEvidence[]): { text
         && paragraphHits.length > 0 && new Set(paragraphHits.map(hit => hit.source.id)).size === 1
         && [...paragraphLabels].every(label => paragraphHits.some(hit => hit.label === label));
       for (const claim of blockAmounts(block).reverse()) {
+        // An undeclared slash expression may be a ratio, not a monetary list.
+        // Do not repair only its last operand when shared-list parsing declined it.
+        if (!claim.sharedChinese && /[/／]\s*$/u.test(paragraph.slice(0, claim.start))) continue;
         const suffix = paragraph.slice(claim.start + claim.raw.length).split(/[。！？\n]/u, 1)[0];
         if (!(claim.sharedChinese || /[亿万]/u.test(claim.raw)) || corrections.length >= 24 || hypotheticalAt(paragraph, claim.start) || /^[ \t]*[（(]\s*(?:假设|假定|示例|hypothetical)/iu.test(suffix)) continue;
         let labels = monetaryLabels(block, claim.start, claim.raw.length);

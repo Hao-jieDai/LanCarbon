@@ -27,7 +27,7 @@ export function moneyAmounts(text: string): MoneyAmount[] {
   ];
   for (const item of coordinated) {
     const existing = result.find(amount => amount.start <= item.start && item.start < amount.start + amount.raw.length && amount.factor === item.factor && amount.currency === item.currency && amount.values.includes(item.values[0]));
-    if (existing) { if (item.sharedSpan) existing.sharedSpan = item.sharedSpan; }
+    if (existing) { if (item.sharedSpan) existing.sharedSpan = item.sharedSpan; if (item.sharedChinese) existing.sharedChinese = true; }
     else result.push(item);
   }
   return result.sort((a, b) => a.start - b.start);
@@ -36,9 +36,18 @@ export function moneyAmounts(text: string): MoneyAmount[] {
 /** Chinese coordinated amounts may share the final scale and currency. */
 export function chineseListAmounts(text: string): Array<{ raw: string; start: number; value: number; digits: string; factor: number; currency: "USD" | "CNY" }> {
   const number = String.raw`[+−-]?\d+(?:,\d{3})*(?:\.\d+)?`;
-  const expression = new RegExp(`(?<![\\d.])${number}(?:\\s*(?:、|,|，|和|及|与|and\\s+)\\s*${number}){1,7}\\s*(万亿|千亿|百亿|百万|亿|万)\\s*(人民币|美元|元)`, "giu");
+  const expression = new RegExp(`(?<![\\d.])${number}(?:\\s*(?:、|,|，|和|及|与|[/／]|and\\s+)\\s*${number}){1,7}\\s*(万亿|千亿|百亿|百万|亿|万)\\s*(人民币|美元|元(?:人民币)?)`, "giu");
   const result: ReturnType<typeof chineseListAmounts> = [];
   for (const match of text.matchAll(expression)) {
+    if (/[/／]/u.test(match[0])) {
+      // A slash can mean division. Inherit the shared unit only when prose
+      // declares an ordered list or an adjoining label list identifies its members.
+      const prefix = text.slice(Math.max(0, match.index! - 100), match.index!).split(/[。！？;；\n]/u).at(-1)!;
+      const suffix = text.slice(match.index! + match[0].length, match.index! + match[0].length + 150);
+      const labels = /^\s*[（(]([^()（）\n]+)[）)]/u.exec(suffix)?.[1].split(/[、,，/／]/u).map(label => label.trim());
+      const members = [...match[0].matchAll(new RegExp(number, "gu"))];
+      if (!/分别|依次|对应|\brespectively\b/iu.test(prefix) && !(labels?.length === members.length && labels.every(label => /[\p{L}]/u.test(label)))) continue;
+    }
     const factor = MONEY_SCALES[match[1]];
     for (const item of match[0].matchAll(new RegExp(number, "gu"))) result.push({ raw: item[0], start: match.index! + item.index!, value: Number(item[0].replace(/,/g, "").replace("−", "-")), digits: item[0], factor, currency: match[2] === "美元" ? "USD" : "CNY" });
   }

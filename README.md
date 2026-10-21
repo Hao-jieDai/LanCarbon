@@ -15,7 +15,7 @@ LanCarbon is a Windows desktop application for writing ordinary Markdown Notes a
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
-Version 2.4.13 consolidates document-answer rules and keeps multiple requested tasks together. The selected Chat model generates one answer directly, with at most one optional source-planning call and no second full-answer rewrite or quotation-audit JSON protocol. Local unit, arithmetic and citation checks remain; corrections are recorded in Evidence. Definition passages, paired baselines and cross-paper source focus retain their existing coverage. Monetary aids and conservative repairs share one parser; explicit relative baselines distinguish remaining levels from reductions. Saved preferences, historical chats and usage records are preserved. These internal changes still require real-model academic acceptance.
+Version 2.4.13 consolidates document-answer rules and keeps multiple requested tasks together. The selected Chat model generates one answer directly, with at most one optional source-planning call and no second full-answer rewrite or quotation-audit JSON protocol. Local unit, arithmetic and citation checks remain; corrections are recorded in Evidence. Definition passages, paired baselines and cross-paper source focus retain their existing coverage. Monetary aids and conservative repairs share one parser; explicit relative baselines distinguish remaining levels from reductions. Saved preferences, historical chats and usage records are preserved. These internal changes still require real-model academic acceptance. Declared slash-separated amount lists share their final unit without changing correct members; ambiguous division is not automatically repaired.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -255,7 +255,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
-2.4.13 统一资料回答规则，保留复合问题的各项要求。所选 Chat 模型直接生成一次回答，按需最多增加一次资料定位规划；移除二次整篇重写及引语审计 JSON 协议。保留本地单位、算术和引用检查，单位修正在 Evidence 记录。沿用操作定义、成对基准和跨文献焦点取证；金额辅助与保守修正共用解析逻辑，明确相对基准时区分剩余水平与减少幅度。保留用户表达偏好、历史聊天及用量。这些内部调整仍须通过真实模型学术验收。
+2.4.13 统一资料回答规则，保留复合问题的各项要求。所选 Chat 模型直接生成一次回答，按需最多增加一次资料定位规划；移除二次整篇重写及引语审计 JSON 协议。保留本地单位、算术和引用检查，单位修正在 Evidence 记录。沿用操作定义、成对基准和跨文献焦点取证；金额辅助与保守修正共用解析逻辑，明确相对基准时区分剩余水平与减少幅度。保留用户表达偏好、历史聊天及用量。这些内部调整仍须通过真实模型学术验收。 明确声明的斜杠并列金额按共享末尾单位逐项核对，保留正确成员；歧义除法不自动修正。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 
