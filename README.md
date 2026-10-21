@@ -214,6 +214,8 @@ LanCarbon stores the active workspace in the selected `Data` folder. It does not
 
 ### Development
 
+An isolated evidence-first RAG comparison helper is available for development; it is not enabled in application chats. See [the experiment protocol](docs/rag-evidence-first-experiment.md). Its offline source-boundary tests run with `npm run test:rag`; live trials require an explicit scope and budget and retain all intermediate costs.
+
 Development requires Node.js 22.12 or newer. Jupyter Book 2 is also required for the complete build and end-to-end test suite.
 
 ```bash
@@ -447,6 +449,8 @@ LanCarbon 会在统一的 **Environment Setup** 中检查这些条件；首次�
 LanCarbon 将当前工作区保存在选定的 `Data` 文件夹中。它不要求注册 LanCarbon 账号，也不会自动同步 Notes。迁移到其他电脑或进行较大的系统修改前，请备份整个 LanCarbon 根目录。
 
 ### 开发
+
+开发环境提供独立的“先整理证据再回答”RAG对照工具，未接入应用聊天，见[试验方案](docs/rag-evidence-first-experiment.md)。其离线来源边界检查纳入 `npm run test:rag`；真实试验须明确范围和预算，并保留全部中间费用。
 
 开发需要 Node.js 22.12 或更高版本。运行完整构建和端到端测试还需要 Jupyter Book 2。
 
