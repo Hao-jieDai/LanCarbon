@@ -12,7 +12,7 @@ export function hasChatSources(scope?: KnowledgeScope): boolean { return !!scope
 export function scopeKey(scope?: KnowledgeScope): string { return scope ? JSON.stringify([...[scope.noteIds, scope.fileIds, scope.bookIds, scope.folderIds].map(ids => [...ids].sort()), scope.includeSystem, scope.includeAttachments, [...(scope.excludedNoteIds ?? [])].sort(), [...(scope.excludedFileIds ?? [])].sort()]) : ""; }
 export function citationLocation(hit: KnowledgeHit): string {
   const a = hit.chunk.anchor;
-  return a.kind === "pdf" ? `Page ${a.page}${a.method === "ocr" ? ` · OCR${a.needsReview ? " · Check text" : ""}` : ""}` : a.kind === "epub" ? `Chapter ${(a.chapterIndex ?? 0) + 1} · Paragraph ${a.paragraph}` : `Lines ${a.line}–${a.endLine}`;
+  return a.kind === "pdf" ? `Page ${a.page}${a.method === "ocr" ? " · OCR" : ""}${a.needsReview ? " · Check text" : ""}` : a.kind === "epub" ? `Chapter ${(a.chapterIndex ?? 0) + 1} · Paragraph ${a.paragraph}` : `Lines ${a.line}–${a.endLine}`;
 }
 /** Normalize grouped/full-width citations, preserving code examples and existing Markdown links. */
 export function mapCitations(text: string, render: (label: string) => string = label => `[${label}]`): string {

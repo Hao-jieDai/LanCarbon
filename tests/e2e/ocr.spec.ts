@@ -2,8 +2,30 @@ import { _electron as electron, expect, test } from "@playwright/test";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { scannedPdfFixture } from "../fixtures/ocr-pdf";
+import { brokenNumericPdfFixture, scannedPdfFixture } from "../fixtures/ocr-pdf";
 import { emptyKnowledgeScope } from "../../src/shared/knowledge";
+test("recovers missing numeric signs from page images instead of indexing unsigned native numbers", async () => {
+  test.setTimeout(180000);
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-glyph-e2e-")); await fs.mkdir(path.join(root, "Data"));
+  const bytes = brokenNumericPdfFixture(), file = path.join(root, "Measured changes.pdf"); await fs.writeFile(file, bytes);
+  const app = await electron.launch({args: ["--in-process-gpu", "--disable-gpu", "--no-sandbox", path.resolve(".")], env: {...process.env, LANCARBON_ROOT: root, E2E_USER_DATA_DIR: ""}});
+  try {
+    const page = await app.firstWindow(); await page.getByRole("main").waitFor();
+    await app.evaluate(({dialog, net}, file) => { dialog.showOpenDialog = (async () => ({canceled: false, filePaths: [file]})) as typeof dialog.showOpenDialog; net.fetch = async () => {throw Error("Glyph recovery must stay offline");}; }, file);
+    await page.getByRole("button", {name: "Library", exact: true}).click(); await page.getByRole("button", {name: "Import PDF / EPUB", exact: true}).click();
+    await expect(page.getByRole("button", {name: "Measured changes.pdf", exact: true})).toBeVisible();
+    const entries = await page.evaluate(() => window.notesDesktop.library!.list()); if (!entries.ok) throw Error(entries.error);
+    const id = entries.entries.find(e => e.name === "Measured changes.pdf")!.id;
+    await page.evaluate(scope => window.notesDesktop.knowledge!.start(scope), {...emptyKnowledgeScope(), fileIds: [id], autoUpdate: false});
+    await expect.poll(async () => { const r = await page.evaluate(() => window.notesDesktop.knowledge!.inspect()); return r.ok && !r.view.running && r.view.records.find(x => x.sourceId === `file:${id}`)?.status; }, {timeout: 120000}).toBe("ready");
+    for (const [query, amount, number] of [["Clinical temperature", "4.7", 1], ["River level", "6.2", 2]] as const) {
+      const r = await page.evaluate(query => window.notesDesktop.knowledge!.search(query), query);
+      expect(r.ok && r.hits.some(h => h.chunk.anchor.page === number && h.chunk.anchor.method === "ocr" && new RegExp(`[-−–—]\\s*${amount.replace(".", "\\.")}`).test(h.chunk.text))).toBe(true);
+    }
+    const usage = await page.evaluate(() => window.notesDesktop.ai!.usage()); expect(usage.ok && usage.usage.summary.requests).toBe(0);
+    expect(await fs.readFile(file)).toEqual(bytes);
+  } finally {await app.close(); await fs.rm(root, {recursive: true, force: true});}
+});
 test("recognizes English/Chinese scanned pages locally, shares text with indexing and preserves native pages and originals", async ({}, info) => {
   test.setTimeout(300000);
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-ocr-e2e-")); await fs.mkdir(path.join(root, "Data"));

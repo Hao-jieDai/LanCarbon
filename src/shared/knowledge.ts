@@ -28,7 +28,7 @@ export interface KnowledgeApi {
   search(query: string): Promise<KnowledgeResult<{ hits: KnowledgeHit[]; total: number }>>;
   onChanged(callback: () => void): () => void;
 }
-export const KNOWLEDGE_PARSER_VERSION = 1;
+export const KNOWLEDGE_PARSER_VERSION = 2;
 export const KNOWLEDGE_MAX_TEXT = 2_000_000;
 export const KNOWLEDGE_MAX_CHUNKS = 2000;
 export const KNOWLEDGE_MAX_BYTES = 100 * 1024 * 1024;

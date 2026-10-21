@@ -24,5 +24,10 @@ export function ocrReviewNotes(text: string, confidence: number): string[] {
 }
 export function pdfTextNeedsOcr(text: string): boolean {
   const compact = text.replace(/\s/g, ""), letters = compact.match(/[\p{L}\p{N}]/gu)?.length ?? 0;
-  return letters < 12 || (compact.match(/[\uFFFD\u0000-\u0008]/g)?.length ?? 0) > Math.max(2, compact.length / 8);
+  return letters < 12 || pdfHasBrokenNumericGlyph(text) || (compact.match(/[\uFFFD\u0000-\u0008]/g)?.length ?? 0) > Math.max(2, compact.length / 8);
+}
+/** One missing sign/decimal glyph can change an otherwise readable page's result.
+ * Trigger image recognition, never guess which mathematical symbol was lost. */
+export function pdfHasBrokenNumericGlyph(text: string): boolean {
+  return /[\uFFFD\u0000-\u0008\u000B\u000C\u000E-\u001F]\s*[+−-]?\s*\d|\d\s*[\uFFFD\u0000-\u0008\u000B\u000C\u000E-\u001F]/u.test(text);
 }

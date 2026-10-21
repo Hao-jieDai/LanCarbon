@@ -4,7 +4,9 @@ export interface TextBlock { text: string; anchor: KnowledgeAnchor }
 export function textChunks(blocks: Iterable<TextBlock>): { chunks: KnowledgeChunk[]; limited: boolean } {
   const chunks: KnowledgeChunk[] = []; let characters = 0, limited = false;
   outer: for (const block of blocks) {
-    const text = block.text.replace(/\u0000/g, "").trim(); if (!text) continue;
+    // Retain an explicit unreadable-glyph marker rather than silently turning
+    // a potentially signed number into a positive one after OCR failure.
+    const text = block.text.replace(/\u0000/g, "\uFFFD").trim(); if (!text) continue;
     for (let offset = 0; offset < text.length; offset += 1040) {
       if (chunks.length >= KNOWLEDGE_MAX_CHUNKS || characters >= KNOWLEDGE_MAX_TEXT) { limited = true; break outer; }
       const piece = text.slice(offset, Math.min(offset + 1200, offset + KNOWLEDGE_MAX_TEXT - characters));

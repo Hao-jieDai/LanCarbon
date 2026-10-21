@@ -8,6 +8,23 @@ export function scannedPdfFixture(images: Buffer[]): Buffer {
   const number = objects.length + 1, text = "BT /F1 18 Tf 50 740 Td (Native policy evidence stays selectable.) Tj ET"; kids.push(number);
   objects.push(Buffer.from(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${number + 1} 0 R >>`), Buffer.from(`<< /Length ${text.length} >>\nstream\n${text}\nendstream`));
   objects[1] = Buffer.from(`<< /Type /Pages /Kids [${kids.map(n => `${n} 0 R`).join(" ")}] /Count ${kids.length} >>`);
+  return writePdf(objects);
+}
+/** Visible minus, deliberately broken text mapping: generic clinical/hydrology data. */
+export function brokenNumericPdfFixture(): Buffer {
+  const cmap = "/CIDInit /ProcSet findresource begin 12 dict begin begincmap /CMapName /BrokenNumeric def /CMapType 2 def 1 begincodespacerange <00> <FF> endcodespacerange 1 beginbfchar <2D> <0000> endbfchar endcmap CMapName currentdict /CMap defineresource pop end end";
+  const stream = (text: string) => Buffer.from(`<< /Length ${Buffer.byteLength(text)} >>\nstream\n${text}\nendstream`);
+  const objects = [Buffer.from("<< /Type /Catalog /Pages 2 0 R >>"), Buffer.alloc(0), Buffer.from("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding /ToUnicode 4 0 R >>"), stream(cmap)];
+  const texts = ["Clinical temperature change was -4.7 degrees after treatment.", "River level change was -6.2 metres after restoration."];
+  const kids: number[] = [];
+  for (const text of texts) {
+    const n = objects.length + 1; kids.push(n);
+    objects.push(Buffer.from(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 3 0 R >> >> /Contents ${n + 1} 0 R >>`), stream(`BT /F1 17 Tf 40 740 Td (${text}) Tj ET`));
+  }
+  objects[1] = Buffer.from(`<< /Type /Pages /Kids [${kids.map(n => `${n} 0 R`).join(" ")}] /Count ${kids.length} >>`);
+  return writePdf(objects);
+}
+function writePdf(objects: Buffer[]): Buffer {
   const chunks = [Buffer.from("%PDF-1.7\n")], offsets: number[] = []; let size = chunks[0].length;
   for (const [index, object] of objects.entries()) { offsets.push(size); const chunk = Buffer.concat([Buffer.from(`${index + 1} 0 obj\n`), object, Buffer.from("\nendobj\n")]); chunks.push(chunk); size += chunk.length; }
   chunks.push(Buffer.from(`xref\n0 ${objects.length + 1}\n0000000000 65535 f \n${offsets.map(offset => `${String(offset).padStart(10, "0")} 00000 n \n`).join("")}trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${size}\n%%EOF\n`)); return Buffer.concat(chunks);

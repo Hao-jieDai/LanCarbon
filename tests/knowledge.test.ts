@@ -5,7 +5,7 @@ import path from "node:path";
 import { afterEach, expect, it, vi } from "vitest";
 import { createNote } from "../src/shared/notes";
 import { createBook } from "../src/shared/books";
-import { emptyKnowledgeScope } from "../src/shared/knowledge";
+import { emptyKnowledgeScope, KNOWLEDGE_PARSER_VERSION } from "../src/shared/knowledge";
 import { extractMarkdown, knowledgeTerms, textChunks } from "../src/shared/knowledgeText";
 import { knowledgeSnapshot, selectedKnowledgeIds, validKnowledgeScope } from "../electron/knowledge-sources";
 import { extractEpub } from "../electron/knowledge-epub";
@@ -27,6 +27,19 @@ async function fixture() {
   const settle = async () => { for (let i = 0; i < 200; i++) { const view = await store.inspect(); if (!view.running && !view.records.some(record => record.status === "pending" || record.status === "processing")) return view; await new Promise(resolve => setTimeout(resolve, 5)); } throw Error("Indexing did not finish"); };
   return { root, data, assets, library, workspace, note, homeNote, book, store, snapshot, extract, extractor, settle };
 }
+it("re-extracts legacy parser caches automatically while keeping sources and selection unchanged", async () => {
+  const f = await fixture(), scope = {...emptyKnowledgeScope(), noteIds: [f.note.id], autoUpdate: false};
+  await f.store.start(scope); await f.settle(); await f.store.stop();
+  const manifestPath = path.join(f.data, "Research/Knowledge/manifest.json"), manifest = JSON.parse(await fs.readFile(manifestPath, "utf8"));
+  manifest.parserVersion = KNOWLEDGE_PARSER_VERSION - 1; await fs.writeFile(manifestPath, JSON.stringify(manifest));
+  const original = f.note.content; f.extract.mockClear(); f.extract.mockImplementation(async () => extractMarkdown("Reparsed numerical sign is -4.7, not unsigned."));
+  const fresh = new KnowledgeStore(f.data, f.snapshot, async id => (await f.library.read(id)).bytes, f.extractor);
+  const view = await fresh.prepare(scope, new AbortController().signal, () => {});
+  expect(view.error).toBeUndefined(); expect(f.extract).toHaveBeenCalledTimes(1); expect(view.scope.noteIds).toEqual([f.note.id]);
+  expect((await fresh.search("-4.7")).total).toBe(1); expect((await fresh.search("Climate policy")).total).toBe(0);
+  expect(f.note.content).toBe(original); expect(JSON.parse(await fs.readFile(manifestPath, "utf8")).parserVersion).toBe(KNOWLEDGE_PARSER_VERSION);
+  await fresh.stop();
+});
 it("extracts Markdown headings, tables, math and source lines without indexing link destinations", () => {
   const value = extractMarkdown("---\nprivate: meta\n---\n# Energy\n\nPolicy and [evidence](assets/" + "a".repeat(64) + ".pdf).\n\n| cost | value |\n| --- | --- |\n| Coal | $x^2$ |\n");
   expect(value.chunks[1].text).toBe("Policy and evidence."); expect(value.chunks[1].anchor).toMatchObject({ kind: "markdown", line: 6, endLine: 6, heading: "Energy" }); expect(value.chunks.some(chunk => chunk.text.includes("$x^2$"))).toBe(true); expect(JSON.stringify(value)).not.toContain("private: meta");

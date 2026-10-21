@@ -70,7 +70,7 @@ export function repairCitedUnits(text: string, evidence: ChatEvidence[]): { text
         if (!labels.size && declaredCalculation) labels = paragraphLabels;
         if (block.table && !/\[S\d+\]/u.test(paragraph) && new Set(evidence.filter(hit => labels.has(hit.label)).map(hit => hit.source.id)).size !== 1) continue;
         // Low-confidence OCR is not an authoritative basis for silently changing a value.
-        const originals = evidence.filter(hit => labels.has(hit.label) && (hit.chunk.anchor.method !== "ocr" || !hit.chunk.anchor.needsReview && (hit.chunk.anchor.confidence ?? 0) >= 80)).flatMap(hit => [...supportedAmounts(hit), ...(subtraction ? subtractionAmounts(hit) : [])].map(amount => ({ ...amount, label: hit.label })));
+        const originals = evidence.filter(hit => labels.has(hit.label) && !hit.chunk.anchor.needsReview && (hit.chunk.anchor.method !== "ocr" || (hit.chunk.anchor.confidence ?? 0) >= 80)).flatMap(hit => [...supportedAmounts(hit), ...(subtraction ? subtractionAmounts(hit) : [])].map(amount => ({ ...amount, label: hit.label })));
         const compatible = originals.filter(item => item.currency === claim.currency && item.values.length === claim.values.length);
         if (compatible.some(item => item.values.every((value, i) => Math.abs(value * item.factor - claim.values[i] * claim.factor) <= Math.max(0.005 * claim.factor, Math.abs(value * item.factor) * 1e-8)))) continue;
         const matching = compatible.filter(item => item.values.every((value, i) => value === claim.values[i]));
@@ -109,7 +109,7 @@ function repairRepeatedCalculations(text: string, evidence: ChatEvidence[], corr
     for (const claim of blockAmounts(block)) {
       if (claim.values.length !== 1 || hypotheticalAt(block.text, claim.start)) continue;
       const labels = monetaryLabels(block, claim.start, claim.raw.length), entityKeys = keys(block.text, claim.start);
-      const originals = evidence.filter(hit => labels.has(hit.label) && (hit.chunk.anchor.method !== "ocr" || !hit.chunk.anchor.needsReview && (hit.chunk.anchor.confidence ?? 0) >= 80)).flatMap(hit => [...supportedAmounts(hit), ...(subtraction ? subtractionAmounts(hit) : [])].map(amount => ({ amount, label: hit.label, sourceId: hit.source.id })));
+      const originals = evidence.filter(hit => labels.has(hit.label) && !hit.chunk.anchor.needsReview && (hit.chunk.anchor.method !== "ocr" || (hit.chunk.anchor.confidence ?? 0) >= 80)).flatMap(hit => [...supportedAmounts(hit), ...(subtraction ? subtractionAmounts(hit) : [])].map(amount => ({ amount, label: hit.label, sourceId: hit.source.id })));
       const verified = originals.filter(({amount}) => amount.values.length === 1 && amount.currency === claim.currency && same(amount.values[0] * amount.factor, claim.values[0] * claim.factor));
       if (verified.length) {
         const {amount, label, sourceId} = verified[0];
@@ -157,7 +157,7 @@ function repairTableConversions(text: string, evidence: ChatEvidence[], correcti
     const coefficients = [...cells[target].matchAll(/([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:\\times\s*|\*\s*)?e\b/gu)];
     if (sourceCells.length !== coefficients.length || !sourceCells.length || sourceCells.some(amount => amount.values.length !== 1)) continue;
     const labels = monetaryLabels(block, 0, block.text.length);
-    const hits = evidence.filter(hit => labels.has(hit.label) && (hit.chunk.anchor.method !== "ocr" || !hit.chunk.anchor.needsReview && (hit.chunk.anchor.confidence ?? 0) >= 80));
+    const hits = evidence.filter(hit => labels.has(hit.label) && !hit.chunk.anchor.needsReview && (hit.chunk.anchor.method !== "ocr" || (hit.chunk.anchor.confidence ?? 0) >= 80));
     if (!/\[S\d+\]/u.test(block.text) && new Set(hits.map(hit => hit.source.id)).size !== 1) continue;
     const originals = hits.flatMap(supportedAmounts);
     if (!sourceCells.every(amount => originals.some(original => original.currency === "USD" && original.values.length === 1 && Math.abs(original.values[0] * original.factor - amount.values[0] * amount.factor) < Math.max(1, Math.abs(amount.values[0] * amount.factor) * 1e-8)))) continue;
