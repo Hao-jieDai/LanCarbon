@@ -29,3 +29,10 @@ it("retains explicit empty question evidence without fabricating an answer",()=>
  const r=applySelection(m,prepare(m),JSON.stringify({questions:[{index:0,citations:["S3"]},{index:1,citations:[]}]}));
  expect(JSON.parse(r.messages[1].content).questionEvidence[1].citations).toEqual([]);
 });
+it("validates internal provenance without adding it to the original model payload",()=>{
+ const m=make(),c=JSON.parse(m[1].content),proof=structuredClone(c.evidence);
+ for(const e of c.evidence){delete e.valid;delete e.fingerprint;}m[1].content=JSON.stringify(c);
+ expect(()=>prepare(m)).toThrow();const p=prepare(m,proof),r=applySelection(m,p,raw);
+ expect(JSON.parse(r.messages[1].content).evidence[0]).toEqual(c.evidence[0]);
+ proof[0].text="Changed";expect(()=>prepare(m,proof)).toThrow();
+});

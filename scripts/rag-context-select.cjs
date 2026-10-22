@@ -1,18 +1,21 @@
 // Experimental context selection. No application imports; never rewrites evidence.
 const assert = require('node:assert/strict');
 const { digest } = require('./rag-evidence-first.cjs');
-function prepare(messages) {
+function prepare(messages, provenance) {
   const index = messages.findIndex(m => m.role === 'user' && m.content.startsWith('{"selectedSources":'));
   assert(index >= 0, 'Missing evidence context');
   const context = JSON.parse(messages[index].content);
+  const originals = provenance ?? context.evidence;
   const question = JSON.parse(messages.at(-1).content);
   const questions = context.questionEvidence?.map(q => q.question) ?? [question.latestQuestion];
   assert(questions.length > 0 && context.evidence.length > 0);
   const labels = new Set(), versions = new Map();
   for (const e of context.evidence) {
-    assert(e.valid && !e.needsReview && e.fingerprint && e.sourceId && e.text && /^S\d+$/.test(e.citation), 'Invalid evidence');
+    const proof = originals.find(p => p.citation === e.citation);
+    assert(proof?.valid && !proof.needsReview && proof.fingerprint && e.sourceId && e.text && /^S\d+$/.test(e.citation), 'Invalid evidence');
+    assert.equal(proof.sourceId, e.sourceId); assert.equal(proof.text, e.text); assert.deepEqual(proof.anchor, e.anchor);
     assert(!labels.has(e.citation), 'Duplicate label'); labels.add(e.citation);
-    assert(!versions.has(e.sourceId) || versions.get(e.sourceId) === e.fingerprint, 'Mixed versions'); versions.set(e.sourceId, e.fingerprint);
+    assert(!versions.has(e.sourceId) || versions.get(e.sourceId) === proof.fingerprint, 'Mixed versions'); versions.set(e.sourceId, proof.fingerprint);
   }
   const documents = [...versions.keys()].map(sourceId => ({ sourceId, excerpts: context.evidence.filter(e => e.sourceId === sourceId) }));
   return { index, context, questions, hash: digest(messages), messages: [
