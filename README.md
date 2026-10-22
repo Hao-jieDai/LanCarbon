@@ -218,6 +218,8 @@ An isolated evidence-first RAG comparison helper is available for development; i
 
 The experimental note validator accepts Chinese layout spacing and finite numeric JSON values while preserving numeric separators, signs and units. This compatibility fix does not certify the notes' factual accuracy.
 
+The initial live comparison did not meet its accuracy gate; this prototype remains disabled in application chats.
+
 Development requires Node.js 22.12 or newer. Jupyter Book 2 is also required for the complete build and end-to-end test suite.
 
 ```bash
@@ -455,6 +457,8 @@ LanCarbon 将当前工作区保存在选定的 `Data` 文件夹中。它不要�
 开发环境提供独立的“先整理证据再回答”RAG对照工具，未接入应用聊天，见[试验方案](docs/rag-evidence-first-experiment.md)。其离线来源边界检查纳入 `npm run test:rag`；真实试验须明确范围和预算，并保留全部中间费用。
 
 试验笔记校验兼容中文排版空格和有限JSON数字，继续保护数字分隔、符号及单位。此兼容修复不代表笔记事实准确性已通过验收。
+
+首批真实对照未达到准确性门槛；该原型继续保持不接入应用聊天。
 
 开发需要 Node.js 22.12 或更高版本。运行完整构建和端到端测试还需要 Jupyter Book 2。
 
