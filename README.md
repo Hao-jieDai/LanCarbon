@@ -222,6 +222,8 @@ The initial live comparison did not meet its accuracy gate; this prototype remai
 
 Explicit monetary equations can now use a source cited in the immediately following calculation-verification paragraph, with original operands rechecked. An isolated original-excerpt selection experiment is documented in [the protocol](docs/rag-context-selection-experiment.md); it is not enabled in application chats.
 
+The excerpt-selection trial reduced context size but did not meet the accuracy gate, so it remains experimental. Bare dollar signs are not automatically treated as USD; ambiguous currency conversions remain a known limitation.
+
 Development requires Node.js 22.12 or newer. Jupyter Book 2 is also required for the complete build and end-to-end test suite.
 
 ```bash
@@ -463,6 +465,8 @@ LanCarbon 将当前工作区保存在选定的 `Data` 文件夹中。它不要�
 首批真实对照未达到准确性门槛；该原型继续保持不接入应用聊天。
 
 显式金额算式可关联紧邻计算核验段的引用，并重新验证原文操作数。另有独立的原文筛选[试验方案](docs/rag-context-selection-experiment.md)，尚未接入应用聊天。
+
+原文筛选试验缩减了上下文，但未达到准确性门槛，继续保持实验状态。单独美元符号不自动认定为USD，币种不明确的换算仍是已知限制。
 
 开发需要 Node.js 22.12 或更高版本。运行完整构建和端到端测试还需要 Jupyter Book 2。
 
