@@ -19,9 +19,12 @@ export interface MoneyAmount {
 export function moneyAmounts(text: string): MoneyAmount[] {
   // Preserve offsets when recognizing numeric-only inline math.
   const readable = text.replace(/(?<!\\)\$([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)\$/gu, (_match, digits: string) => ` ${digits} `);
-  const expression = new RegExp(String.raw`(?:(CNY|RMB|USD|US\\?\$)\s*)?([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\s*(?:to|[-–—~～至])\s*(CNY|RMB|USD|US\\?\$)?\s*([+−-]?\d+(?:,\d{3})*(?:\.\d+)?))?\s*(${MONEY_SCALE_PATTERN})[ \t]*(CNY|RMB|USD|US\\?\$|美元|人民币|元(?:人民币)?|dollars)?`, "giu");
+  const expression = new RegExp(String.raw`(?:(CNY|RMB|USD|US\\?\$)\s*)?([+−-]?\d+(?:,\d{3})*(?:\.\d+)?)(?:\s*(?:to|[-–—~～至])\s*(CNY|RMB|USD|US\\?\$)?\s*([+−-]?\d+(?:,\d{3})*(?:\.\d+)?))?\s*(${MONEY_SCALE_PATTERN})[ \t]*(CNY|RMB|USD|US\\?\$|美元|人民币|元(?:人民币)?|US dollars|U\.S\. dollars|dollars)?`, "giu");
   const result: MoneyAmount[] = [...readable.matchAll(expression)].flatMap(match => {
-    const currencies = [match[1], match[3], match[6]].filter((value): value is string => !!value).map(value => /CNY|RMB|人民币|^元$/iu.test(value) ? "CNY" as const : "USD" as const);
+    // Bare dollars do not identify USD (CAD/AUD/HKD also use dollars).
+    const markers = [match[1], match[3], match[6]].filter((value): value is string => !!value && !/^dollars$/iu.test(value));
+    if (/^dollars$/iu.test(match[6] ?? "") && markers.some(value => /CNY|RMB|人民币|^元$/iu.test(value))) return [];
+    const currencies = markers.map(value => /CNY|RMB|人民币|^元$/iu.test(value) ? "CNY" as const : "USD" as const);
     if (!currencies.length || new Set(currencies).size !== 1) return [];
     const digits = [match[2], ...(match[4] ? [match[4]] : [])];
     return [{ raw: text.slice(match.index!, match.index! + match[0].length), start: match.index!, digits, values: digits.map(value => Number(value.replace(/,/g, "").replace("−", "-"))), factor: MONEY_SCALES[match[5].toLowerCase()], currency: currencies[0] }];

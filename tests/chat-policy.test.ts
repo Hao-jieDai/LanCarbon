@@ -5,6 +5,15 @@ import { localResearchPlan, readResearchPlan } from "../electron/chat-plan";
 import { relativeQuantityAids } from "../electron/chat-relative-quantities";
 import { groundingInstructions } from "../electron/chat-policy";
 import { moneyAmounts } from "../electron/chat-money";
+
+it("requires explicit currency rather than interpreting all dollar amounts as USD", () => {
+  for (const text of ["Treatment costs $23–47 billion.", "Transport costs 42 million dollars.", "CAD 42 million dollars.", "A$42 million", "HK$42 million", "$42$ million", "CNY 42 million dollars."]) expect(moneyAmounts(text)).toEqual([]);
+  for (const text of ["Treatment costs 23–47 billion US dollars.", "Transport costs USD 23–47 billion.", "Loss is US$23–47 billion.", "Costs are 23–47 billion U.S. dollars."]) {
+    expect(moneyAmounts(text)).toHaveLength(1);
+    expect(moneyAmounts(text)[0]).toMatchObject({currency:"USD",factor:1e9,values:[23,47]});
+  }
+  expect(moneyAmounts("Costs are RMB 42 million.")[0]).toMatchObject({currency:"CNY",factor:1e6,values:[42]});
+});
 import { moneyClaimAmounts, monetaryBlocks } from "../electron/chat-claims";
 import { quantityNotes, quantityWarnings } from "../electron/chat-quality";
 import { repairCitedUnits } from "../electron/chat-repair";
