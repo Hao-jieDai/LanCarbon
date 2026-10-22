@@ -98,9 +98,17 @@ function repairCalculatedEquivalents(text: string, evidence: ChatEvidence[], cor
   const value = (digits: string) => Number(digits.replace(/,/g, "").replace("−", "-"));
   const same = (a: number, b: number) => Math.abs(a - b) <= Math.max(1e-8, Math.abs(b) * 1e-10);
   const edits: Array<{ at: number; digits: string; replacement: string; label: string }> = [];
-  for (const block of monetaryBlocks(text)) {
+  const blocks = monetaryBlocks(text);
+  for (const [index, block] of blocks.entries()) {
     if (block.table) continue;
-    const labels = citedLabels(block.text), hits = evidence.filter(hit => labels.has(hit.label));
+    let labels = citedLabels(block.text);
+    // A list of explicit equations may put its source in the immediately
+    // following verification paragraph. Scope this only to arithmetic checks,
+    // never ordinary prose, headings, tables or a later unrelated citation.
+    const next = blocks[index + 1];
+    if (!labels.size && next && !next.table && next.text.length <= 1500
+      && /^(?:按(?:论文|原文|报告|研究)[^。！？\n]{0,40}(?:核验|核对)|计算依据(?:原文|报告|论文)|(?:Checking|Verifying) (?:these|the) (?:calculations|results) against (?:the )?(?:source|paper))/iu.test(next.text.trim())) labels = citedLabels(next.text);
+    const hits = evidence.filter(hit => labels.has(hit.label));
     if (!hits.length || new Set(hits.map(hit => hit.source.id)).size !== 1 || [...labels].some(label => !hits.some(hit => hit.label === label))) continue;
     for (const match of block.text.matchAll(expression)) {
       if (hypotheticalAt(block.text, match.index!)) continue;

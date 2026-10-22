@@ -203,3 +203,20 @@ it.each([
   expect(repairCitedUnits(text, [evidence(source.replace("billion", "million"))]).corrections).toEqual([]);
   expect(repairCitedUnits(text, [{ ...hits[0], chunk: { ...hits[0].chunk, anchor: { kind: "pdf", page: 1, needsReview: true } } }]).corrections).toEqual([]);
 });
+
+it("binds explicit equation lists to their immediately following source verification", () => {
+  const hits = [evidence("Transport plans cost CNY 92.8 billion, CNY 63.4 billion and CNY 21.6 billion.")];
+  const equations = "- 甲：$92.8-21.6=71.2$（十亿元），即约0.712万亿元人民币；\n- 乙：$63.4-21.6=41.8$（十亿元），即约4180亿元人民币。";
+  const attribution = "按论文给出的比例核验：对应降幅与文中一致[S1]。";
+  const text = equations + "\n\n" + attribution;
+  const fixed = repairCitedUnits(text, hits);
+  expect(fixed.text).toContain("0.0712万亿元人民币"); expect(fixed.text).toContain("418亿元人民币");
+  expect(fixed.corrections).toHaveLength(2);
+  expect(repairCitedUnits(fixed.text, hits)).toEqual({ text: fixed.text, corrections: [] });
+  for (const suffix of ["其他内容[S1]。", "## 新章节\n\n" + attribution, "中间无关内容\n\n" + attribution, attribution.replace("[S1]", "[S1][S2]")]) {
+    expect(repairCitedUnits(equations + "\n\n" + suffix, hits).corrections).toEqual([]);
+  }
+  expect(repairCitedUnits("假设某一家公司的结果：\n" + text, hits).corrections).toEqual([]);
+  expect(repairCitedUnits(text.replace("=71.2", "=99").replace("=41.8", "=88"), hits).corrections).toEqual([]);
+  expect(repairCitedUnits("甲为71.2亿元人民币。\n\n" + attribution, hits).corrections).toEqual([]);
+});
