@@ -10,7 +10,9 @@ function exactKeys(value, keys) {
 }
 function quoteForms(text) {
   const normalized = text.normalize('NFC');
-  const fold = value => value.replace(/\s+/gu, ' ').trim();
+  const fold = value => value.replace(/\s+/gu, ' ')
+    .replace(/(?<=\p{Script=Han}) +(?=\p{Script=Han})/gu, '')
+    .replace(/ +(?=[,;:，。；：！？])/gu, '').trim();
   return [fold(normalized), fold(normalized.replace(/([\p{L}\p{N}])-\s*\r?\n\s*(?=\p{L})/gu, '$1-')), fold(normalized.replace(/(\p{L})-\s*\r?\n\s*(?=\p{L})/gu, '$1'))];
 }
 function quoteMatches(text, quote) { return quoteForms(text).some(source => quoteForms(quote).some(q => source.includes(q))); }
@@ -37,7 +39,8 @@ function parseNotes(raw, group) {
   for (const fact of parsed.facts) {
     exactKeys(fact, ['subject', 'statement', 'measure', 'value', 'unit', 'conditions', 'evidence']);
     for (const name of ['subject', 'statement']) assert(typeof fact[name] === 'string' && fact[name].trim() && fact[name].length <= 1000, 'Invalid fact');
-    for (const name of ['measure', 'value', 'unit']) assert(fact[name] === null || (typeof fact[name] === 'string' && fact[name].length <= 400), 'Invalid field');
+    for (const name of ['measure', 'value', 'unit']) assert(fact[name] === null || (typeof fact[name] === 'string' && fact[name].length <= 400)
+      || (name === 'value' && typeof fact[name] === 'number' && Number.isFinite(fact[name]) && Math.abs(fact[name]) <= Number.MAX_SAFE_INTEGER), 'Invalid field');
     assert(Array.isArray(fact.conditions) && fact.conditions.length <= 8 && fact.conditions.every(v => typeof v === 'string' && v.length <= 500), 'Invalid conditions');
     assert(Array.isArray(fact.evidence) && fact.evidence.length > 0 && fact.evidence.length <= 4, 'Original quotes required');
     for (const proof of fact.evidence) {

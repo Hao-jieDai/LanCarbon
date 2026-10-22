@@ -40,6 +40,18 @@ it("retains null fields and empty irrelevant-document notes without fabricating 
   expect(parseNotes('{"facts":[]}', g).facts).toEqual([]);
   expect(parseNotes(JSON.stringify({ facts: [fact()] }), g).facts[0].value).toBe(null);
 });
+it("normalizes Chinese layout spacing without merging numbers or removing signs", () => {
+  expect(quoteMatches("交通需求下 降，客流为 12.5% , 成本不变", "交通需求下降，客流为 12.5%, 成本不变")).toBe(true);
+  expect(quoteMatches("交通成本 - 12.5", "交通成本 12.5")).toBe(false);
+  expect(quoteMatches("人数 12 50", "人数 1250")).toBe(false);
+  expect(quoteMatches("比率 1 . 25", "比率 1.25")).toBe(false);
+});
+it("accepts finite JSON numeric values without coercing units or accepting unsafe magnitudes", () => {
+  const [g] = groupEvidence("What changed?", evidence);
+  expect(parseNotes(JSON.stringify({ facts: [{ ...fact(), value: -12.5 }] }), g).facts[0].value).toBe(-12.5);
+  for (const value of [true, [], {}, 1e100]) expect(() => parseNotes(JSON.stringify({ facts: [{ ...fact(), value }] }), g)).toThrow();
+  expect(() => parseNotes(JSON.stringify({ facts: [{ ...fact(), unit: 12 }] }), g)).toThrow();
+});
 it("rejects malformed responses, missing proof and unbounded extraction", () => {
   const [g] = groupEvidence("What changed?", evidence);
   for (const raw of ['{"facts":', '{} {}', JSON.stringify({ facts: [fact()], answer: "unsupported" }), JSON.stringify({ facts: [{ ...fact(), evidence: [] }] }), JSON.stringify({ facts: Array(9).fill(fact()) })]) expect(() => parseNotes(raw, g)).toThrow();
