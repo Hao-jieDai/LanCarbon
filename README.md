@@ -9,6 +9,8 @@
 
 ## English
 
+A developer-only generation-input diagnostic now checks a simplified document contract against unchanged evidence and user preferences. It is not enabled in application chats.
+
 ### What is LanCarbon?
 
 LanCarbon is a Windows desktop application for writing ordinary Markdown Notes and organizing longer work as Books with Sections and Child Pages. It keeps writing and managed resources on your computer. An account is not required for ordinary writing, and LanCarbon sends content only when you explicitly use Publish or make AI requests.
@@ -260,6 +262,8 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 <a id="中文"></a>
 
 ## 中文
+
+新增仅供开发诊断的生成输入对照：固定证据与用户偏好，验证简化资料合同的效果，未启用到日常聊天。
 
 ### LanCarbon 是什么？
 
