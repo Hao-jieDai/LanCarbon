@@ -47,7 +47,18 @@ export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][],
   // Actual user subquestions and explicit follow-ups have priority over
   // automatically generated method/result/unit coverage groups. Otherwise a
   // large number of helpers can fill the budget before a direct result's context.
-  for (let depth = 0; depth < 3; depth++) for (const group of primary) add(group[depth]);
+  // First preserve each direct question, then one retrieved passage from every
+  // required document. Extra hits/neighbours from one document must not consume
+  // the whole budget before another named comparison document is represented.
+  for (const group of primary) add(group[0]);
+  const direct = new Map<string, Map<string, KnowledgeHit>>();
+  for (const group of [...primary, ...ranked]) for (const hit of group) { const items = direct.get(hit.source.id) ?? new Map<string, KnowledgeHit>(); items.set(evidenceKey(hit), hit); direct.set(hit.source.id, items); }
+  const reserved = requiredSourceIds.map(id => [...(direct.get(id)?.values() ?? [])]);
+  for (const candidates of reserved) {
+    if (candidates.some(hit => seen.has(evidenceKey(hit)))) continue;
+    for (const candidate of candidates) { add(candidate); if (seen.has(evidenceKey(candidate))) break; }
+  }
+  for (let depth = 1; depth < 3; depth++) for (const group of primary) add(group[depth]);
   for (const group of primary) for (const hit of group.slice(0, 2)) {
     const siblings = sources.get(hit.source.id)!, index = siblings.findIndex(item => item.chunk.id === hit.chunk.id);
     for (const neighbour of [siblings[index - 1], siblings[index + 1]]) if (neighbour && adjacent(hit, neighbour)) add(neighbour);
@@ -57,14 +68,12 @@ export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][],
   for (let depth = 0; depth < 6; depth++) for (const group of ranked) add(group[depth]);
 
   // Reserve direct, source-specific retrieval before neighbour expansion can consume the budget.
-  const direct = new Map<string, Map<string, KnowledgeHit>>();
-  for (const group of ranked) for (const hit of group) { const items = direct.get(hit.source.id) ?? new Map<string, KnowledgeHit>(); items.set(evidenceKey(hit), hit); direct.set(hit.source.id, items); }
-  const reserved = requiredSourceIds.map(id => [...(direct.get(id)?.values() ?? [])]);
   for (let depth = 0; depth < 4; depth++) for (const candidates of reserved) add(candidates[depth]);
 
   // A short selected corpus can fit completely. Retain it instead of sampling away important details.
-  const all = [...current.values()];
-  if (sourceIds.length <= 3 && (broad || groups.length > 1) && all.length <= CHAT_EVIDENCE_MAX_CHUNKS && all.reduce((sum, hit) => sum + evidenceTokens(hit), 0) <= budget) {
+  const all = [...current.values()].filter(hit => includeBibliography || !bibliography(hit));
+  const completeSelection = sourceIds.length <= 3 || sourceIds.every(id => requiredSourceIds.includes(id));
+  if (completeSelection && (broad || groups.length > 1) && all.length <= CHAT_EVIDENCE_MAX_CHUNKS && all.reduce((sum, hit) => sum + evidenceTokens(hit), 0) <= budget) {
     all.forEach(add);
   } else {
     // Bound neighbour expansion and keep original text/anchors intact for exact citations.

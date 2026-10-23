@@ -20,6 +20,25 @@ it("keeps table rows when two are emphasised and allows only explicit subsets or
 function passage(index: number, source = "paper"): KnowledgeHit {
   return { source: { id: `file:${source}`, entityId: source, kind: "file", title: source, format: "pdf", locations: [], attachments: [], tags: [], systemManaged: false, fingerprint: "a".repeat(64) }, fingerprint: "a".repeat(64), chunk: { id: String(index), text: `Passage ${index}. ` + "Background context. ".repeat(45), anchor: { kind: "pdf", page: Math.floor(index / 5) + 1 } } };
 }
+it.each(["clinical", "transport"])("reserves a named comparison source before optional %s neighbours exhaust the budget", topic => {
+  const a = Array.from({ length: 12 }, (_, i) => passage(i, topic));
+  const b = passage(0, "comparison");
+  const primary = [a.slice(5, 8)];
+  const selected = chooseEvidence([...a, b], [a.slice(5, 10), [b]], [a[0].source.id, b.source.id], true,
+    [a[0].source.id, b.source.id], evidenceTokens(a[0]) * 3, false, primary);
+  expect(selected.some(hit => hit.source.id === b.source.id)).toBe(true);
+  expect(selected.some(hit => hit.source.id === a[0].source.id && hit.chunk.id === "5")).toBe(true);
+  expect(selected.reduce((sum, hit) => sum + evidenceTokens(hit), 0)).toBeLessThanOrEqual(evidenceTokens(a[0]) * 3);
+});
+
+it("keeps a complete small multi-document selection when it fits rather than dropping unranked conditions", () => {
+  const corpus = Array.from({length:5}, (_, doc) => Array.from({length:6}, (_, i) => passage(i, `short-${doc}`))).flat();
+  const sources = [...new Set(corpus.map(hit => hit.source.id))];
+  const groups = sources.map(id => corpus.filter(hit => hit.source.id === id).slice(0, 1));
+  const selected = chooseEvidence(corpus, groups, sources, true, sources, 18000);
+  expect(selected).toHaveLength(corpus.length);
+  expect(selected.map(hit => hit.source.id + ":" + hit.chunk.id).sort()).toEqual(corpus.map(hit => hit.source.id + ":" + hit.chunk.id).sort());
+});
 it.each(["clinical", "materials"])("reserves a direct %s finding and its context before automatic background groups", source => {
   const corpus = Array.from({length: 70}, (_, i) => passage(i, source));
   corpus[49].chunk.text = source === "clinical" ? "Treatment improves recovery but not mortality; these are distinct outcomes." : "Recovered material reduces energy demand, while upfront capital costs rise.";
