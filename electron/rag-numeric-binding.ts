@@ -3,6 +3,7 @@
 import { createHash } from "node:crypto";
 import { strict as assert } from "node:assert";
 import { MONEY_SCALES, moneyAmounts } from "./chat-money";
+import { monetaryBlocks, monetaryLabels, moneyClaimAmounts } from "./chat-claims";
 
 export interface NumericSource {
   citation: string; sourceId: string; fingerprint: string; chunkId: string;
@@ -75,4 +76,35 @@ export function checkNumericUse(sources: readonly NumericSource[], use: {
   const currencyStatus = record.currency === null || use.currency === null ? "unresolved" : record.currency === use.currency ? "matched" : "conflict";
   return { recordId: record.id, magnitudeMatches, currencyStatus, semanticAttribution: "unverified" as const,
     answerVerified: false as const, quote: record.quote, raw: record.raw, anchor: record.anchor };
+}
+
+/** Candidate discovery, not automatic attribution or repair. A citation may
+ * contain several entities; even a unique numerical candidate is not proof. */
+export function inspectNumericAnswer(answer: string, sources: readonly NumericSource[]) {
+  const records = numericRecords(sources);
+  const known = new Set(sources.map(source => source.citation));
+  return monetaryBlocks(answer).flatMap(block => moneyClaimAmounts(block).map(amount => {
+    const labels = [...monetaryLabels(block, amount.start, amount.raw.length)];
+    const unknownLabels = labels.filter(label => !known.has(label));
+    const citedRecords = records.filter(record => labels.includes(record.citation));
+    const candidates = citedRecords.flatMap(record => {
+      if (record.currency && record.currency !== amount.currency || record.digits.length !== amount.digits.length) return [];
+      // Search only exact powers of ten, preserving sign and every range endpoint.
+      // This is a diagnostic signature, not permission to change the answer.
+      const exponent = Array.from({ length: 13 }, (_, i) => i - 6).find(power => record.digits.every((original, i) => {
+        const [a, ad] = decimal(original), [b, bd] = decimal(amount.digits[i]);
+        const left = a * BigInt(record.scale) * bd;
+        const right = b * BigInt(amount.factor) * ad;
+        if (left === 0n || right === 0n) return power === 0 && left === right;
+        return power >= 0 ? left * 10n ** BigInt(power) === right : left === right * 10n ** BigInt(-power);
+      }));
+      return exponent === undefined ? [] : [{ recordId: record.id, citation: record.citation, sourceId: record.sourceId,
+        raw: record.raw, quote: record.quote, anchor: record.anchor, exponent,
+        currencyStatus: record.currency === null ? "unresolved" as const : "matched" as const }];
+    });
+    const status = !labels.length ? "uncited" : unknownLabels.length ? "unknown-citation" : candidates.length > 1 ? "ambiguous"
+      : candidates.length === 0 ? "no-numeric-candidate" : candidates[0].exponent === 0 ? "numeric-candidate" : "possible-scale-error";
+    return { start: block.start + amount.start, raw: amount.raw, labels, unknownLabels, status, candidates,
+      citedRecordCount: citedRecords.length, semanticAttribution: "unverified" as const, answerVerified: false as const };
+  }));
 }
