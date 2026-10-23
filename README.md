@@ -9,7 +9,7 @@
 
 ## English
 
-A developer-only generation-input diagnostic now checks a simplified document contract against unchanged evidence and user preferences. It is not enabled in application chats.
+A developer-only generation-input diagnostic now checks a simplified document contract against unchanged evidence and user preferences. The four-call comparison did not meet its accuracy gate; it is not enabled in application chats.
 
 ### What is LanCarbon?
 
@@ -263,7 +263,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 ## 中文
 
-新增仅供开发诊断的生成输入对照：固定证据与用户偏好，验证简化资料合同的效果，未启用到日常聊天。
+新增仅供开发诊断的生成输入对照：固定证据与用户偏好，验证简化资料合同的效果；四次对照未达到准确性门槛，未启用到日常聊天。
 
 ### LanCarbon 是什么？
 
