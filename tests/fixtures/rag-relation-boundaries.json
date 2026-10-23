@@ -1,0 +1,58 @@
+[
+  {
+    "id": "clinical-subject",
+    "text": "Ward Alpha spent USD 17 million. Ward Beta spent USD 31 million. Both used the same treatment protocol.",
+    "supported": "Ward Alpha spent USD 17 million.",
+    "unsupported": "Ward Beta spent USD 17 million.",
+    "reason": "The amount exists, but belongs to the other ward."
+  },
+  {
+    "id": "transport-metric",
+    "text": "The fleet was ranked by passenger capacity. The accident rate was reported separately and did not determine this ranking.",
+    "supported": "The fleet ranking uses passenger capacity.",
+    "unsupported": "The fleet ranking uses accident rate.",
+    "reason": "The two metrics occur together but only one determines the ranking."
+  },
+  {
+    "id": "agriculture-condition",
+    "text": "With irrigation fixed, yield increased 8%. A separate sensitivity experiment doubled irrigation and yield increased 15%.",
+    "supported": "Yield increased 8% with irrigation fixed.",
+    "unsupported": "Yield increased 15% with irrigation fixed.",
+    "reason": "The sensitivity result is assigned to the baseline condition."
+  },
+  {
+    "id": "clinical-negation",
+    "text": "The intervention did not reduce mortality. It reduced admissions by 12%.",
+    "supported": "The intervention reduced admissions by 12%.",
+    "unsupported": "The intervention reduced mortality by 12%.",
+    "reason": "An observed result is transferred across endpoints and negation."
+  },
+  {
+    "id": "transport-population",
+    "text": "Study A includes operating buses only. Study B includes operating and planned buses in the eastern region.",
+    "supported": "The studies have different population definitions.",
+    "unsupported": "Every bus in Study B is included in Study A.",
+    "reason": "Geographical overlap does not imply planned assets belong to the operating sample."
+  },
+  {
+    "id": "water-overlap",
+    "text": "Study A estimates annual water demand in the north. Study B independently estimates lifetime infrastructure investment nationwide.",
+    "supported": "These estimates differ in measure and time horizon.",
+    "unsupported": "Adding these estimates counts the same expenditure twice.",
+    "reason": "Overlapping geography does not establish duplicated expenditure."
+  },
+  {
+    "id": "finance-role",
+    "text": "Fund Cedar owns the assets. Firm Birch manages Fund Cedar and charges a management fee; it does not own the fund assets.",
+    "supported": "Fund Cedar owns the assets.",
+    "unsupported": "Firm Birch owns the fund assets.",
+    "reason": "Manager and owner are distinct roles despite co-occurrence."
+  },
+  {
+    "id": "energy-upper-bound",
+    "text": "USD 43 million is a hypothetical maximum under complete shutdown. It is not an observed loss.",
+    "supported": "The hypothetical maximum is USD 43 million.",
+    "unsupported": "The observed loss is USD 43 million.",
+    "reason": "The numeric value is exact but its epistemic condition changes."
+  }
+]
