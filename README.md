@@ -9,6 +9,8 @@
 
 ## English
 
+**Comparison context:** Definitions and reference cases selected by local method coverage are now reserved before optional result excerpts and neighbours. This keeps both studies' measures available within the existing context limits; it does not certify generated interpretations.
+
 **Document evidence selection:** Required comparison sources are now considered before optional extra excerpts and neighbours consume the context budget. Complete short collections can be retained beyond three documents when every source is required and the existing limits allow it. These fixes passed offline regression checks; real-model academic acceptance remains pending.
 
 An offline numeric-binding prototype separately checks source amounts, scale conversion and currency certainty; it locates numeric candidates within cited excerpts. Cross-domain counterexamples explicitly guard against treating numeric or quote matches as semantic verification; application answers are unchanged.
@@ -268,6 +270,8 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 <a id="中文"></a>
 
 ## 中文
+
+**比较题上下文：** 本地方法覆盖找到的定义与参照条件，现在先于额外结果和邻段保留，使比较双方的计量口径在既有预算内得到优先覆盖；这不代表生成的推论已经得到验证。
 
 **资料证据选择修复：** 在额外片段和邻段占满上下文前，优先尝试保留必需的比较来源。全部来源均为当前问题必需、且原文可放进既有预算时，超过三篇的短资料也可完整保留。上述修复已通过离线回归，真实模型学术验收仍待完成。
 

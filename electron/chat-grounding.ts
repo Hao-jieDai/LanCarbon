@@ -141,7 +141,7 @@ export class ChatGrounder {
       const evidenceIds = !plan.compare && required.length ? required : ids;
       const followup = plan.lockedFocus && earlierMessage ? followupEvidenceGroups(corpus, earlierMessage, evidenceIds) : [];
       const referencedTable = plan.lockedFocus && earlierMessage ? referencedTableShape(earlierMessage.content) : undefined;
-      const selectEvidence = () => chooseEvidence(corpus, [...followup, ...methods, ...formal, ...outcomes, ...coverage, ...groups], evidenceIds, broad, required, evidenceBudget, withBibliography, [...followup, ...outcomes, ...questionGroups, ...plannedGroups]);
+      const selectEvidence = () => chooseEvidence(corpus, [...followup, ...methods, ...formal, ...outcomes, ...coverage, ...groups], evidenceIds, broad, required, evidenceBudget, withBibliography, [...followup, ...outcomes, ...questionGroups, ...plannedGroups], plan.compare || tasks.includes("comparison") ? methods : []);
       let evidence = selectEvidence();
       const supplemented = followups > 0;
       // Local coverage and bounded planned searches supply the originals before

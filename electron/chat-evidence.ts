@@ -29,11 +29,12 @@ function adjacent(a: KnowledgeHit, b: KnowledgeHit): boolean {
 }
 
 /** Relevant evidence is reserved per question before adding neighbours or overview context. */
-export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][], sourceIds: string[], broad: boolean, requiredSourceIds: string[] = [], limitTokens = 30_000, includeBibliography = false, primaryGroups: KnowledgeHit[][] = []): ChatEvidence[] {
+export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][], sourceIds: string[], broad: boolean, requiredSourceIds: string[] = [], limitTokens = 30_000, includeBibliography = false, primaryGroups: KnowledgeHit[][] = [], methodGroups: KnowledgeHit[][] = []): ChatEvidence[] {
   const allowed = new Set(sourceIds), current = new Map(corpus.filter(hit => allowed.has(hit.source.id)).map(hit => [evidenceKey(hit), hit]));
   const valid = (hit: KnowledgeHit) => { const latest = current.get(evidenceKey(hit)); return latest?.fingerprint === hit.fingerprint && latest.chunk.text === hit.chunk.text && (includeBibliography || !bibliography(latest)) ? latest : undefined; };
   const ranked = groups.map(group => group.flatMap(hit => { const latest = valid(hit); return latest ? [latest] : []; }));
   const primary = primaryGroups.map(group => group.flatMap(hit => { const latest = valid(hit); return latest ? [latest] : []; }));
+  const methods = methodGroups.map(group => group.flatMap(hit => { const latest = valid(hit); return latest ? [latest] : []; }));
   const budget = Math.min(30_000, limitTokens, (broad ? 12_000 : 6_000) + Math.max(0, groups.length - 1) * 4_000 + Math.min(8, Math.max(0, sourceIds.length - 1)) * 1_000);
   const result: KnowledgeHit[] = [], seen = new Set<string>(), texts = new Set<string>(); let tokens = 0;
   const add = (hit?: KnowledgeHit) => {
@@ -58,6 +59,11 @@ export function chooseEvidence(corpus: KnowledgeHit[], groups: KnowledgeHit[][],
     if (candidates.some(hit => seen.has(evidenceKey(hit)))) continue;
     for (const candidate of candidates) { add(candidate); if (seen.has(evidenceKey(candidate))) break; }
   }
+  // A comparison needs the meaning and reference case of each measure, not
+  // merely one arbitrary excerpt per source. Preserve the bounded method
+  // candidates before optional extra results and their neighbours fill context.
+  // They undergo the same scope, freshness, deduplication and budget checks.
+  for (let depth = 0; depth < 2; depth++) for (const group of methods) add(group[depth]);
   for (let depth = 1; depth < 3; depth++) for (const group of primary) add(group[depth]);
   for (const group of primary) for (const hit of group.slice(0, 2)) {
     const siblings = sources.get(hit.source.id)!, index = siblings.findIndex(item => item.chunk.id === hit.chunk.id);

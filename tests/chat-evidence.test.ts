@@ -20,6 +20,21 @@ it("keeps table rows when two are emphasised and allows only explicit subsets or
 function passage(index: number, source = "paper"): KnowledgeHit {
   return { source: { id: `file:${source}`, entityId: source, kind: "file", title: source, format: "pdf", locations: [], attachments: [], tags: [], systemManaged: false, fingerprint: "a".repeat(64) }, fingerprint: "a".repeat(64), chunk: { id: String(index), text: `Passage ${index}. ` + "Background context. ".repeat(45), anchor: { kind: "pdf", page: Math.floor(index / 5) + 1 } } };
 }
+it.each([
+  ["clinical", "Recovery is defined as sustained symptom resolution; the control receives standard care."],
+  ["transport", "Delay is measured as excess journey time relative to the uncongested baseline."],
+])("retains both %s operational definitions before optional results and neighbours", (topic, definition) => {
+  const a = Array.from({ length: 15 }, (_, i) => passage(i, topic + "-a"));
+  const b = Array.from({ length: 15 }, (_, i) => passage(i, topic + "-b"));
+  a[12].chunk.text = definition;
+  b[12].chunk.text = "The comparison uses a different observation period. " + definition;
+  const primary = [a.slice(5, 8), b.slice(5, 8)], methods = [[a[12]], [b[12]]];
+  const budget = evidenceTokens(a[5]) * 4;
+  const selected = chooseEvidence([...a, ...b], [...methods, ...primary], [a[0].source.id, b[0].source.id], true,
+    [a[0].source.id, b[0].source.id], budget, false, primary, methods);
+  for (const hit of [a[5], b[5], a[12], b[12]]) expect(selected.some(x => x.source.id === hit.source.id && x.chunk.id === hit.chunk.id)).toBe(true);
+  expect(selected.reduce((n, h) => n + evidenceTokens(h), 0)).toBeLessThanOrEqual(budget);
+});
 it.each(["clinical", "transport"])("reserves a named comparison source before optional %s neighbours exhaust the budget", topic => {
   const a = Array.from({ length: 12 }, (_, i) => passage(i, topic));
   const b = passage(0, "comparison");
@@ -29,6 +44,17 @@ it.each(["clinical", "transport"])("reserves a named comparison source before op
   expect(selected.some(hit => hit.source.id === b.source.id)).toBe(true);
   expect(selected.some(hit => hit.source.id === a[0].source.id && hit.chunk.id === "5")).toBe(true);
   expect(selected.reduce((sum, hit) => sum + evidenceTokens(hit), 0)).toBeLessThanOrEqual(evidenceTokens(a[0]) * 3);
+});
+
+it("applies scope, freshness and bibliography guards to protected method evidence", () => {
+  const corpus = Array.from({ length: 20 }, (_, i) => passage(i));
+  const hidden = passage(0, "unselected"), stale = { ...corpus[15], fingerprint: "b".repeat(64) };
+  const changed = { ...corpus[16], chunk: { ...corpus[16].chunk, text: "Obsolete definition" } };
+  corpus[17].chunk.text = "References\nSmith, A. (2020). A research report. Journal of Studies.";
+  const selected = chooseEvidence([...corpus, hidden], [[corpus[5]]], ["file:paper"], true, ["file:paper"],
+    evidenceTokens(corpus[5]) * 2, false, [[corpus[5]]], [[hidden], [stale], [changed], [corpus[17]], [corpus[18]]]);
+  expect(selected.map(h => h.chunk.id)).toEqual(["5", "18"]);
+  expect(selected.every(h => h.source.id === "file:paper")).toBe(true);
 });
 
 it("keeps a complete small multi-document selection when it fits rather than dropping unranked conditions", () => {

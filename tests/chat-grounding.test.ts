@@ -96,6 +96,24 @@ it("limits auxiliary use to source planning before preparing the single answer",
   expect(JSON.stringify(prepared.messages)).not.toContain("SecretOutsideSelection");
 });
 
+it("sends both studies' measure definitions despite result-heavy comparison retrieval", async () => {
+  const f = await fixture();
+  for (const [i, marker] of ["patient recovery", "symptom reduction"].entries()) {
+    f.notes[i].content = Array.from({ length: 60 }, (_, n) => `# Outcome ${n}\n\n` + (`Reported outcome ${n} for group ${i}. ` + "Participants received follow-up visits. ".repeat(22))).join("\n\n")
+      + `\n\n# Measurement\n\nIn this study we define ${marker} as the change from baseline after observation. The comparison uses ${i ? "twelve" : "six"} months of follow-up.`;
+  }
+  vi.mocked(f.retrieval.search).mockImplementation(async (_q, ids) => ({ hits: (await f.store.corpus()).filter(h => (ids ?? []).includes(h.source.id) && h.chunk.text.includes("Reported outcome")).slice(10, 30).map(h => ({ ...h, score: 1, retrieval: "keyword" as const })), warnings: [], mode: "keyword" }));
+  await f.service.setSources(f.chat.id, { ...emptyKnowledgeScope(), noteIds: ["a", "b"] });
+  await f.service.send(f.chat.id, "siliconflow", "fixture-model", "Compare these two studies. Can the reported outcomes be combined?");
+  expect((await f.settled()).messages.at(-1)!.status).toBe("complete");
+  const bodies = f.fetcher.mock.calls.map(call => JSON.parse(String(call[1]!.body)));
+  const data = bodies.flatMap(body => body.messages).find((m: { content: string }) => m.content.startsWith('{"selectedSources":'));
+  const text = JSON.stringify(JSON.parse(data.content).evidence);
+  expect(text).toContain("define patient recovery"); expect(text).toContain("define symptom reduction");
+  expect(text).toContain("six months"); expect(text).toContain("twelve months");
+  expect(text).not.toContain("SecretOutsideSelection");
+});
+
 it.each(["clinical", "materials"])("executes a targeted %s query before generic source checks exhaust the allowance", async domain => {
   const f = await fixture(), selected = ["a", "b", "c", "d", "e"];
   for (const id of selected.slice(2)) f.notes.push(createNote({ id, title: `${domain} ${id}`, content: "" }));
