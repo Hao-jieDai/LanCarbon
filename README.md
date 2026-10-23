@@ -11,7 +11,7 @@
 
 An offline numeric-binding prototype separately checks source amounts, scale conversion and currency certainty; it locates numeric candidates within cited excerpts. Cross-domain counterexamples explicitly guard against treating numeric or quote matches as semantic verification; application answers are unchanged.
 
-A separate developer-only clean-input comparison preserves original excerpts and the question while removing auxiliary instructions and history; it is not enabled in application chats.
+A separate developer-only clean-input comparison preserves original excerpts and the question while removing auxiliary instructions and history; it did not meet its accuracy gate and is not enabled in application chats.
 
 A developer-only generation-input diagnostic now checks a simplified document contract against unchanged evidence and user preferences. The four-call comparison did not meet its accuracy gate; it is not enabled in application chats.
 
@@ -269,7 +269,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 新增离线金额原文绑定原型，分开检查数量级与币种确定性；可按引用查找数值候选，并以跨领域反例防止把数值或引文匹配当作语义验证；日常回答未改变。
 
-另设干净输入开发对照，保留原文与问题，移除辅助指令和历史，未启用到日常聊天。
+另设干净输入开发对照，保留原文与问题，移除辅助指令和历史；对照未达到准确性门槛，未启用到日常聊天。
 
 新增仅供开发诊断的生成输入对照：固定证据与用户偏好，验证简化资料合同的效果；四次对照未达到准确性门槛，未启用到日常聊天。
 
