@@ -15,3 +15,6 @@ acceptance/
 public/pdfjs/
 public/ocr/
 src/generated/
+
+__pycache__/
+*.pyc

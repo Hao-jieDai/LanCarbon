@@ -114,4 +114,27 @@ class EvidenceTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('A',result.references)
         self.assertIn('B',result.references)
 
+    async def test_native_retrieval_stays_inside_selected_document(self):
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        environment = patch.dict(os.environ, {'PQA_HOME':temporary.name,'LITELLM_LOCAL_MODEL_COST_MAP':'True'})
+        environment.start()
+        self.addCleanup(environment.stop)
+        try:
+            from paperqa import Docs, Settings
+            from paperqa.types import Doc, Text
+        except ImportError:
+            self.skipTest('Pinned PaperQA environment required')
+        a=Doc(docname='Clinical',dockey='A',citation='Clinical study')
+        b=Doc(docname='Transit',dockey='B',citation='Transit study')
+        all_texts=[Text(name='p1',text='Clinical definitions',doc=a,embedding=[1.,0.]),
+                   Text(name='p1',text='Transit definitions',doc=b,embedding=[1.,0.])]
+        selected=[t for t in all_texts if t.doc.dockey=='A']
+        docs=Docs(docs={'A':a},texts=selected)
+        await docs.texts_index.add_texts_and_embeddings(selected)
+        async def embed_documents(texts):return [[1.,0.] for _ in texts]
+        fake=SimpleNamespace(set_mode=lambda mode:None,embed_documents=embed_documents)
+        matches=await docs.retrieve_texts('definitions',12,Settings(),embedding_model=fake)
+        self.assertEqual([t.doc.dockey for t in matches],['A'])
+
 if __name__=='__main__':unittest.main()
