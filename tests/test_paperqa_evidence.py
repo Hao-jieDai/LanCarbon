@@ -114,6 +114,18 @@ class EvidenceTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn('A',result.references)
         self.assertIn('B',result.references)
 
+        for t in texts:
+            t.embedding=[1.,0.]
+        original=Docs(docs={t.doc.dockey:t.doc for t in texts},texts=texts)
+        serialized=json.loads(original.model_dump_json())
+        restored=await m.restore_native_index(serialized)
+        self.assertEqual([(d.docname,d.dockey,d.citation) for d in restored.docs.values()],
+                         [(d.docname,d.dockey,d.citation) for d in original.docs.values()])
+        self.assertEqual([t.doc.dockey for t in restored.texts_index.texts],['A','B'])
+        serialized['texts'][0]['doc']['dockey']='outside'
+        with self.assertRaisesRegex(ValueError,'identities disagree'):
+            await m.restore_native_index(serialized)
+
     async def test_native_retrieval_stays_inside_selected_document(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)

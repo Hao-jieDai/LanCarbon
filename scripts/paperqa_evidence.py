@@ -76,6 +76,34 @@ def citation_id(text: Any) -> str:
     return 'pqac-' + identity(text)[:8]
 
 
+async def restore_native_index(payload: dict):
+    """Restore typed documents before upstream's union validator can reinterpret them."""
+    from paperqa import Docs
+    from paperqa.types import Doc, DocDetails
+    data = dict(payload)
+    data.pop('texts_index', None)
+    documents = {}
+    plain_fields = set(Doc.model_fields) | {'formatted_citation'}
+    for key, raw in data['docs'].items():
+        model = Doc if set(raw) <= plain_fields else DocDetails
+        doc = model.model_validate(raw)
+        if str(doc.dockey) != str(key) or any(
+            getattr(doc, field) != raw[field] for field in ('docname', 'dockey', 'citation')
+        ):
+            raise ValueError('Document identity changed while restoring the index')
+        documents[key] = doc
+    data['docs'] = documents
+    docs = Docs.model_validate(data)
+    for text in docs.texts:
+        doc = next((d for d in docs.docs.values() if d.dockey == text.doc.dockey), None)
+        if doc is None or doc.docname != text.doc.docname or doc.citation != text.doc.citation:
+            raise ValueError('Index catalogue and excerpt identities disagree')
+        if text.embedding is None:
+            raise ValueError('Saved index is missing an embedding')
+    await docs.texts_index.add_texts_and_embeddings(docs.texts)
+    return docs
+
+
 def validate_ranks(response: dict, count: int) -> list[tuple[int, float]]:
     rows = response.get('results')
     if not isinstance(rows, list) or len(rows) != count:
