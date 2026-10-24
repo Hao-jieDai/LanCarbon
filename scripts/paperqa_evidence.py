@@ -14,6 +14,10 @@ from typing import Any, Awaitable, Callable
 
 PLAN_SYSTEM = '''Decompose the user's question into at most four evidence-search
 subquestions. Return JSON only: {"questions":[{"query":"...","sources":["S1"]}]}.
+Split by the distinct information needs in the question, not one bundle per paper.
+For a comparison, apply each requested dimension across its relevant source IDs.
+Do not put document titles or author names in search queries: source IDs already
+scope the search. Do not add requests for quantities that the user did not ask for.
 Use only IDs in the supplied selected-source catalogue. Preserve all requested
 comparisons, quantities and qualifications. A subquestion may target several sources.
 Queries must ask for evidence, not assert an answer or introduce assumed facts.
