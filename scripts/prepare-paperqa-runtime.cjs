@@ -49,6 +49,11 @@ async function main() {
     const relative = path.relative(source.site, item), parts = relative.split(path.sep);
     if (parts.some(p => p === '__pycache__') || /\.pyc$/i.test(item)) return false;
     if (/^pip(?:-|$)/i.test(parts[0])) return false;
+    // These are upstream benchmark outputs, not runtime guardrail code. Their
+    // long filenames exceed NSIS path limits at otherwise valid install roots.
+    if (parts.includes('guardrail_benchmarks') && parts.includes('results')) return false;
+    // NSIS excludes ARM launchers from an x64 installation; match its payload.
+    if (/^(?:cli|gui)-arm64\.exe$/i.test(path.basename(item))) return false;
     if (fs.lstatSync(item).isSymbolicLink()) throw Error('Runtime dependencies must not contain links.');
     return true;
   } });
