@@ -9,6 +9,8 @@
 
 ## English
 
+A developer-only PaperQA candidate now scopes evidence searches by subquestion and source, applies the configured BGE reranker, and retains original excerpts for one final answer. It is not enabled in application chats; see the [evaluation scope](docs/rag-paperqa-scoped-evidence.md).
+
 **Comparison context:** Definitions and reference cases selected by local method coverage are now reserved before optional result excerpts and neighbours. This keeps both studies' measures available within the existing context limits; it does not certify generated interpretations.
 
 **Document evidence selection:** Required comparison sources are now considered before optional extra excerpts and neighbours consume the context budget. Complete short collections can be retained beyond three documents when every source is required and the existing limits allow it. These fixes passed offline regression checks; real-model academic acceptance remains pending.
@@ -270,6 +272,8 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 <a id="中文"></a>
 
 ## 中文
+
+开发候选基于 PaperQA 按子问题和来源取证，使用现有 BGE 重排，并保留原文用于一次最终回答。尚未启用到日常聊天，验证边界见[适配说明](docs/rag-paperqa-scoped-evidence.md)。
 
 **比较题上下文：** 本地方法覆盖找到的定义与参照条件，现在先于额外结果和邻段保留，使比较双方的计量口径在既有预算内得到优先覆盖；这不代表生成的推论已经得到验证。
 
