@@ -1,9 +1,10 @@
 import type { KnowledgeHit, KnowledgeScope, KnowledgeSource, KnowledgeView } from "./knowledge";
 export const CHAT_EVIDENCE_MAX_CHUNKS = 96;
+export const FULL_TEXT_MAX_CHUNKS = 999;
 export interface ChatEvidence extends KnowledgeHit { label: string }
 export interface ChatGrounding {
   scope: KnowledgeScope; sourceIds: string[]; evidence: ChatEvidence[];
-  warnings: string[]; mode: "keyword" | "hybrid" | "reranked";
+  warnings: string[]; mode: "keyword" | "hybrid" | "reranked" | "full-text";
   research?: { failedReview?: string; answerRevision?: "applied" | "failed"; focusSourceIds: string[]; searches: number; modelChecks: number; supplemented: boolean; review: "sufficient" | "limited" | "unavailable" | "not-needed" };
 }
 export type ChatSourceCatalogue = Pick<KnowledgeView, "sources" | "books" | "folders">;

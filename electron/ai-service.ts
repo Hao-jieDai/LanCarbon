@@ -27,7 +27,7 @@ export function conversationMessages(chat: AIChat, provider: AIProvider, modelId
 export class AIService {
   private readonly jobs = new Map<string, { controller: AbortController; done: Promise<void> }>();
   private testJob?: { controller: AbortController; done: Promise<void> };
-  constructor(readonly settings: AISettingsStore, private readonly chats: () => AIChatStore, private readonly client: AIClient, private readonly emit: (chat: AIChat) => void, private readonly grounder?: ChatGrounder) {}
+  constructor(readonly settings: AISettingsStore, private readonly chats: () => AIChatStore, private readonly client: AIClient, private readonly emit: (chat: AIChat) => void, private readonly grounder?: Pick<ChatGrounder, "validate" | "prepare" | "finish">) {}
   async setSources(id: string, scope: KnowledgeScope) {
     if (this.jobs.has(id)) throw Error("Stop the reply before changing its sources.");
     if (!this.grounder) throw Error("Document questions are unavailable.");
@@ -88,6 +88,7 @@ export class AIService {
           if (hasChatSources(chat.sourceScope)) {
             if (!this.grounder) throw Error("Document questions are unavailable.");
             const prepared = await this.grounder.prepare(chat, controller.signal, progress, consult);
+            if (prepared.grounding.mode === "full-text" && (provider.kind !== "siliconflow" || !/DeepSeek.*Flash/i.test(modelId))) throw Error("Choose your configured SiliconFlow DeepSeek Flash model for this development full-text mode.");
             reply.grounding = prepared.grounding;
             // One system message: presentation preferences plus the document contract.
             // Evidence/history remain data in their original user-message roles.
@@ -101,7 +102,7 @@ export class AIService {
             if (reply.content.length + reply.reasoning.length > 1_000_000) { controller.abort(); throw new Error("Response size limit reached"); }
             if (!updateTimer) updateTimer = setTimeout(() => { updateTimer = undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, 120);
             if (!persistTimer) persistTimer = setTimeout(() => { persistTimer = undefined; const snapshot = { ...reply }; void chatStore.update(id, saved => { const index = saved.messages.findIndex(message => message.id === reply.id); if (index >= 0) saved.messages[index] = snapshot; }).catch(() => controller.abort()); }, 800);
-          }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, { ...(reply.grounding ? { maxTokens: 16384, thinkingBudget: 8192, timeoutMs: 600_000, maxRetries: 0 } : {}), onFinish: reason => { reply.finishReason = reason; } });
+          }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, { ...(reply.grounding ? { maxTokens: reply.grounding.mode === "full-text" ? 8192 : 16384, thinkingBudget: 8192, timeoutMs: 600_000, maxRetries: 0, ...(reply.grounding.mode === "full-text" ? { temperature: 0 } : {}) } : {}), onFinish: reason => { reply.finishReason = reason; } });
           if (reply.grounding && this.grounder) { try { progress("Checking answer…"); reply.content = await this.grounder.finish(reply.grounding, reply.content); } catch { reply.content = chatMarkdown(reply.content); throw Error("The reply was generated, but local consistency checks failed. Its text is retained."); } }
           reply.content = chatMarkdown(reply.content);
           reply.status = controller.signal.aborted ? "stopped" : "complete";

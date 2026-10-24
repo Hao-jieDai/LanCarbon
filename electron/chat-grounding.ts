@@ -185,11 +185,15 @@ export class ChatGrounder {
     return new Promise((resolve, reject) => { const abort = () => { if (!started) reject(Error("Document question stopped.")); }; signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort(); work.then(resolve, reject).finally(() => signal.removeEventListener("abort", abort)); });
   }
   async finish(grounding: ChatGrounding, text: string) {
-    const repaired = repairCitedUnits(text, grounding.evidence); text = repaired.text;
-    grounding.warnings.push(...repaired.corrections);
-    grounding.warnings.push(...arithmeticWarnings(text));
-    grounding.warnings.push(...quantityWarnings(text, grounding.evidence));
-    grounding.warnings.push(...scenarioWarnings(text, grounding.evidence));
+    // The PaperQA development path preserves the model's answer. Keep only
+    // provenance checks below; do not carry over the old numeric repair rules.
+    if (grounding.mode !== "full-text") {
+      const repaired = repairCitedUnits(text, grounding.evidence); text = repaired.text;
+      grounding.warnings.push(...repaired.corrections);
+      grounding.warnings.push(...arithmeticWarnings(text));
+      grounding.warnings.push(...quantityWarnings(text, grounding.evidence));
+      grounding.warnings.push(...scenarioWarnings(text, grounding.evidence));
+    }
     try {
       const current = new Map((await this.catalogue()).sources.map(source => [source.id, source]));
       if (grounding.evidence.some(hit => current.get(hit.source.id)?.fingerprint !== hit.fingerprint || current.get(hit.source.id)?.unavailable)) grounding.warnings.push("A cited source changed or became unavailable while this answer was generated. Saved excerpts are retained; ask again using the current documents.");

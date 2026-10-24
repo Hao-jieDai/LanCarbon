@@ -43,6 +43,8 @@ import { migrateAssetsToLibrary } from "./asset-migration";
 import { AISettingsStore, AIChatStore } from "./ai-storage";
 import { AIClient, redactAIError } from "./ai-client";
 import { AIService } from "./ai-service";
+import { PaperQAGrounder } from "./paperqa-grounding";
+import { paperQACompiler } from "./paperqa-bridge";
 import { PdfReaderStore } from "./pdf-reader";
 import { EpubReaderStore } from "./epub-reader";
 import { AIBalanceStore } from "./ai-balances";
@@ -67,12 +69,13 @@ let externalTimer: NodeJS.Timeout | undefined;
 let flushExternal: () => Promise<unknown> = async () => {};
 let shutdownKnowledge: () => Promise<unknown> = async () => {};
 
+const paperQADevelopment = !app.isPackaged && process.env.LANCARBON_PAPERQA_DEV === "1";
 const directories = resolveLanCarbonDirectories({
   executable: process.execPath,
   packaged: app.isPackaged,
   platform: process.platform,
   appData: app.getPath("appData"),
-  overrideRoot: process.env.LANCARBON_ROOT,
+  overrideRoot: paperQADevelopment ? (process.env.LANCARBON_PAPERQA_TEST_ROOT || path.resolve(".dev-workspace", "PaperQA")) : process.env.LANCARBON_ROOT,
   e2eDirectory: process.env.E2E_USER_DATA_DIR
 });
 for (const directory of directoryList(directories)) mkdirSync(directory, { recursive: true });
@@ -114,6 +117,10 @@ async function createWindow(): Promise<void> {
   });
 
   mainWindow.webContents.session.setSpellCheckerEnabled(false);
+  if (paperQADevelopment) {
+    mainWindow.setTitle("LanCarbon · PaperQA Development");
+    mainWindow.on("page-title-updated", event => { event.preventDefault(); mainWindow?.setTitle("LanCarbon · PaperQA Development"); });
+  }
   mainWindow.webContents.on("before-input-event", (_event, input) => {
     // Keep Ctrl+Q in the renderer instead of Electron's native Quit accelerator.
     mainWindow?.webContents.setIgnoreMenuShortcuts(input.control && !input.meta && !input.alt && !input.shift && input.key.toLowerCase() === "q");
@@ -213,7 +220,10 @@ app.whenReady().then(async () => {
   };
   const aiClient = new AIClient((input, init) => net.fetch(input as string, init), observeUsage);
   const retrievalClient = new RetrievalClient((input, init) => net.fetch(input as string, init), observeUsage);
-  aiService = new AIService(aiSettings, chats, aiClient, chat => mainWindow?.webContents.send("ai:chat", chat), new ChatGrounder(() => knowledge(), () => retrieval(), async () => (await retrievalSettings.get()).enabled));
+  const nativeGrounder = new ChatGrounder(() => knowledge(), () => retrieval(), async () => (await retrievalSettings.get()).enabled);
+  const activeGrounder = paperQADevelopment ? new PaperQAGrounder(() => knowledge(), nativeGrounder,
+    paperQACompiler(process.env.LANCARBON_PAPERQA_PYTHON || path.resolve(".dev-workspace", "paperqa-runtime", "Scripts", "python.exe"), path.resolve("scripts", "paperqa_prompt.py")), () => retrieval().stop()) : nativeGrounder;
+  aiService = new AIService(aiSettings, chats, aiClient, chat => mainWindow?.webContents.send("ai:chat", chat), activeGrounder);
   translationService = new TranslationService(translationSettings, translationConnections, aiSettings, cache, aiClient);
   const translationChanged = () => mainWindow?.webContents.send("translation:changed");
   const aiHandler = (channel: string, action: (...args: any[]) => Promise<object>) => ipcMain.handle(channel, async (event, ...args) => {

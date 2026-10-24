@@ -1,0 +1,7 @@
+paper-qa==2026.8.12
+paper-qa-pypdf==2026.8.12
+fhlmi==0.45.0
+fhaviary==0.34.0
+pydantic==2.12.5
+litellm==1.82.4
+tiktoken==0.12.0

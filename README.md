@@ -9,6 +9,8 @@
 
 ## English
 
+**PaperQA development mode:** Use the separate [development launcher and acceptance guide](docs/rag-paperqa-development.md) for complete selected texts and one SiliconFlow DeepSeek Flash answer. This mode skips planning, summaries, embedding/rerank and answer rewriting, preserves citations/Thinking/Usage, and uses separate local data. Oversized or incomplete sources stop before sending. The installed application is unchanged; local integration checks are not academic acceptance.
+
 A developer-only [PaperQA comparison candidate](docs/rag-paperqa-comparison-flow.md) was tested with Flash on four fixed cases, including two new papers. All four quotation maps failed the frozen verbatim checks, so no candidate final answer was generated; factual improvement is not established. The [live evaluation](docs/rag-paperqa-flash-paired.md) is closed within its budget. Application chats remain unchanged.
 
 A developer-only PaperQA candidate now scopes evidence searches by subquestion and source, applies the configured BGE reranker, and retains original excerpts for one final answer. Live evaluation still found missing evidence and incorrect synthesis; it is not enabled in application chats. See the [evaluation scope and results](docs/rag-paperqa-scoped-evidence.md).
@@ -278,6 +280,8 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 <a id="中文"></a>
 
 ## 中文
+
+**PaperQA 开发模式：** 使用独立的[开发入口与验收指南](docs/rag-paperqa-development.md)，将选定资料的完整解析文本交给 SiliconFlow DeepSeek Flash 一次回答。此模式不运行规划、摘要、embedding/rerank 或答案改写，保留引用、Thinking、Usage，数据独立存放。超限或解析不完整时在发送前停止。本轮不安装，接入测试不等于学术验收通过。
 
 开发候选基于 PaperQA 按子问题和来源取证，使用现有 BGE 重排，并保留原文用于一次最终回答。真实验证仍存在取证遗漏与综合判断错误，尚未启用到日常聊天，验证边界和结果见[适配说明](docs/rag-paperqa-scoped-evidence.md)。
 
