@@ -31,7 +31,7 @@ def prepare(question, texts, settings, *, selected_ids=None, flexible_length=Fal
     # Native serializer sorts by score then lexicographic page name. Preserve
     # the parser's sequence, including page 2 before page 10, in both conditions.
     for i, context in enumerate(session.contexts):
-        context.score = 5 - i / (len(texts) + 1)
+        context.score = len(texts) - i  # Integer ordering key, not a relevance estimate.
     configured = settings.model_copy(deep=True)
     configured.answer.answer_max_sources = len(texts)
     configured.answer.evidence_relevance_score_cutoff = 0
