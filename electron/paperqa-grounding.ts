@@ -33,7 +33,7 @@ export class PaperQAGrounder implements DocumentGrounder {
       if (unreadable.length) throw Error(`Full text is not ready: ${unreadable.slice(0, 4).map(s => s.title).join(", ")}. Check extraction/OCR or remove these sources; nothing was sent.`);
       const hits = (await this.knowledge().corpus()).filter(hit => ids.has(hit.source.id));
       if ([...ids].some(id => !hits.some(hit => hit.source.id === id))) throw Error("A selected source has no readable full text. Nothing was sent.");
-      if (hits.length > PAPERQA_MAX_PASSAGES || hits.reduce((n, hit) => n + hit.chunk.text.length, 0) > PAPERQA_MAX_CHARACTERS) throw Error("Select fewer sources: the development full-text limit is 500,000 characters / 999 passages. Nothing was truncated or sent.");
+      if (hits.length > PAPERQA_MAX_PASSAGES || hits.reduce((n, hit) => n + hit.chunk.text.length, 0) > PAPERQA_MAX_CHARACTERS) throw Error("Select fewer sources: the full-text limit is 500,000 characters / 999 passages. Nothing was truncated or sent.");
       const evidence: ChatEvidence[] = hits.map((hit, i) => ({ ...hit, label: `S${i + 1}` }));
       signal.throwIfAborted(); progress("Preparing full-text answer…");
       const prepared = await this.compile(question, evidence, signal);
@@ -54,7 +54,7 @@ export class PaperQAGrounder implements DocumentGrounder {
         historySize += m.content.length; history.unshift({ role: m.role, content: m.content });
       }
       const messages = [prepared.messages[0], ...history, prepared.messages[1]];
-      if (Buffer.byteLength(JSON.stringify(messages), "utf8") > 750_000) throw Error("Select fewer sources or start a new chat: the full-text request exceeds the development limit. Nothing was sent.");
+      if (Buffer.byteLength(JSON.stringify(messages), "utf8") > 750_000) throw Error("Select fewer sources or start a new chat: the full-text request exceeds the size limit. Nothing was sent.");
       const grounding: ChatGrounding = { scope, sourceIds: [...ids], evidence, mode: "full-text", warnings: evidence.some(hit => hit.chunk.anchor.needsReview) ? ["Some OCR text needs checking against the original page."] : [], research: { focusSourceIds: [...ids], searches: 0, modelChecks: 0, supplemented: false, review: "not-needed" } };
       return { grounding, messages };
     });

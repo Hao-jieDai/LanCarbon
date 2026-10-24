@@ -9,7 +9,7 @@
 
 ## English
 
-**PaperQA development mode:** Use the separate [development launcher and acceptance guide](docs/rag-paperqa-development.md) for complete selected texts and one SiliconFlow DeepSeek Flash answer. This mode skips planning, summaries, embedding/rerank and answer rewriting, preserves citations/Thinking/Usage, and uses separate local data. Oversized or incomplete sources stop before sending. The installed application is unchanged; local integration checks are not academic acceptance.
+**PaperQA full-text questions:** The installed application includes its runtime and uses your existing Flash configuration. See the [installation acceptance guide](docs/rag-paperqa-installation.md). Earlier experiments below describe historical candidates, not extra steps in the current answer flow.
 
 A developer-only [PaperQA comparison candidate](docs/rag-paperqa-comparison-flow.md) was tested with Flash on four fixed cases, including two new papers. All four quotation maps failed the frozen verbatim checks, so no candidate final answer was generated; factual improvement is not established. The [live evaluation](docs/rag-paperqa-flash-paired.md) is closed within its budget. Application chats remain unchanged.
 
@@ -35,7 +35,7 @@ LanCarbon is a Windows desktop application for writing ordinary Markdown Notes a
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
-Version 2.4.13 consolidates document-answer rules and keeps multiple requested tasks together. The selected Chat model generates one answer directly, with at most one optional source-planning call and no second full-answer rewrite or quotation-audit JSON protocol. Local unit, arithmetic and citation checks remain; corrections are recorded in Evidence. Definition passages, paired baselines and cross-paper source focus retain their existing coverage. Monetary aids and conservative repairs share one parser; explicit relative baselines distinguish remaining levels from reductions. Saved preferences, historical chats and usage records are preserved. These internal changes still require real-model academic acceptance. Declared slash-separated amount lists share their final unit without changing correct members; ambiguous division is not automatically repaired. A damaged numeric glyph triggers local PDF OCR; unreadable symbols remain visible and uncertain rather than silently losing a sign. Older text indexes are re-extracted automatically; original files and selection are preserved. Text chunks prefer complete sentences and table lines within the existing size limit so that classifications are less likely to end mid-label. Targeted planned searches run before generic source checks. Direct subquestions, comparative findings and adjacent originals are reserved before automatic background coverage, within the same budgets. Inline amounts and monetary table headings now share the same complete scale definitions; an unsupported compound unit is left untouched rather than matched as a smaller suffix. Explicit arithmetic-to-currency equivalences are checked against current cited operands, including changed mantissas; unsupported or uncertain operands remain untouched. Baseline assumptions, primary scenario changes and separate sensitivity experiments are kept distinct in the shared evidence contract. Document replies check proposed premises and labels against originals and avoid unneeded quantitative inventories, conversions and formulas.
+Version 2.4.13 enables PaperQA full-text document questions with the configured SiliconFlow DeepSeek Flash model. Complete parsed source text goes into one answer without planning, generated summaries, embedding/rerank or answer rewriting. The Python/PaperQA runtime is bundled; no separate Python, Docker or WSL installation is needed. Existing configuration, writing, Library, chats, Thinking, citations, Usage and exports are preserved. Oversized, missing or partially parsed sources stop before sending. Local functional checks do not certify academic answer accuracy.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -281,7 +281,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 ## 中文
 
-**PaperQA 开发模式：** 使用独立的[开发入口与验收指南](docs/rag-paperqa-development.md)，将选定资料的完整解析文本交给 SiliconFlow DeepSeek Flash 一次回答。此模式不运行规划、摘要、embedding/rerank 或答案改写，保留引用、Thinking、Usage，数据独立存放。超限或解析不完整时在发送前停止。本轮不安装，接入测试不等于学术验收通过。
+**PaperQA 全文问答：** 安装版内置运行环境，沿用现有 Flash 配置。参见[安装版验收指南](docs/rag-paperqa-installation.md)。下方试验记录属于历史候选，不是当前问答流程中的额外步骤。
 
 开发候选基于 PaperQA 按子问题和来源取证，使用现有 BGE 重排，并保留原文用于一次最终回答。真实验证仍存在取证遗漏与综合判断错误，尚未启用到日常聊天，验证边界和结果见[适配说明](docs/rag-paperqa-scoped-evidence.md)。
 
@@ -307,7 +307,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
-2.4.13 统一资料回答规则，保留复合问题的各项要求。所选 Chat 模型直接生成一次回答，按需最多增加一次资料定位规划；移除二次整篇重写及引语审计 JSON 协议。保留本地单位、算术和引用检查，单位修正在 Evidence 记录。沿用操作定义、成对基准和跨文献焦点取证；金额辅助与保守修正共用解析逻辑，明确相对基准时区分剩余水平与减少幅度。保留用户表达偏好、历史聊天及用量。这些内部调整仍须通过真实模型学术验收。 明确声明的斜杠并列金额按共享末尾单位逐项核对，保留正确成员；歧义除法不自动修正。 PDF 数字附近缺失的字形触发本地 OCR；仍无法识别时保留缺失标记及复核状态，不静默丢失符号。旧文字索引自动重新解析，保留原件和资料选择。 文字分块在既有长度限制内优先保留完整句子和表格行，减少分级标签被截断。 针对性规划查询先于通用来源补查；在同一预算内，优先保留真实子问题、比较所需研究发现及相邻原文，再补充自动背景覆盖。 行内金额与表头共用完整量级定义，不将不支持的复合单位误认作较小单位。显式算式后的金额换算根据当前引用操作数核对，不再仅匹配原文数字；依据不足或需复核的原文不自动修正。统一证据规则区分基准假设、主要情景变化与单独敏感性试验。资料回答核对问题前提和建议标签，避免无关的数值清单、换算与公式。
+2.4.13 将 PaperQA 全文问答接入安装版，使用现有 SiliconFlow DeepSeek Flash 配置。完整解析原文进入一次回答，不运行规划、生成摘要、embedding/rerank 或答案改写。Python/PaperQA 运行环境随包提供，无需另装 Python、Docker 或 WSL。保留配置、写作、Library、聊天、Thinking、引用、Usage 和导出。资料超限、缺失或部分解析时在发送前停止；本地功能检查不代表学术回答正确性已通过验收。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

@@ -1,5 +1,7 @@
 # PaperQA 全文开发版
 
+安装版现已采用相同全文链路并内置运行环境，参见[安装与验收](rag-paperqa-installation.md)。下文保留独立开发入口的用法与初次接入记录。
+
 本开发入口把 PaperQA 的完整原文回答接入 LanCarbon Chat。保留现有资料选择、流式正文、Thinking、引用、Usage、导出及聊天保存；不安装、不替换日常软件、不创建 Release。
 
 ## 打开和验收

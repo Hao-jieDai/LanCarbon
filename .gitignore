@@ -11,6 +11,7 @@ playwright-report/
 backups/
 acceptance/
 .dev-workspace/
+build/paperqa-runtime/
 
 public/pdfjs/
 public/ocr/

@@ -11,7 +11,7 @@ export function paperQACompiler(python: string, script: string): PaperQACompiler
     signal.throwIfAborted();
     const env: NodeJS.ProcessEnv = { PYTHONUTF8: "1", PYTHONIOENCODING: "utf-8", LITELLM_LOCAL_MODEL_COST_MAP: "True" };
     for (const name of ["SystemRoot", "WINDIR", "PATH", "Path", "TEMP", "TMP"]) if (process.env[name]) env[name] = process.env[name];
-    const child = spawn(python, ["-I", script], { windowsHide: true, stdio: ["pipe", "pipe", "pipe"], env });
+    const child = spawn(python, ["-I", "-B", script], { windowsHide: true, stdio: ["pipe", "pipe", "pipe"], env });
     let output = "", bytes = 0, failure: Error | undefined;
     const fail = (message: string) => { failure ??= Error(message); child.kill(); };
     const abort = () => fail("Document question stopped.");
@@ -21,7 +21,7 @@ export function paperQACompiler(python: string, script: string): PaperQACompiler
     child.stdout.setEncoding("utf8");
     child.stdout.on("data", (part: string) => { bytes += Buffer.byteLength(part); if (bytes > 4_000_000) fail("Select fewer sources: full-text request is too large."); else output += part; });
     child.stderr.resume(); // Never expose document data from dependency diagnostics.
-    child.on("error", () => { failure = Error("PaperQA runtime is unavailable. Run the development setup before trying again."); });
+    child.on("error", () => { failure = Error("PaperQA runtime is unavailable. Repair the LanCarbon installation or run the development setup before trying again."); });
     child.stdin.on("error", () => { failure ??= Error("PaperQA could not read the selected sources."); });
     child.on("close", code => {
       clearTimeout(timer); signal.removeEventListener("abort", abort);

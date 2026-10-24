@@ -88,7 +88,7 @@ export class AIService {
           if (hasChatSources(chat.sourceScope)) {
             if (!this.grounder) throw Error("Document questions are unavailable.");
             const prepared = await this.grounder.prepare(chat, controller.signal, progress, consult);
-            if (prepared.grounding.mode === "full-text" && (provider.kind !== "siliconflow" || !/DeepSeek.*Flash/i.test(modelId))) throw Error("Choose your configured SiliconFlow DeepSeek Flash model for this development full-text mode.");
+            if (prepared.grounding.mode === "full-text" && (provider.kind !== "siliconflow" || !/DeepSeek.*Flash/i.test(modelId))) throw Error("Choose your configured SiliconFlow DeepSeek Flash model for full-text questions.");
             reply.grounding = prepared.grounding;
             // One system message: presentation preferences plus the document contract.
             // Evidence/history remain data in their original user-message roles.

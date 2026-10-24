@@ -221,8 +221,10 @@ app.whenReady().then(async () => {
   const aiClient = new AIClient((input, init) => net.fetch(input as string, init), observeUsage);
   const retrievalClient = new RetrievalClient((input, init) => net.fetch(input as string, init), observeUsage);
   const nativeGrounder = new ChatGrounder(() => knowledge(), () => retrieval(), async () => (await retrievalSettings.get()).enabled);
-  const activeGrounder = paperQADevelopment ? new PaperQAGrounder(() => knowledge(), nativeGrounder,
-    paperQACompiler(process.env.LANCARBON_PAPERQA_PYTHON || path.resolve(".dev-workspace", "paperqa-runtime", "Scripts", "python.exe"), path.resolve("scripts", "paperqa_prompt.py")), () => retrieval().stop()) : nativeGrounder;
+  const bundledPaperQA = path.join(process.resourcesPath, "paperqa-runtime");
+  const activeGrounder = app.isPackaged || paperQADevelopment ? new PaperQAGrounder(() => knowledge(), nativeGrounder,
+    paperQACompiler(app.isPackaged ? path.join(bundledPaperQA, "python.exe") : process.env.LANCARBON_PAPERQA_PYTHON || path.resolve(".dev-workspace", "paperqa-runtime", "Scripts", "python.exe"),
+      app.isPackaged ? path.join(bundledPaperQA, "adapter", "paperqa_prompt.py") : path.resolve("scripts", "paperqa_prompt.py")), () => retrieval().stop()) : nativeGrounder;
   aiService = new AIService(aiSettings, chats, aiClient, chat => mainWindow?.webContents.send("ai:chat", chat), activeGrounder);
   translationService = new TranslationService(translationSettings, translationConnections, aiSettings, cache, aiClient);
   const translationChanged = () => mainWindow?.webContents.send("translation:changed");

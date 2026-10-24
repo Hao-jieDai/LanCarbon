@@ -12,7 +12,7 @@ function run(file, args) {
 if (!python) {
   run('python', ['-m', 'venv', runtime]);
   python = path.join(runtime, process.platform === 'win32' ? 'Scripts/python.exe' : 'bin/python');
-  run(python, ['-m', 'pip', 'install', '-r', 'scripts/paperqa-requirements.txt']);
+  run(python, ['-m', 'pip', 'install', '-r', 'scripts/paperqa-runtime-lock.txt']);
 }
 python = path.resolve(python);
 const sample = { question: 'What is the scope?', passages: [{ label: 'S1', sourceId: 'note:setup', fingerprint: 'a'.repeat(64), title: 'Setup sample', location: 'Lines 1–1', text: 'The study covers adults.' }] };

@@ -16,7 +16,8 @@
     "clean:installers": "node scripts/clean-installers.cjs",
     "dist": "npm run build && node scripts/build-installer.cjs",
     "setup:paperqa": "node scripts/setup-paperqa.cjs",
-    "dev:paperqa": "node scripts/dev-paperqa.cjs"
+    "dev:paperqa": "node scripts/dev-paperqa.cjs",
+    "prepare:paperqa": "node scripts/prepare-paperqa-runtime.cjs"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.0",
@@ -84,6 +85,15 @@
       {
         "from": "resources/starter-content",
         "to": "starter-content"
+      },
+      {
+        "from": "build/paperqa-runtime",
+        "to": "paperqa-runtime",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
       }
     ],
     "win": {

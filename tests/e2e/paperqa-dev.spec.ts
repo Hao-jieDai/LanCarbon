@@ -10,6 +10,10 @@ import { readerPdfFixture } from "../fixtures/reader";
 import { readerEpubFixture } from "../fixtures/epub";
 const model = "deepseek-ai/DeepSeek-V4.1-Flash";
 async function launch(root: string) {
+  if (process.env.E2E_EXECUTABLE) return electron.launch({ executablePath: process.env.E2E_EXECUTABLE,
+    args: ["--in-process-gpu", "--disable-gpu", "--no-sandbox"],
+    // Invalid development overrides prove installed builds use their own runtime.
+    env: { ...process.env, LANCARBON_ROOT: root, E2E_USER_DATA_DIR: "", VITE_DEV_SERVER_URL: "", LANCARBON_PAPERQA_DEV: "", LANCARBON_PAPERQA_PYTHON: "Z:/missing/python.exe", LANCARBON_PAPERQA_TEST_ROOT: "" } });
   const python = process.env.LANCARBON_PAPERQA_PYTHON || (await fs.readFile(path.resolve(".dev-workspace/paperqa-python.txt"), "utf8")).trim();
   return electron.launch({ args: ["--in-process-gpu", "--disable-gpu", "--no-sandbox", path.resolve(".")], env: { ...process.env, E2E_USER_DATA_DIR: "", VITE_DEV_SERVER_URL: "", LANCARBON_PAPERQA_DEV: "1", LANCARBON_PAPERQA_TEST_ROOT: root, LANCARBON_PAPERQA_PYTHON: python } });
 }
@@ -39,7 +43,8 @@ test("PaperQA development reads PDF EPUB Note Book, calls once per turn, opens c
   let app = await launch(root);
   try {
     let page = await app.firstWindow(); await page.getByRole("main").waitFor(); await mock(app);
-    expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle())).toContain("PaperQA Development");
+    expect(await app.evaluate(({ app }) => app.isPackaged)).toBe(!!process.env.E2E_EXECUTABLE);
+    if (!process.env.E2E_EXECUTABLE) expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle())).toContain("PaperQA Development");
     await page.evaluate(async ({ model }) => { const r = await window.notesDesktop.ai!.saveProvider({ id: "siliconflow", kind: "siliconflow", name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", apiKey: "mock-key-not-real", models: [{ id: model, name: "Flash", purpose: "chat" }], defaultModel: model }); if (!r.ok) throw Error(r.error); }, { model });
     await page.getByRole("button", { name: "Workshop", exact: true }).click(); await page.getByRole("button", { name: "Chat", exact: true }).click();
     await page.getByRole("button", { name: "Choose sources", exact: true }).click();
