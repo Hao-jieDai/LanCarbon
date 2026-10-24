@@ -8,15 +8,15 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.13";
+export const RELEASE_VERSION = "2.4.14";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 Welcome to **LanCarbon**, an offline-first desktop application for writing Notes and creating structured Books that can become local or online websites.
 
-**PaperQA full-text mode:** When Evidence shows **PaperQA · full text**, complete selected texts are sent for one SiliconFlow DeepSeek Flash answer. This mode does not use embedding/rerank, planning, summaries or answer rewriting. Citations, Thinking, Usage and chat exports remain available. Oversized or incomplete texts stop before sending; this does not guarantee the model’s interpretation is correct.
+**PaperQA full-text mode:** When Evidence shows **PaperQA · full text**, complete selected texts are sent for one answer from the selected Chat model. This mode does not use embedding/rerank, planning, summaries or answer rewriting. Citations, Thinking, Usage and chat exports remain available. Oversized or incomplete texts stop before sending; this does not guarantee the model’s interpretation is correct.
 
-Version 2.4.13 enables PaperQA full-text document questions with the configured SiliconFlow DeepSeek Flash model. Complete parsed source text goes into one answer without planning, generated summaries, embedding/rerank or answer rewriting. The Python/PaperQA runtime is bundled; no separate Python, Docker or WSL installation is needed. Existing configuration, writing, Library, chats, Thinking, citations, Usage and exports are preserved. Oversized, missing or partially parsed sources stop before sending. Local functional checks do not certify academic answer accuracy.
+Version 2.4.14 enables PaperQA full-text document questions with any configured Chat model from SiliconFlow, OpenRouter or Others, including Grok. Complete parsed source text goes into one answer without planning, generated summaries, embedding/rerank or answer rewriting. The Python/PaperQA runtime is bundled; no separate Python, Docker or WSL installation is needed. Existing configuration, writing, Library, chats, Thinking, citations, Usage and exports are preserved. Oversized, missing or partially parsed sources stop before sending. Local functional checks do not certify academic answer accuracy.
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
@@ -259,9 +259,9 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
-**PaperQA 全文模式：** Evidence 显示 **PaperQA · full text** 时，会将选定资料的完整解析文本交给 SiliconFlow DeepSeek Flash 一次回答。不调用 embedding/rerank、规划、摘要或答案改写。引用、Thinking、Usage 和聊天导出仍可使用。超限或解析不完整时会在发送前停止；这不代表模型解读一定正确。
+**PaperQA 全文模式：** Evidence 显示 **PaperQA · full text** 时，会将选定资料的完整解析文本交给当前选择的聊天模型一次回答。不调用 embedding/rerank、规划、摘要或答案改写。引用、Thinking、Usage 和聊天导出仍可使用。超限或解析不完整时会在发送前停止；这不代表模型解读一定正确。
 
-2.4.13 将 PaperQA 全文问答接入安装版，使用现有 SiliconFlow DeepSeek Flash 配置。完整解析原文进入一次回答，不运行规划、生成摘要、embedding/rerank 或答案改写。Python/PaperQA 运行环境随包提供，无需另装 Python、Docker 或 WSL。保留配置、写作、Library、聊天、Thinking、引用、Usage 和导出。资料超限、缺失或部分解析时在发送前停止；本地功能检查不代表学术回答正确性已通过验收。
+2.4.14 将 PaperQA 全文问答接入安装版，允许使用 SiliconFlow、OpenRouter 或 Others 中已配置的聊天模型，包括 Grok。完整解析原文进入一次回答，不运行规划、生成摘要、embedding/rerank 或答案改写。Python/PaperQA 运行环境随包提供，无需另装 Python、Docker 或 WSL。保留配置、写作、Library、聊天、Thinking、引用、Usage 和导出。资料超限、缺失或部分解析时在发送前停止；本地功能检查不代表学术回答正确性已通过验收。
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 

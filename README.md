@@ -37,7 +37,7 @@ LanCarbon is a Windows desktop application for writing ordinary Markdown Notes a
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
-Version 2.4.13 enables PaperQA full-text document questions with the configured SiliconFlow DeepSeek Flash model. Complete parsed source text goes into one answer without planning, generated summaries, embedding/rerank or answer rewriting. The Python/PaperQA runtime is bundled; no separate Python, Docker or WSL installation is needed. Existing configuration, writing, Library, chats, Thinking, citations, Usage and exports are preserved. Oversized, missing or partially parsed sources stop before sending. Local functional checks do not certify academic answer accuracy.
+Version 2.4.14 enables PaperQA full-text document questions with any configured Chat model from SiliconFlow, OpenRouter or Others, including Grok. Complete parsed source text goes into one answer without planning, generated summaries, embedding/rerank or answer rewriting. The Python/PaperQA runtime is bundled; no separate Python, Docker or WSL installation is needed. Existing configuration, writing, Library, chats, Thinking, citations, Usage and exports are preserved. Oversized, missing or partially parsed sources stop before sending. Local functional checks do not certify academic answer accuracy.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -311,7 +311,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
-2.4.13 将 PaperQA 全文问答接入安装版，使用现有 SiliconFlow DeepSeek Flash 配置。完整解析原文进入一次回答，不运行规划、生成摘要、embedding/rerank 或答案改写。Python/PaperQA 运行环境随包提供，无需另装 Python、Docker 或 WSL。保留配置、写作、Library、聊天、Thinking、引用、Usage 和导出。资料超限、缺失或部分解析时在发送前停止；本地功能检查不代表学术回答正确性已通过验收。
+2.4.14 将 PaperQA 全文问答接入安装版，允许使用 SiliconFlow、OpenRouter 或 Others 中已配置的聊天模型，包括 Grok。完整解析原文进入一次回答，不运行规划、生成摘要、embedding/rerank 或答案改写。Python/PaperQA 运行环境随包提供，无需另装 Python、Docker 或 WSL。保留配置、写作、Library、聊天、Thinking、引用、Usage 和导出。资料超限、缺失或部分解析时在发送前停止；本地功能检查不代表学术回答正确性已通过验收。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

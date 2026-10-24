@@ -8,7 +8,7 @@ import { createNote } from "../../src/shared/notes";
 import { createBook } from "../../src/shared/books";
 import { readerPdfFixture } from "../fixtures/reader";
 import { readerEpubFixture } from "../fixtures/epub";
-const model = "deepseek-ai/DeepSeek-V4.1-Flash";
+
 async function launch(root: string) {
   if (process.env.E2E_EXECUTABLE) return electron.launch({ executablePath: process.env.E2E_EXECUTABLE,
     args: ["--in-process-gpu", "--disable-gpu", "--no-sandbox"],
@@ -30,7 +30,11 @@ async function mock(app: ElectronApplication, hang = false) {
   }, hang);
 }
 
-test("PaperQA development reads PDF EPUB Note Book, calls once per turn, opens citations and survives restart", async ({}, info) => {
+for (const connection of [
+  { id: "siliconflow", kind: "siliconflow", name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", model: "deepseek-ai/DeepSeek-V4.1-Flash" },
+  { id: "openrouter", kind: "openrouter", name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", model: "x-ai/grok-4.7" },
+  { id: "others", kind: "others", name: "Custom", baseUrl: "https://fixture.example/v1", model: "fixture-chat" }
+] as const) test(`PaperQA ${connection.kind} reads all source kinds, calls once per turn and survives restart`, async ({}, info) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-paperqa-ui-")); await fs.mkdir(path.join(root, "Data"));
   const pdf = path.join(root, "Study.pdf"), epub = path.join(root, "Study.epub");
   await fs.writeFile(pdf, readerPdfFixture(3)); await fs.writeFile(epub, readerEpubFixture());
@@ -45,7 +49,7 @@ test("PaperQA development reads PDF EPUB Note Book, calls once per turn, opens c
     let page = await app.firstWindow(); await page.getByRole("main").waitFor(); await mock(app);
     expect(await app.evaluate(({ app }) => app.isPackaged)).toBe(!!process.env.E2E_EXECUTABLE);
     if (!process.env.E2E_EXECUTABLE) expect(await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].getTitle())).toContain("PaperQA Development");
-    await page.evaluate(async ({ model }) => { const r = await window.notesDesktop.ai!.saveProvider({ id: "siliconflow", kind: "siliconflow", name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", apiKey: "mock-key-not-real", models: [{ id: model, name: "Flash", purpose: "chat" }], defaultModel: model }); if (!r.ok) throw Error(r.error); }, { model });
+    await page.evaluate(async c => { const r = await window.notesDesktop.ai!.saveProvider({ id: c.id, kind: c.kind, name: c.name, baseUrl: c.baseUrl, apiKey: "mock-key-not-real", models: [{ id: c.model, name: "Test Chat", purpose: "chat" }], defaultModel: c.model }); if (!r.ok) throw Error(r.error); }, connection);
     await page.getByRole("button", { name: "Workshop", exact: true }).click(); await page.getByRole("button", { name: "Chat", exact: true }).click();
     await page.getByRole("button", { name: "Choose sources", exact: true }).click();
     const picker = page.getByRole("dialog", { name: "Choose chat sources" });
@@ -59,6 +63,9 @@ test("PaperQA development reads PDF EPUB Note Book, calls once per turn, opens c
     expect(answer.status).toBe("complete"); expect(answer.grounding!.evidence.length).toBeGreaterThan(96);
     expect(new Set(answer.grounding!.sourceIds)).toEqual(new Set([`note:${note.id}`, `note:${homeNote.id}`, ...files.map(f => `file:${f.id}`)]));
     const calls = await app.evaluate(() => (globalThis as any).paperqaCalls); expect(calls).toHaveLength(1);
+    expect(calls[0].endpoint).toBe(`${connection.baseUrl}/chat/completions`);
+    expect(calls[0].request.model).toBe(connection.model);
+    if (connection.kind !== "siliconflow") { expect(calls[0].request).not.toHaveProperty("thinking_budget"); expect(calls[0].request).not.toHaveProperty("enable_thinking"); expect(calls[0].request).not.toHaveProperty("temperature"); }
     expect(JSON.stringify(calls)).toContain("LAST_104"); expect(JSON.stringify(calls)).not.toContain("DO_NOT_SEND_OUTSIDE_SCOPE");
     expect(calls[0].request.messages.filter((m: any) => m.role === "system")).toHaveLength(1);
     const pdfHit = answer.grounding!.evidence.find(h => h.chunk.anchor.kind === "pdf" && h.chunk.anchor.page === 3)!;

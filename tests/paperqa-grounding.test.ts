@@ -107,3 +107,33 @@ it("preserves the generated text without legacy repairs while retaining citation
   expect(await f.grounder.finish(grounding, generated)).toBe(generated);
   expect(grounding.warnings).toEqual(["The reply contains an unrecognized citation. Only the saved evidence entries below can be opened."]);
 });
+
+for (const id of ["openrouter", "others", "siliconflow"] as const) it(`uses selected ${id} model for full text, switches without fallback and preserves provider errors`, async () => {
+  const f = await fixture("Household surveys count residents, not journeys.");
+  const model = id === "openrouter" ? "x-ai/grok-4.7" : "fixture-other-chat";
+  const baseUrl = id === "others" ? "https://fixture.example/v1" : defaultAIProviders().find(p => p.id === id)!.baseUrl;
+  await f.settings.save({ ...defaultAIProviders().find(p => p.id === id)!, baseUrl, apiKey: "mock-secret", models: [{ id: model, name: "Other Chat", purpose: "chat" }], defaultModel: model });
+  await f.service.send(f.chat.id, id, model, "What is counted?");
+  const answer = (await f.settled()).messages.at(-1)!;
+  expect(answer).toMatchObject({ status: "complete", providerId: id, modelId: model, grounding: { mode: "full-text" } });
+  expect(f.fetcher).toHaveBeenCalledTimes(1);
+  expect(f.fetcher.mock.calls[0][0]).toBe(`${baseUrl}/chat/completions`);
+  const request = JSON.parse(String(f.fetcher.mock.calls[0][1]?.body));
+  expect(request.model).toBe(model); expect(request.max_tokens).toBe(8192);
+  expect(request).not.toHaveProperty("thinking_budget"); expect(request).not.toHaveProperty("enable_thinking"); expect(request).not.toHaveProperty("temperature");
+  expect(JSON.stringify(request.messages)).toContain("Household surveys count residents");
+  expect(f.usage.at(-1)).toMatchObject({ type: "finish", status: "complete" });
+  // Repeated failures must not silently truncate, retry or substitute a model.
+  f.fetcher.mockImplementationOnce(async () => new Response(JSON.stringify({ error: { message: "Context length exceeded" } }), { status: 400 }));
+  await f.service.send(f.chat.id, id, model, "Compare this with journeys.");
+  const failed = (await f.settled()).messages.at(-1)!;
+  expect(failed.status).toBe("error"); expect(failed.error).toContain("Context length exceeded"); expect(f.fetcher).toHaveBeenCalledTimes(2);
+  expect(f.retrieval.build).not.toHaveBeenCalled(); expect(f.retrieval.search).not.toHaveBeenCalled();
+  // An existing failed chat can be retried with another configured model.
+  await f.settings.save({ ...defaultAIProviders()[0], apiKey: "mock-secret", models: [{ id: f.model, name: "Flash", purpose: "chat" }], defaultModel: f.model });
+  await f.service.send(f.chat.id, "siliconflow", f.model, "", true);
+  expect((await f.settled()).messages.at(-1)).toMatchObject({ status: "complete", modelId: f.model });
+  expect(f.fetcher).toHaveBeenCalledTimes(3);
+  const switched = JSON.parse(String(f.fetcher.mock.calls[2][1]?.body));
+  expect(switched.model).toBe(f.model); expect(switched.thinking_budget).toBe(8192);
+});
