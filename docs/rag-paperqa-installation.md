@@ -28,6 +28,8 @@ PaperQA 组织全部选定的成功解析原文，Electron 发出一次 Flash �
 - 内嵌 Python 使用[官方 Windows embeddable package](https://www.python.org/downloads/release/python-31314/)，构建校验官方 SHA-256。没有复制系统 Python 安装目录。随包保留 Python LICENSE 及依赖包的许可证/元数据。
 - 运行时通过相对目录加载库，禁止使用开发 Python 环境或环境变量覆盖安装版运行时。`runtime-manifest.json` 记录包版本及文件摘要，可对最终安装内容核验。
 - 打包后设置 `E2E_EXECUTABLE` 为解包/实际安装的 LanCarbon.exe，运行 `tests/e2e/paperqa-dev.spec.ts`。测试使用临时资料、模拟接口、故意无效的开发 Python 路径，验证安装版仍能全文问答、追问、引用、Usage、停止和重启。
+- 运行环境排除第三方 benchmark results 和 ARM setuptools 启动器，避免 NSIS 长路径及架构过滤导致内容清单不一致；运行代码与许可证保留。
+- `build/installer.nsh` 的卸载宏只接受名为 Application 的目录，先将其整体移到同盘唯一的临时目录，再移除旧程序，避免默认逐文件跨盘搬移及临时路径膨胀。`node scripts/test-installer-removal.cjs` 编译并执行通用样例，验证正常移除及数据目录拒绝保护；不操作真实安装或注册表。
 - 每次更新前备份 Data、Library、Config 和 Cache/Local State；启动后仅允许官方教程/ReadMe同步，用户内容和配置必须与备份核对。按项目规则保留最新三个安装版本。
 - 如需回滚到不识别 full-text 聊天记录的旧版，应同时恢复安装前的数据与配置备份，不能直接让旧版读取新增的全文聊天；恢复前另存升级后新增的个人内容。
 

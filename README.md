@@ -11,6 +11,8 @@
 
 **PaperQA full-text questions:** The installed application includes its runtime and uses your existing Flash configuration. See the [installation acceptance guide](docs/rag-paperqa-installation.md). Earlier experiments below describe historical candidates, not extra steps in the current answer flow.
 
+**Installer maintenance:** Old application files are staged on the installation volume before removal, avoiding cross-drive and long temporary-path failures. Removal is restricted to the Application directory; Data, Config and Library are retained.
+
 A developer-only [PaperQA comparison candidate](docs/rag-paperqa-comparison-flow.md) was tested with Flash on four fixed cases, including two new papers. All four quotation maps failed the frozen verbatim checks, so no candidate final answer was generated; factual improvement is not established. The [live evaluation](docs/rag-paperqa-flash-paired.md) is closed within its budget. Application chats remain unchanged.
 
 A developer-only PaperQA candidate now scopes evidence searches by subquestion and source, applies the configured BGE reranker, and retains original excerpts for one final answer. Live evaluation still found missing evidence and incorrect synthesis; it is not enabled in application chats. See the [evaluation scope and results](docs/rag-paperqa-scoped-evidence.md).
@@ -282,6 +284,8 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 ## 中文
 
 **PaperQA 全文问答：** 安装版内置运行环境，沿用现有 Flash 配置。参见[安装版验收指南](docs/rag-paperqa-installation.md)。下方试验记录属于历史候选，不是当前问答流程中的额外步骤。
+
+**安装维护：** 旧程序在安装磁盘内暂存后移除，避免跨盘搬移及过长临时路径造成失败。移除范围限制为 Application，保留 Data、Config 和 Library。
 
 开发候选基于 PaperQA 按子问题和来源取证，使用现有 BGE 重排，并保留原文用于一次最终回答。真实验证仍存在取证遗漏与综合判断错误，尚未启用到日常聊天，验证边界和结果见[适配说明](docs/rag-paperqa-scoped-evidence.md)。
 
