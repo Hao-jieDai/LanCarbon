@@ -9,7 +9,7 @@
 
 ## English
 
-A developer-only [PaperQA comparison candidate](docs/rag-paperqa-comparison-flow.md) validates source-linked original quotations before passing a navigation map alongside the complete parsed text to native answering. The latest plan uses Flash. Offline checks passed; no live API was called, no factual accuracy improvement is claimed, and application chats are unchanged.
+A developer-only [PaperQA comparison candidate](docs/rag-paperqa-comparison-flow.md) was tested with Flash on four fixed cases, including two new papers. All four quotation maps failed the frozen verbatim checks, so no candidate final answer was generated; factual improvement is not established. The [live evaluation](docs/rag-paperqa-flash-paired.md) is closed within its budget. Application chats remain unchanged.
 
 A developer-only PaperQA candidate now scopes evidence searches by subquestion and source, applies the configured BGE reranker, and retains original excerpts for one final answer. Live evaluation still found missing evidence and incorrect synthesis; it is not enabled in application chats. See the [evaluation scope and results](docs/rag-paperqa-scoped-evidence.md).
 
@@ -281,7 +281,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 开发候选基于 PaperQA 按子问题和来源取证，使用现有 BGE 重排，并保留原文用于一次最终回答。真实验证仍存在取证遗漏与综合判断错误，尚未启用到日常聊天，验证边界和结果见[适配说明](docs/rag-paperqa-scoped-evidence.md)。
 
-新增开发用[PaperQA比较候选](docs/rag-paperqa-comparison-flow.md)：逐字核对带来源的原文定位表，并将定位表与完整解析原文一起交给原生回答。最新方案继续使用Flash；离线检查通过，本轮未调用真实API，尚不能声称准确率提升，日常聊天未变。
+开发用[PaperQA比较候选](docs/rag-paperqa-comparison-flow.md)已用Flash完成四组固定输入试验，包含两篇新材料。四个定位表均未通过冻结的逐字校验，未生成候选最终回答，尚不能证明准确率提升。[真实验证](docs/rag-paperqa-flash-paired.md)已在预算内结束并关闭调用，日常聊天未变。
 
 独立的[完整原文对照](docs/rag-paperqa-full-context.md)发现，提供全部已解析文本改善了证据覆盖，但真实重复回答仍存在主体层级综合错误。仅为隔离试验，未新增日常软件设置，不代表验收通过。
 
