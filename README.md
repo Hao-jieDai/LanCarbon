@@ -9,11 +9,13 @@
 
 ## English
 
+A developer-only [PaperQA comparison candidate](docs/rag-paperqa-comparison-flow.md) validates source-linked original quotations before passing a navigation map alongside the complete parsed text to native answering. The latest plan uses Flash. Offline checks passed; no live API was called, no factual accuracy improvement is claimed, and application chats are unchanged.
+
 A developer-only PaperQA candidate now scopes evidence searches by subquestion and source, applies the configured BGE reranker, and retains original excerpts for one final answer. Live evaluation still found missing evidence and incorrect synthesis; it is not enabled in application chats. See the [evaluation scope and results](docs/rag-paperqa-scoped-evidence.md).
 
 A separate [full-context comparison](docs/rag-paperqa-full-context.md) found better evidence coverage when supplying all parsed source text, while entity-level synthesis errors remained in repeated live answers. This is an isolated experiment, not an application setting or an acceptance pass.
 
-An isolated [OpenRouter model comparison](docs/rag-paperqa-openrouter-comparison.md) retained Grok as the next full-context candidate. Numeric and ownership checks improved in this sample, but a repeated cross-study synthesis still made an unsupported double-counting inference. Application chats and default model settings remain unchanged.
+An earlier isolated [OpenRouter model comparison](docs/rag-paperqa-openrouter-comparison.md) found better numeric and ownership handling with Grok in this sample, but a repeated cross-study synthesis still made an unsupported double-counting inference. The subsequent plan returned to Flash because of cost; application chats and default model settings remain unchanged.
 
 **Comparison context:** Definitions and reference cases selected by local method coverage are now reserved before optional result excerpts and neighbours. This keeps both studies' measures available within the existing context limits; it does not certify generated interpretations.
 
@@ -279,9 +281,11 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 开发候选基于 PaperQA 按子问题和来源取证，使用现有 BGE 重排，并保留原文用于一次最终回答。真实验证仍存在取证遗漏与综合判断错误，尚未启用到日常聊天，验证边界和结果见[适配说明](docs/rag-paperqa-scoped-evidence.md)。
 
+新增开发用[PaperQA比较候选](docs/rag-paperqa-comparison-flow.md)：逐字核对带来源的原文定位表，并将定位表与完整解析原文一起交给原生回答。最新方案继续使用Flash；离线检查通过，本轮未调用真实API，尚不能声称准确率提升，日常聊天未变。
+
 独立的[完整原文对照](docs/rag-paperqa-full-context.md)发现，提供全部已解析文本改善了证据覆盖，但真实重复回答仍存在主体层级综合错误。仅为隔离试验，未新增日常软件设置，不代表验收通过。
 
-独立的[OpenRouter模型对照](docs/rag-paperqa-openrouter-comparison.md)保留Grok作为后续完整原文候选。本组数值和主体检查有所改善，但重复综合回答仍有未经支持的重复计量推断；日常聊天和默认模型配置未变。
+此前独立的[OpenRouter模型对照](docs/rag-paperqa-openrouter-comparison.md)发现Grok在本组数值和主体检查中有所改善，但重复综合回答仍有未经支持的重复计量推断。后续因费用回到Flash；日常聊天和默认模型配置未变。
 
 **比较题上下文：** 本地方法覆盖找到的定义与参照条件，现在先于额外结果和邻段保留，使比较双方的计量口径在既有预算内得到优先覆盖；这不代表生成的推论已经得到验证。
 
