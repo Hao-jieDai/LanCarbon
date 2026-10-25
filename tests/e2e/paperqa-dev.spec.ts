@@ -123,7 +123,7 @@ test("PaperQA quantities render once per request, retain checks in copy and expo
         const rows = body.messages[0].content.split("\n").filter((s: string) => s.startsWith('{"id":"S')).map((s: string) => JSON.parse(s));
         if (rows.length !== 2) throw Error("Expected independent source quantities");
         if (rows.some((row: { scale: string }) => row.scale !== "million")) throw Error("Lost wrapped source scale");
-        const content = (globalThis as any).quantityCalls === 1 ? `Budget {{qty:${rows[0].id}|亿}}. Difference {{diff:${rows[0].id}:${rows[1].id}|million}}.` : "Unbound estimate EUR 235 million [S1].";
+        const content = (globalThis as any).quantityCalls === 1 ? `Budget {{qty:${rows[0].id}\\|亿}}. Difference {{diff:${rows[0].id}:${rows[1].id}\\|million}}.` : "Unbound estimate EUR 235 million [S1].";
         return new Response(new ReadableStream({ start(controller) {
           for (let i = 0; i < content.length; i += 7) controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ choices: [{ delta: { content: content.slice(i, i + 7) } }] })}\n\n`));
           controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":120,"completion_tokens":20,"total_tokens":140}}\n\ndata: [DONE]\n\n')); controller.close();

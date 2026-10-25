@@ -82,6 +82,18 @@ describe("source-bound monetary rendering", () => {
     const answer = renderQuantities(`{{diff:${q[0].id}:${q[1].id}|亿}}; {{pct:${q[0].id}:${q[1].id}}}`, q);
     expect(answer.text).toBe("CNY 111.25 亿 [S1]; ≈ 64.49% [S1]"); expect(answer.check.resolved).toBe(2);
   });
+  it("accepts Markdown-escaped unit delimiters in tables and prose without relaxing validation", () => {
+    const q = catalogue("EUR 12.5\nmillion versus EUR 8.25 mil-\nlion.");
+    for (const pipe of ["|", "\\|"]) {
+      const input = `| Baseline | {{qty:${q[0].id}${pipe}亿}} |\nDifference {{diff:${q[0].id}:${q[1].id}${pipe}million}}.`;
+      const output = renderQuantities(input, q);
+      expect(output.text).toBe("| Baseline | EUR 0.125 亿 [S1] |\nDifference EUR 4.25 million [S1].");
+      expect(output.check.status).toBe("checked");
+      expect(renderQuantities(`{{qty:${q[0].id}${pipe}__proto__}}`, q).check.status).toBe("needs-review");
+    }
+    expect(renderQuantities(`{{qty:${q[0].id}\\\\|million}}`, q).check.status).toBe("needs-review");
+    expect(renderQuantities(`{{qty:${q[0].id}\\|million|亿}}`, q).check.status).toBe("needs-review");
+  });
   it("handles negative differences without losing the sign", () => {
     const q = catalogue("EUR -0.15 million and EUR 0.2 million");
     expect(renderQuantities(`{{diff:${q[0].id}:${q[1].id}|million}}`, q).text).toBe("EUR -0.35 million [S1]");

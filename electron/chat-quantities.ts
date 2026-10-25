@@ -97,7 +97,10 @@ export function renderQuantities(text: string, catalogue: SourceQuantity[], part
   let rendered = text.replace(/\{\{((?:qty|diff|pct):[^{}]*?)\}\}/g, (_all, instruction: string, start: number) => {
     try {
       if (code.some(span => start >= span.start && start < span.end)) { issue("A quantity reference was placed inside code; it was not evaluated."); return _all; }
-      const match = /^(qty|diff|pct):(S[1-9]\d{0,2}Q\d+)(?::(S[1-9]\d{0,2}Q\d+))?(?:\|([^|:]+))?$/.exec(instruction);
+      // Markdown table authors escape pipes, including protocol delimiters.
+      // Accept exactly that separator spelling; still validate IDs, units and
+      // operations strictly, without evaluating arbitrary escaped expressions.
+      const match = /^(qty|diff|pct):(S[1-9]\d{0,2}Q\d+)(?::(S[1-9]\d{0,2}Q\d+))?(?:\\?\|([^|:]+))?$/.exec(instruction);
       if (!match) throw Error("Invalid quantity reference format");
       if (resolved >= 1000) throw Error("Too many quantity expressions in one answer");
       const [, op, id, otherId, unit] = match, a = entries.get(id), b = otherId ? entries.get(otherId) : undefined;
