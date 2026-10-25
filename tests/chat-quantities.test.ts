@@ -32,8 +32,50 @@ describe("source-bound monetary rendering", () => {
     expect(renderQuantities(`Budget {{qty:${q[0].id}|${unit}}}.`, q)).toMatchObject({ text: `Budget CNY ${expected} [S1].`, check: { resolved: 1, status: "checked", issues: [] } });
   });
   it("preserves small values and exact decimals rather than rounding them to zero", () => {
-    const q = catalogue("USD 0.000000001");
+    const q = catalogue("USD 0.000000000001 thousand.");
     expect(renderQuantities(`{{qty:${q[0].id}|trillion}}`, q).text).toBe("USD 0.000000000000000000001 trillion [S1]");
+  });
+  it.each(["\n", "\r\n", " \n  ", "\u00a0\n\u00a0"])("keeps a wrapped scale with its amount (%j)", gap => {
+    const input = `Clinic cost EUR 23.75${gap}million; transport GBP 6.125${gap}billion; 支出为人民币 12.5${gap}万亿。`;
+    const q = catalogue(input);
+    expect(q.map(x => [x.currency, x.scale])).toEqual([["EUR", "million"], ["GBP", "billion"], ["CNY", "万亿"]]);
+    expect(q.map(x => x.numerator / x.denominator)).toEqual([23750000n, 6125000000n, 12500000000000n]);
+    for (const x of q) expect(input.slice(x.start, x.end)).toBe(x.raw);
+    expect(renderQuantities(`{{qty:${q[1].id}|亿}}`, q).text).toBe("GBP 61.25 亿 [S1]");
+  });
+  it("handles each possible hyphenation position without changing source identity", () => {
+    const units = { thousand: 1000n, million: 1000000n, billion: 1000000000n, trillion: 1000000000000n };
+    for (const [unit, factor] of Object.entries(units)) for (let cut = 1; cut < unit.length; cut++) for (const breakText of ["-\n", "-\r\n  ", "\u00ad\n", "\u00ad"]) {
+      const wrapped = unit.slice(0, cut) + breakText + unit.slice(cut);
+      for (const raw of [`USD 7.25 ${wrapped}`, `7.25 ${wrapped}美元`]) {
+        const input = `😀 Unrelated programme: ${raw}.`, q = catalogue(input);
+        expect(q).toHaveLength(1);
+        expect(q[0].scale).toBe(unit);
+        expect(q[0].numerator).toBe(725n * factor);
+        expect(q[0].denominator).toBe(100n);
+        expect(q[0].raw).toBe(raw);
+        expect(input.slice(q[0].start, q[0].end)).toBe(raw);
+        expect(q[0].id).toBe(`S1Q${input.indexOf(raw)}`);
+        expect(renderQuantities(`{{qty:${q[0].id}|${unit}}}`, q).text).toBe(`USD 7.25 ${unit} [S1]`);
+      }
+    }
+  });
+  it.each(["USD 7.25", "USD 7.25 tril-", "USD 7.25 tril-\n", "USD 7.25 tril-\nli", "USD 7.25 trillions", "USD 7.25 millionaire", "USD 7.25 quadrillion", "USD 7.25 bn", "USD 7.25\n\ntrillion", "USD 7.25\n[page 2]\ntrillion", "USD 7.25\nunknown scale", "USD 7.25 tril\nlion"])("does not silently bind a partial or ambiguous scale as base: %s", input => {
+    expect(catalogue(input)).toEqual([]);
+    const result = renderQuantities("{{qty:S1Q0|trillion}}", catalogue(input));
+    expect(result.check.status).toBe("needs-review");
+    expect(result.text).toBe("〔金额待核对〕");
+  });
+  it("does not infer base currency from bare values, figure ticks, years or shared scales", () => {
+    for (const input of ["USD 8 was the ticket price.", "0.2\n0.4\n0.6\nEUR million", "Costs (2020 USD bn)", "EUR 9 and EUR 16 million", "GBP 12 to GBP 19 billion"]) {
+      expect(catalogue(input).every(q => q.scale !== "base")).toBe(true);
+    }
+    expect(catalogue("Cost GBP 18.5.\nSee figure for unit.")).toEqual([]);
+    const raw = "The ticket was USD 8 [S1].";
+    expect(renderQuantities(raw, catalogue("The ticket was USD 8.")).text).toBe(raw);
+    expect(renderQuantities(raw, []).check.status).toBe("needs-review");
+    expect(catalogue("EUR 8 mil-\nlion per year")).toEqual([]);
+    expect(catalogue("CNY 8 亿万")).toEqual([]);
   });
   it("computes differences and percent reductions from the specified original operands", () => {
     const q = catalogue("CNY 17.25 billion versus CNY 6.125 billion");

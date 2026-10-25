@@ -6,6 +6,14 @@ const scales: Record<string, bigint> = { base: 1n, thousand: 1000n, million: 100
 const currency = String.raw`(?:US\\?\$|CNY|RMB|USD|EUR|GBP|JPY|人民币|美元|欧元|英镑|日元)`;
 const number = String.raw`[-−+]?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?`;
 const magnitude = "(?:trillion|billion|million|thousand|万亿|十亿|千万|百万|亿|万|千)";
+// PDF layout may wrap an amount or hyphenate a scale word. Match the original
+// span directly: never normalize the whole source and invalidate its offsets.
+const horizontalSpace = String.raw`[^\S\r\n]`;
+const layoutSpace = `${horizontalSpace}*(?:\\r?\\n${horizontalSpace}*)?`;
+const wordBreak = `(?:[-\u00ad]${horizontalSpace}*\\r?\\n${horizontalSpace}*|\u00ad)?`;
+const englishScales = ["trillion", "billion", "million", "thousand"];
+const layoutMagnitude = `(?:${englishScales.map(word => word.split("").join(wordBreak)).join("|")})(?![A-Za-z])|(?:万亿|十亿|千万|百万|亿|万|千)(?![万千百十亿兆])`;
+const cleanScale = (unit: string) => unit.replace(/[-\u00ad\s]/gu, "").toLowerCase();
 const currencies: Record<string, string> = { RMB: "CNY", 人民币: "CNY", 美元: "USD", 欧元: "EUR", 英镑: "GBP", 日元: "JPY", "US$": "USD" };
 const normalizeCurrency = (s: string) => currencies[s.replaceAll("\\", "").toUpperCase()] ?? s.toUpperCase();
 interface Money { start: number; end: number; raw: string; currency: string; scale: string; numerator: bigint; denominator: bigint }
@@ -16,16 +24,21 @@ function decimal(s: string): [bigint, bigint] {
   return [BigInt(whole + fraction), 10n ** BigInt(fraction.length)];
 }
 function amount(start: number, raw: string, c: string, n: string, unit = "base"): Money | undefined {
-  try { const [value, denominator] = decimal(n); const scale = unit.toLowerCase(); if (!scales[scale]) return; return { start, end: start + raw.length, raw, currency: normalizeCurrency(c), scale, numerator: value * scales[scale], denominator }; } catch { return; }
+  try { const [value, denominator] = decimal(n); const scale = cleanScale(unit); if (!scales[scale]) return; return { start, end: start + raw.length, raw, currency: normalizeCurrency(c), scale, numerator: value * scales[scale], denominator }; } catch { return; }
 }
-function money(text: string): Money[] {
+function money(text: string, binding = false): Money[] {
   const found: Money[] = [];
-  const prefix = new RegExp(`(${currency})\\s*(${number})(?:[ \\t]*(${magnitude}))?`, "giu");
-  const suffix = new RegExp(`(${number})[ \\t]*(${magnitude})?\\s*(?:元[ \\t]*)?(${currency})`, "giu");
+  const prefix = new RegExp(`(${currency})${layoutSpace}(${number})(?:${layoutSpace}(${layoutMagnitude}))?`, "giu");
+  const suffix = new RegExp(`(${number})(?:${layoutSpace}(${layoutMagnitude}))?${layoutSpace}(?:元${layoutSpace})?(${currency})`, "giu");
   for (const [regex, before] of [[prefix, true], [suffix, false]] as const) for (const m of text.matchAll(regex)) {
     const start = m.index!, end = start + m[0].length;
     // Do not partially parse exponents, ranges/lists with shared scales, or rates.
     if (/[\w.,+−-]$/u.test(text.slice(Math.max(0, start - 1), start)) || /^\s*(?:[%％/]|per\b|[eE][+-]?\d|[,，、]\s*\d|(?:to|and)\s+\d|[-–—]\s*\d)/iu.test(text.slice(end)) || /^\d/u.test(text.slice(end))) continue;
+    // Currency alone does not establish scale in extracted papers: it may be
+    // a plot tick, a price-base year, or a shared/missing table unit. Keep these
+    // amounts available in full text and in diagnostics, but never assign base
+    // implicitly to an automatically convertible source quantity.
+    if (binding && !(before ? m[3] : m[2])) continue;
     if (found.some(x => start < x.end && end > x.start)) continue;
     const value = before ? amount(start, m[0], m[1], m[2], m[3]) : amount(start, m[0], m[3], m[1], m[2]);
     if (value) found.push(value);
@@ -47,7 +60,7 @@ function money(text: string): Money[] {
 export function quantityCatalogue(evidence: ChatEvidence[]): SourceQuantity[] {
   return evidence.flatMap(hit => {
     if (hit.chunk.anchor.needsReview) return [];
-    return money(hit.chunk.text).map(value => ({ ...value, id: `${hit.label}Q${value.start}`, label: hit.label, context: hit.chunk.text.slice(Math.max(0, value.start - 100), Math.min(hit.chunk.text.length, value.end + 100)) }));
+    return money(hit.chunk.text, true).map(value => ({ ...value, id: `${hit.label}Q${value.start}`, label: hit.label, context: hit.chunk.text.slice(Math.max(0, value.start - 100), Math.min(hit.chunk.text.length, value.end + 100)) }));
   });
 }
 function fixed(n: bigint, d: bigint, digits = 6): string {

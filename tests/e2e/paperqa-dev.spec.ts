@@ -109,7 +109,7 @@ test("PaperQA quantities render once per request, retain checks in copy and expo
     if (path.resolve(process.env.E2E_EXECUTABLE) !== candidate || path.resolve(await fs.realpath(candidate)) !== candidate) throw Error("Quantity acceptance only permits the workspace build, never the daily installation");
   }
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-quantity-ui-")); await fs.mkdir(path.join(root, "Data"));
-  const note = createNote({ id: "budget-source", title: "Public health budgets", content: "Baseline: EUR 23.5 million. Revised programme: EUR 8.25 million." });
+  const note = createNote({ id: "budget-source", title: "Public health budgets", content: "Baseline: EUR 23.5\nmillion. Revised programme: EUR 8.25 mil-\nlion." });
   await fs.writeFile(path.join(root, "Data/notes.json"), JSON.stringify({ version: 2, notes: [note], books: [] }));
   let app = await launch(root);
   try {
@@ -122,6 +122,7 @@ test("PaperQA quantities render once per request, retain checks in copy and expo
         const body = JSON.parse(String(init?.body));
         const rows = body.messages[0].content.split("\n").filter((s: string) => s.startsWith('{"id":"S')).map((s: string) => JSON.parse(s));
         if (rows.length !== 2) throw Error("Expected independent source quantities");
+        if (rows.some((row: { scale: string }) => row.scale !== "million")) throw Error("Lost wrapped source scale");
         const content = (globalThis as any).quantityCalls === 1 ? `Budget {{qty:${rows[0].id}|亿}}. Difference {{diff:${rows[0].id}:${rows[1].id}|million}}.` : "Unbound estimate EUR 235 million [S1].";
         return new Response(new ReadableStream({ start(controller) {
           for (let i = 0; i < content.length; i += 7) controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ choices: [{ delta: { content: content.slice(i, i + 7) } }] })}\n\n`));

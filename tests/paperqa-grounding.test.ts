@@ -111,12 +111,15 @@ it("preserves the generated text without legacy repairs while retaining citation
 });
 
 it("renders source-bound quantities in a single call, preserves them across turns and restart", async () => {
-  const f = await fixture("Transit baseline: CNY 17.25 billion. Adaptation: CNY 6.125 billion.");
+  const f = await fixture("Transit baseline: CNY 17.25\nbillion. Adaptation: CNY 6.125 bil-\nlion.");
   // Read IDs from the actual request, never from a paper-specific fixture mapping.
   f.fetcher.mockImplementation(async (_url, init) => {
     const request = JSON.parse(String(init?.body)), system = request.messages[0].content;
     const rows = system.split("\n").filter((s: string) => s.startsWith('{"id":"S')).map((s: string) => JSON.parse(s));
     expect(rows).toHaveLength(2);
+    expect(rows.map((row: any) => row.scale)).toEqual(["billion", "billion"]);
+    expect(rows[0].original).toBe("CNY 17.25\nbillion");
+    expect(rows[1].original).toBe("CNY 6.125 bil-\nlion");
     const answer = `Budget {{qty:${rows[0].id}|亿}}. Reduction {{diff:${rows[0].id}:${rows[1].id}|亿}}; {{pct:${rows[0].id}:${rows[1].id}}}.`;
     return new Response(new ReadableStream({ start(controller) {
       for (const part of [answer.slice(0, 11), answer.slice(11, 24), answer.slice(24)]) controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ choices: [{ delta: { content: part } }] })}\n\n`));
@@ -134,7 +137,7 @@ it("renders source-bound quantities in a single call, preserves them across turn
   expect(f.fetcher).toHaveBeenCalledTimes(2);
   const followup = JSON.parse(String(f.fetcher.mock.calls[1][1]?.body));
   expect(followup.messages.find((m: any) => m.role === "assistant").content).toBe(answer.content);
-  expect(followup.messages.at(-1).content).toContain("CNY 17.25 billion");
+  expect(followup.messages.at(-1).content).toContain("CNY 17.25\nbillion");
   expect(f.usage.filter(e => e.type === "start")).toHaveLength(2);
   expect(f.retrieval.build).not.toHaveBeenCalled(); expect(f.retrieval.search).not.toHaveBeenCalled();
 });
