@@ -27,7 +27,7 @@ export function chatNote(chat: AIChat, options: ChatPdfOptions) {
     const content = message.role === "assistant" ? chatMarkdown(message.content) : message.content;
     parts.push(mapCitations(content, label => referenced.some(hit => hit.label === label) ? `[${label}](#${anchor(label)})` : `[${label}]`));
     if (message.error) parts.push(`Status: ${plain(message.error)}`);
-    const checks = message.grounding?.warnings.filter(text => /needs checking|unresolved|unrecognized|did not supply|unavailable|changed|incomplete/iu.test(text)) ?? [];
+    const checks = [...(message.grounding?.quantityCheck?.issues ?? []), ...(message.grounding?.warnings.filter(text => /needs checking|unresolved|unrecognized|did not supply|unavailable|changed|incomplete/iu.test(text)) ?? [])];
     if (checks.length) parts.push("### Checks", ...checks.map(text => `- ${plain(text)}`));
     if (referenced.length) {
       parts.push("### Sources");

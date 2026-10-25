@@ -106,6 +106,36 @@ it("preserves the generated text without legacy repairs while retaining citation
   const generated = "Costs are 2 billion USD, or 2 亿美元 [S1]. An unknown source [S998].";
   expect(await f.grounder.finish(grounding, generated)).toBe(generated);
   expect(grounding.warnings).toEqual(["The reply contains an unrecognized citation. Only the saved evidence entries below can be opened."]);
+  expect(grounding.quantityCheck?.status).toBe("needs-review");
+});
+
+it("renders source-bound quantities in a single call, preserves them across turns and restart", async () => {
+  const f = await fixture("Transit baseline: CNY 17.25 billion. Adaptation: CNY 6.125 billion.");
+  // Read IDs from the actual request, never from a paper-specific fixture mapping.
+  f.fetcher.mockImplementation(async (_url, init) => {
+    const request = JSON.parse(String(init?.body)), system = request.messages[0].content;
+    const rows = system.split("\n").filter((s: string) => s.startsWith('{"id":"S')).map((s: string) => JSON.parse(s));
+    expect(rows).toHaveLength(2);
+    const answer = `Budget {{qty:${rows[0].id}|亿}}. Reduction {{diff:${rows[0].id}:${rows[1].id}|亿}}; {{pct:${rows[0].id}:${rows[1].id}}}.`;
+    return new Response(new ReadableStream({ start(controller) {
+      for (const part of [answer.slice(0, 11), answer.slice(11, 24), answer.slice(24)]) controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ choices: [{ delta: { content: part } }] })}\n\n`));
+      controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":100,"completion_tokens":30,"total_tokens":130}}\n\ndata: [DONE]\n\n')); controller.close();
+    } }), { headers: { "content-type": "text/event-stream" } });
+  });
+  await f.service.send(f.chat.id, "siliconflow", f.model, "Compare the monetary amounts");
+  const chat = await f.settled(), answer = chat.messages.at(-1)!;
+  expect(answer.content).toBe("Budget CNY 172.5 亿 [S1]. Reduction CNY 111.25 亿 [S1]; ≈ 64.49% [S1].");
+  expect(answer.grounding?.quantityCheck).toMatchObject({ version: 1, resolved: 3, status: "checked", issues: [] });
+  expect(answer.grounding?.quantityCheck?.bindings).toHaveLength(3);
+  expect(f.fetcher).toHaveBeenCalledTimes(1);
+  expect((await new AIChatStore(f.root).get(chat.id)).messages.at(-1)).toEqual(answer);
+  await f.service.send(f.chat.id, "siliconflow", f.model, "Restate the same figures"); await f.settled();
+  expect(f.fetcher).toHaveBeenCalledTimes(2);
+  const followup = JSON.parse(String(f.fetcher.mock.calls[1][1]?.body));
+  expect(followup.messages.find((m: any) => m.role === "assistant").content).toBe(answer.content);
+  expect(followup.messages.at(-1).content).toContain("CNY 17.25 billion");
+  expect(f.usage.filter(e => e.type === "start")).toHaveLength(2);
+  expect(f.retrieval.build).not.toHaveBeenCalled(); expect(f.retrieval.search).not.toHaveBeenCalled();
 });
 
 for (const id of ["openrouter", "others", "siliconflow"] as const) it(`uses selected ${id} model for full text, switches without fallback and preserves provider errors`, async () => {

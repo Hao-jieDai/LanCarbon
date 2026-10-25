@@ -100,3 +100,64 @@ for (const connection of [
     await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 });
   }
 });
+
+test("PaperQA quantities render once per request, retain checks in copy and exports, and survive restart", async ({}, info) => {
+  if (process.env.E2E_EXECUTABLE) throw Error("Quantity development acceptance must not run against the daily installation");
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-quantity-ui-")); await fs.mkdir(path.join(root, "Data"));
+  const note = createNote({ id: "budget-source", title: "Public health budgets", content: "Baseline: EUR 23.5 million. Revised programme: EUR 8.25 million." });
+  await fs.writeFile(path.join(root, "Data/notes.json"), JSON.stringify({ version: 2, notes: [note], books: [] }));
+  let app = await launch(root);
+  try {
+    let page = await app.firstWindow(); await page.getByRole("main").waitFor();
+    await app.evaluate(({ net }) => {
+      (globalThis as any).quantityCalls = 0;
+      net.fetch = async (_url, init) => {
+        (globalThis as any).quantityCalls++;
+        const body = JSON.parse(String(init?.body));
+        const rows = body.messages[0].content.split("\n").filter((s: string) => s.startsWith('{"id":"S')).map((s: string) => JSON.parse(s));
+        if (rows.length !== 2) throw Error("Expected independent source quantities");
+        const content = (globalThis as any).quantityCalls === 1 ? `Budget {{qty:${rows[0].id}|亿}}. Difference {{diff:${rows[0].id}:${rows[1].id}|million}}.` : "Unbound estimate EUR 235 million [S1].";
+        return new Response(new ReadableStream({ start(controller) {
+          for (let i = 0; i < content.length; i += 7) controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ choices: [{ delta: { content: content.slice(i, i + 7) } }] })}\n\n`));
+          controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":120,"completion_tokens":20,"total_tokens":140}}\n\ndata: [DONE]\n\n')); controller.close();
+        } }), { headers: { "content-type": "text/event-stream" } });
+      };
+    });
+    await page.evaluate(async () => { const r = await window.notesDesktop.ai!.saveProvider({ id: "others", kind: "others", name: "Fixture", baseUrl: "https://fixture.example/v1", apiKey: "mock-key", models: [{ id: "fixture", name: "Fixture", purpose: "chat" }], defaultModel: "fixture" }); if (!r.ok) throw Error(r.error); });
+    await page.getByRole("button", { name: "Workshop", exact: true }).click(); await page.getByRole("button", { name: "Chat", exact: true }).click();
+    await page.getByRole("button", { name: "Choose sources", exact: true }).click();
+    const picker = page.getByRole("dialog", { name: "Choose chat sources" });
+    await picker.getByLabel("Select Public health budgets", { exact: true }).check();
+    await picker.getByRole("button", { name: "Use sources", exact: true }).click();
+    const send = async (question: string, count: number) => {
+      await page.getByLabel("Chat message").fill(question); await page.getByRole("button", { name: "Send", exact: true }).click();
+      await expect.poll(async () => { const r = await page.evaluate(() => window.notesDesktop.ai!.chats()); return r.ok && r.chats[0].messages.length === count && r.chats[0].messages.at(-1)?.status; }, { timeout: 90000 }).toBe("complete");
+    };
+    await send("Compare the budget amounts.", 2);
+    await expect(page.getByRole("article", { name: "AI reply", exact: true }).first()).toContainText("EUR 0.235 亿");
+    await expect(page.getByRole("article", { name: "AI reply", exact: true }).first()).toContainText("EUR 15.25 million");
+    await expect(page.locator(".chat-quantity-check")).toHaveCount(0);
+    await send("What if the model returns an unbound amount?", 4);
+    await expect(page.locator(".chat-quantity-check")).toContainText("EUR 235 million");
+    await page.getByRole("button", { name: "Copy reply", exact: true }).last().click();
+    const copied = await app.evaluate(({ clipboard }) => clipboard.readText()); expect(copied).toContain("Check amounts:"); expect(copied).not.toContain("{{qty:");
+    const result = await page.evaluate(() => window.notesDesktop.ai!.chats()); if (!result.ok) throw Error(result.error); const chat = result.chats[0];
+    const exported = await page.evaluate(id => window.notesDesktop.ai!.exportNote(id, { includeThinking: true, includeEvidence: false }), chat.id);
+    expect(exported.ok && exported.workspace.notes.find(n => n.id === exported.noteId)?.content).toContain("Unverified amount");
+    await app.evaluate(({ app, dialog }, destination) => {
+      dialog.showSaveDialog = (async () => ({ canceled: false, filePath: destination })) as typeof dialog.showSaveDialog;
+      app.on("browser-window-created", (_event, win) => {
+        const print = win.webContents.printToPDF.bind(win.webContents);
+        win.webContents.printToPDF = async options => { (globalThis as any).quantityPrintText = await win.webContents.executeJavaScript("document.body.innerText"); return print(options); };
+      });
+    }, info.outputPath("quantity-export.pdf"));
+    const pdf = await page.evaluate(id => window.notesDesktop.ai!.exportPdf(id, { includeThinking: false, includeEvidence: false }), chat.id); expect(pdf.ok).toBe(true);
+    const printed = await app.evaluate(() => (globalThis as any).quantityPrintText);
+    expect(printed).toContain("EUR 0.235 亿"); expect(printed).toContain("Unverified amount"); expect(printed).not.toContain("{{qty:");
+    expect(await app.evaluate(() => (globalThis as any).quantityCalls)).toBe(2);
+    const usage = await page.evaluate(() => window.notesDesktop.ai!.usage()); expect(usage.ok && usage.usage.records.length).toBe(2);
+    await page.screenshot({ path: info.outputPath("quantity-checks.png") });
+    await app.close(); app = await launch(root); page = await app.firstWindow(); await page.getByRole("main").waitFor(); await mock(app);
+    const restored = await page.evaluate(() => window.notesDesktop.ai!.chats()); expect(restored.ok && restored.chats[0].messages).toEqual(chat.messages);
+  } finally { await app.close().catch(() => undefined); if (path.dirname(root) !== os.tmpdir() || !path.basename(root).startsWith("lancarbon-quantity-ui-")) throw Error("Unsafe cleanup"); await fs.rm(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
+});

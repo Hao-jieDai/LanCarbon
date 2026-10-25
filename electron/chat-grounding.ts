@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { quantityCatalogue, renderQuantities } from "./chat-quantities";
 import type { AIChat } from "../src/shared/ai";
 import { citedLabels, hasChatSources, scopeKey, type ChatGrounding, type CitationTarget } from "../src/shared/grounding";
 import { KNOWLEDGE_MAX_SOURCES, selectedKnowledgeSources, type KnowledgeHit, type KnowledgeScope } from "../src/shared/knowledge";
@@ -185,6 +186,10 @@ export class ChatGrounder {
     return new Promise((resolve, reject) => { const abort = () => { if (!started) reject(Error("Document question stopped.")); }; signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort(); work.then(resolve, reject).finally(() => signal.removeEventListener("abort", abort)); });
   }
   async finish(grounding: ChatGrounding, text: string) {
+    if (grounding.mode === "full-text" && grounding.quantityProtocol === 1) {
+      const rendered = renderQuantities(text, quantityCatalogue(grounding.evidence));
+      text = rendered.text; grounding.quantityCheck = rendered.check;
+    }
     // The PaperQA development path preserves the model's answer. Keep only
     // provenance checks below; do not carry over the old numeric repair rules.
     if (grounding.mode !== "full-text") {

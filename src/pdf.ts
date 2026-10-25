@@ -51,8 +51,8 @@ window.renderLanCarbonChatPdf = async ({ chat, options }) => {
     }
     section.append(render(message.content, "pdf-chat-answer"));
     if (message.error) { const error = document.createElement("p"); error.className = "pdf-chat-warning"; error.textContent = message.error; section.append(error); }
-    const notes = message.grounding?.warnings ?? [];
-    for (const note of notes.filter(note => /needs checking|unresolved|unrecognized|did not supply|unavailable|changed|incomplete/iu.test(note))) {
+    const notes = [...(message.grounding?.quantityCheck?.issues ?? []), ...(message.grounding?.warnings.filter(note => /needs checking|unresolved|unrecognized|did not supply|unavailable|changed|incomplete/iu.test(note)) ?? [])];
+    for (const note of notes) {
       const warning = document.createElement("p"); warning.className = "pdf-chat-warning"; warning.textContent = note; section.append(warning);
     }
     if (referenced.length) {

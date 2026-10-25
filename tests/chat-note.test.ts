@@ -42,3 +42,9 @@ it("refuses empty/live/oversized exports instead of silently truncating the conv
   expect(() => chatNote(chat, { includeThinking: true, includeEvidence: false })).toThrow("size limit");
   expect(() => chatNote(chat, { includeThinking: false, includeEvidence: false })).not.toThrow();
 });
+it("retains specific quantity issues in a Note even when evidence excerpts are omitted", () => {
+  const chat = fixture();
+  chat.messages[1].grounding!.quantityCheck = { version: 1, resolved: 1, status: "needs-review", issues: ["Unverified amount: USD 17 million."] };
+  const note = chatNote(chat, { includeThinking: false, includeEvidence: false });
+  expect(note.content).toContain("Unverified amount: USD 17 million.");
+});

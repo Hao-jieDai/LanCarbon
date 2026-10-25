@@ -12,6 +12,14 @@ let root: string;
 beforeEach(async () => { root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-chat-files-")); });
 afterEach(async () => { vi.restoreAllMocks(); if (path.dirname(root) !== path.resolve(os.tmpdir()) || !path.basename(root).startsWith("lancarbon-chat-files-")) throw Error("Unsafe cleanup"); await fs.rm(root, { recursive: true, force: true }); });
 const folder = () => path.join(root, "Research/Chats");
+it("marks quantity validation unfinished after an interrupted generation", async () => {
+  const store = new AIChatStore(root), c = await store.create("fixture", "model");
+  await store.update(c.id, saved => { saved.messages = [{ id: "partial", role: "assistant", content: "EUR 235 million", status: "streaming", createdAt: "2026-10-25", grounding: { ...grounding(), quantityProtocol: 1 } }]; });
+  const recovered = (await new AIChatStore(root).get(c.id)).messages[0];
+  expect(recovered.status).toBe("stopped");
+  expect(recovered.grounding?.quantityCheck?.status).toBe("needs-review");
+  expect(recovered.grounding?.quantityCheck?.issues[0]).toContain("interrupted");
+});
 const hit = (index = 0): ChatEvidence => ({ label: `S${index + 1}`, fingerprint: "a".repeat(64), source: { id: "file:sample", entityId: "sample", kind: "file", format: "pdf", title: "Sample", fingerprint: "a".repeat(64), locations: [], attachments: [], tags: [], systemManaged: false }, chunk: { id: String(index), text: ("Original material " + index + " ").padEnd(1200, "x"), anchor: { kind: "pdf", page: index + 1 } } });
 const grounding = (count = 2): ChatGrounding => ({ scope: { ...emptyKnowledgeScope(), fileIds: ["sample"] }, sourceIds: ["file:sample"], evidence: Array.from({ length: count }, (_, i) => hit(i)), warnings: [], mode: "full-text" });
 const chat = (id: string, count = 2): AIChat => ({ id, title: id, providerId: "fixture", modelId: "model", createdAt: "2026-10-25", updatedAt: "2026-10-25", messages: Array.from({ length: count }, (_, i) => ({ id: "reply-" + i, role: "assistant", content: "A supported answer [S1].", reasoning: "Original reasoning", status: "complete", createdAt: "2026-10-25", grounding: grounding() })) });
