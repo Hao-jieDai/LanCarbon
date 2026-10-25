@@ -13,7 +13,7 @@
 
 **Installer maintenance:** Same-location upgrades replace bundled runtime files in place while preserving the Application path and executable identity used by shortcuts. Explicit uninstall is restricted to Application; Data, Config and Library are retained.
 
-For the agreed reading-assistance scope, verification record and remaining limitations, see the [stage closeout](docs/rag-stage3-closeout.md). Historical experiments and maintenance notes are in the [RAG handoff](docs/rag-handoff.md).
+For the agreed reading-assistance scope, verification record and remaining limitations, see the [stage closeout](docs/rag-stage3-closeout.md). Historical experiments and maintenance notes are in the [RAG handoff](docs/rag-handoff.md). For future changes or major failures, start with the [RAG update and troubleshooting guide](docs/rag-update-guide.md).
 
 ### What is LanCarbon?
 
