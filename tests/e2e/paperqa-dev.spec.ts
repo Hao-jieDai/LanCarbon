@@ -68,6 +68,12 @@ for (const connection of [
     if (connection.kind !== "siliconflow") { expect(calls[0].request).not.toHaveProperty("thinking_budget"); expect(calls[0].request).not.toHaveProperty("enable_thinking"); expect(calls[0].request).not.toHaveProperty("temperature"); }
     expect(JSON.stringify(calls)).toContain("LAST_104"); expect(JSON.stringify(calls)).not.toContain("DO_NOT_SEND_OUTSIDE_SCOPE");
     expect(calls[0].request.messages.filter((m: any) => m.role === "system")).toHaveLength(1);
+    const instructions = calls[0].request.messages.map((m: any) => m.content).join("\n");
+    expect(instructions).toContain("Answer each supported part");
+    expect(instructions).toContain("author-year citations");
+    expect(instructions).toContain("separate evidence links");
+    expect(instructions).not.toContain('reply "I cannot answer."');
+    expect(instructions).not.toContain("Invalid citation examples");
     const pdfHit = answer.grounding!.evidence.find(h => h.chunk.anchor.kind === "pdf" && h.chunk.anchor.page === 3)!;
     await page.locator(".chat-evidence summary").last().click();
     await page.getByRole("article", { name: `Evidence ${pdfHit.label}`, exact: true }).getByRole("button", { name: "Open source", exact: true }).click();

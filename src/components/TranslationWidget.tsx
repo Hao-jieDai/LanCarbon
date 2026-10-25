@@ -29,6 +29,7 @@ export function TranslationWidget({ scope, onSettings }: { scope: string; onSett
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   const [enabled, setEnabled] = useState(false), [toggling, setToggling] = useState(false);
   const [source, setSource] = useState(""), [result, setResult] = useState<TranslationResult>(), [error, setError] = useState(""), [busy, setBusy] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
   const [position, setPosition] = useState<Position | null>(() => { try { const value = JSON.parse(localStorage.getItem("lancarbon.translation.position") ?? "null"); return value && Number.isFinite(value.x) && Number.isFinite(value.y) ? value : null; } catch { return null; } });
   const panel = useRef<HTMLElement | null>(null), timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined), request = useRef(""), revision = useRef(0), fingerprint = useRef(""), lastText = useRef("");
   const interrupt = useCallback(() => { clearTimeout(timer.current); revision.current++; const id = request.current; request.current = ""; lastText.current = ""; setBusy(false); if (id) void api?.cancel(id); }, [api]);
@@ -43,6 +44,17 @@ export function TranslationWidget({ scope, onSettings }: { scope: string; onSett
     return () => { live = false; unsubscribe(); interrupt(); };
   }, [api, interrupt]);
   useEffect(() => { interrupt(); setSource(""); setResult(undefined); setError(""); }, [scope, interrupt]);
+  useEffect(() => api?.onProgress(value => { if (value.id === request.current) setResult(value.result); }), [api]);
+  useEffect(() => { if (!busy) return; const start = Date.now(); setElapsed(0); const clock = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000); return () => clearInterval(clock); }, [busy]);
+  const translate = useCallback(async (text: string) => {
+    if (!api) return;
+    interrupt(); lastText.current = text;
+    const ticket = revision.current, id = crypto.randomUUID();
+    request.current = id; setSource(text); setResult(undefined); setError(""); setElapsed(0); setBusy(true);
+    try { const value = await api.translate(id, text); if (ticket !== revision.current) return; if (!value.ok) throw Error(value.error); setResult(value.result); }
+    catch (error) { if (ticket === revision.current) { lastText.current = ""; setError(error instanceof Error ? error.message : String(error)); } }
+    finally { if (ticket === revision.current) { request.current = ""; setBusy(false); } }
+  }, [api, interrupt]);
   const toggle = useCallback(async () => {
     if (!api || toggling) return;
     interrupt(); setToggling(true); setError(""); setSource(""); setResult(undefined);
@@ -57,28 +69,25 @@ export function TranslationWidget({ scope, onSettings }: { scope: string; onSett
     const schedule = (target: Element | null) => {
       if (!target || target.closest(EXCLUDED)) return;
       const raw = translationSelection(target);
-      if (!raw.trim()) { interrupt(); return; }
+      if (!raw.trim()) return;
       let text: string;
       try { text = normalizeTranslationText(raw); if (/^(?:https?:\/\/|sk-[\w-]+$)|^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text)) return; }
       catch (error) { if (/[A-Za-z]/.test(raw)) { interrupt(); setSource(""); setResult(undefined); setError(error instanceof Error ? error.message : String(error)); } return; }
       if (text === lastText.current) return;
-      interrupt(); lastText.current = text;
+      clearTimeout(timer.current); lastText.current = text;
       const ticket = revision.current;
-      timer.current = setTimeout(async () => {
+      timer.current = setTimeout(() => {
         if (ticket !== revision.current) return;
-        const id = crypto.randomUUID(); request.current = id; setSource(text); setResult(undefined); setError(""); setBusy(true);
-        try { const value = await api.translate(id, text); if (ticket !== revision.current) return; if (!value.ok) throw Error(value.error); setResult(value.result); }
-        catch (error) { if (ticket === revision.current) setError(error instanceof Error ? error.message : String(error)); }
-        finally { if (ticket === revision.current) { request.current = ""; setBusy(false); } }
+        void translate(text);
       }, 400);
     };
-    const down = (event: PointerEvent) => { const target = event.target instanceof Element ? event.target : null; if (!target || target.closest(EXCLUDED) || target.closest("button,select,a")) { origin = null; return; } pointer = true; origin = target; gestureAt = Date.now(); interrupt(); };
+    const down = (event: PointerEvent) => { const target = event.target instanceof Element ? event.target : null; if (!target || target.closest(EXCLUDED) || target.closest("button,select,a")) { origin = null; return; } pointer = true; origin = target; gestureAt = Date.now(); };
     const up = () => { pointer = false; if (origin) { const target = origin; setTimeout(() => schedule(target), 0); } };
     const selection = () => { if (!pointer && Date.now() - gestureAt < 1000) schedule(origin ?? document.activeElement); };
     const keyup = (event: KeyboardEvent) => { if (event.isComposing || !(event.shiftKey && /^(Arrow|Home|End|Page)/.test(event.key)) && !((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "a")) return; origin = event.target instanceof Element ? event.target : null; gestureAt = Date.now(); schedule(origin); };
     document.addEventListener("pointerdown", down); document.addEventListener("mouseup", up); document.addEventListener("selectionchange", selection); document.addEventListener("keyup", keyup);
     return () => { document.removeEventListener("pointerdown", down); document.removeEventListener("mouseup", up); document.removeEventListener("selectionchange", selection); document.removeEventListener("keyup", keyup); origin = null; interrupt(); };
-  }, [enabled, api, interrupt]);
+  }, [enabled, api, interrupt, translate]);
   useEffect(() => { const resize = () => setPosition(value => value ? clamp(value) : value); window.addEventListener("resize", resize); if (enabled) resize(); return () => window.removeEventListener("resize", resize); }, [enabled, clamp]);
   useEffect(() => { if (enabled) setPosition(value => value ? clamp(value) : value); }, [enabled, source, result, error, busy, clamp]);
   if (!api) return null;
@@ -94,8 +103,9 @@ export function TranslationWidget({ scope, onSettings }: { scope: string; onSett
       <header onPointerDown={drag}><strong>Translation</strong><div><button className="text-button" onClick={onSettings}>Settings</button><button className="icon-button" aria-label="Turn off translation" onClick={() => void toggle()}>×</button></div></header>
       {!source && !error && <p className="translation-empty">Select an English word, phrase or short passage.</p>}
       {source && <div key={source} className="translation-source" tabIndex={0} aria-label="Selected English">{source}</div>}
-      {busy && <p role="status">Translating…</p>}{result && <><div className="translation-result" tabIndex={0} aria-label="Chinese translation">{result.text}</div><p className="translation-model">{result.cached ? "Saved result · " : ""}{result.providerName} · {result.modelName}</p></>}
+      {busy && <div className="translation-progress"><p role="status">{result?.text ? "Translating…" : elapsed >= 15 ? "Still waiting for the translation service…" : "Waiting for translation…"} {elapsed}s</p><button className="text-button" onClick={() => { interrupt(); setError("Translation stopped. Partial text is not saved."); }}>Stop</button></div>}{result && <><div className="translation-result" tabIndex={0} aria-label="Chinese translation">{result.text}</div><p className="translation-model">{result.cached ? "Saved result · " : ""}{result.providerName} · {result.modelName}</p></>}
       {error && <p role="alert" className="translation-error">{error}</p>}
+      {error && source && !busy && <button className="text-button" onClick={() => void translate(source)}>Retry translation</button>}
     </section>}
     {!enabled && error && <div className="translation-toggle-error" role="alert">{error}</div>}
   </>;

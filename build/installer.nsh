@@ -149,29 +149,17 @@ FunctionEnd
 
 !ifdef BUILD_UNINSTALLER
 !macro customRemoveFiles
-  ; Keep staging on the installation volume. The default per-file staging in
-  ; $PLUGINSDIR can fail across drives or expand Python paths beyond MAX_PATH.
+  ; Explicit uninstall only. Same-path upgrades overwrite in place and preserve
+  ; Application's identity; never rename the folder tracked by pinned shortcuts.
   ${GetFileName} "$INSTDIR" $R8
   ${If} $R8 != "Application"
     Abort "Refusing to remove an unrecognized application directory."
   ${EndIf}
-  ${GetParent} "$INSTDIR" $R8
   SetOutPath $TEMP
   ClearErrors
-  GetTempFileName $R9 "$R8"
+  RMDir /r "$INSTDIR"
   ${If} ${Errors}
-    Abort "Cannot prepare the application update."
-  ${EndIf}
-  Delete "$R9"
-  ClearErrors
-  Rename "$INSTDIR" "$R9"
-  ${If} ${Errors}
-    Abort "Cannot move the old application. Close LanCarbon and try again."
-  ${EndIf}
-  ; R9 is our unique sibling staging directory, never a user data folder.
-  RMDir /r "$R9"
-  ${If} ${Errors}
-    DetailPrint "Some old application files remain in $R9."
+    Abort "Cannot remove application files. Close LanCarbon and try again."
   ${EndIf}
 !macroend
 !endif

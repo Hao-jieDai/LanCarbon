@@ -8,20 +8,35 @@ import { AISettingsStore } from "../electron/ai-storage";
 import { AIClient } from "../electron/ai-client";
 import { AIPriceStore, AIUsageStore } from "../electron/ai-usage";
 import { TranslationCache, TranslationService, TranslationSettingsStore, translationMessages } from "../electron/translation";
-import { defaultTranslationSettings, normalizeTranslationText, translationPriceProviders } from "../src/shared/translation";
+import { defaultTranslationSettings, normalizeTranslationText, translationPriceProviders, type TranslationProgress } from "../src/shared/translation";
 let root: string;
 beforeEach(async () => { root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-translation-unit-")); });
 afterEach(async () => { if (path.dirname(root) !== path.resolve(os.tmpdir()) || !path.basename(root).startsWith("lancarbon-translation-unit-")) throw Error("Unexpected test cleanup path"); await fs.rm(root, { recursive: true, force: true }); });
 const codec = { available: () => true, encrypt: (text: string) => Buffer.from("encrypted:" + text), decrypt: (bytes: Buffer) => bytes.toString().slice(10) };
 const response = () => new Response('data: {"choices":[{"delta":{"content":"搁浅资产"},"finish_reason":"stop"}]}\n\ndata: {"choices":[],"usage":{"prompt_tokens":10,"completion_tokens":4}}\n\ndata: [DONE]\n\n', { headers: { "content-type": "text/event-stream" } });
-async function setup(fetcher: typeof fetch = vi.fn(async () => response()) as typeof fetch) {
+async function setup(fetcher: typeof fetch = vi.fn(async () => response()) as typeof fetch, progress?: (value: TranslationProgress) => void) {
   const shared = new AISettingsStore(root, codec), custom = new AISettingsStore(root, codec, "translation-"), settings = new TranslationSettingsStore(root), cache = new TranslationCache(root), ledger = new AIUsageStore(root, new AIPriceStore(root));
   await shared.save({ id: "siliconflow", kind: "siliconflow", name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", models: [{ id: "chat-model", name: "Chat Model", purpose: "chat" }, { id: "tencent/Hunyuan-MT-7B", name: "Hunyuan MT", purpose: "chat" }, { id: "another-model", name: "Another model", purpose: "chat" }], defaultModel: "chat-model", apiKey: "fixture-key-private" });
   await settings.save({ ...defaultTranslationSettings(), providerId: "siliconflow", modelId: "tencent/Hunyuan-MT-7B", modelName: "Hunyuan MT" });
-  const service = new TranslationService(settings, custom, shared, () => cache, new AIClient(fetcher, event => ledger.record(event)));
+  const service = new TranslationService(settings, custom, shared, () => cache, new AIClient(fetcher, event => ledger.record(event)), progress);
   return { shared, custom, settings, cache, service, fetcher, ledger };
 }
 describe("translation connections and requests", () => {
+  it("streams partial text before completion, never caches cancellation, and does not retry 429 automatically", async () => {
+    let stream!: ReadableStreamDefaultController<Uint8Array>;
+    const updates: TranslationProgress[] = [];
+    const fetcher = vi.fn(async (_input, init) => new Response(new ReadableStream<Uint8Array>({ start(controller) { stream = controller; init!.signal!.addEventListener("abort", () => controller.error(Error("aborted")), { once: true }); } }), { headers: { "content-type": "text/event-stream" } })) as typeof fetch;
+    const { service, cache } = await setup(fetcher, value => updates.push(value)); await service.setEnabled(true);
+    const pending = service.translate("stream", "climate change").catch(error => error.message);
+    await vi.waitFor(() => expect(stream).toBeDefined());
+    stream.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"气候"}}]}\n\n'));
+    await vi.waitFor(() => expect(updates[0]).toMatchObject({ id: "stream", result: { text: "气候" } }));
+    expect((await cache.stats()).entries).toBe(0);
+    await service.cancel("stream"); expect(await pending).toBe("Translation stopped."); expect((await cache.stats()).entries).toBe(0);
+    vi.mocked(fetcher).mockImplementation(async () => new Response('{"error":{"message":"busy"}}', { status: 429 }));
+    await expect(service.translate("retry", "climate change")).rejects.toThrow();
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
   it("defaults off, keeps chat configuration intact, reuses a saved model and records native usage", async () => {
     const { service, shared, fetcher, ledger } = await setup();
     await expect(service.translate("off", "stranded assets")).rejects.toThrow("Turn on"); expect(fetcher).not.toHaveBeenCalled();

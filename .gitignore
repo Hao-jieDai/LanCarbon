@@ -19,3 +19,4 @@ src/generated/
 
 __pycache__/
 *.pyc
+build/generated-nsis/

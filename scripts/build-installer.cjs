@@ -2,12 +2,13 @@ const { spawnSync } = require("node:child_process");
 const path = require("node:path");
 
 const executable = process.execPath;
-const builderCli = path.join(process.cwd(), "node_modules", "electron-builder", "cli.js");
+const builderCli = path.join(__dirname, "run-installer-builder.cjs");
 
 const runtime = spawnSync(executable, [path.join(__dirname, "prepare-paperqa-runtime.cjs")], { stdio: "inherit", windowsHide: true });
 if (runtime.error) throw runtime.error;
 if (runtime.status !== 0) process.exit(runtime.status ?? 1);
 
+require("./prepare-installer-script.cjs").prepareInstallerScript(process.cwd());
 const result = spawnSync(executable, [builderCli, "--win", "nsis", "--x64"], {
   stdio: "inherit",
   env: {

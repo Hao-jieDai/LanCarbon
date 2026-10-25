@@ -1171,3 +1171,5 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .chat-evidence small { color:var(--muted); }
 .epub-prose .cited-passage { outline:2px solid var(--accent); outline-offset:6px; border-radius:2px; }
 @media(max-width:800px) { .chat-source-filters { grid-template-columns:1fr 1fr; } .chat-source-filters > input { grid-column:1/-1; } }
+.translation-progress { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.translation-progress p { margin: 8px 0; }

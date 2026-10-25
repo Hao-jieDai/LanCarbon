@@ -19,6 +19,34 @@ os.environ['LITELLM_LOCAL_MODEL_COST_MAP'] = 'True'
 VERSION = '2026.8.12'
 MAX_CHARS = 500_000
 
+# Replace PaperQA's all-or-nothing refusal / opaque-key-only template through
+# its public prompt setting. Keep native context assembly and one generation.
+ANSWER_TEMPLATE = """Answer the question using the supplied source context.
+
+Context:
+{context}
+
+Question: {question}
+
+Answer each supported part of the question. If some requested information is
+missing, answer the remaining supported parts and identify only the specific
+gap. Missing information for one part must not prevent answering other parts.
+Do not invent values, conversions, references or source claims. Keep the source
+units and scope; a missing conversion assumption does not prevent reporting
+available original amounts or a valid within-source comparison.
+
+Follow the requested language, structure and citation style. When APA is
+requested, use author-year citations from the supplied bibliographic information;
+do not fabricate missing author, date or publication details. Attach the supplied
+source identifiers as separate evidence links, e.g. (Author, year) [S1]. These
+links do not replace APA citations or forbid author-year prose. Otherwise cite
+supporting source identifiers, e.g. [S1]. Cite only sources present in the context.
+Write directly, without repeatedly describing excerpt coverage or adding general
+disclaimers. Distinguish supported conclusions from inference in the wording.
+{prior_answer_prompt}
+Answer ({answer_length}):
+"""
+
 
 def no_network(*args, **kwargs):
     raise RuntimeError('The local PaperQA adapter cannot access the network')
@@ -49,6 +77,7 @@ async def compile_prompt(payload):
     if sum(len(t.text) for t in texts) > MAX_CHARS:
         raise ValueError('Select fewer sources: full-text size limit exceeded')
     settings = Settings(answer={'answer_length': 'enough detail to answer the question'})
+    settings.prompts.qa = ANSWER_TEMPLATE
     settings.prompts.answer_iteration_prompt = None
     session, settings = prepare(question, texts, settings, flexible_length=True)
     for context, item in zip(session.contexts, passages, strict=True):

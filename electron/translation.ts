@@ -3,7 +3,7 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { AISettingsStore } from "./ai-storage";
 import { AIClient, redactAIError } from "./ai-client";
-import { defaultTranslationSettings, DEFAULT_TRANSLATION_PROMPT, normalizeTranslationText, type TranslationCacheStats, type TranslationResult, type TranslationSettings } from "../src/shared/translation";
+import { defaultTranslationSettings, DEFAULT_TRANSLATION_PROMPT, normalizeTranslationText, type TranslationCacheStats, type TranslationResult, type TranslationSettings, type TranslationProgress } from "../src/shared/translation";
 class Serial {
   private tail: Promise<unknown> = Promise.resolve();
   protected serial<T>(action: () => Promise<T>): Promise<T> { const result = this.tail.then(action); this.tail = result.catch(() => undefined); return result; }
@@ -58,7 +58,7 @@ export class TranslationService {
   private active?: { id: string; controller: AbortController; done: Promise<void> };
   private revision = 0;
   private pendingId = "";
-  constructor(readonly settings: TranslationSettingsStore, readonly custom: AISettingsStore, private readonly shared: AISettingsStore, private readonly cache: () => TranslationCache, private readonly client: AIClient) {}
+  constructor(readonly settings: TranslationSettingsStore, readonly custom: AISettingsStore, private readonly shared: AISettingsStore, private readonly cache: () => TranslationCache, private readonly client: AIClient, private readonly progress?: (value: TranslationProgress) => void) {}
   async setEnabled(value: boolean) { if (typeof value !== "boolean") throw Error("Choose whether translation is enabled."); this.enabled = value; if (!value) { this.revision++; await this.cancel(); } return this.enabled; }
   private async stopActive(id?: string): Promise<void> { const job = this.active; if (job && (id === undefined || job.id === id)) { job.controller.abort(); await job.done; } }
   async cancel(id?: string): Promise<void> { if (id === undefined || id === this.pendingId) this.revision++; await this.stopActive(id); }
@@ -85,7 +85,12 @@ export class TranslationService {
       const provider = { ...connection.provider, models: [{ id: settings.modelId, name: settings.modelName || settings.modelId, purpose: "chat" as const }] };
       if (cached !== undefined) return { text: cached, cached: true, providerName: provider.name, modelName: provider.models[0].name };
       let text = "";
-      await this.client.complete(provider, key, settings.modelId, messages, job.controller.signal, content => { text += content; if (text.length > 8000) { job.controller.abort(); throw Error("Translation response is too long."); } }, false, undefined, { purpose: "translation", maxTokens: 700, disableThinking: true, timeoutMs: 90_000, ...(settings.template === "hunyuan" || (settings.template === "auto" && /(?:Hunyuan-MT|HY-MT)/i.test(settings.modelId)) ? { temperature: 0.7 } : {}) });
+      await this.client.complete(provider, key, settings.modelId, messages, job.controller.signal, content => {
+        if (job.controller.signal.aborted || ticket !== this.revision) return;
+        text += content;
+        if (text.length > 8000) { job.controller.abort(); throw Error("Translation response is too long."); }
+        this.progress?.({ id, result: { text, cached: false, providerName: provider.name, modelName: provider.models[0].name } });
+      }, false, undefined, { purpose: "translation", maxTokens: 700, disableThinking: true, timeoutMs: 90_000, maxRetries: 0, ...(settings.template === "hunyuan" || (settings.template === "auto" && /(?:Hunyuan-MT|HY-MT)/i.test(settings.modelId)) ? { temperature: 0.7 } : {}) });
       if (job.controller.signal.aborted || ticket !== this.revision) throw Error("Translation stopped.");
       text = text.trim(); if (!text) throw Error("The model returned no translation.");
       try { await cache.put(cacheKey, text); } catch { /* The translated result is usable even when caching fails. */ }

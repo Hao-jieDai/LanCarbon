@@ -80,7 +80,8 @@ const api: NotesDesktopApi = {
     cancel: id => ipcRenderer.invoke("translation:cancel", id),
     test: () => ipcRenderer.invoke("translation:test"),
     clearCache: () => ipcRenderer.invoke("translation:clear-cache"),
-    onChanged: callback => { const listener = () => callback(); ipcRenderer.on("translation:changed", listener); return () => ipcRenderer.removeListener("translation:changed", listener); }
+    onChanged: callback => { const listener = () => callback(); ipcRenderer.on("translation:changed", listener); return () => ipcRenderer.removeListener("translation:changed", listener); },
+    onProgress: callback => { const listener = (_event: Electron.IpcRendererEvent, progress: import("../src/shared/translation").TranslationProgress) => callback(progress); ipcRenderer.on("translation:progress", listener); return () => ipcRenderer.removeListener("translation:progress", listener); }
   },
   ai: {
     providers: () => ipcRenderer.invoke("ai:providers"),

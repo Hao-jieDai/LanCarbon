@@ -9,9 +9,9 @@
 
 ## English
 
-**PaperQA full-text questions:** The installed application includes its runtime and uses your existing Flash configuration. See the [installation acceptance guide](docs/rag-paperqa-installation.md). Earlier experiments below describe historical candidates, not extra steps in the current answer flow.
+**PaperQA full-text questions:** The installed application includes its runtime and uses your selected configured Chat model. See the [installation acceptance guide](docs/rag-paperqa-installation.md). Earlier experiments below describe historical candidates, not extra steps in the current answer flow.
 
-**Installer maintenance:** Old application files are staged on the installation volume before removal, avoiding cross-drive and long temporary-path failures. Removal is restricted to the Application directory; Data, Config and Library are retained.
+**Installer maintenance:** Same-location upgrades replace bundled runtime files in place while preserving the Application path and executable identity used by shortcuts. Explicit uninstall is restricted to Application; Data, Config and Library are retained.
 
 A developer-only [PaperQA comparison candidate](docs/rag-paperqa-comparison-flow.md) was tested with Flash on four fixed cases, including two new papers. All four quotation maps failed the frozen verbatim checks, so no candidate final answer was generated; factual improvement is not established. The [live evaluation](docs/rag-paperqa-flash-paired.md) is closed within its budget. Application chats remain unchanged.
 
@@ -37,7 +37,7 @@ LanCarbon is a Windows desktop application for writing ordinary Markdown Notes a
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
-Version 2.4.14 enables PaperQA full-text document questions with any configured Chat model from SiliconFlow, OpenRouter or Others, including Grok. Complete parsed source text goes into one answer without planning, generated summaries, embedding/rerank or answer rewriting. The Python/PaperQA runtime is bundled; no separate Python, Docker or WSL installation is needed. Existing configuration, writing, Library, chats, Thinking, citations, Usage and exports are preserved. Oversized, missing or partially parsed sources stop before sending. Local functional checks do not certify academic answer accuracy.
+Version 2.4.15 adjusts the native PaperQA answer template to answer supported parts when other information is missing and to allow APA author-year citations alongside separate evidence links. Full-text assembly and the single model call remain unchanged. Selection translation streams incoming text, shows waiting time, and offers Stop / Retry without cancelling on ordinary clicks. Failed requests do not retry automatically. Same-location upgrades preserve the application directory and executable identity instead of running legacy removal that renames them. Existing data and model configuration are retained. Service-side translation latency and model answer accuracy still require real-use verification.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -285,7 +285,7 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 
 **PaperQA 全文问答：** 安装版内置运行环境，沿用现有 Flash 配置。参见[安装版验收指南](docs/rag-paperqa-installation.md)。下方试验记录属于历史候选，不是当前问答流程中的额外步骤。
 
-**安装维护：** 旧程序在安装磁盘内暂存后移除，避免跨盘搬移及过长临时路径造成失败。移除范围限制为 Application，保留 Data、Config 和 Library。
+**安装维护：** 同目录升级原地替换内置运行环境，保留快捷方式使用的 Application 路径和程序身份。显式卸载范围限制为 Application，保留 Data、Config 和 Library。
 
 开发候选基于 PaperQA 按子问题和来源取证，使用现有 BGE 重排，并保留原文用于一次最终回答。真实验证仍存在取证遗漏与综合判断错误，尚未启用到日常聊天，验证边界和结果见[适配说明](docs/rag-paperqa-scoped-evidence.md)。
 
@@ -311,7 +311,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
-2.4.14 将 PaperQA 全文问答接入安装版，允许使用 SiliconFlow、OpenRouter 或 Others 中已配置的聊天模型，包括 Grok。完整解析原文进入一次回答，不运行规划、生成摘要、embedding/rerank 或答案改写。Python/PaperQA 运行环境随包提供，无需另装 Python、Docker 或 WSL。保留配置、写作、Library、聊天、Thinking、引用、Usage 和导出。资料超限、缺失或部分解析时在发送前停止；本地功能检查不代表学术回答正确性已通过验收。
+2.4.15 调整 PaperQA 原生回答模板：部分信息缺失时回答仍可支持的部分，允许 APA 作者年份引用与独立证据链接并存。完整原文组织与一次模型调用不变。选词翻译随文字返回显示，提供等待计时、Stop／Retry，普通点击不再取消请求；失败不自动重试。同目录升级保留程序目录和可执行文件身份，避开旧卸载程序移动目录的行为。保留现有数据及模型配置；服务端翻译耗时与模型回答质量仍须实际使用确认。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

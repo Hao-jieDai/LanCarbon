@@ -155,6 +155,7 @@ async function createWindow(): Promise<void> {
   else await mainWindow.loadFile(path.join(__dirname, "../../dist/index.html"));
 }
 
+if (process.platform === "win32") app.setAppUserModelId("cn.lancarbon.desktop");
 app.whenReady().then(async () => {
   const configurationDirectory = app.getPath("userData");
   environmentManager = new EnvironmentManager(directories.tools, directories.temp, path.join(configurationDirectory, "Logs", "environment-setup.log"), net.fetch as unknown as typeof fetch, progress => mainWindow?.webContents.send("environment:progress", progress));
@@ -226,7 +227,7 @@ app.whenReady().then(async () => {
     paperQACompiler(app.isPackaged ? path.join(bundledPaperQA, "python.exe") : process.env.LANCARBON_PAPERQA_PYTHON || path.resolve(".dev-workspace", "paperqa-runtime", "Scripts", "python.exe"),
       app.isPackaged ? path.join(bundledPaperQA, "adapter", "paperqa_prompt.py") : path.resolve("scripts", "paperqa_prompt.py")), () => retrieval().stop()) : nativeGrounder;
   aiService = new AIService(aiSettings, chats, aiClient, chat => mainWindow?.webContents.send("ai:chat", chat), activeGrounder);
-  translationService = new TranslationService(translationSettings, translationConnections, aiSettings, cache, aiClient);
+  translationService = new TranslationService(translationSettings, translationConnections, aiSettings, cache, aiClient, progress => mainWindow?.webContents.send("translation:progress", progress));
   const translationChanged = () => mainWindow?.webContents.send("translation:changed");
   const aiHandler = (channel: string, action: (...args: any[]) => Promise<object>) => ipcMain.handle(channel, async (event, ...args) => {
     if (event.sender !== mainWindow?.webContents) return { ok: false, error: "The AI workspace is unavailable" };
