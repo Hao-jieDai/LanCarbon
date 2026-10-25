@@ -37,6 +37,8 @@ LanCarbon is a Windows desktop application for writing ordinary Markdown Notes a
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
+**Answer wording maintenance (development):** Source-based answers now distinguish time-point values, periodic flows and cumulative totals using source definitions. Follow-ups recheck definitions instead of preserving an earlier mistaken interpretation. Internal quantity identifiers and checking mechanics belong to the separate amount-checking interface, not academic prose. This updates the existing single-call instructions; semantic correctness still requires real-model validation.
+
 **Source-linked amounts:** Clearly identified monetary values can be rendered and converted locally from their original source quantities. Differences and percentage reductions use those same operands without another model call. **Check amounts** lists specific unbound or invalid amounts; these notes remain in copies and PDF/Note exports. Unclear units and flagged OCR are not guessed. These checks cover monetary representation and arithmetic, not whether the chosen scenario, entity or economic comparison is correct.
 
 Version 2.4.16 removes the shared 25 MB chat-file bottleneck. Conversations save separately and share immutable source evidence, while existing replies, Thinking and citations migrate without deleting the original file. Failed saves retain the last committed data and explain how to preserve visible output. Translation requests now record local setup, response headers, first text and completion timing, and manual translation tests show response-time details. This diagnoses latency without adding model calls or changing your chosen service.
@@ -312,6 +314,8 @@ Use [GitHub Issues](https://github.com/Hao-jieDai/LanCarbon/issues) to report re
 LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown Notes，也可以通过 Sections 和 Child Pages 组织较长的 Books。正文和受管理资源保存在你的电脑上。普通写作不需要账号，只有在你明确使用 Publish 时，LanCarbon 才会上传内容。
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
+
+**回答表述维护（开发中）：** 资料回答按原文定义区分时点值、期间流量和跨期累计，追问重新核对定义，避免沿用先前的错误解释。数量编号和检查机制由独立金额检查区域说明，避免进入学术正文。仅整理现有单次调用指令，语义正确性仍须真实模型验证。
 
 **原文金额核对：** 明确识别的金额可根据原文数量在本地显示和换算，差额与降幅也由对应操作数计算，不增加模型调用。**Check amounts** 会列出没有可靠数量引用或无法处理的具体金额，复制及 PDF／Note 导出会保留这些说明。单位不清楚、OCR 存疑时不猜测换算。核对范围是金额表示和算术，不代表情景、主体或经济比较已经验证正确。
 

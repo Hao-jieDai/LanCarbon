@@ -16,6 +16,8 @@ Welcome to **LanCarbon**, an offline-first desktop application for writing Notes
 
 **PaperQA full-text mode:** When Evidence shows **PaperQA · full text**, complete selected texts are sent for one answer from the selected Chat model. This mode does not use embedding/rerank, planning, summaries or answer rewriting. Citations, Thinking, Usage and chat exports remain available. Oversized or incomplete texts stop before sending; this does not guarantee the model’s interpretation is correct.
 
+**Answer wording maintenance (development):** Source-based answers now distinguish time-point values, periodic flows and cumulative totals using source definitions. Follow-ups recheck definitions instead of preserving an earlier mistaken interpretation. Internal quantity identifiers and checking mechanics belong to the separate amount-checking interface, not academic prose. This updates the existing single-call instructions; semantic correctness still requires real-model validation.
+
 **Source-linked amounts:** Clearly identified monetary values can be rendered and converted locally from their original source quantities. Differences and percentage reductions use those same operands without another model call. **Check amounts** lists specific unbound or invalid amounts; these notes remain in copies and PDF/Note exports. Unclear units and flagged OCR are not guessed. These checks cover monetary representation and arithmetic, not whether the chosen scenario, entity or economic comparison is correct.
 
 Version 2.4.16 removes the shared 25 MB chat-file bottleneck. Conversations save separately and share immutable source evidence, while existing replies, Thinking and citations migrate without deleting the original file. Failed saves retain the last committed data and explain how to preserve visible output. Translation requests now record local setup, response headers, first text and completion timing, and manual translation tests show response-time details. This diagnoses latency without adding model calls or changing your chosen service.
@@ -262,6 +264,8 @@ Export is optional in this workflow. It creates a separate source copy and is no
 欢迎使用 **LanCarbon**。这是一款优先离线使用的桌面写作软件，可以撰写普通 Notes，也可以组织结构化 Books，并将 Book 构建为本地网站或发布为在线网站。
 
 **PaperQA 全文模式：** Evidence 显示 **PaperQA · full text** 时，会将选定资料的完整解析文本交给当前选择的聊天模型一次回答。不调用 embedding/rerank、规划、摘要或答案改写。引用、Thinking、Usage 和聊天导出仍可使用。超限或解析不完整时会在发送前停止；这不代表模型解读一定正确。
+
+**回答表述维护（开发中）：** 资料回答按原文定义区分时点值、期间流量和跨期累计，追问重新核对定义，避免沿用先前的错误解释。数量编号和检查机制由独立金额检查区域说明，避免进入学术正文。仅整理现有单次调用指令，语义正确性仍须真实模型验证。
 
 **原文金额核对：** 明确识别的金额可根据原文数量在本地显示和换算，差额与降幅也由对应操作数计算，不增加模型调用。**Check amounts** 会列出没有可靠数量引用或无法处理的具体金额，复制及 PDF／Note 导出会保留这些说明。单位不清楚、OCR 存疑时不猜测换算。核对范围是金额表示和算术，不代表情景、主体或经济比较已经验证正确。
 

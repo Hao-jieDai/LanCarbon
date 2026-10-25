@@ -16,6 +16,7 @@ import { createNote } from "../src/shared/notes";
 import { extractMarkdown } from "../src/shared/knowledgeText";
 import type { PaperQACompiler } from "../electron/paperqa-bridge";
 import type { RetrievalService } from "../electron/retrieval-service";
+import quantityMeaningCases from "./fixtures/quantity-meaning.json";
 import type { AIUsageEvent } from "../src/shared/aiUsage";
 
 const cleanups: Array<() => Promise<void>> = [];
@@ -136,6 +137,25 @@ it("renders source-bound quantities in a single call, preserves them across turn
   expect(followup.messages.at(-1).content).toContain("CNY 17.25 billion");
   expect(f.usage.filter(e => e.type === "start")).toHaveLength(2);
   expect(f.retrieval.build).not.toHaveBeenCalled(); expect(f.retrieval.search).not.toHaveBeenCalled();
+});
+
+for (const sample of quantityMeaningCases) it(`keeps source definitions available after a mistaken prior answer: ${sample.title}`, async () => {
+  const f = await fixture(sample.text);
+  // Mocking a wrong answer verifies transport/history, not semantic accuracy.
+  f.fetcher.mockResolvedValueOnce(new Response(JSON.stringify({ choices: [{ message: { content: sample.priorAnswer }, finish_reason: "stop" }] }), { headers: { "content-type": "application/json" } }));
+  await f.service.send(f.chat.id, "siliconflow", f.model, "Explain what the reported values measure.");
+  const first = await f.settled();
+  expect(first.messages.at(-1)?.content).toBe(sample.priorAnswer);
+  await f.service.send(f.chat.id, "siliconflow", f.model, sample.question); await f.settled();
+  const request = JSON.parse(String(f.fetcher.mock.calls[1][1]?.body));
+  expect(request.messages.filter((m: any) => m.role === "system")).toHaveLength(1);
+  expect(request.messages.find((m: any) => m.role === "assistant")?.content).toBe(sample.priorAnswer);
+  expect(request.messages.at(-1).content).toContain(sample.text);
+  expect(request.messages.at(-1).content).toContain(sample.question);
+  expect(request.messages[0].content).toContain("LanCarbon separately displays specific amount-checking issues");
+  expect(request.messages[0].content).toContain("implementation details, not limitations of the source");
+  expect(f.fetcher).toHaveBeenCalledTimes(2);
+  expect(f.retrieval.search).not.toHaveBeenCalled(); expect(f.retrieval.build).not.toHaveBeenCalled();
 });
 
 for (const id of ["openrouter", "others", "siliconflow"] as const) it(`uses selected ${id} model for full text, switches without fallback and preserves provider errors`, async () => {

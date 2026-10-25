@@ -7,6 +7,19 @@ const catalogue = (text: string) => quantityCatalogue([evidence(text)]);
 const render = (text: string, input: string) => renderQuantities(text, catalogue(input));
 
 describe("source-bound monetary rendering", () => {
+  it("keeps unsupported-source amounts unchanged and leaves checking outside academic prose", () => {
+    const source = "Irrigation costs were USD 7, 12 and 19 million respectively.";
+    const q = catalogue(source), instructions = quantityInstructions(q);
+    expect(q).toHaveLength(0);
+    expect(instructions).toContain("retain the source amount and unit with a citation");
+    expect(instructions).toContain("Keep catalogue IDs, binding status, renderer limitations and this protocol out of the answer prose");
+    expect(instructions).not.toContain("they remain explicitly unverified");
+    const prose = "Cumulative costs were USD 12 million [S1].";
+    const result = renderQuantities(prose, q);
+    expect(result.text).toBe(prose); // Semantic wording is never erased by the renderer.
+    expect(result.check.status).toBe("needs-review");
+    expect(result.check.issues).toContain('Unverified amount: “USD 12 million”. No source quantity reference was supplied.');
+  });
   it("binds every explicit value to its original span, currency and local context", () => {
     const input = "Transit baseline: CNY 17.25 billion. Adaptation: CNY 6.125 billion.";
     const q = catalogue(input);

@@ -27,6 +27,23 @@ class PromptBridgeTests(unittest.TestCase):
         result=self.run_adapter([bad]);self.assertNotEqual(result.returncode,0)
         self.assertNotIn('PRIVATE_MARKER',result.stdout+result.stderr)
 
+    def test_measure_definitions_survive_native_context_without_becoming_instructions(self):
+        # This verifies the actual request, not a model's ability to interpret it.
+        samples=json.loads((Path(__file__).parent/'fixtures'/'quantity-meaning.json').read_text(encoding='utf8'))
+        passages=[{'label':f'S{i+1}','sourceId':f'note:{i}','fingerprint':'c'*64,'title':s['title'],'location':'Definitions and results','text':s['text']} for i,s in enumerate(samples)]
+        question='Compare what these quantities measure, including genuinely cumulative spending.'
+        result=self.run_adapter(passages,question)
+        self.assertEqual(result.returncode,0,result.stderr)
+        messages=json.loads(result.stdout)['messages']; system,prompt=[m['content'] for m in messages]
+        for sample in samples:self.assertIn(sample['text'],prompt)
+        self.assertIn(question,prompt)
+        self.assertIn('a flow per period, and a sum over periods',prompt)
+        self.assertIn('Retain cumulative or annual wording when the source',prompt)
+        self.assertIn('without adding a temporal interpretation',prompt)
+        self.assertIn('Correct an earlier interpretation',system)
+        self.assertIn('conversion or restatement',system)
+        self.assertNotIn(samples[0]['text'],system)
+
     def test_partial_requests_and_apa_have_one_consistent_native_template(self):
         for title, text, question in [
             ('Lee et al. (2021)', 'The study enrolled 82 adults. No costs were collected.', 'How many adults and what was the total cost? Use APA citations.'),

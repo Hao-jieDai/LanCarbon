@@ -1,0 +1,30 @@
+[
+  {
+    "title": "Municipal equipment valuation",
+    "text": "For each candidate inspection date, the model values the remaining equipment across twelve depots. At the 2032 date the total value is EUR 18 million. At the 2037 date it is EUR 11 million. Each figure is a valuation at that date, not the sum of intervening annual values.",
+    "question": "The earlier reply called this cumulative spending. Restate the two values and explain what total means here.",
+    "priorAnswer": "The cumulative spending over the inspection windows was EUR 18 million and EUR 11 million.",
+    "measure": "point-in-time value aggregated across entities"
+  },
+  {
+    "title": "Public health programme accounts",
+    "text": "Annual expenditure in 2031 was CNY 24 million. Cumulative expenditure for 2031 through 2034 was CNY 90 million, calculated by adding the expenditure of the four years. These measures are spending flows, not the value of facilities at year end.",
+    "question": "Explain the annual and cumulative amounts and their time coverage. Keep the cumulative label where it belongs.",
+    "priorAnswer": "The four-year figure is the facilities' value at year end.",
+    "measure": "annual flow and genuinely cumulative expenditure"
+  },
+  {
+    "title": "District transport balance sheets",
+    "text": "The north district's asset value at 31 December 2035 was GBP 32 million; the south district's was GBP 14 million. The regional total at that same date combines the two districts. The study reports neither annual spending nor a cumulative time series.",
+    "question": "Does total refer to time or districts? Explain the two values without introducing annual expenditure.",
+    "priorAnswer": "These are annual expenditures.",
+    "measure": "same-date aggregation across districts"
+  },
+  {
+    "title": "Irrigation scenarios",
+    "text": "The scenarios report USD 7, 12 and 19 million respectively. Their common planning horizon is 2040. The report calls these estimated costs and does not define whether the values are discounted lifetime costs, annual costs, or expenditures accumulated over several years.",
+    "question": "What do the reported costs mean? Is the horizon enough to call them cumulative costs?",
+    "priorAnswer": "All three are cumulative lifetime expenditures.",
+    "measure": "unspecified temporal basis; retain source term"
+  }
+]
