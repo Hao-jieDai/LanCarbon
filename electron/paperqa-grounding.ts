@@ -58,7 +58,7 @@ export class PaperQAGrounder implements DocumentGrounder {
       const messages = [{ ...prepared.messages[0], content: prepared.messages[0].content + "\n\n" + quantityInstructions(quantityCatalogue(evidence)) }, ...history, prepared.messages[1]];
       if (Buffer.byteLength(JSON.stringify(messages), "utf8") > 750_000) throw Error("Select fewer sources or start a new chat: the full-text request exceeds the size limit. Nothing was sent.");
       const grounding: ChatGrounding = { scope, sourceIds: [...ids], evidence, mode: "full-text", warnings: evidence.some(hit => hit.chunk.anchor.needsReview) ? ["Some OCR text needs checking against the original page."] : [], research: { focusSourceIds: [...ids], searches: 0, modelChecks: 0, supplemented: false, review: "not-needed" } };
-      grounding.quantityProtocol = 1;
+      grounding.quantityProtocol = 2;
       return { grounding, messages };
     });
     this.queue = work.catch(() => {});

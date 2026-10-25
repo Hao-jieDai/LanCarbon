@@ -7,6 +7,40 @@ const catalogue = (text: string) => quantityCatalogue([evidence(text)]);
 const render = (text: string, input: string) => renderQuantities(text, catalogue(input));
 
 describe("source-bound monetary rendering", () => {
+  it.each([
+    ["Clinic losses were EUR 27 million, 62% in public clinics.", "EUR 27 million"],
+    ["Equipment loss: GBP 16 billion，43％ in the east.", "GBP 16 billion"],
+    ["Flood damage: USD 4.2 million, 17 hospitals affected.", "USD 4.2 million"],
+    ["医疗支出为12.34亿元人民币，41%属于基层诊所。", "12.34亿元人民币"],
+    ["Budget EUR 23.75\nmillion, 39% for maintenance.", "EUR 23.75\nmillion"],
+    ["Works cost GBP 8 mil-\nlion, 2024 prices.", "GBP 8 mil-\nlion"],
+  ])("keeps independently scaled amounts before another numeric fact: %s", (source, raw) => {
+    const q = catalogue(source);
+    expect(q).toHaveLength(1); expect(q[0].raw).toBe(raw);
+    expect(source.slice(q[0].start, q[0].end)).toBe(raw);
+    expect(q[0].id).toBe(`S1Q${source.indexOf(raw)}`);
+  });
+  it("keeps fully specified amounts while rejecting shared scales and rates", () => {
+    expect(catalogue("EUR 27 million, EUR 18 million and EUR 6 million").map(q => q.raw)).toEqual(["EUR 27 million", "EUR 18 million", "EUR 6 million"]);
+    for (const s of ["EUR 27, 18 and 6 million", "GBP 4–9 billion", "USD 6 and 11 million", "EUR 27 million/year", "GBP 16 billion per year", "12.34亿元人民币/年"]) expect(catalogue(s)).toEqual([]);
+  });
+  it("v2 permits literal restatements without marking them verified or missing an ID", () => {
+    const q = catalogue("Clinic losses EUR 27 million, 62% in public clinics."), text = "Losses EUR 27 million [S1].";
+    expect(quantityInstructions(q)).toContain("For direct restatements");
+    expect(quantityInstructions(q)).not.toContain("every monetary amount");
+    expect(renderQuantities(text, q, false, 2)).toEqual({ text, check: { version: 1, resolved: 0, status: "not-checked", issues: [] } });
+    // Absence of a warning is not semantic validation, even for incorrect prose.
+    expect(renderQuantities("EUR 270 million [S1]", q, false, 2).check.status).toBe("not-checked");
+    expect(renderQuantities(text, q, false, 1).check.status).toBe("needs-review");
+  });
+  it("v2 checks only requested calculations and retains invalid-token diagnostics", () => {
+    const q = catalogue("EUR 27 million, 62% for clinics. Revised EUR 18 million.");
+    const text = `Baseline EUR 27 million [S1]. Difference {{diff:${q[0].id}:${q[1].id}|million}}.`;
+    const result = renderQuantities(text, q, false, 2);
+    expect(result.text).toBe("Baseline EUR 27 million [S1]. Difference EUR 9 million [S1].");
+    expect(result.check).toMatchObject({ resolved: 1, status: "checked", issues: [] });
+    for (const token of ["{{qty:S99Q0|million}}", `{{qty:${q[0].id}|EUR}}`, "{{diff:S1Q0", `{{qty:${q[0].id}|million}} million`]) expect(renderQuantities(token, q, false, 2).check.status).toBe("needs-review");
+  });
   it("keeps unsupported-source amounts unchanged and leaves checking outside academic prose", () => {
     const source = "Irrigation costs were USD 7, 12 and 19 million respectively.";
     const q = catalogue(source), instructions = quantityInstructions(q);

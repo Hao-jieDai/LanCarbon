@@ -109,7 +109,7 @@ test("PaperQA quantities render once per request, retain checks in copy and expo
     if (path.resolve(process.env.E2E_EXECUTABLE) !== candidate || path.resolve(await fs.realpath(candidate)) !== candidate) throw Error("Quantity acceptance only permits the workspace build, never the daily installation");
   }
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-quantity-ui-")); await fs.mkdir(path.join(root, "Data"));
-  const note = createNote({ id: "budget-source", title: "Public health budgets", content: "Baseline: EUR 23.5\nmillion. Revised programme: EUR 8.25 mil-\nlion." });
+  const note = createNote({ id: "budget-source", title: "Public health budgets", content: "Baseline: EUR 23.5\nmillion. Revised programme: EUR 8.25 mil-\nlion, 37% for equipment." });
   await fs.writeFile(path.join(root, "Data/notes.json"), JSON.stringify({ version: 2, notes: [note], books: [] }));
   let app = await launch(root);
   try {
@@ -123,7 +123,7 @@ test("PaperQA quantities render once per request, retain checks in copy and expo
         const rows = body.messages[0].content.split("\n").filter((s: string) => s.startsWith('{"id":"S')).map((s: string) => JSON.parse(s));
         if (rows.length !== 2) throw Error("Expected independent source quantities");
         if (rows.some((row: { scale: string }) => row.scale !== "million")) throw Error("Lost wrapped source scale");
-        const content = (globalThis as any).quantityCalls === 1 ? `Budget {{qty:${rows[0].id}\\|亿}}. Difference {{diff:${rows[0].id}:${rows[1].id}\\|million}}.` : "Unbound estimate EUR 235 million [S1].";
+        const content = (globalThis as any).quantityCalls === 1 ? `Budget {{qty:${rows[0].id}\\|亿}}. Difference {{diff:${rows[0].id}:${rows[1].id}\\|million}}.` : (globalThis as any).quantityCalls === 2 ? "Source budget EUR 23.5 million [S1]." : "Invalid calculation {{qty:S999Q0|million}}.";
         return new Response(new ReadableStream({ start(controller) {
           for (let i = 0; i < content.length; i += 7) controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ choices: [{ delta: { content: content.slice(i, i + 7) } }] })}\n\n`));
           controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":120,"completion_tokens":20,"total_tokens":140}}\n\ndata: [DONE]\n\n')); controller.close();
@@ -144,13 +144,20 @@ test("PaperQA quantities render once per request, retain checks in copy and expo
     await expect(page.getByRole("article", { name: "AI reply", exact: true }).first()).toContainText("EUR 0.235 亿");
     await expect(page.getByRole("article", { name: "AI reply", exact: true }).first()).toContainText("EUR 15.25 million");
     await expect(page.locator(".chat-quantity-check")).toHaveCount(0);
-    await send("What if the model returns an unbound amount?", 4);
-    await expect(page.locator(".chat-quantity-check")).toContainText("EUR 235 million");
+    await send("Restate the original budget.", 4);
+    await expect(page.locator(".chat-quantity-check")).toHaveCount(0);
+    const literal = await page.evaluate(() => window.notesDesktop.ai!.chats());
+    expect(literal.ok && literal.chats[0].messages.at(-1)?.grounding?.quantityCheck?.status).toBe("not-checked");
+    await send("Try an unavailable calculation reference.", 6);
+    await expect(page.locator(".chat-quantity-check")).toContainText("Source quantity is unavailable");
+    // Capture the clipboard boundary without depending on desktop focus or
+    // overwriting/reading the user's clipboard during an isolated test.
+    await page.evaluate(() => { Object.defineProperty(navigator.clipboard, "writeText", { configurable: true, value: async (text: string) => { (window as any).quantityCopied = text; } }); });
     await page.getByRole("button", { name: "Copy reply", exact: true }).last().click();
-    const copied = await app.evaluate(({ clipboard }) => clipboard.readText()); expect(copied).toContain("Check amounts:"); expect(copied).not.toContain("{{qty:");
+    const copied = await page.evaluate(() => (window as any).quantityCopied); expect(copied).toContain("Check amounts:"); expect(copied).not.toContain("{{qty:");
     const result = await page.evaluate(() => window.notesDesktop.ai!.chats()); if (!result.ok) throw Error(result.error); const chat = result.chats[0];
     const exported = await page.evaluate(id => window.notesDesktop.ai!.exportNote(id, { includeThinking: true, includeEvidence: false }), chat.id);
-    expect(exported.ok && exported.workspace.notes.find(n => n.id === exported.noteId)?.content).toContain("Unverified amount");
+    expect(exported.ok && exported.workspace.notes.find(n => n.id === exported.noteId)?.content).toContain("Source quantity is unavailable");
     await app.evaluate(({ app, dialog }, destination) => {
       dialog.showSaveDialog = (async () => ({ canceled: false, filePath: destination })) as typeof dialog.showSaveDialog;
       app.on("browser-window-created", (_event, win) => {
@@ -160,9 +167,9 @@ test("PaperQA quantities render once per request, retain checks in copy and expo
     }, info.outputPath("quantity-export.pdf"));
     const pdf = await page.evaluate(id => window.notesDesktop.ai!.exportPdf(id, { includeThinking: false, includeEvidence: false }), chat.id); expect(pdf.ok).toBe(true);
     const printed = await app.evaluate(() => (globalThis as any).quantityPrintText);
-    expect(printed).toContain("EUR 0.235 亿"); expect(printed).toContain("Unverified amount"); expect(printed).not.toContain("{{qty:");
-    expect(await app.evaluate(() => (globalThis as any).quantityCalls)).toBe(2);
-    const usage = await page.evaluate(() => window.notesDesktop.ai!.usage()); expect(usage.ok && usage.usage.records.length).toBe(2);
+    expect(printed).toContain("EUR 0.235 亿"); expect(printed).toContain("Source quantity is unavailable"); expect(printed).not.toContain("{{qty:");
+    expect(await app.evaluate(() => (globalThis as any).quantityCalls)).toBe(3);
+    const usage = await page.evaluate(() => window.notesDesktop.ai!.usage()); expect(usage.ok && usage.usage.records.length).toBe(3);
     await page.screenshot({ path: info.outputPath("quantity-checks.png") });
     await app.close(); app = await launch(root); page = await app.firstWindow(); await page.getByRole("main").waitFor(); await mock(app);
     const restored = await page.evaluate(() => window.notesDesktop.ai!.chats()); expect(restored.ok && restored.chats[0].messages).toEqual(chat.messages);

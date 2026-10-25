@@ -107,7 +107,8 @@ it("preserves the generated text without legacy repairs while retaining citation
   const generated = "Costs are 2 billion USD, or 2 亿美元 [S1]. An unknown source [S998].";
   expect(await f.grounder.finish(grounding, generated)).toBe(generated);
   expect(grounding.warnings).toEqual(["The reply contains an unrecognized citation. Only the saved evidence entries below can be opened."]);
-  expect(grounding.quantityCheck?.status).toBe("needs-review");
+  expect(grounding.quantityProtocol).toBe(2);
+  expect(grounding.quantityCheck).toMatchObject({ status: "not-checked", resolved: 0, issues: [] });
 });
 
 it("renders source-bound quantities in a single call, preserves them across turns and restart", async () => {
@@ -155,8 +156,8 @@ for (const sample of quantityMeaningCases) it(`keeps source definitions availabl
   expect(request.messages.find((m: any) => m.role === "assistant")?.content).toBe(sample.priorAnswer);
   expect(request.messages.at(-1).content).toContain(sample.text);
   expect(request.messages.at(-1).content).toContain(sample.question);
-  expect(request.messages[0].content).toContain("LanCarbon separately displays specific amount-checking issues");
-  expect(request.messages[0].content).toContain("implementation details, not limitations of the source");
+  expect(request.messages[0].content).toContain("For direct restatements");
+  expect(request.messages[0].content).toContain("Calculation checks concern arithmetic only, not the correctness of a claim");
   expect(f.fetcher).toHaveBeenCalledTimes(2);
   expect(f.retrieval.search).not.toHaveBeenCalled(); expect(f.retrieval.build).not.toHaveBeenCalled();
 });

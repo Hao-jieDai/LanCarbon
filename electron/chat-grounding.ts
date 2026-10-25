@@ -186,8 +186,8 @@ export class ChatGrounder {
     return new Promise((resolve, reject) => { const abort = () => { if (!started) reject(Error("Document question stopped.")); }; signal.addEventListener("abort", abort, { once: true }); if (signal.aborted) abort(); work.then(resolve, reject).finally(() => signal.removeEventListener("abort", abort)); });
   }
   async finish(grounding: ChatGrounding, text: string) {
-    if (grounding.mode === "full-text" && grounding.quantityProtocol === 1) {
-      const rendered = renderQuantities(text, quantityCatalogue(grounding.evidence));
+    if (grounding.mode === "full-text" && grounding.quantityProtocol) {
+      const rendered = renderQuantities(text, quantityCatalogue(grounding.evidence), false, grounding.quantityProtocol);
       text = rendered.text; grounding.quantityCheck = rendered.check;
     }
     // The PaperQA development path preserves the model's answer. Keep only

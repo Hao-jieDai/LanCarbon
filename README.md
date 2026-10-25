@@ -37,13 +37,15 @@ LanCarbon is a Windows desktop application for writing ordinary Markdown Notes a
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
+**Calculation references (development):** Complete monetary amounts are retained when followed by a separate percentage or numeric fact. New full-text replies may restate source amounts normally; source references are reserved for requested local conversions, differences and percentage reductions. Ordinary amounts are not flagged merely for lacking a calculation ID and are not certified as verified. Invalid calculations still show specific diagnostics. Existing replies retain their original checks. No additional model calls are introduced.
+
 **Monetary layout correction (development):** Source amounts retain scales wrapped to the next line or hyphenated across PDF lines. Amounts without an explicit scale are excluded from automatic conversion: bare currency labels may be figure ticks, price-base years or shared/incomplete units. They remain in the full text and are never silently treated as base currency. Original source offsets and text are preserved. Markdown-escaped quantity separators are accepted without relaxing currency or arithmetic checks. The original five-paper multi-turn regression is required in addition to independent material before delivery; offline checks alone are not academic acceptance.
 
 **Answer wording:** Source-based answers now distinguish time-point values, periodic flows and cumulative totals using source definitions. Follow-ups recheck definitions instead of preserving an earlier mistaken interpretation. Internal quantity identifiers and checking mechanics belong to the separate amount-checking interface, not academic prose. This updates the existing single-call instructions; semantic correctness still requires real-model validation.
 
 **Source-linked amounts:** Clearly identified monetary values can be rendered and converted locally from their original source quantities. Differences and percentage reductions use those same operands without another model call. **Check amounts** lists specific unbound or invalid amounts; these notes remain in copies and PDF/Note exports. Unclear units and flagged OCR are not guessed. These checks cover monetary representation and arithmetic, not whether the chosen scenario, entity or economic comparison is correct.
 
-Version 2.4.17 adds source-linked monetary rendering and local conversions, differences and percentage reductions to full-text answers. Answer instructions distinguish time-point values, periodic flows and cumulative measures, while internal quantity diagnostics stay in the separate checking area. Existing models, configuration, Notes, Books and chat history are preserved; no additional model calls are introduced. Amount diagnostics can still flag correct monetary restatements that did not use a source reference.
+Version 2.4.17 adds source-linked monetary rendering and local conversions, differences and percentage reductions to full-text answers. Answer instructions distinguish time-point values, periodic flows and cumulative measures, while internal quantity diagnostics stay in the separate checking area. Existing models, configuration, Notes, Books and chat history are preserved; no additional model calls are introduced. Older replies may retain diagnostics for amounts without source references.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -323,7 +325,9 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 **金额排版修正（开发中）：** 识别金额与量级之间的换行以及英文量级断词，保留原文及其位置。未明确量级的裸币种金额不自动换算，避免将图轴、价格基年和共享/残缺单位误当成基本货币单位；原文仍保留。兼容Markdown表格中的金额标记分隔符转义，币种与计算检查不放宽。交付前必须复测原五篇完整多轮问答，并补充独立材料；离线检查不能替代学术验收。
 
-2.4.17 为全文回答增加原文金额绑定，以及本地单位换算、差额和降幅计算；整理指标时间口径，区分时点值、期间流量与累计值，并将内部数量检查说明留在独立检查区域。保留原有模型、配置、Notes、Books和聊天历史，不增加模型调用。部分未使用原文数量引用的正确金额复述仍可能被提示核对。
+**数值计算引用修复（开发中）：** 完整金额后接独立百分比或数字事实时不再遗漏。新的全文回答可以直接复述原文金额，仅在需要本地换算、差额或降幅计算时使用数量引用。普通金额不会仅因缺少计算编号而显示警告，也不会被标成已验证。无效计算仍保留具体提示；旧回答的检查记录不变，不增加模型调用。
+
+2.4.17 为全文回答增加原文金额绑定，以及本地单位换算、差额和降幅计算；整理指标时间口径，区分时点值、期间流量与累计值，并将内部数量检查说明留在独立检查区域。保留原有模型、配置、Notes、Books和聊天历史，不增加模型调用。旧回答可能保留未使用数量引用时产生的检查提示。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

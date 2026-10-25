@@ -92,7 +92,7 @@ export class AIService {
             if (!this.grounder) throw Error("Document questions are unavailable.");
             const prepared = await this.grounder.prepare(chat, controller.signal, progress, consult);
             reply.grounding = prepared.grounding;
-            if (reply.grounding.quantityProtocol === 1) quantities = quantityCatalogue(reply.grounding.evidence);
+            if (reply.grounding.quantityProtocol) quantities = quantityCatalogue(reply.grounding.evidence);
             // One system message: presentation preferences plus the document contract.
             // Evidence/history remain data in their original user-message roles.
             context = [{ ...context[0], content: context[0].content + "\n\n" + prepared.messages[0].content }, ...prepared.messages.slice(1)];
@@ -102,7 +102,7 @@ export class AIService {
           controller.signal.throwIfAborted();
           await this.client.complete(provider, key, modelId, context, controller.signal, (content, reasoning) => {
             rawReply += content;
-            reply.content = quantities ? renderQuantities(rawReply, quantities, true).text : rawReply;
+            reply.content = quantities ? renderQuantities(rawReply, quantities, true, reply.grounding?.quantityProtocol).text : rawReply;
             reply.reasoning = (reply.reasoning ?? "") + reasoning;
             if (rawReply.length + reply.reasoning.length > 1_000_000) { controller.abort(); throw new Error("Response size limit reached"); }
             if (!updateTimer) updateTimer = setTimeout(() => { updateTimer = undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, 120);
@@ -114,7 +114,7 @@ export class AIService {
         } catch (error) { reply.status = saveFailure ? "error" : controller.signal.aborted ? "stopped" : "error"; reply.error = saveFailure ? `Generation stopped because saving failed: ${saveFailure}` : controller.signal.aborted ? "Generation stopped." : redactAIError(error, key); }
         finally {
           if (quantities && reply.grounding && !reply.grounding.quantityCheck) {
-            const rendered = renderQuantities(rawReply, quantities);
+            const rendered = renderQuantities(rawReply, quantities, false, reply.grounding.quantityProtocol);
             reply.content = chatMarkdown(rendered.text); reply.grounding.quantityCheck = rendered.check;
           }
           reply.progress = undefined;
