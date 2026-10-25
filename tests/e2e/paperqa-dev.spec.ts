@@ -102,12 +102,18 @@ for (const connection of [
 });
 
 test("PaperQA quantities render once per request, retain checks in copy and exports, and survive restart", async ({}, info) => {
-  if (process.env.E2E_EXECUTABLE) throw Error("Quantity development acceptance must not run against the daily installation");
+  if (process.env.E2E_EXECUTABLE) {
+    // Keep daily installations forbidden. Only this workspace's generated payload
+    // may exercise the packaged path, always with the fresh temporary root below.
+    const candidate = path.resolve("release/win-unpacked/LanCarbon.exe");
+    if (path.resolve(process.env.E2E_EXECUTABLE) !== candidate || path.resolve(await fs.realpath(candidate)) !== candidate) throw Error("Quantity acceptance only permits the workspace build, never the daily installation");
+  }
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-quantity-ui-")); await fs.mkdir(path.join(root, "Data"));
   const note = createNote({ id: "budget-source", title: "Public health budgets", content: "Baseline: EUR 23.5 million. Revised programme: EUR 8.25 million." });
   await fs.writeFile(path.join(root, "Data/notes.json"), JSON.stringify({ version: 2, notes: [note], books: [] }));
   let app = await launch(root);
   try {
+    expect(path.resolve(await app.evaluate(({ app }) => app.getPath("userData")))).toBe(path.resolve(root, "Config"));
     let page = await app.firstWindow(); await page.getByRole("main").waitFor();
     await app.evaluate(({ net }) => {
       (globalThis as any).quantityCalls = 0;
