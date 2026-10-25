@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { quantityCatalogue, renderQuantities } from "./chat-quantities";
+import { calculationContext, renderCalculations } from "./chat-calculations";
 import type { AIChat } from "../src/shared/ai";
 import { citedLabels, hasChatSources, scopeKey, type ChatGrounding, type CitationTarget } from "../src/shared/grounding";
 import { KNOWLEDGE_MAX_SOURCES, selectedKnowledgeSources, type KnowledgeHit, type KnowledgeScope } from "../src/shared/knowledge";
@@ -187,7 +188,7 @@ export class ChatGrounder {
   }
   async finish(grounding: ChatGrounding, text: string) {
     if (grounding.mode === "full-text" && grounding.quantityProtocol) {
-      const rendered = renderQuantities(text, quantityCatalogue(grounding.evidence), false, grounding.quantityProtocol);
+      const rendered = grounding.quantityProtocol === 3 ? renderCalculations(text, calculationContext(grounding.evidence)) : renderQuantities(text, quantityCatalogue(grounding.evidence), false, grounding.quantityProtocol);
       text = rendered.text; grounding.quantityCheck = rendered.check;
     }
     // The PaperQA development path preserves the model's answer. Keep only

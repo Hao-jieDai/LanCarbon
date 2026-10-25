@@ -16,7 +16,7 @@ Welcome to **LanCarbon**, an offline-first desktop application for writing Notes
 
 **PaperQA full-text mode:** When Evidence shows **PaperQA · full text**, complete selected texts are sent for one answer from the selected Chat model. This mode does not use embedding/rerank, planning, summaries or answer rewriting. Citations, Thinking, Usage and chat exports remain available. Oversized or incomplete texts stop before sending; this does not guarantee the model’s interpretation is correct.
 
-**Calculation references (development):** Complete monetary amounts are retained when followed by a separate percentage or numeric fact. New full-text replies may restate source amounts normally; source references are reserved for requested local conversions, differences and percentage reductions. Ordinary amounts are not flagged merely for lacking a calculation ID and are not certified as verified. Invalid calculations still show specific diagnostics. Existing replies retain their original checks. No additional model calls are introduced.
+**Calculation references (development):** New full-text answers quote each original amount and its source for local calculations instead of generating internal numeric IDs. The app requires a unique source match and explicit currency and scale, retains original amounts alongside successful calculations, and preserves matched originals without placeholder amounts when calculation fails. Ordinary source restatements and legacy reply checks remain unchanged. Arithmetic checks do not verify entities, scenarios or interpretations. No additional model calls are introduced.
 
 **Monetary layout correction (development):** Source amounts retain scales wrapped to the next line or hyphenated across PDF lines. Amounts without an explicit scale are excluded from automatic conversion: bare currency labels may be figure ticks, price-base years or shared/incomplete units. They remain in the full text and are never silently treated as base currency. Original source offsets and text are preserved. Markdown-escaped quantity separators are accepted without relaxing currency or arithmetic checks. The original five-paper multi-turn regression is required in addition to independent material before delivery; offline checks alone are not academic acceptance.
 
@@ -275,7 +275,7 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 **金额排版修正（开发中）：** 识别金额与量级之间的换行以及英文量级断词，保留原文及其位置。未明确量级的裸币种金额不自动换算，避免将图轴、价格基年和共享/残缺单位误当成基本货币单位；原文仍保留。兼容Markdown表格中的金额标记分隔符转义，币种与计算检查不放宽。交付前必须复测原五篇完整多轮问答，并补充独立材料；离线检查不能替代学术验收。
 
-**数值计算引用修复（开发中）：** 完整金额后接独立百分比或数字事实时不再遗漏。新的全文回答可以直接复述原文金额，仅在需要本地换算、差额或降幅计算时使用数量引用。普通金额不会仅因缺少计算编号而显示警告，也不会被标成已验证。无效计算仍保留具体提示；旧回答的检查记录不变，不增加模型调用。
+**数值计算引用修复（开发中）：** 新的全文回答以原文金额和出处进行本地计算，不再要求模型生成内部数量编号。软件仅对唯一匹配且币种、量级明确的原文进行运算，成功时同时保留原文金额；失败时保留能匹配的原文，不替换成占位金额。普通原文复述和旧回答的检查记录保持不变。算术核对不认证主体、情景或解读正确，不增加模型调用。
 
 2.4.17 为全文回答增加原文金额绑定，以及本地单位换算、差额和降幅计算；整理指标时间口径，区分时点值、期间流量与累计值，并将内部数量检查说明留在独立检查区域。保留原有模型、配置、Notes、Books和聊天历史，不增加模型调用。旧回答可能保留未使用数量引用时产生的检查提示。
 

@@ -107,21 +107,20 @@ it("preserves the generated text without legacy repairs while retaining citation
   const generated = "Costs are 2 billion USD, or 2 亿美元 [S1]. An unknown source [S998].";
   expect(await f.grounder.finish(grounding, generated)).toBe(generated);
   expect(grounding.warnings).toEqual(["The reply contains an unrecognized citation. Only the saved evidence entries below can be opened."]);
-  expect(grounding.quantityProtocol).toBe(2);
+  expect(grounding.quantityProtocol).toBe(3);
   expect(grounding.quantityCheck).toMatchObject({ status: "not-checked", resolved: 0, issues: [] });
 });
 
 it("renders source-bound quantities in a single call, preserves them across turns and restart", async () => {
   const f = await fixture("Transit baseline: CNY 17.25\nbillion. Adaptation: CNY 6.125 bil-\nlion.");
-  // Read IDs from the actual request, never from a paper-specific fixture mapping.
+  // The request carries original evidence, never model-facing offset IDs.
   f.fetcher.mockImplementation(async (_url, init) => {
     const request = JSON.parse(String(init?.body)), system = request.messages[0].content;
-    const rows = system.split("\n").filter((s: string) => s.startsWith('{"id":"S')).map((s: string) => JSON.parse(s));
-    expect(rows).toHaveLength(2);
-    expect(rows.map((row: any) => row.scale)).toEqual(["billion", "billion"]);
-    expect(rows[0].original).toBe("CNY 17.25\nbillion");
-    expect(rows[1].original).toBe("CNY 6.125 bil-\nlion");
-    const answer = `Budget {{qty:${rows[0].id}|亿}}. Reduction {{diff:${rows[0].id}:${rows[1].id}|亿}}; {{pct:${rows[0].id}:${rows[1].id}}}.`;
+    expect(system).not.toContain('"id":"S');
+    expect(system).toContain("protocol v3");
+    const a = { source: "S1", quote: "CNY 17.25 billion" }, b = { source: "S1", quote: "CNY 6.125 billion" };
+    const token = (value: object) => "{{calc:" + JSON.stringify(value) + "}}";
+    const answer = `Budget ${token({ op: "qty", a, unit: "亿" })}. Reduction ${token({ op: "diff", a, b, unit: "亿" })}; ${token({ op: "pct", a, b })}.`;
     return new Response(new ReadableStream({ start(controller) {
       for (const part of [answer.slice(0, 11), answer.slice(11, 24), answer.slice(24)]) controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify({ choices: [{ delta: { content: part } }] })}\n\n`));
       controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{},"finish_reason":"stop"}],"usage":{"prompt_tokens":100,"completion_tokens":30,"total_tokens":130}}\n\ndata: [DONE]\n\n')); controller.close();
@@ -129,7 +128,10 @@ it("renders source-bound quantities in a single call, preserves them across turn
   });
   await f.service.send(f.chat.id, "siliconflow", f.model, "Compare the monetary amounts");
   const chat = await f.settled(), answer = chat.messages.at(-1)!;
-  expect(answer.content).toBe("Budget CNY 172.5 亿 [S1]. Reduction CNY 111.25 亿 [S1]; ≈ 64.49% [S1].");
+  expect(answer.content).toContain("CNY 17.25 billion [S1] (CNY 172.5 亿 [S1])");
+  expect(answer.content).toContain("CNY 111.25 亿 [S1]");
+  expect(answer.content).toContain("≈ 64.49% [S1]");
+  expect(answer.content).not.toContain("{{calc:");
   expect(answer.grounding?.quantityCheck).toMatchObject({ version: 1, resolved: 3, status: "checked", issues: [] });
   expect(answer.grounding?.quantityCheck?.bindings).toHaveLength(3);
   expect(f.fetcher).toHaveBeenCalledTimes(1);
@@ -156,7 +158,7 @@ for (const sample of quantityMeaningCases) it(`keeps source definitions availabl
   expect(request.messages.find((m: any) => m.role === "assistant")?.content).toBe(sample.priorAnswer);
   expect(request.messages.at(-1).content).toContain(sample.text);
   expect(request.messages.at(-1).content).toContain(sample.question);
-  expect(request.messages[0].content).toContain("For direct restatements");
+  expect(request.messages[0].content).toContain("Direct restatements");
   expect(request.messages[0].content).toContain("Calculation checks concern arithmetic only, not the correctness of a claim");
   expect(f.fetcher).toHaveBeenCalledTimes(2);
   expect(f.retrieval.search).not.toHaveBeenCalled(); expect(f.retrieval.build).not.toHaveBeenCalled();

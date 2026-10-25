@@ -12,7 +12,7 @@ let root: string;
 beforeEach(async () => { root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-chat-files-")); });
 afterEach(async () => { vi.restoreAllMocks(); if (path.dirname(root) !== path.resolve(os.tmpdir()) || !path.basename(root).startsWith("lancarbon-chat-files-")) throw Error("Unsafe cleanup"); await fs.rm(root, { recursive: true, force: true }); });
 const folder = () => path.join(root, "Research/Chats");
-it.each([1, 2] as const)("marks quantity protocol %s validation unfinished after an interrupted generation", async protocol => {
+it.each([1, 2, 3] as const)("marks quantity protocol %s validation unfinished after an interrupted generation", async protocol => {
   const store = new AIChatStore(root), c = await store.create("fixture", "model");
   await store.update(c.id, saved => { saved.messages = [{ id: "partial", role: "assistant", content: "EUR 235 million", status: "streaming", createdAt: "2026-10-25", grounding: { ...grounding(), quantityProtocol: protocol } }]; });
   const recovered = (await new AIChatStore(root).get(c.id)).messages[0];
@@ -24,12 +24,13 @@ const hit = (index = 0): ChatEvidence => ({ label: `S${index + 1}`, fingerprint:
 const grounding = (count = 2): ChatGrounding => ({ scope: { ...emptyKnowledgeScope(), fileIds: ["sample"] }, sourceIds: ["file:sample"], evidence: Array.from({ length: count }, (_, i) => hit(i)), warnings: [], mode: "full-text" });
 const chat = (id: string, count = 2): AIChat => ({ id, title: id, providerId: "fixture", modelId: "model", createdAt: "2026-10-25", updatedAt: "2026-10-25", messages: Array.from({ length: count }, (_, i) => ({ id: "reply-" + i, role: "assistant", content: "A supported answer [S1].", reasoning: "Original reasoning", status: "complete", createdAt: "2026-10-25", grounding: grounding() })) });
 it("preserves legacy diagnostics alongside v2 literal replies and rejects unknown protocols", async () => {
-  const store = new AIChatStore(root), c = await store.create("fixture", "model"), messages = chat(c.id).messages;
+  const store = new AIChatStore(root), c = await store.create("fixture", "model"), messages = chat(c.id, 3).messages;
   messages[0].grounding = { ...grounding(), quantityProtocol: 1, quantityCheck: { version: 1, resolved: 0, status: "needs-review", issues: ["Legacy amount not bound"] } };
   messages[1].grounding = { ...grounding(), quantityProtocol: 2, quantityCheck: { version: 1, resolved: 0, status: "not-checked", issues: [] } };
+  messages[2].grounding = { ...grounding(), quantityProtocol: 3, quantityCheck: { version: 1, resolved: 0, status: "not-checked", issues: [] } };
   await store.update(c.id, saved => { saved.messages = messages; });
   expect((await new AIChatStore(root).get(c.id)).messages).toEqual(messages);
-  await store.update(c.id, saved => { saved.messages[1].grounding!.quantityProtocol = 3 as 2; });
+  await store.update(c.id, saved => { saved.messages[1].grounding!.quantityProtocol = 4 as 2; });
   await expect(new AIChatStore(root).get(c.id)).rejects.toThrow("Unsupported quantity");
 });
 async function legacy(chats: AIChat[]) { await fs.mkdir(folder(), { recursive: true }); const text = JSON.stringify({ version: 1, chats }, null, 2); await fs.writeFile(path.join(folder(), "chats.json"), text); return text; }

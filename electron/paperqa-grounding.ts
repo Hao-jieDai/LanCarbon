@@ -4,7 +4,7 @@ import { selectedKnowledgeSources } from "../src/shared/knowledge";
 import type { KnowledgeStore } from "./knowledge-store";
 import type { ChatGrounder, PreparedChat } from "./chat-grounding";
 import type { PaperQACompiler } from "./paperqa-bridge";
-import { quantityCatalogue, quantityInstructions } from "./chat-quantities";
+import { calculationInstructions } from "./chat-calculations";
 
 export const PAPERQA_MAX_CHARACTERS = 500_000;
 export const PAPERQA_MAX_PASSAGES = 999;
@@ -55,10 +55,10 @@ export class PaperQAGrounder implements DocumentGrounder {
         historySize += m.content.length; history.unshift({ role: m.role, content: m.content });
       }
       // Preserve every original passage. The catalogue only supplies span IDs.
-      const messages = [{ ...prepared.messages[0], content: prepared.messages[0].content + "\n\n" + quantityInstructions(quantityCatalogue(evidence)) }, ...history, prepared.messages[1]];
+      const messages = [{ ...prepared.messages[0], content: prepared.messages[0].content + "\n\n" + calculationInstructions() }, ...history, prepared.messages[1]];
       if (Buffer.byteLength(JSON.stringify(messages), "utf8") > 750_000) throw Error("Select fewer sources or start a new chat: the full-text request exceeds the size limit. Nothing was sent.");
       const grounding: ChatGrounding = { scope, sourceIds: [...ids], evidence, mode: "full-text", warnings: evidence.some(hit => hit.chunk.anchor.needsReview) ? ["Some OCR text needs checking against the original page."] : [], research: { focusSourceIds: [...ids], searches: 0, modelChecks: 0, supplemented: false, review: "not-needed" } };
-      grounding.quantityProtocol = 2;
+      grounding.quantityProtocol = 3;
       return { grounding, messages };
     });
     this.queue = work.catch(() => {});

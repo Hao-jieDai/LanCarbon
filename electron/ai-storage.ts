@@ -119,7 +119,7 @@ export class AIChatStore extends Serialized {
       for (const message of chat.messages) { validId(message.id); if (message.sourceScope) message.sourceScope = validKnowledgeScope(message.sourceScope);
         if (message.grounding) {
           const g = message.grounding; g.scope = validKnowledgeScope(g.scope);
-          if (g.quantityProtocol !== undefined && g.quantityProtocol !== 1 && g.quantityProtocol !== 2) throw Error("Unsupported quantity reference version");
+          if (g.quantityProtocol !== undefined && ![1, 2, 3].includes(g.quantityProtocol)) throw Error("Unsupported quantity reference version");
           const q = g.quantityCheck;
           if (q && (q.version !== 1 || !Number.isSafeInteger(q.resolved) || q.resolved < 0 || !["checked", "needs-review", "not-checked"].includes(q.status) || !Array.isArray(q.issues) || q.issues.length > 12 || q.issues.some(s => typeof s !== "string" || s.length > 500))) throw Error("Invalid quantity check data");
           if (q?.bindings && (!Array.isArray(q.bindings) || q.bindings.length > 1000 || q.bindings.some(b => !b || !["qty", "diff", "pct"].includes(b.operation) || !Array.isArray(b.ids) || b.ids.length < 1 || b.ids.length > 2 || b.ids.some(id => typeof id !== "string" || !/^S[1-9]\d{0,2}Q\d{1,4}$/.test(id)) || typeof b.unit !== "string" || b.unit.length > 20 || typeof b.output !== "string" || b.output.length > 160))) throw Error("Invalid quantity source bindings");

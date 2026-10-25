@@ -10,7 +10,7 @@ export interface QuantityCheck {
 export interface ChatGrounding {
   scope: KnowledgeScope; sourceIds: string[]; evidence: ChatEvidence[];
   warnings: string[]; mode: "keyword" | "hybrid" | "reranked" | "full-text";
-  quantityProtocol?: 1 | 2;
+  quantityProtocol?: 1 | 2 | 3;
   quantityCheck?: QuantityCheck;
   research?: { failedReview?: string; answerRevision?: "applied" | "failed"; focusSourceIds: string[]; searches: number; modelChecks: number; supplemented: boolean; review: "sufficient" | "limited" | "unavailable" | "not-needed" };
 }
