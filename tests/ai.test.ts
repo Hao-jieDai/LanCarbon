@@ -191,3 +191,24 @@ it("bounds documented SiliconFlow reasoning without sending its vendor field to 
   for(const thinkingBudget of [0,32769,NaN,3.5])await expect(client.complete(defaultAIProviders()[0],secret,"fixture",[],new AbortController().signal,()=>{},false,()=>{},{thinkingBudget})).rejects.toThrow("Invalid thinking budget");
   expect(fetcher).toHaveBeenCalledTimes(3);
 });
+
+it("measures local dispatch, header arrival, first body byte and first text independently without extra calls", async () => {
+  let controller!: ReadableStreamDefaultController<Uint8Array>, releaseHeaders!: () => void;
+  const headerGate = new Promise<void>(resolve => { releaseHeaders = resolve; });
+  const records: any[] = [], metrics: any[] = [];
+  const fetcher = vi.fn(async () => { await headerGate; return new Response(new ReadableStream<Uint8Array>({ start(value) { controller = value; } }), { headers: { "content-type": "text/event-stream" } }); });
+  const client = new AIClient(fetcher, async event => { records.push(event); });
+  const request = client.complete(defaultAIProviders()[0], secret, "translator", [], new AbortController().signal, () => {}, false, undefined, { maxRetries: 0, onTiming: value => metrics.push(value) });
+  await vi.waitFor(() => expect(fetcher).toHaveBeenCalledTimes(1)); releaseHeaders();
+  await vi.waitFor(() => expect(controller).toBeDefined());
+  controller.enqueue(new TextEncoder().encode(': keepalive\n\n'));
+  await new Promise(resolve => setTimeout(resolve, 25));
+  controller.enqueue(new TextEncoder().encode('data: {"choices":[{"delta":{"content":"译文"},"finish_reason":"stop"}]}\n\ndata: [DONE]\n\n')); controller.close(); await request;
+  expect(metrics).toHaveLength(1); const timing = metrics[0];
+  expect(timing.headersMs).toBeGreaterThanOrEqual(timing.dispatchMs);
+  expect(timing.firstByteMs).toBeGreaterThanOrEqual(timing.headersMs);
+  expect(timing.firstTextMs).toBeGreaterThan(timing.firstByteMs);
+  expect(timing.totalMs).toBeGreaterThanOrEqual(timing.firstTextMs);
+  expect(records.at(-1).timing).toEqual(timing); expect(fetcher).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify(records)).not.toContain(secret);
+});

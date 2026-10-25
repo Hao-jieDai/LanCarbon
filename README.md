@@ -37,7 +37,7 @@ LanCarbon is a Windows desktop application for writing ordinary Markdown Notes a
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
-Version 2.4.15 adjusts the native PaperQA answer template to answer supported parts when other information is missing and to allow APA author-year citations alongside separate evidence links. Full-text assembly and the single model call remain unchanged. Selection translation streams incoming text, shows waiting time, and offers Stop / Retry without cancelling on ordinary clicks. Failed requests do not retry automatically. Same-location upgrades preserve the application directory and executable identity instead of running legacy removal that renames them. Existing data and model configuration are retained. Service-side translation latency and model answer accuracy still require real-use verification.
+Version 2.4.16 removes the shared 25 MB chat-file bottleneck. Conversations save separately and share immutable source evidence, while existing replies, Thinking and citations migrate without deleting the original file. Failed saves retain the last committed data and explain how to preserve visible output. Translation requests now record local setup, response headers, first text and completion timing, and manual translation tests show response-time details. This diagnoses latency without adding model calls or changing your chosen service.
 
 **PDF layout fix:** Fit width and Fit page now recalculate when the window or reading sidebar changes size, keeping the selected reading mode.
 
@@ -311,7 +311,7 @@ LanCarbon 是一款 Windows 桌面写作软件，既可以撰写普通 Markdown 
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
-2.4.15 调整 PaperQA 原生回答模板：部分信息缺失时回答仍可支持的部分，允许 APA 作者年份引用与独立证据链接并存。完整原文组织与一次模型调用不变。选词翻译随文字返回显示，提供等待计时、Stop／Retry，普通点击不再取消请求；失败不自动重试。同目录升级保留程序目录和可执行文件身份，避开旧卸载程序移动目录的行为。保留现有数据及模型配置；服务端翻译耗时与模型回答质量仍须实际使用确认。
+2.4.16 修复全部聊天共用25 MB文件上限的问题。聊天分别保存，相同来源证据只保存一份；已有回答、Thinking与引用自动迁移，并保留原文件。保存失败时保留上次成功记录，并提示如何保存屏幕上可见的内容。翻译记录本地请求准备、响应、首段文字及完成耗时，手动翻译测试可查看响应时间；不增加模型调用，不更换已选服务。
 
 **PDF 排版修复：** 调整窗口大小或展开阅读侧栏后，Fit width 和 Fit page 会自动重新计算，保留所选阅读方式。
 

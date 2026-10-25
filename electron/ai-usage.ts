@@ -140,7 +140,8 @@ export class AIUsageStore extends SerializedUsage {
             } else if ("finish" in event) {
               const finish = event.finish, record = records.get(finish.id);
               if (!record || !["complete", "error", "stopped"].includes(finish.status) || !validUsage(finish.usage) || !Number.isFinite(Date.parse(finish.completedAt))) throw new Error("Invalid usage completion");
-              records.set(finish.id, { ...record, ...finish.usage, status: finish.status, completedAt: finish.completedAt, cost: usageCost(finish.usage, record.price) });
+              const timing = finish.timing && Object.values(finish.timing).every(value => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 3_600_000) ? finish.timing : undefined;
+              records.set(finish.id, { ...record, ...finish.usage, status: finish.status, completedAt: finish.completedAt, ...(timing ? { timing } : {}), cost: usageCost(finish.usage, record.price) });
             } else throw new Error("Invalid usage event");
           } catch { warning = "Some usage log entries could not be read. Valid records are preserved; totals may be incomplete."; }
         }

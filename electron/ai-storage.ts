@@ -4,6 +4,7 @@ import { KNOWLEDGE_MAX_SOURCES } from "../src/shared/knowledge";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { AIChatFiles } from "./ai-chat-files";
 import { AI_PRESETS, DEFAULT_AI_SYSTEM_PROMPT, defaultAIProviders, type AIProvider, type AIProviderInput, type AIChat } from "../src/shared/ai";
 
 export interface SecretCodec { available(): boolean | Promise<boolean>; encrypt(text: string): Buffer | Promise<Buffer>; decrypt(bytes: Buffer): string | Promise<string> }
@@ -25,7 +26,7 @@ async function readJson(filename: string, limit: number): Promise<unknown | unde
 }
 async function atomicJson(filename: string, value: unknown): Promise<void> {
   const text = JSON.stringify(value, null, 2);
-  if (Buffer.byteLength(text) > (filename.endsWith("chats.json") ? 25_000_000 : 2_000_000)) throw new Error("AI storage is full. Delete unused conversations or configurations to continue.");
+  if (Buffer.byteLength(text) > 2_000_000) throw new Error("AI configuration is too large. Remove unused model configurations to continue.");
   await fs.mkdir(path.dirname(filename), { recursive: true });
   const temporary = `${filename}.${randomUUID()}.tmp`;
   try { await fs.writeFile(temporary, text, { mode: 0o600 }); await fs.rename(temporary, filename); }
@@ -102,11 +103,13 @@ export class AISettingsStore extends Serialized {
 export class AIChatStore extends Serialized {
   private loaded?: AIChat[];
   private readonly filename: string;
-  constructor(data: string) { super(); this.filename = path.join(data, "Research", "Chats", "chats.json"); }
+  private readonly files: AIChatFiles;
+  constructor(data: string) { super(); this.filename = path.join(data, "Research", "Chats", "chats.json"); this.files = new AIChatFiles(data); }
   private async read(): Promise<AIChat[]> {
     if (this.loaded) return this.loaded;
-    const data = await readJson(this.filename, 25_000_000) as { version?: number; chats?: AIChat[] } | undefined;
-    if (!data) return this.loaded = [];
+    const modern = await this.files.load();
+    const data = modern ? { version: 1, chats: modern } : await readJson(this.filename, 25_000_000) as { version?: number; chats?: AIChat[] } | undefined;
+    if (!data) { await this.files.index([]); return this.loaded = []; }
     if (data.version !== 1 || !Array.isArray(data.chats)) throw new Error("Unsupported chat format. Existing conversations have been preserved.");
     let interrupted = false;
     const ids = new Set<string>();
@@ -121,13 +124,14 @@ export class AIChatStore extends Serialized {
         }
         if (!["user", "assistant"].includes(message.role) || typeof message.content !== "string" || !["complete", "streaming", "stopped", "error"].includes(message.status)) throw new Error("Invalid chat message"); if (message.status === "streaming") { message.status = "stopped"; message.error = "Generation was interrupted when LanCarbon closed. You can retry."; interrupted = true; } }
     }
-    if (interrupted) await atomicJson(this.filename, data);
+    if (!modern) await this.files.migrate(data.chats);
+    else if (interrupted) { for (const chat of data.chats) await this.files.save(chat); }
     return this.loaded = data.chats;
   }
   async list(): Promise<AIChat[]> { return this.serial(async () => structuredClone(await this.read())); }
-  async get(id: string): Promise<AIChat> { validId(id); const chat = (await this.list()).find(item => item.id === id); if (!chat) throw new Error("Conversation not found"); return chat; }
-  async update(id: string, change: (chat: AIChat) => void): Promise<AIChat> { validId(id); return this.serial(async () => { const chats = structuredClone(await this.read()), chat = chats.find(item => item.id === id); if (!chat) throw new Error("Conversation not found"); change(chat); chat.updatedAt = new Date().toISOString(); if (Buffer.byteLength(JSON.stringify({version:1,chats})) > 25_000_000) throw Error("Saved chats reached 25 MB. Export important replies and remove an old conversation."); await atomicJson(this.filename, { version: 1, chats }); this.loaded = chats; return structuredClone(chat); }); }
-  async create(providerId: string, modelId: string): Promise<AIChat> { return this.serial(async () => { const chats = await this.read(), now = new Date().toISOString(); const chat: AIChat = { id: randomUUID(), title: "New chat", providerId, modelId, messages: [], createdAt: now, updatedAt: now }; await atomicJson(this.filename, { version: 1, chats: [...chats, chat] }); this.loaded = [...chats, chat]; return structuredClone(chat); }); }
+  async get(id: string): Promise<AIChat> { validId(id); return this.serial(async () => { const chat = (await this.read()).find(item => item.id === id); if (!chat) throw new Error("Conversation not found"); return structuredClone(chat); }); }
+  async update(id: string, change: (chat: AIChat) => void): Promise<AIChat> { validId(id); return this.serial(async () => { const chats = await this.read(), previous = chats.find(item => item.id === id); if (!previous) throw new Error("Conversation not found"); const chat = structuredClone(previous); change(chat); chat.updatedAt = new Date().toISOString(); await this.files.save(chat); this.loaded = chats.map(item => item.id === id ? chat : item); return structuredClone(chat); }); }
+  async create(providerId: string, modelId: string): Promise<AIChat> { return this.serial(async () => { const chats = await this.read(), now = new Date().toISOString(); const chat: AIChat = { id: randomUUID(), title: "New chat", providerId, modelId, messages: [], createdAt: now, updatedAt: now }; await this.files.save(chat); await this.files.index([...chats, chat]); this.loaded = [...chats, chat]; return structuredClone(chat); }); }
   async rename(id: string, title: string): Promise<AIChat> { const text = bounded(title, "chat title", 120); if (!text) throw new Error("Enter a chat title"); return this.update(id, chat => { chat.title = text; }); }
-  async remove(id: string): Promise<void> { validId(id); return this.serial(async () => { const chats = (await this.read()).filter(chat => chat.id !== id); await atomicJson(this.filename, { version: 1, chats }); this.loaded = chats; }); }
+  async remove(id: string): Promise<void> { validId(id); return this.serial(async () => { const chats = (await this.read()).filter(chat => chat.id !== id); await this.files.remove(id, chats); this.loaded = chats; }); }
 }

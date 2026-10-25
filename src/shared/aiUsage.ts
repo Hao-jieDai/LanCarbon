@@ -42,10 +42,12 @@ export interface AIUsageRequest {
 }
 export type AIUsageEvent =
   | { type: "start"; request: AIUsageRequest }
-  | { type: "finish"; id: string; completedAt: string; status: "complete" | "stopped" | "error"; usage: AIReportedUsage };
+  | { type: "finish"; id: string; completedAt: string; status: "complete" | "stopped" | "error"; usage: AIReportedUsage; timing?: AIRequestTiming };
+export interface AIRequestTiming { dispatchMs: number; headersMs?: number; firstByteMs?: number; firstTextMs?: number; totalMs: number }
 export interface AIUsageRecord extends AIUsageRequest, AIReportedUsage {
   day: string;
   completedAt?: string;
+  timing?: AIRequestTiming;
   status: AIUsageStatus;
   price?: AIModelPrice;
   cost?: { amount: number; currency: AICurrency; source: "reported" | "estimated" };

@@ -72,6 +72,7 @@ export class AIService {
       void (async () => {
         let updateTimer: NodeJS.Timeout | undefined;
         let persistTimer: NodeJS.Timeout | undefined;
+        let saveFailure = "";
         const progress = (text: string) => { reply.progress = text || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); };
         let planningCalls = 0;
         const consult = async (messages: Array<{ role: string; content: string }>) => {
@@ -100,17 +101,17 @@ export class AIService {
             reply.content += content; reply.reasoning = (reply.reasoning ?? "") + reasoning;
             if (reply.content.length + reply.reasoning.length > 1_000_000) { controller.abort(); throw new Error("Response size limit reached"); }
             if (!updateTimer) updateTimer = setTimeout(() => { updateTimer = undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, 120);
-            if (!persistTimer) persistTimer = setTimeout(() => { persistTimer = undefined; const snapshot = { ...reply }; void chatStore.update(id, saved => { const index = saved.messages.findIndex(message => message.id === reply.id); if (index >= 0) saved.messages[index] = snapshot; }).catch(() => controller.abort()); }, 800);
+            if (!persistTimer) persistTimer = setTimeout(() => { persistTimer = undefined; const snapshot = { ...reply }; void chatStore.update(id, saved => { const index = saved.messages.findIndex(message => message.id === reply.id); if (index >= 0) saved.messages[index] = snapshot; }).catch(error => { saveFailure = redactAIError(error, key); controller.abort(); }); }, 800);
           }, false, progress => { if ((reply.progress ?? "") === progress) return; reply.progress = progress || undefined; this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply } : message) }); }, { ...(reply.grounding ? { maxTokens: reply.grounding.mode === "full-text" ? 8192 : 16384, thinkingBudget: 8192, timeoutMs: 600_000, maxRetries: 0, ...(reply.grounding.mode === "full-text" && provider.kind === "siliconflow" && /DeepSeek.*Flash/i.test(modelId) ? { temperature: 0 } : {}) } : {}), onFinish: reason => { reply.finishReason = reason; } });
           if (reply.grounding && this.grounder) { try { progress("Checking answer…"); reply.content = await this.grounder.finish(reply.grounding, reply.content); } catch { reply.content = chatMarkdown(reply.content); throw Error("The reply was generated, but local consistency checks failed. Its text is retained."); } }
           reply.content = chatMarkdown(reply.content);
           reply.status = controller.signal.aborted ? "stopped" : "complete";
-        } catch (error) { reply.status = controller.signal.aborted ? "stopped" : "error"; reply.error = controller.signal.aborted ? "Generation stopped. Partial text has been saved." : redactAIError(error, key); }
+        } catch (error) { reply.status = saveFailure ? "error" : controller.signal.aborted ? "stopped" : "error"; reply.error = saveFailure ? `Generation stopped because saving failed: ${saveFailure}` : controller.signal.aborted ? "Generation stopped." : redactAIError(error, key); }
         finally {
           reply.progress = undefined;
           clearTimeout(updateTimer); clearTimeout(persistTimer);
           try { const saved = await chatStore.update(id, chat => { const index = chat.messages.findIndex(message => message.id === reply.id); if (index >= 0) chat.messages[index] = { ...reply }; }); this.emit(saved); }
-          catch { this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply, status: "error", error: "The reply could not be saved. Check the data folder." } : message) }); }
+          catch (error) { this.emit({ ...chat, messages: chat.messages.map(message => message.id === reply.id ? { ...reply, status: "error", error: `Could not save this reply: ${redactAIError(error, key)} Copy any visible answer before closing. Retry reply sends a new model request.` } : message) }); }
           this.jobs.delete(id);
           finishJob();
         }

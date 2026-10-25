@@ -22,7 +22,7 @@ test("exports a single multi-model chat offline with full Thinking, per-reply ci
     { id: "reply-three", role: "assistant", status: "stopped", createdAt: now, providerName: "SiliconFlow", modelName: "Model A", content: "PARTIAL_ANSWER", reasoning: "PARTIAL_THINKING", error: "Generation stopped. Partial text has been saved." }
   ]; });
   await store.update(other.id, saved => { saved.title = "Other conversation"; saved.messages = [{ id: "outside", role: "user", status: "complete", createdAt: now, content: "OTHER_CHAT_SECRET" }]; });
-  const before = await fs.readFile(path.join(data, "Research/Chats/chats.json"));
+  const before = await fs.readFile(path.join(data, "Research/Chats/conversations", chat.id + ".json"));
   const app = await electron.launch({ ...(process.env.E2E_EXECUTABLE ? { executablePath: process.env.E2E_EXECUTABLE } : {}), args: ["--in-process-gpu", "--disable-gpu", "--no-sandbox", ...(process.env.E2E_EXECUTABLE ? [] : [path.resolve(".")])], env: { ...process.env, LANCARBON_ROOT: root, E2E_USER_DATA_DIR: "" } });
   try {
     await app.evaluate(({ net, dialog }) => { (globalThis as any).pdfCalls = 0; net.fetch = async () => { (globalThis as any).pdfCalls++; throw Error("No API calls allowed"); }; dialog.showSaveDialog = (async (_window, options) => { (globalThis as any).pdfDialog = options; return { canceled: !!(globalThis as any).cancelPdf, filePath: (globalThis as any).pdfDestination }; }) as typeof dialog.showSaveDialog; });
@@ -52,7 +52,7 @@ test("exports a single multi-model chat offline with full Thinking, per-reply ci
     const result = await page.evaluate(id => window.notesDesktop.ai!.exportPdf(id, { includeThinking: true, includeEvidence: false }), "missing-chat"); expect(result.ok).toBe(false);
     await app.evaluate((_electron, filename) => { (globalThis as any).pdfDestination = filename; (globalThis as any).cancelPdf = true; }, full);
     const canceled = await page.evaluate(id => window.notesDesktop.ai!.exportPdf(id, { includeThinking: false, includeEvidence: false }), chat.id); expect(canceled).toMatchObject({ ok: false, canceled: true }); expect(await fs.readFile(full)).toEqual(fullBytes);
-    expect(await fs.readFile(path.join(data, "Research/Chats/chats.json"))).toEqual(before); expect(await app.evaluate(() => (globalThis as any).pdfCalls)).toBe(0);
+    expect(await fs.readFile(path.join(data, "Research/Chats/conversations", chat.id + ".json"))).toEqual(before); expect(await app.evaluate(() => (globalThis as any).pdfCalls)).toBe(0);
     expect((await fs.readdir(path.dirname(full))).filter(name => name.endsWith(".tmp"))).toEqual([]);
     await page.screenshot({ path: info.outputPath("chat-pdf-ui.png") });
   } finally { await app.close().catch(() => undefined); const target = path.resolve(root); if (!target.startsWith(path.resolve(os.tmpdir()) + path.sep) || !path.basename(target).startsWith("lancarbon-chat-pdf-")) throw Error("Unsafe cleanup"); await fs.rm(target, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }

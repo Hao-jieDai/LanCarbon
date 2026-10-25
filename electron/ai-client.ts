@@ -1,7 +1,7 @@
 import { aiModelName, type AIModel, type AIProvider } from "../src/shared/ai";
 import { randomUUID } from "node:crypto";
-import { parseAIUsage, type AIReportedUsage, type AIUsageEvent, type AIUsagePurpose } from "../src/shared/aiUsage";
-export interface AICompletionOptions { purpose?: AIUsagePurpose; maxTokens?: number; temperature?: number; disableThinking?: boolean; thinkingBudget?: number; timeoutMs?: number; maxRetries?: number; onFinish?(reason: string): void }
+import { parseAIUsage, type AIReportedUsage, type AIUsageEvent, type AIUsagePurpose, type AIRequestTiming } from "../src/shared/aiUsage";
+export interface AICompletionOptions { purpose?: AIUsagePurpose; maxTokens?: number; temperature?: number; disableThinking?: boolean; thinkingBudget?: number; timeoutMs?: number; maxRetries?: number; onFinish?(reason: string): void; onTiming?(timing: AIRequestTiming): void }
 
 export function redactAIError(error: unknown, key = ""): string {
   let text = error instanceof Error ? error.message : String(error);
@@ -86,6 +86,8 @@ export class AIClient {
     const touch = () => { clearTimeout(timer); timer = setTimeout(() => { timedOut = true; controller.abort(); }, 180_000); };
     let reader: ReadableStreamDefaultReader<Uint8Array> | undefined;
     const requestId = randomUUID();
+    const started = performance.now(), elapsed = () => Math.round(performance.now() - started);
+    const timing: AIRequestTiming = { dispatchMs: 0, totalMs: 0 };
     let usage: AIReportedUsage = {}, status: "complete" | "stopped" | "error" = "error";
     const captureUsage = (value: unknown) => {
       const parsed = parseAIUsage(value, provider.baseUrl);
@@ -94,7 +96,9 @@ export class AIClient {
     };
     await this.track({ type: "start", request: { id: requestId, startedAt: new Date().toISOString(), providerId: provider.id, providerName: provider.name, baseUrl: provider.baseUrl, modelId, modelName: provider.models.find(model => model.id === modelId)?.name ?? aiModelName(modelId), purpose: options.purpose ?? (test ? "test" : "chat"), attempt } });
     try {
+      timing.dispatchMs = elapsed();
       const response = await this.fetcher(`${provider.baseUrl}/chat/completions`, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json", ...(provider.kind === "openrouter" ? { "X-OpenRouter-Title": "LanCarbon" } : {}) }, redirect: "error", signal: controller.signal, body: JSON.stringify({ model: modelId, messages, stream: true, ...(test ? { max_tokens: 128 } : {}), ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}), ...(options.temperature !== undefined ? { temperature: options.temperature } : {}), ...(options.thinkingBudget !== undefined && provider.kind === "siliconflow" && /DeepSeek-V(?:3\.[12]|4)/.test(modelId) && !options.disableThinking ? { thinking_budget: options.thinkingBudget } : {}), ...((test || options.disableThinking) && provider.kind === "siliconflow" && /DeepSeek-V[34]/.test(modelId) ? { enable_thinking: false } : {}) }) });
+      timing.headersMs = elapsed();
       if (!response.ok) { const detail = await response.text(); try { captureUsage(JSON.parse(detail).usage); } catch { /* Plain-text service errors have no usage metadata. */ } throw statusError(response.status, detail, response.headers); }
       touch();
       let received = false, finished = false, finishReason = "";
@@ -107,7 +111,7 @@ export class AIClient {
         const content = typeof delta?.content === "string" ? delta.content : "";
         const reason = delta && "reasoning" in delta ? delta.reasoning : undefined;
         const reasoning = typeof delta?.reasoning_content === "string" ? delta.reasoning_content : typeof reason === "string" ? reason : "";
-        if (content || reasoning) { if (content) received = true; onDelta(content, reasoning); }
+        if (content || reasoning) { if (content) { received = true; timing.firstTextMs ??= elapsed(); } onDelta(content, reasoning); }
         // Read the remaining usage frame before reporting a truncated/filtered reply.
         if (choice.finish_reason) { finishReason = choice.finish_reason; finished = true; }
       };
@@ -116,7 +120,7 @@ export class AIClient {
         if (!response.body) throw new Error("The AI service returned an empty response");
         reader = response.body.getReader(); const decoder = new TextDecoder(); let buffer = "", data: string[] = [], done = false;
         const line = (value: string) => { if (value === "") { const event = data.join("\n"); data = []; if (!event) return; if (event === "[DONE]") { finished = true; done = true; return; } consume(JSON.parse(event)); } else if (value.startsWith("data:")) data.push(value.slice(5).replace(/^ /, "")); };
-        while (!done) { const chunk = await reader.read(); if (chunk.done) break; touch(); buffer += decoder.decode(chunk.value, { stream: true }); if (buffer.length > 2_000_000) throw new Error("Invalid oversized streaming event"); let end: number; while ((end = buffer.indexOf("\n")) >= 0) { line(buffer.slice(0, end).replace(/\r$/, "")); buffer = buffer.slice(end + 1); if (done) break; } }
+        while (!done) { const chunk = await reader.read(); if (chunk.done) break; timing.firstByteMs ??= elapsed(); touch(); buffer += decoder.decode(chunk.value, { stream: true }); if (buffer.length > 2_000_000) throw new Error("Invalid oversized streaming event"); let end: number; while ((end = buffer.indexOf("\n")) >= 0) { line(buffer.slice(0, end).replace(/\r$/, "")); buffer = buffer.slice(end + 1); if (done) break; } }
         buffer += decoder.decode(); if (buffer) line(buffer.replace(/\r$/, "")); line("");
       }
       options.onFinish?.(finishReason || "done");
@@ -133,6 +137,6 @@ export class AIClient {
       const detail = redactAIError(error, key);
       if (error instanceof AIRequestError) throw new AIRequestError(detail, error.status, error.retryAfter);
       throw new Error(/fetch failed|ERR_|ENOTFOUND|ECONN|network/i.test(detail) ? `Connection failed. Check your computer's network or system proxy and retry. ${detail}` : detail);
-    } finally { clearTimeout(timer); clearTimeout(overall); signal.removeEventListener("abort", abort); await reader?.cancel().catch(() => undefined); await this.track({ type: "finish", id: requestId, completedAt: new Date().toISOString(), status, usage }); }
+    } finally { clearTimeout(timer); clearTimeout(overall); signal.removeEventListener("abort", abort); timing.totalMs = elapsed(); options.onTiming?.({ ...timing }); await reader?.cancel().catch(() => undefined); await this.track({ type: "finish", id: requestId, completedAt: new Date().toISOString(), status, usage, timing }); }
   }
 }

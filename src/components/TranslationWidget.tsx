@@ -45,7 +45,7 @@ export function TranslationWidget({ scope, onSettings }: { scope: string; onSett
   }, [api, interrupt]);
   useEffect(() => { interrupt(); setSource(""); setResult(undefined); setError(""); }, [scope, interrupt]);
   useEffect(() => api?.onProgress(value => { if (value.id === request.current) setResult(value.result); }), [api]);
-  useEffect(() => { if (!busy) return; const start = Date.now(); setElapsed(0); const clock = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000); return () => clearInterval(clock); }, [busy]);
+  useEffect(() => { if (!busy) return; const start = Date.now(); setElapsed(0); const clock = setInterval(() => setElapsed(Math.floor((Date.now() - start) / 1000)), 1000); return () => clearInterval(clock); }, [busy, source]);
   const translate = useCallback(async (text: string) => {
     if (!api) return;
     interrupt(); lastText.current = text;

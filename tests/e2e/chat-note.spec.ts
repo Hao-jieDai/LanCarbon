@@ -21,7 +21,7 @@ test("copies LaTeX into Notes and exports independent chat snapshots with scoped
     { id: "q2", role: "user", content: "Another study?", status: "complete", createdAt: now },
     { id: "a2", role: "assistant", providerName: "Fixture", modelName: "B", status: "stopped", createdAt: now, content: "PARTIAL_ANSWER [S1].", error: "Stopped by user.", grounding: { scope: emptyKnowledgeScope(), sourceIds: ["file:fixture"], mode: "keyword", warnings: [], evidence: [evidence(9)] } }
   ]; });
-  const before = await fs.readFile(path.join(data, "Research/Chats/chats.json"));
+  const before = await fs.readFile(path.join(data, "Research/Chats/conversations", chat.id + ".json"));
   const launch = () => electron.launch({ ...(process.env.E2E_EXECUTABLE ? { executablePath: process.env.E2E_EXECUTABLE } : {}), args: ["--in-process-gpu", "--disable-gpu", "--no-sandbox", ...(process.env.E2E_EXECUTABLE ? [] : [path.resolve(".")])], env: { ...process.env, LANCARBON_ROOT: root, E2E_USER_DATA_DIR: "" } });
   let app = await launch();
   try {
@@ -60,7 +60,7 @@ test("copies LaTeX into Notes and exports independent chat snapshots with scoped
     // Concurrent IPC exports must append two Notes rather than overwrite one another.
     const parallel = await page.evaluate(id => Promise.all([window.notesDesktop.ai!.exportNote(id, { includeThinking: false, includeEvidence: false }), window.notesDesktop.ai!.exportNote(id, { includeThinking: false, includeEvidence: false })]), chat.id); expect(parallel.every(result => result.ok)).toBe(true);
     expect(await app.evaluate(() => (globalThis as any).noteApiCalls)).toBe(0);
-    expect(await fs.readFile(path.join(data, "Research/Chats/chats.json"))).toEqual(before);
+    expect(await fs.readFile(path.join(data, "Research/Chats/conversations", chat.id + ".json"))).toEqual(before);
     await page.locator(".theme-option").filter({ hasText: "Dark" }).click(); await page.screenshot({ path: info.outputPath("chat-note-dark.png") });
     await app.close(); app = await launch(); page = await app.firstWindow(); await page.getByRole("main").waitFor();
     const reloaded = await page.evaluate(() => window.notesDesktop.loadWorkspace()); if (!reloaded.ok) throw Error(reloaded.error);

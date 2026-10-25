@@ -85,16 +85,17 @@ export class TranslationService {
       const provider = { ...connection.provider, models: [{ id: settings.modelId, name: settings.modelName || settings.modelId, purpose: "chat" as const }] };
       if (cached !== undefined) return { text: cached, cached: true, providerName: provider.name, modelName: provider.models[0].name };
       let text = "";
+      let timing: import("../src/shared/aiUsage").AIRequestTiming | undefined;
       await this.client.complete(provider, key, settings.modelId, messages, job.controller.signal, content => {
         if (job.controller.signal.aborted || ticket !== this.revision) return;
         text += content;
         if (text.length > 8000) { job.controller.abort(); throw Error("Translation response is too long."); }
         this.progress?.({ id, result: { text, cached: false, providerName: provider.name, modelName: provider.models[0].name } });
-      }, false, undefined, { purpose: "translation", maxTokens: 700, disableThinking: true, timeoutMs: 90_000, maxRetries: 0, ...(settings.template === "hunyuan" || (settings.template === "auto" && /(?:Hunyuan-MT|HY-MT)/i.test(settings.modelId)) ? { temperature: 0.7 } : {}) });
+      }, false, undefined, { purpose: "translation", maxTokens: 700, disableThinking: true, timeoutMs: 90_000, maxRetries: 0, onTiming: value => { timing = value; }, ...(settings.template === "hunyuan" || (settings.template === "auto" && /(?:Hunyuan-MT|HY-MT)/i.test(settings.modelId)) ? { temperature: 0.7 } : {}) });
       if (job.controller.signal.aborted || ticket !== this.revision) throw Error("Translation stopped.");
       text = text.trim(); if (!text) throw Error("The model returned no translation.");
       try { await cache.put(cacheKey, text); } catch { /* The translated result is usable even when caching fails. */ }
-      return { text, cached: false, providerName: provider.name, modelName: provider.models[0].name };
+      return { text, cached: false, providerName: provider.name, modelName: provider.models[0].name, timing };
     } catch (error) { throw Error(job.controller.signal.aborted ? "Translation stopped." : redactAIError(error, key)); }
     finally { if (this.active === job) this.active = undefined; finish(); }
   }
