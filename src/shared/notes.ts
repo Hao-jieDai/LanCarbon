@@ -8,7 +8,7 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.4.17";
+export const RELEASE_VERSION = "2.4.18";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
@@ -16,15 +16,17 @@ Welcome to **LanCarbon**, an offline-first desktop application for writing Notes
 
 **PaperQA full-text mode:** When Evidence shows **PaperQA · full text**, complete selected texts are sent for one answer from the selected Chat model. This mode does not use embedding/rerank, planning, summaries or answer rewriting. Citations, Thinking, Usage and chat exports remain available. Oversized or incomplete texts stop before sending; this does not guarantee the model’s interpretation is correct.
 
-**Calculation references (development):** New full-text answers quote each original amount and its source for local calculations instead of generating internal numeric IDs. The app requires a unique source match and explicit currency and scale, retains original amounts alongside successful calculations, and preserves matched originals without placeholder amounts when calculation fails. Ordinary source restatements and legacy reply checks remain unchanged. Arithmetic checks do not verify entities, scenarios or interpretations. No additional model calls are introduced.
+**Calculation references:** New full-text answers quote each original amount and its source for local calculations instead of generating internal numeric IDs. The app requires a unique source match and explicit currency and scale, retains original amounts alongside successful calculations, and preserves matched originals without placeholder amounts when calculation fails. Ordinary source restatements and legacy reply checks remain unchanged. Arithmetic checks do not verify entities, scenarios or interpretations. No additional model calls are introduced.
 
-**Monetary layout correction (development):** Source amounts retain scales wrapped to the next line or hyphenated across PDF lines. Amounts without an explicit scale are excluded from automatic conversion: bare currency labels may be figure ticks, price-base years or shared/incomplete units. They remain in the full text and are never silently treated as base currency. Original source offsets and text are preserved. Markdown-escaped quantity separators are accepted without relaxing currency or arithmetic checks. The original five-paper multi-turn regression is required in addition to independent material before delivery; offline checks alone are not academic acceptance.
+**Reading assistance:** Use document questions to locate, explain and compare selected sources. Open citations or **Evidence → Open source** to check important amounts, units, formula variables and ownership relationships before using them in research. Local arithmetic checks do not certify the interpretation of a source.
+
+**Monetary layout correction:** Source amounts retain scales wrapped to the next line or hyphenated across PDF lines. Amounts without an explicit scale are excluded from automatic conversion: bare currency labels may be figure ticks, price-base years or shared/incomplete units. They remain in the full text and are never silently treated as base currency. Original source offsets and text are preserved. Markdown-escaped quantity separators are accepted without relaxing currency or arithmetic checks.
 
 **Answer wording:** Source-based answers now distinguish time-point values, periodic flows and cumulative totals using source definitions. Follow-ups recheck definitions instead of preserving an earlier mistaken interpretation. Internal quantity identifiers and checking mechanics belong to the separate amount-checking interface, not academic prose. This updates the existing single-call instructions; semantic correctness still requires real-model validation.
 
-**Source-linked amounts:** Clearly identified monetary values can be rendered and converted locally from their original source quantities. Differences and percentage reductions use those same operands without another model call. **Check amounts** lists specific unbound or invalid amounts; these notes remain in copies and PDF/Note exports. Unclear units and flagged OCR are not guessed. These checks cover monetary representation and arithmetic, not whether the chosen scenario, entity or economic comparison is correct.
+**Source-linked amounts:** Clearly identified monetary values can be rendered and converted locally from their original source quantities. Differences and percentage reductions use those same operands without another model call. **Check amounts** lists calculations that could not be matched or completed; these notes remain in copies and PDF/Note exports. Unclear units and flagged OCR are not guessed. These checks cover monetary representation and arithmetic, not whether the chosen scenario, entity or economic comparison is correct.
 
-Version 2.4.17 adds source-linked monetary rendering and local conversions, differences and percentage reductions to full-text answers. Answer instructions distinguish time-point values, periodic flows and cumulative measures, while internal quantity diagnostics stay in the separate checking area. Existing models, configuration, Notes, Books and chat history are preserved; no additional model calls are introduced. Older replies may retain diagnostics for amounts without source references.
+Version 2.4.18 fixes monetary scales split across PDF lines and omissions after complete amounts followed by percentages. Local calculations use quoted source amounts rather than model-generated numeric IDs; matched originals remain visible when a calculation cannot be completed. Existing configurations, Notes, Books and chat history are preserved. This is a reading-assistance maintenance update, not a claim of error-free academic answers.
 
 **Workspace stability:** Tutorial synchronization and workspace reads/saves now share an ordered queue; temporary Windows file-sharing failures receive bounded retries. Failed reads are reported without treating personal data as corrupt or empty.
 
@@ -271,13 +273,15 @@ Export is optional in this workflow. It creates a separate source copy and is no
 
 **回答表述：** 资料回答按原文定义区分时点值、期间流量和跨期累计，追问重新核对定义，避免沿用先前的错误解释。数量编号和检查机制由独立金额检查区域说明，避免进入学术正文。仅整理现有单次调用指令，语义正确性仍须真实模型验证。
 
-**原文金额核对：** 明确识别的金额可根据原文数量在本地显示和换算，差额与降幅也由对应操作数计算，不增加模型调用。**Check amounts** 会列出没有可靠数量引用或无法处理的具体金额，复制及 PDF／Note 导出会保留这些说明。单位不清楚、OCR 存疑时不猜测换算。核对范围是金额表示和算术，不代表情景、主体或经济比较已经验证正确。
+**原文金额核对：** 明确识别的金额可根据原文数量在本地显示和换算，差额与降幅也由对应操作数计算，不增加模型调用。**Check amounts** 会列出无法匹配或完成的具体计算，复制及 PDF／Note 导出会保留这些说明。单位不清楚、OCR 存疑时不猜测换算。核对范围是金额表示和算术，不代表情景、主体或经济比较已经验证正确。
 
-**金额排版修正（开发中）：** 识别金额与量级之间的换行以及英文量级断词，保留原文及其位置。未明确量级的裸币种金额不自动换算，避免将图轴、价格基年和共享/残缺单位误当成基本货币单位；原文仍保留。兼容Markdown表格中的金额标记分隔符转义，币种与计算检查不放宽。交付前必须复测原五篇完整多轮问答，并补充独立材料；离线检查不能替代学术验收。
+**金额排版修正：** 识别金额与量级之间的换行以及英文量级断词，保留原文及其位置。未明确量级的裸币种金额不自动换算，避免将图轴、价格基年和共享/残缺单位误当成基本货币单位；原文仍保留。兼容Markdown表格中的金额标记分隔符转义，币种与计算检查不放宽。
 
-**数值计算引用修复（开发中）：** 新的全文回答以原文金额和出处进行本地计算，不再要求模型生成内部数量编号。软件仅对唯一匹配且币种、量级明确的原文进行运算，成功时同时保留原文金额；失败时保留能匹配的原文，不替换成占位金额。普通原文复述和旧回答的检查记录保持不变。算术核对不认证主体、情景或解读正确，不增加模型调用。
+**数值计算引用修复：** 新的全文回答以原文金额和出处进行本地计算，不再要求模型生成内部数量编号。软件仅对唯一匹配且币种、量级明确的原文进行运算，成功时同时保留原文金额；失败时保留能匹配的原文，不替换成占位金额。普通原文复述和旧回答的检查记录保持不变。算术核对不认证主体、情景或解读正确，不增加模型调用。
 
-2.4.17 为全文回答增加原文金额绑定，以及本地单位换算、差额和降幅计算；整理指标时间口径，区分时点值、期间流量与累计值，并将内部数量检查说明留在独立检查区域。保留原有模型、配置、Notes、Books和聊天历史，不增加模型调用。旧回答可能保留未使用数量引用时产生的检查提示。
+**辅助阅读：** 资料问答可用于定位、解释和比较选定文献。将结论用于研究前，通过引用或 **Evidence → Open source** 核对重要金额、单位、公式变量和主体归属。本地算术检查不认证文献解读正确。
+
+2.4.18 修复 PDF 换行、断词导致的金额量级识别问题，以及完整金额后接百分比时的漏项。本地计算使用原文金额引用，不再要求模型生成内部数量编号；计算无法完成时保留能匹配的原文。保留现有配置、Notes、Books 和聊天记录。本次按辅助阅读用途收尾，不表示学术回答已经无误。
 
 **工作区稳定性：** 教程同步与工作区读写按顺序执行，Windows 临时文件占用会有限重试；读取失败会报告错误，不再将其当作数据损坏或空工作区。
 
