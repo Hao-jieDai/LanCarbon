@@ -43,7 +43,8 @@ async function verify(root, backup, expectedVersion, reportDirectory) {
       const workshopName = major > 2 || minor > 3 || (minor === 3 && patch >= 7) ? "Workshop" : "Research";
       for (const name of ["Notes", "Books", workshopName, "Library"]) await page.getByRole("button", { name, exact: true }).waitFor();
       const tutorial = result.workspace.books.find(book => book.id === "lancarbon-from-zero-to-one");
-      if (!tutorial?.pages["tutorial-page-s6"]) throw new Error("The independent Research and Library tutorial chapter is missing");
+      if (!tutorial?.pages["tutorial-page-s6"]) throw new Error("The system tutorial chapter is missing");
+      if ((major > 2 || minor > 5 || (minor === 5 && patch >= 1)) && !tutorial.pages["tutorial-page-s7"]) throw new Error("The separate Workshop tutorial chapter is missing");
     }
   } finally { await app.close(); }
   // Managed tutorial assets can refresh; personal originals must remain byte-identical.

@@ -18,14 +18,16 @@ describe("system-managed LanCarbon tutorial", () => {
     const oldBook = structuredClone(officialBook);
     oldBook.settings.title = "Edited system tutorial";
     oldBook.rootPageIds = [oldBook.homePageId];
+    oldBook.pages["tutorial-page-s6-ocr"] = { ...oldBook.pages[oldBook.homePageId], id: "tutorial-page-s6-ocr", noteId: "tutorial-note-s6-ocr", exportPath: "06-research-library/pdf-ocr.md", children: [] };
     const oldNotes = bundled.notes.filter(note => officialNoteIds.has(note.id)).map(note => note.id === "tutorial-note-home" ? { ...note, content: "Personal edit inside system tutorial" } : note);
-    const workspace: WorkspaceFile = { version: 2, notes: [userNote, user.homeNote, ...oldNotes], books: [user.book, oldBook] };
+    const workspace: WorkspaceFile = { version: 2, notes: [userNote, user.homeNote, ...oldNotes, createNote({ id: "tutorial-note-s6-ocr", title: "Obsolete standalone OCR page", content: "Old official page" })], books: [user.book, oldBook] };
     const result = syncManagedTutorial(workspace, bundled);
     expect(result.changed).toBe(true);
     expect(result.workspace.books.find(book => book.id === MANAGED_TUTORIAL_BOOK_ID)).toEqual(officialBook);
     expect(result.workspace.notes.find(note => note.id === "tutorial-note-home")).toEqual(bundled.notes.find(note => note.id === "tutorial-note-home"));
     expect(result.workspace.notes.find(note => note.id === userNote.id)).toEqual(userNote);
     expect(result.workspace.books.find(book => book.id === user.book.id)).toEqual(user.book);
+    expect(result.workspace.notes.some(note => note.id === "tutorial-note-s6-ocr")).toBe(false);
     expect(syncManagedTutorial(result.workspace, bundled)).toEqual({ workspace: result.workspace, changed: false });
   });
 
@@ -89,5 +91,37 @@ describe("system-managed LanCarbon tutorial", () => {
     expect(toolsNote.content).toContain(`[常见问题处理（Troubleshooting Common Problems）](${link})`);
     expect(toolsNote.content.match(/\[Troubleshooting Common Problems\]\(\.\.\/04-publish\/troubleshooting\.md\)/g)).toHaveLength(1);
     expect(path.posix.normalize(path.posix.join(path.posix.dirname(toolsPage.exportPath), link))).toBe(troubleshootingPage.exportPath);
+  });
+
+  it("keeps the reorganized tutorial navigable with valid page and managed image references", () => {
+    const paths = new Set(Object.values(officialBook.pages).map(page => page.exportPath));
+    const catalog = JSON.parse(readFileSync(path.join(process.cwd(), "resources/starter-content/assets.json"), "utf8"));
+    const assetIds = new Set(catalog.assets.map((asset: { id: string }) => asset.id));
+    const reached = new Set<string>();
+    const visit = (id: string) => {
+      expect(reached.has(id), `Duplicate or cyclic page ${id}`).toBe(false);
+      reached.add(id);
+      const page = officialBook.pages[id]; expect(page, `Missing page ${id}`).toBeDefined();
+      expect(bundled.notes.some(note => note.id === page.noteId)).toBe(true);
+      page.children.forEach(visit);
+    };
+    officialBook.rootPageIds.forEach(visit);
+    expect(reached.size).toBe(Object.keys(officialBook.pages).length);
+    for (const page of Object.values(officialBook.pages)) {
+      const note = bundled.notes.find(note => note.id === page.noteId)!;
+      const prose = note.content.replace(/^```[^\n]*\n[\s\S]*?^```\s*$/gm, "");
+      for (const match of prose.matchAll(/\]\(([^)\s]+)\)/g)) {
+        const target = match[1].split("#")[0];
+        if (/^[a-z]+:/i.test(target) || !target) continue;
+        if (target.startsWith("assets/")) expect(assetIds.has(target.slice(7)), `${note.title}: ${target}`).toBe(true);
+        else if (target.endsWith(".md")) expect(paths.has(path.posix.normalize(path.posix.join(path.posix.dirname(page.exportPath!), target))), `${note.title}: ${target}`).toBe(true);
+      }
+      if (page.exportPath?.startsWith("06-library/") || page.exportPath?.startsWith("07-workshop/")) {
+        const [english, chinese] = note.content.split("\n---\n");
+        expect(english.match(/^## /gm)?.length).toBe(chinese.match(/^## /gm)?.length);
+        expect(english).not.toMatch(/\bPhase\s+\d/);
+        expect(chinese).not.toMatch(/第[一二三四五六七]阶段/);
+      }
+    }
   });
 });

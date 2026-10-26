@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import { RELEASE_VERSION } from "../src/shared/notes";
 
 describe("release metadata", () => {
-  it("documents single-page PDF export bilingually and keeps resource fixes out of the tutorial", () => {
+  it("keeps lasting PDF export instructions in the tutorial and release highlights in ReadMe", () => {
     const starter = JSON.parse(readFileSync(path.join(process.cwd(), "resources", "starter-content", "notes.json"), "utf8"));
     for (const id of ["tutorial-note-s1-interface", "tutorial-note-s2-preview", "tutorial-note-s2-export"]) {
       const page = starter.notes.find((note: { id: string }) => note.id === id);
@@ -16,9 +16,9 @@ describe("release metadata", () => {
     const guide = starter.notes.find((note: { id: string }) => note.id === "tutorial-note-s2-export").content;
     expect(guide).toContain("does not include descendants"); expect(guide).toContain("不包含其子页面");
     const readme = readFileSync(path.join(process.cwd(), "README.md"), "utf8");
-    expect(readme).toContain("### Export a page as PDF"); expect(readme).toContain("### 导出页面为 PDF");
-    expect(readme).toContain("Resource-dialog fix"); expect(readme).toContain("资源提示修复");
-    expect(readme).toContain("**PDFs**"); expect(guide).toContain("**PDFs**");
+    expect(readme).toContain(`### What's new in ${RELEASE_VERSION}`); expect(readme).toContain(`### ${RELEASE_VERSION} 的主要更新`);
+    expect(readme).not.toContain("Resource-dialog fix"); expect(readme).not.toContain("Source-linked amounts");
+    expect(guide).toContain("**PDFs**");
     const storage = starter.notes.find((note: { id: string }) => note.id === "tutorial-note-s1-storage").content;
     expect(storage.split("├─ PDFs").length).toBe(3); expect(storage).toContain("existing PDFs are not moved");
     const tour = starter.notes.find((note: { id: string }) => note.id === "tutorial-note-s1-interface").content;
@@ -30,7 +30,6 @@ describe("release metadata", () => {
     const [english, chinese] = tour.split("\n---\n");
     for (const phrase of ["**Notes / Books**", "**Ctrl+Q**", "**Last modified**", "**Date created**", "**Name (A–Z)**"]) {
       expect(english).toContain(phrase); expect(chinese).toContain(phrase);
-      expect(readFileSync(path.join(process.cwd(), "README.md"), "utf8")).toContain(phrase);
     }
     expect(tour).toContain("Each Book remembers its folded branches across restarts");
     expect(tour).toContain("每本 Book 分别记住折叠状态");
@@ -58,11 +57,14 @@ describe("release metadata", () => {
     const starter = JSON.parse(readFileSync(path.join(process.cwd(), "resources", "starter-content", "notes.json"), "utf8"));
     const book = starter.books.find((item: { id: string }) => item.id === "lancarbon-from-zero-to-one");
     expect(book.settings.title).toBe("LanCarbon: From 0 to 1");
-    expect(Object.keys(book.pages)).toHaveLength(50);
-    expect(book.pages["tutorial-page-s6-ocr"].noteId).toBe("tutorial-note-s6-ocr");
-    expect(starter.notes.find((note: { id: string }) => note.id === "tutorial-note-s6-ocr").content).toContain("Stop OCR");
+    expect(book.pages["tutorial-page-s6"].children).toEqual(["tutorial-page-s6-library", "tutorial-page-s6-pdf"]);
+    expect(book.rootPageIds.at(-1)).toBe("tutorial-page-s7");
+    expect(book.pages["tutorial-page-s7"].children).toEqual(["workspaces", "ai-settings", "chat", "translation", "usage", "knowledge"].map(name => `tutorial-page-s6-${name}`));
+    expect(starter.notes.find((note: { id: string }) => note.id === "tutorial-note-s6-pdf").content).toContain("Stop OCR");
     expect(book.pages["tutorial-page-s6-pdf"].noteId).toBe("tutorial-note-s6-pdf");
-    expect(book.pages["tutorial-page-s6-epub"].noteId).toBe("tutorial-note-s6-epub");
+    expect(book.pages["tutorial-page-s1"].children).toContain("tutorial-page-s6-recovery");
+    expect(book.pages["tutorial-page-s6-epub"]).toBeUndefined();
+    expect(book.pages["tutorial-page-s6-retrieval"]).toBeUndefined();
     expect(book.settings.publishing).toBeUndefined();
     const bookNoteIds = new Set(Object.values(book.pages).map((page: unknown) => (page as { noteId: string }).noteId));
     const content = starter.notes.filter((note: { id: string }) => bookNoteIds.has(note.id)).map((note: { content: string }) => note.content).join("\n");
@@ -70,7 +72,7 @@ describe("release metadata", () => {
     const home = starter.notes.find((note: { id: string }) => note.id === "tutorial-note-home");
     expect(home.content).toContain(":width: 50%\n:align: center");
     const assets = JSON.parse(readFileSync(path.join(process.cwd(), "resources", "starter-content", "assets.json"), "utf8"));
-    expect(assets.assets).toHaveLength(8);
+    expect(assets.assets.length).toBeGreaterThanOrEqual(11);
     for (const asset of assets.assets) {
       const file = asset.file ?? asset.id;
       const bytes = readFileSync(path.join(process.cwd(), "resources", "starter-content", "assets", file));

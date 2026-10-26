@@ -3,12 +3,12 @@
   "assets": [
     {
       "id": "2de495e4aed7eca98ea1cfbe93ff676026cc958d049bcddb5065b40f0e00e4d9.png",
-      "file": "32a3e216430183b9d8a8b7f239b26b4b0fb164fff5b42f399d119d880c23eb77.png",
-      "name": "LanCarbon main workspace.png",
-      "size": 296727,
+      "file": "18add49e1fa8d2c97fc66a43e2c8d939c7b3b983fbea6fbfaf1f766031668c90.png",
+      "name": "LanCarbon workspace.png",
+      "size": 234156,
       "mime": "image/png",
       "createdAt": "2026-09-07T07:42:55.570539Z",
-      "updatedAt": "2026-09-09T12:28:40.262Z"
+      "updatedAt": "2026-10-26T09:00:00.000Z"
     },
     {
       "id": "2ed04c61ae2d3f2479c2090e9d729a4b64608925a5b0612b2284f7533e6f08d7.png",
@@ -72,6 +72,33 @@
       "mime": "image/png",
       "createdAt": "2026-09-05T14:55:57.784Z",
       "updatedAt": "2026-09-09T12:28:40.262Z"
+    },
+    {
+      "id": "d659080065812a642f807c34a48d3fdc9d07708aa1901e52caaaa090a017db0b.png",
+      "file": "712989ff50b471a738d80421b26bf17f4c32b756b5aa5b586c8f6819d33d29e0.png",
+      "name": "LanCarbon ai-settings.png",
+      "size": 185049,
+      "mime": "image/png",
+      "createdAt": "2026-10-26T09:00:00.000Z",
+      "updatedAt": "2026-10-26T09:00:00.000Z"
+    },
+    {
+      "id": "ee0c402b2fd894e2831cd49000f583d9d2352d4c0e972cfa3c6190ba4cc12c8a.png",
+      "file": "d4b4bea2abd5b8002682869b9981ce401f466d9c85b2323b01440e505b449f5f.png",
+      "name": "LanCarbon translation.png",
+      "size": 173690,
+      "mime": "image/png",
+      "createdAt": "2026-10-26T09:00:00.000Z",
+      "updatedAt": "2026-10-26T09:00:00.000Z"
+    },
+    {
+      "id": "2d1d4b5aeacbc660195824c0657ba89614d85b1d2ea59a356ba69d5162df05be.png",
+      "file": "000aff6c0733a138d50049a7bcd144270922adf233a373e1dac0e1e61148c9a8.png",
+      "name": "LanCarbon chat-sources.png",
+      "size": 180398,
+      "mime": "image/png",
+      "createdAt": "2026-10-26T09:00:00.000Z",
+      "updatedAt": "2026-10-26T09:00:00.000Z"
     }
   ]
 }

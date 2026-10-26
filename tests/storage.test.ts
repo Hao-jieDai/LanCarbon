@@ -108,7 +108,7 @@ describe("NotesStore 工作区存储", () => {
     expect(result.workspace.books.find(book => book.id === MANAGED_TUTORIAL_BOOK_ID)).toEqual(officialBook);
     expect(result.workspace.notes.find(note => note.id === "tutorial-note-home")?.content).toContain("System-managed tutorial — do not edit");
     expect(result.workspace.notes.find(note => note.id === loose.id)).toEqual(loose); expect(result.workspace.books.find(book => book.id === user.book.id)).toMatchObject({ id: user.book.id, settings: { title: "User Book" }, homePageId: user.book.homePageId });
-    const assets = JSON.parse(await fs.readFile(path.join(data, "assets.json"), "utf8")); expect(assets.assets).toHaveLength(9); expect(assets.assets.some((asset: { id: string }) => asset.id === userFile)).toBe(true);
+    const assets = JSON.parse(await fs.readFile(path.join(data, "assets.json"), "utf8")); expect(assets.assets).toHaveLength(bundledAssets.assets.length + 1); expect(assets.assets.some((asset: { id: string }) => asset.id === userFile)).toBe(true);
     expect(assets.assets.find((asset: { id: string }) => asset.id === logo.id).file).toBe(logo.file); expect(await fs.stat(path.join(data, "assets", oldLogoFile)).catch(() => null)).toBeNull();
     const persisted = JSON.parse(await fs.readFile(path.join(data, "notes.json"), "utf8")); expect(persisted.books.find((book: { id: string }) => book.id === MANAGED_TUTORIAL_BOOK_ID).settings.title).toBe("LanCarbon: From 0 to 1");
   });

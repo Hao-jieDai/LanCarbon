@@ -32,8 +32,21 @@ test("upgrades the system tutorial while preserving user Notes and Books", async
     await expect(page.getByLabel("Note title")).toHaveValue("LanCarbon: From 0 to 1");
     await expect(page.getByLabel("Note content")).toContainText("System-managed tutorial — do not edit");
     await expect(page.getByLabel("Note content")).toContainText("系统管理教程——请勿编辑");
+    await expect(page.locator('[data-book-page-id="tutorial-page-s6"] > div .book-page-row').first()).toHaveText("6. Library");
+    await expect(page.locator('[data-book-page-id="tutorial-page-s7"] > div .book-page-row').first()).toHaveText("7. Workshop");
+    await page.getByRole("button", { name: "Preview", exact: true }).click();
+    await expect(page.getByLabel("Rendered preview").getByRole("heading", { name: "Find the right workspace", exact: true })).toBeVisible();
+    const images = page.getByLabel("Rendered preview").locator("img");
+    await expect(images).toHaveCount(3);
+    for (const image of await images.all()) {
+      await image.scrollIntoViewIfNeeded();
+      await expect.poll(() => image.evaluate(element => (element as HTMLImageElement).complete && (element as HTMLImageElement).naturalWidth > 0)).toBe(true);
+    }
+    await page.getByLabel("Rendered preview").getByRole("link", { name: "Workshop", exact: true }).first().click();
+    await expect(page.getByLabel("Note title")).toHaveValue("7. Workshop");
     await page.getByRole("button", { name: "Notes", exact: true }).click();
     await page.getByRole("button", { name: /Personal Note/ }).click();
+    await page.getByRole("button", { name: "Edit", exact: true }).click();
     await expect(page.getByLabel("Note content")).toContainText("Never replace my content");
   } finally { await application.close(); }
   try {
