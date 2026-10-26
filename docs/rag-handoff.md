@@ -6,7 +6,7 @@
 
 连接测试及翻译按官方 API 使用 `thinking: { type: "disabled" }`；日常 Chat 保留官方默认行为，不向 DeepSeek 发送 SiliconFlow 专用的 `thinking_budget` / `enable_thinking`。没有更改 PaperQA 全文组织、回答提示词或模型调用次数。依据官方文档：https://api-docs.deepseek.com/ 、https://api-docs.deepseek.com/api/list-models/ 、https://api-docs.deepseek.com/guides/thinking_mode/ 。
 
-README、内置 ReadMe、AI 配置教程及其真实界面截图已同步。85 项相关单元测试、325 项 RAG 回归、类型检查与构建通过；教程图片更新后另行复核 19 项教程测试。7 项桌面检查通过，包含四类来源的全文问答、重启恢复、停止生成和教程升级；打包检查进行中，尚未安装本修订。全部使用临时数据及模拟接口，真实 API 调用 0 次。验收材料在 `acceptance/deepseek-2.5.1/`，其中 `install/backup-before` 为安装前备份，928 文件、213938469 字节；上一份 2.5.1 包保留于 `previous-package/`。下方为此前安装记录。
+README、内置 ReadMe、AI 配置教程及其真实界面截图已同步。85 项相关单元测试、325 项 RAG 回归、类型检查与构建通过；教程图片更新后另行复核 19 项教程测试。7 项开发桌面检查通过，包含四类来源的全文问答、重启恢复、停止生成和教程升级；打包程序的配置、DeepSeek 全文问答及教程升级 3 项检查也通过。全部使用临时数据及模拟接口，真实 API 调用 0 次。验收材料在 `acceptance/deepseek-2.5.1/`，其中 `install/backup-before` 为安装前备份，928 文件、213938469 字节；上一份 2.5.1 包保留于 `previous-package/`。已安装到 `D:/LanCarbon/Application`，对应代码提交 `e1b0638`。最终包 `release/LanCarbon-2.5.1-x64-Setup.exe` 为 234375191 字节，SHA-256 `660AB9C062686973E062CC94E529B41E0C815334DE8F4F2AD07E017C55FB7937`。实际主程序和 app.asar 与验证构建一致，9536 项运行文件校验通过；DeepSeek 入口可见且未预填密钥。27 篇个人 Note、1 本个人 Book、17 个聊天、3 个已有密钥连接及 10 条用量记录保留，781 项资料/聊天/配置文件摘要不变，全部教程与资源同步正确，桌面/开始菜单/任务栏三个快捷方式不变。安装验证结束后软件已关闭。已执行 `npm run clean:installers`，保留 2.5.1、2.4.18、2.4.17 及对应 blockmap。上述均为离线或模拟验证，不代表真实官方账户调用或学术准确性验收。下方为此前安装记录。
 
 ## 当前修订：2.5.1 教程文风统一
 
