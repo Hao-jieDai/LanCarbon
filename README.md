@@ -23,7 +23,7 @@ This update brings the writing and publishing tools of 1.1.4 together with docum
 - **Selection translation:** translate English words, phrases and short passages while writing or reading. Reuse a saved model or configure an independent translation connection; enable translation only when needed.
 - **Knowledge-library questions:** choose Library documents, Notes and Book pages as sources, ask follow-up questions or compare documents, then follow citations back to the original. Current full-text questions use the selected Chat model without requiring Embedding or Rerank setup.
 - **Usage and costs:** review tokens, request history and activity heatmaps; configure model prices, a reference exchange rate and estimated account balances. Group connections that share the same billed account.
-- **A reorganized tutorial:** *LanCarbon: From 0 to 1* provides separate Library and Workshop chapters, current screenshots, and routes for both writing/publishing and reading/knowledge-library work.
+- **A reorganized tutorial:** *LanCarbon: From 0 to 1* provides separate Library and Workshop chapters, current screenshots, and consistent instructions for writing, publishing, reading and knowledge-library work.
 
 Notes, Books, existing model settings and chat history are retained on upgrade. Automated paper discovery and collection expansion are not available yet. Document questions support reading and comparison; check important figures, formulas and interpretations against the linked originals before using them in research.
 
@@ -76,7 +76,7 @@ LanCarbon 是一款将本地写作、文档阅读与 AI 辅助结合起来的 Wi
 - **划词翻译：**在写作和阅读时翻译英文单词、词组或短段落。可以复用已有模型或独立配置翻译连接，按需开启。
 - **个人知识库问答：**选择 Library 文档、Notes 和 Book 页面作为来源，继续追问或比较多份文档，并通过引用返回原文。当前全文问答使用选定的 Chat 模型，不要求先配置 Embedding 或 Rerank。
 - **用量与费用：**查看 Token、请求历史和活动热力图，设置模型价格、参考汇率和估算账户余额。实际共用一个计费账户的连接可以合并统计余额。
-- **重新组织的教程：***LanCarbon: From 0 to 1* 分设 Library 和 Workshop 章节，更新截图，分别提供“写作与发布”和“阅读与知识库”的学习路线。
+- **重新组织的教程：***LanCarbon: From 0 to 1* 分设 Library 和 Workshop 章节，更新截图，并以统一的写法介绍写作、发布、阅读与知识库操作。
 
 升级保留 Notes、Books、已有模型配置和聊天记录。自动文献发现与资料库自动拓展尚未开放。资料问答用于辅助阅读和比较；用于研究前，请通过原文核对重要数字、公式与解释。
 

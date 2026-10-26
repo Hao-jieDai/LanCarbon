@@ -34,7 +34,7 @@ Review request history, tokens and activity heatmaps. Set model prices and a ref
 
 ### Learn the workflow
 
-Open **Books → LanCarbon: From 0 to 1**. The tutorial introduces the four workspaces and offers separate Library and Workshop chapters, current screenshots and two routes: writing/publishing and reading/knowledge-library work. The first five chapters retain the writing and publishing workflow.
+Open **Books → LanCarbon: From 0 to 1**. The tutorial introduces the four workspaces and offers separate Library and Workshop chapters, current screenshots and consistent instructions for writing/publishing and reading/knowledge-library work. The first five chapters retain the writing and publishing workflow.
 
 Your Notes, Books, model settings and chat history are retained. The system ReadMe and tutorial synchronize with the app; write personal content in your own Notes and Books. Automated paper discovery and collection expansion are not available yet. Check important source-based findings against the original before using them in research.
 
@@ -62,7 +62,7 @@ Your Notes, Books, model settings and chat history are retained. The system Read
 
 ### 学习使用流程
 
-打开 **Books → LanCarbon: From 0 to 1**。教程重新介绍四个工作区，分设 Library 和 Workshop 章节，更新截图，并提供“写作与发布”和“阅读与知识库”两条学习路线。前五章保留原有写作与发布流程。
+打开 **Books → LanCarbon: From 0 to 1**。教程重新介绍四个工作区，分设 Library 和 Workshop 章节，更新截图，并统一写作、发布、阅读与知识库操作说明的写法。前五章保留原有写作与发布流程。
 
 升级保留 Notes、Books、模型配置和聊天记录。系统 ReadMe 与教程随软件同步，个人内容请写在自己创建的 Notes 和 Books 中。自动文献发现与资料库自动拓展尚未开放。资料问答的重要结论用于研究前，请返回原文核对。`;
 
