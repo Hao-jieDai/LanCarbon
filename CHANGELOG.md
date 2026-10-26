@@ -1,41 +1,28 @@
 # Changelog
 
-All notable changes to official LanCarbon releases are recorded here.
+User-facing changes are recorded here. The current release candidate is marked as unreleased until publication; internal development patches are consolidated into that release.
 
-## 2.1.1 — 2026-10-13
+本文件记录用户可见的变化。当前候选版本在正式发布前标记为未发布，内部开发过程中的小版本调整合并说明。
 
-### Added
+## 2.5.1 — Unreleased / 尚未发布
 
-- Resource-folder migration to Library/assets with copy verification, conflict checks and retry recovery, preserving Workspace v2, resource IDs and writing links.
-- Library reference navigation to Notes/Book writing lines, Book settings and bibliography panels.
-- Containing-folder actions and resource renaming with extension, duplicate-name and built-in-resource safeguards.
+This update extends the writing and publishing tools of 1.1.4 into a personal knowledge library.
 
-### Changed
+- **Library and reading:** document import, folders, file versions, resource references, batch operations, PDF/EPUB reading, up to ten reading tabs and local English/Chinese OCR.
+- **Workshop:** Chat with SiliconFlow, OpenRouter, DeepSeek or compatible custom connections; shared response guidelines, Thinking display, and PDF/Note exports.
+- **Translation and usage:** selection translation, independent or reused model connections, token/cost records, activity heatmaps and estimated shared-account balances.
+- **Document questions and tutorial:** ask about selected Library documents, Notes and Book pages using the current full-text Chat flow; follow citations to originals. Separate Library and Workshop tutorial chapters explain the available features.
 
-- Compact Library rows and a fixed selected-resource panel with independently scrolling file/reference lists.
-- Save a copy sits beside the filename; redundant storage text is removed and introductory text uses the available width.
-- Newly imported, pasted and dropped writing resources and managed tutorial images use Library/assets; assets.json remains in Data.
-- Updated the bilingual ReadMe and the corresponding long-term Research/Library tutorial instructions.
+Automated paper discovery and collection expansion are not implemented. Document answers support reading and comparison; important figures, formulas and interpretations still require checking against the originals.
 
-## 2.1.0 — 2026-10-13
+本次在 1.1.4 的写作与发布工具基础上，扩展个人知识库功能。
 
-### Added
+- **Library 与阅读：**文档导入、文件夹、文件版本、资源引用、批量操作、PDF/EPUB 阅读、最多十个阅读标签页，以及本地中英文 OCR。
+- **Workshop：**支持 SiliconFlow、OpenRouter、DeepSeek 或兼容自定义连接的 Chat，共用回答规范、Thinking 展示及 PDF/Note 导出。
+- **翻译与用量：**选词翻译、独立或复用模型连接、token/费用记录、活动热力图及共享账户估算余额。
+- **资料问答与教程：**通过当前全文 Chat 流程询问选定的 Library 文档、Notes 和 Book 页面，沿引用返回原文；Library、Workshop 独立教程章节介绍已实现功能。
 
-- Four workspace buttons in a 2×2 grid: Notes, Books, Research and Library, with selection recovery across switching and restarts.
-- Reserved Run, Templates, Outputs, Chat and AI Settings pages with explicit availability labels; AI and PDF/EPUB reading are not active in this foundation stage.
-- Library browsing of existing managed resources, reference locations and saved copies, without moving or changing legacy resource IDs.
-- Separate original-file and Research management folders, included in Data Location transfer where appropriate.
-- Verified user-data snapshots and recovery into a new empty folder, including the stable installer and SHA-256 checks.
-
-### Changed
-
-- Development defaults to an isolated root inside the checkout.
-- Writing shortcuts are scoped to Notes/Books; Ctrl+Q returns from the new workspaces to the previous writing workspace.
-- Refreshed the bilingual ReadMe and corresponding evergreen tutorial instructions.
-
-### Fixed
-
-- Unsupported workspace versions stop loading and saving without renaming or overwriting the original data.
+自动文献发现和文献库自拓展尚未实现。资料回答用于辅助阅读与比较，重要数字、公式和解读仍需核对原文。
 
 ## 1.1.4 — 2026-10-05
 

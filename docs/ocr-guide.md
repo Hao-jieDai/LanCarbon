@@ -12,11 +12,11 @@ After recognition, the normal PDF text layer supports selection, copying, **Find
 
 Document questions automatically prepare the selected scans. Library and Note/Book references to the same PDF reuse recognition by file content and original page number. **Evidence** labels recognized excerpts with **OCR**, and the citation opens the original PDF page. Recognized text does not replace or rewrite the original PDF.
 
-English/Chinese recognition resources are included with the application. No OCR account, API Key, download or online OCR service is required. Recognizing locally does not consume Chat, embedding or rerank tokens. When new recognized text is subsequently sent to the configured embedding or Chat services, their normal usage is recorded.
+English/Chinese recognition resources are included with the application. No OCR account, API Key, download or online OCR service is required. Local recognition does not call a model or consume tokens. When recognized text is sent to the selected Chat model for a document question, normal Chat usage is recorded.
 
 Recognition progress appears in the reader or source preparation. Confidence is a diagnostic, not a guarantee: inspect the original for important numbers, currency units, multi-column text, tables and formulas. A blurred scan, unusual layout or damaged text layer may still need manual checking. Local OCR extracts text and coordinates; it does not promise complete spreadsheet/table structure or mathematical markup.
 
-Recognition text and coordinates are saved in **Data/Research/OCR**, limited to 64 MB; older derived results are removed when necessary. Full-page recognition images are released after processing rather than saved. **Workshop → AI Settings → Retrieval → Local OCR → Clear OCR cache** removes only derived recognition results. Original files, personal writing, saved chats and usage are retained. Needed scans will be recognized again; changing recognized text can also require updated embeddings.
+Recognition text and coordinates are saved in **Data/Research/OCR**, limited to 64 MB; older derived results are removed when necessary. Full-page recognition images are released after processing rather than saved. **Workshop → AI Settings → Retrieval → Local OCR → Clear OCR cache** removes only derived recognition results. Original files, personal writing, saved chats and usage are retained. Needed scans will be recognized again; document questions use the updated recognized text.
 
 Password-protected PDFs can be read after entering the password locally; automatic indexing/OCR does not retain or reuse that password. EPUB DRM and standalone image/Word recognition are outside this PDF workflow.
 
@@ -36,10 +36,10 @@ Password-protected PDFs can be read after entering the password locally; automat
 
 资料问答会自动准备选中的扫描 PDF。Library 文件和 Note／Book 对同一 PDF 的引用，按文件内容与原始页码复用识别结果。**Evidence** 用 **OCR** 标识识别片段，点击引用仍跳到原始 PDF 对应页。识别文字不会替换或改写原文件。
 
-应用内置中英文识别资源，无须 OCR 账号、API Key、额外下载或在线识别服务。本地识别不消耗 Chat、embedding 或 rerank tokens。后续将新增识别文字交给已配置的 embedding 或 Chat 服务时，按原有规则记录用量和费用。
+应用内置中英文识别资源，无须 OCR 账号、API Key、额外下载或在线识别服务。本地识别不调用模型、不消耗 tokens。后续围绕资料提问时，识别文字会交给选定的 Chat 模型，并按正常聊天记录用量和费用。
 
 阅读器或资料准备过程会显示进度。置信度用于提示识别质量，不代表准确保证；重要数字、币种单位、分栏顺序、表格和公式应核对原页。模糊扫描、特殊版式和损坏文字层仍可能需要人工检查。本地 OCR 提取文字及坐标，不保证完整还原表格结构或数学公式标记。
 
-识别文字和坐标保存在 **Data/Research/OCR**，最多 64 MB，达到限制后清理较早的派生结果。整页识别图片处理完即释放，不长期保存。通过 **Workshop → AI Settings → Retrieval → Local OCR → Clear OCR cache** 只清除识别缓存，原文件、个人写作、聊天和用量保留。再次需要时会重新识别；识别文字变化也可能需要更新向量。
+识别文字和坐标保存在 **Data/Research/OCR**，最多 64 MB，达到限制后清理较早的派生结果。整页识别图片处理完即释放，不长期保存。通过 **Workshop → AI Settings → Retrieval → Local OCR → Clear OCR cache** 只清除识别缓存，原文件、个人写作、聊天和用量保留。再次需要时会重新识别，后续资料问答使用更新后的识别文字。
 
 加密 PDF 可在本地输入密码后阅读；自动索引和 OCR 不保存或复用该密码。EPUB DRM、独立图片和 Word 识别不属于这套 PDF 流程。
