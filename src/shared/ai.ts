@@ -3,7 +3,7 @@ import type { KnowledgeScope } from "./knowledge";
 import type { AIModelPrice, AIModelPriceInput, AIUsagePage, AIUsageQuery } from "./aiUsage";
 import type { WorkspaceFile } from "./types";
 import { CHAT_OUTPUT_GUIDELINES } from "./chatText";
-export type AIProviderKind = "siliconflow" | "openrouter" | "others";
+export type AIProviderKind = "siliconflow" | "openrouter" | "deepseek" | "others";
 // Retrieval roles use their own settings; Chat connections retain their Chat-only model lists.
 export type AIModelPurpose = "chat" | "embedding" | "rerank";
 export interface AIModel { id: string; name: string; purpose: AIModelPurpose }
@@ -51,9 +51,10 @@ export const DEFAULT_AI_SYSTEM_PROMPT = `Use a professional, accurate, calm, neu
 export const AI_PRESETS = {
   siliconflow: { name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", modelId: "deepseek-ai/DeepSeek-V4-Pro", modelName: "DeepSeek V4 Pro" },
   openrouter: { name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", modelId: "openai/gpt-6-luna", modelName: "GPT-6 Luna" },
+  deepseek: { name: "DeepSeek", baseUrl: "https://api.deepseek.com", modelId: "deepseek-flash", modelName: "DeepSeek Flash" },
   others: { name: "Others", baseUrl: "", modelId: "", modelName: "" }
 };
-export function defaultAIProviders(): AIProvider[] { return (["siliconflow", "openrouter", "others"] as const).map(kind => ({ id: kind, kind, name: AI_PRESETS[kind].name, baseUrl: AI_PRESETS[kind].baseUrl, models: [], defaultModel: "", hasKey: false })); }
+export function defaultAIProviders(): AIProvider[] { return (["siliconflow", "openrouter", "deepseek", "others"] as const).map(kind => ({ id: kind, kind, name: AI_PRESETS[kind].name, baseUrl: AI_PRESETS[kind].baseUrl, models: [], defaultModel: "", hasKey: false })); }
 export function aiModelName(id: string): string {
   for (const preset of Object.values(AI_PRESETS)) if (preset.modelId === id) return preset.modelName;
   return id.split("/").at(-1)?.replace(/[-_]/g, " ") || id;

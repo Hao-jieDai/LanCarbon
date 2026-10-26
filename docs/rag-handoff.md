@@ -1,5 +1,13 @@
 # RAG 当前交接
 
+## 当前修订：2.5.1 DeepSeek 官方连接
+
+2026-10-26，用户在发布准备前要求新增 DeepSeek 官方 API 来源。版本仍为 2.5.1，未冻结，未创建 Tag 或 Release。新增 `deepseek` 预设，地址为 `https://api.deepseek.com`，从 `/models` 获取实际目录；用户自行保存模型，未恢复快捷添加按钮。现有设置读取时补充空预设，不改写旧连接、密钥或回答规范；明确保存时才持久化。Chat、翻译和用量沿用原有流程，官方账户与 SiliconFlow 分开配置和计费。
+
+连接测试及翻译按官方 API 使用 `thinking: { type: "disabled" }`；日常 Chat 保留官方默认行为，不向 DeepSeek 发送 SiliconFlow 专用的 `thinking_budget` / `enable_thinking`。没有更改 PaperQA 全文组织、回答提示词或模型调用次数。依据官方文档：https://api-docs.deepseek.com/ 、https://api-docs.deepseek.com/api/list-models/ 、https://api-docs.deepseek.com/guides/thinking_mode/ 。
+
+README、内置 ReadMe、AI 配置教程及其真实界面截图已同步。85 项相关单元测试、325 项 RAG 回归、类型检查与构建通过；教程图片更新后另行复核 19 项教程测试。7 项桌面检查通过，包含四类来源的全文问答、重启恢复、停止生成和教程升级；打包检查进行中，尚未安装本修订。全部使用临时数据及模拟接口，真实 API 调用 0 次。验收材料在 `acceptance/deepseek-2.5.1/`，其中 `install/backup-before` 为安装前备份，928 文件、213938469 字节；上一份 2.5.1 包保留于 `previous-package/`。下方为此前安装记录。
+
 ## 当前修订：2.5.1 教程文风统一
 
 2026-10-26，用户要求第六、七章与前五章保持一致。此次只调整这两章的 10 个官方页面：章节首页改为简短功能介绍，移除目录表和导航式结尾，统一标题与说明语气，保留操作步骤、规则对照表、截图和必要的上下文链接。前五章、首页、目录结构、页面稳定 ID 和截图资源均未改。README 与内置 ReadMe 在原有教程条目中同步说明写法统一，不追加小版本日志。版本仍为 2.5.1，尚未进入 Release 冻结，不创建 Tag、草稿或推送。

@@ -4,13 +4,13 @@ import path from "node:path";
 import os from "node:os";
 import { createServer } from "node:http";
 
-test("configures both providers and Others, streams, switches models, preserves writing, retries and restores encrypted local chats", async ({}, info) => {
+test("configures official providers and Others, streams, switches models, preserves writing, retries and restores encrypted local chats", async ({}, info) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-ai-desktop-"));
   const bodies: Array<{ model: string; messages: Array<{ role: string; content: string }> }> = [];
   let stopAttempts = 0;
   let rateAttempts = 0, limitTest = false;
   const server = createServer(async (request, response) => {
-    if (request.url?.startsWith("/models")) { response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ data: [{ id: "deepseek-ai/DeepSeek-V4-Pro", name: "DeepSeek V4 Pro" }, { id: "openai/gpt-6-luna", name: "GPT-6 Luna" }, { id: "fixture-embedding", architecture: { output_modalities: ["embeddings"] } }] })); return; }
+    if (request.url?.startsWith("/models")) { response.setHeader("Content-Type", "application/json"); response.end(JSON.stringify({ data: [{ id: "deepseek-ai/DeepSeek-V4-Pro", name: "DeepSeek V4 Pro" }, { id: "openai/gpt-6-luna", name: "GPT-6 Luna" }, { id: "deepseek-flash", name: "DeepSeek Flash" }, { id: "fixture-embedding", architecture: { output_modalities: ["embeddings"] } }] })); return; }
     let raw = ""; for await (const chunk of request) raw += chunk;
     const body = JSON.parse(raw); bodies.push(body); const text = body.messages.at(-1)?.content || "";
     if ((text === "rate-limit-test" && rateAttempts++ === 0) || (text === "Reply with just OK." && limitTest)) { response.writeHead(429, { "Content-Type": "application/json", "Retry-After": limitTest ? "60" : "1" }); response.end(JSON.stringify({ error: { message: "Provider returned error", metadata: { provider_name: "Mistral", limit_source: "upstream_provider_shared_pool" } } })); return; }
@@ -41,6 +41,18 @@ test("configures both providers and Others, streams, switches models, preserves 
     await expect(page.getByLabel("Saved API key", { exact: true })).toHaveText("fixt••••••••vate");
     await expect(page.getByRole("button", { name: "Add DeepSeek V4 Pro", exact: true })).toHaveCount(0); await page.getByRole("combobox", { name: "Model ID", exact: true }).fill("deepseek-ai/DeepSeek-V4-Pro"); await page.getByLabel("Model display name").fill("DeepSeek V4 Pro"); await page.getByRole("button", { name: "Add model", exact: true }).click(); await page.getByRole("button", { name: "Save models", exact: true }).click(); await expect(page.getByText("Configuration saved.", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Test model", exact: true }).click(); await expect(page.getByText(/Connection successful/)).toBeVisible();
+    await page.getByRole("button", { name: "DeepSeek", exact: true }).click();
+    await expect(page.getByLabel("API base address")).toHaveValue("https://api.deepseek.com");
+    await page.getByLabel("API Key", { exact: true }).fill("fixture-deepseek-private");
+    await page.getByRole("button", { name: "Refresh models", exact: true }).click();
+    await expect(page.getByText(/models found/)).toBeVisible();
+    await page.getByRole("combobox", { name: "Model ID", exact: true }).fill("deepseek-flash");
+    await page.getByLabel("Model display name").fill("DeepSeek Flash");
+    await page.getByRole("button", { name: "Add model", exact: true }).click();
+    await page.getByRole("button", { name: "Save models", exact: true }).click();
+    await page.getByRole("button", { name: "Test model", exact: true }).click();
+    await expect(page.getByText(/Connection successful/)).toBeVisible();
+    expect(bodies.at(-1)).toMatchObject({ model: "deepseek-flash", thinking: { type: "disabled" } });
     await page.getByRole("button", { name: "OpenRouter", exact: true }).click(); await expect(page.getByLabel("API base address")).toHaveValue("https://openrouter.ai/api/v1");
     await page.getByLabel("API Key", { exact: true }).fill("fixture-api-key-private"); await expect(page.getByRole("button", { name: "Add GPT-6 Luna", exact: true })).toHaveCount(0); await page.getByRole("combobox", { name: "Model ID", exact: true }).fill("openai/gpt-6-luna"); await page.getByLabel("Model display name").fill("GPT-6 Luna"); await page.getByRole("button", { name: "Add model", exact: true }).click(); await page.getByRole("button", { name: "Save models", exact: true }).click(); await expect(page.getByText("Configuration saved.", { exact: true })).toBeVisible();
     await page.getByRole("button", { name: "Others", exact: true }).click(); await page.getByLabel("Configuration name").fill("Local fixture"); await page.getByLabel("API base address").fill(address + "/v1"); await page.getByLabel("API Key", { exact: true }).fill("fixture-api-key-private"); await page.getByRole("combobox", { name: "Model ID", exact: true }).fill("fixture-chat"); await page.getByLabel("Model display name").fill("Fixture Chat"); await page.getByRole("button", { name: "Add model", exact: true }).click(); await page.getByRole("button", { name: "Save models", exact: true }).click(); await expect(page.getByText("Configuration saved.", { exact: true })).toBeVisible();

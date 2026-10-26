@@ -19,7 +19,7 @@ This update brings the writing and publishing tools of 1.1.4 together with docum
 
 - **Library:** import PDF/EPUB documents, organize folders, handle duplicates, keep file versions and manage writing attachments. Rename, move and inspect references; use batch selection to move, export or delete files.
 - **Built-in reading:** read PDF and EPUB inside LanCarbon, use document outlines and search, keep reading positions and switch between up to ten open documents. Local English/Chinese OCR makes scanned PDF pages selectable and searchable.
-- **Workshop and AI Chat:** configure SiliconFlow, OpenRouter or other compatible services and choose saved models for conversations. Set shared response guidelines, view available Thinking, and export conversations to PDF or editable Notes.
+- **Workshop and AI Chat:** configure SiliconFlow, OpenRouter, DeepSeek or other compatible services and choose saved models for conversations. Set shared response guidelines, view available Thinking, and export conversations to PDF or editable Notes.
 - **Selection translation:** translate English words, phrases and short passages while writing or reading. Reuse a saved model or configure an independent translation connection; enable translation only when needed.
 - **Knowledge-library questions:** choose Library documents, Notes and Book pages as sources, ask follow-up questions or compare documents, then follow citations back to the original. Current full-text questions use the selected Chat model without requiring Embedding or Rerank setup.
 - **Usage and costs:** review tokens, request history and activity heatmaps; configure model prices, a reference exchange rate and estimated account balances. Group connections that share the same billed account.
@@ -72,7 +72,7 @@ LanCarbon 是一款将本地写作、文档阅读与 AI 辅助结合起来的 Wi
 
 - **Library 资料管理：**导入 PDF／EPUB、组织文件夹、处理重复文件、保存版本并管理写作附件。支持改名、移动、查看引用，以及批量移动、导出和删除。
 - **内置阅读：**直接阅读 PDF 和 EPUB，使用目录与搜索，保留阅读进度，最多切换十个打开的文档。本地中英文 OCR 让扫描 PDF 的文字可以选取和搜索。
-- **Workshop 与 AI Chat：**配置 SiliconFlow、OpenRouter 或其他兼容服务，为对话选择已保存的模型。支持共用回答规范、查看模型返回的 Thinking，以及导出 PDF 或可编辑 Note。
+- **Workshop 与 AI Chat：**配置 SiliconFlow、OpenRouter、DeepSeek 或其他兼容服务，为对话选择已保存的模型。支持共用回答规范、查看模型返回的 Thinking，以及导出 PDF 或可编辑 Note。
 - **划词翻译：**在写作和阅读时翻译英文单词、词组或短段落。可以复用已有模型或独立配置翻译连接，按需开启。
 - **个人知识库问答：**选择 Library 文档、Notes 和 Book 页面作为来源，继续追问或比较多份文档，并通过引用返回原文。当前全文问答使用选定的 Chat 模型，不要求先配置 Embedding 或 Rerank。
 - **用量与费用：**查看 Token、请求历史和活动热力图，设置模型价格、参考汇率和估算账户余额。实际共用一个计费账户的连接可以合并统计余额。

@@ -44,16 +44,22 @@ export class AISettingsStore extends Serialized {
   private async read(): Promise<StoredSettings> {
     const data = await readJson(this.filename, 2_000_000) as { version?: number; providers?: StoredProvider[]; systemPrompt?: string } | undefined;
     if (!data) return { version: 1, providers: this.defaults().map(({ hasKey: _key, ...provider }) => provider), systemPrompt: DEFAULT_AI_SYSTEM_PROMPT };
-    if (data.version !== 1 || !Array.isArray(data.providers) || data.providers.length > 30) throw new Error("Unsupported AI settings format. Existing settings have been preserved.");
+    if (data.version !== 1 || !Array.isArray(data.providers) || data.providers.length > 31) throw new Error("Unsupported AI settings format. Existing settings have been preserved.");
     const ids = new Set<string>();
     for (const provider of data.providers) { validId(provider.id); if (ids.has(provider.id)) throw new Error("Duplicate AI configuration"); ids.add(provider.id); const validated = this.validate(provider); if (validated.baseUrl !== provider.baseUrl) throw new Error("Invalid stored API address"); if (provider.encryptedKey !== undefined && (typeof provider.encryptedKey !== "string" || provider.encryptedKey.length > 20000)) throw new Error("Invalid stored API key"); }
-    if (this.defaults().some(provider => !ids.has(provider.id))) throw new Error("AI settings are incomplete. Existing settings have been preserved.");
+    if (this.defaults().some(provider => provider.kind !== "deepseek" && !ids.has(provider.id))) throw new Error("AI settings are incomplete. Existing settings have been preserved.");
+    // Add new presets in memory; existing encrypted keys, models and preferences stay intact.
+    // Persist only on an explicit settings save, as for the original defaults.
+    const deepseek = this.defaults().find(provider => provider.kind === "deepseek")!;
+    const existingDeepseek = data.providers.find(provider => provider.id === deepseek.id);
+    if (existingDeepseek && existingDeepseek.kind !== "deepseek") throw new Error("The DeepSeek preset ID is already used by another connection. Existing settings have been preserved.");
+    if (!existingDeepseek) { const { hasKey: _key, ...preset } = deepseek; data.providers.push(preset); }
     const systemPrompt = data.systemPrompt === undefined ? DEFAULT_AI_SYSTEM_PROMPT : bounded(data.systemPrompt, "response guidelines", 12000);
     return { version: 1, providers: data.providers, systemPrompt };
   }
   private validate(input: AIProviderInput): Omit<AIProvider, "hasKey"> {
     validId(input.id);
-    if (!["siliconflow", "openrouter", "others"].includes(input.kind)) throw new Error("Unknown AI service");
+    if (!["siliconflow", "openrouter", "deepseek", "others"].includes(input.kind)) throw new Error("Unknown AI service");
     if (input.kind !== "others" && input.id !== this.namespace + input.kind) throw new Error("Invalid preset configuration");
     if (this.namespace && !input.id.startsWith(this.namespace)) throw new Error("Invalid translation configuration");
     const name = input.kind === "others" ? bounded(input.name, "configuration name", 100) : AI_PRESETS[input.kind].name + (this.namespace === "retrieval-" ? " Retrieval" : this.namespace ? " Translation" : "");
@@ -90,7 +96,7 @@ export class AISettingsStore extends Serialized {
       if (key) { if (!await this.codec.available()) throw new Error("Windows secure key storage is unavailable. The key was not saved."); encryptedKey = (await this.codec.encrypt(key)).toString("base64"); }
       const next = { ...provider, encryptedKey };
       const updated = existing ? providers.map(item => item.id === next.id ? next : item) : [...providers, next];
-      if (updated.length > 30) throw new Error("Configure up to 30 services");
+      if (updated.length > 31) throw new Error("Configure up to 31 services");
       await atomicJson(this.filename, { ...settings, providers: updated });
       return this.publicProviders(updated);
     });

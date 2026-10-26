@@ -22,7 +22,7 @@ Import and organize PDF/EPUB documents, manage folders and duplicates, follow wr
 
 ### AI Chat and knowledge-library questions
 
-Configure SiliconFlow, OpenRouter or another compatible service, save models and select one in Chat. Set shared response guidelines, read available Thinking and export conversations as PDF or editable Notes. Choose Library documents, Notes and Book pages to ask source-based questions or compare materials, then open citations to read the originals. Current full-text questions use your selected Chat model; Embedding and Rerank setup is not required.
+Configure SiliconFlow, OpenRouter, DeepSeek or another compatible service, save models and select one in Chat. Set shared response guidelines, read available Thinking and export conversations as PDF or editable Notes. Choose Library documents, Notes and Book pages to ask source-based questions or compare materials, then open citations to read the originals. Current full-text questions use your selected Chat model; Embedding and Rerank setup is not required.
 
 ### Selection translation
 
@@ -50,7 +50,7 @@ Your Notes, Books, model settings and chat history are retained. The system Read
 
 ### AI Chat 与个人知识库问答
 
-配置 SiliconFlow、OpenRouter 或其他兼容服务，保存模型并在 Chat 中选择。可设置共用回答规范、查看模型提供的 Thinking，并将聊天导出为 PDF 或可编辑 Note。选择 Library 文档、Notes 和 Book 页面后，可以围绕资料提问和比较，并通过引用返回原文。当前全文问答使用选定的 Chat 模型，不要求配置 Embedding 或 Rerank。
+配置 SiliconFlow、OpenRouter、DeepSeek 或其他兼容服务，保存模型并在 Chat 中选择。可设置共用回答规范、查看模型提供的 Thinking，并将聊天导出为 PDF 或可编辑 Note。选择 Library 文档、Notes 和 Book 页面后，可以围绕资料提问和比较，并通过引用返回原文。当前全文问答使用选定的 Chat 模型，不要求配置 Embedding 或 Rerank。
 
 ### 划词翻译
 

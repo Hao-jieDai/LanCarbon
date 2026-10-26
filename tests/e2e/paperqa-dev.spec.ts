@@ -33,6 +33,7 @@ async function mock(app: ElectronApplication, hang = false) {
 for (const connection of [
   { id: "siliconflow", kind: "siliconflow", name: "SiliconFlow", baseUrl: "https://api.siliconflow.cn/v1", model: "deepseek-ai/DeepSeek-V4.1-Flash" },
   { id: "openrouter", kind: "openrouter", name: "OpenRouter", baseUrl: "https://openrouter.ai/api/v1", model: "x-ai/grok-4.7" },
+  { id: "deepseek", kind: "deepseek", name: "DeepSeek", baseUrl: "https://api.deepseek.com", model: "deepseek-flash" },
   { id: "others", kind: "others", name: "Custom", baseUrl: "https://fixture.example/v1", model: "fixture-chat" }
 ] as const) test(`PaperQA ${connection.kind} reads all source kinds, calls once per turn and survives restart`, async ({}, info) => {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "lancarbon-paperqa-ui-")); await fs.mkdir(path.join(root, "Data"));
