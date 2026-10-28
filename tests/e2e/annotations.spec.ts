@@ -23,9 +23,21 @@ test("PDF annotation geometry survives zoom, restart, export and return links; e
     await page.evaluate(id => window.dispatchEvent(new CustomEvent("lancarbon:open-pdf", { detail: { id } })), f.entry.id);
     const line = page.locator('.page[data-page-number="1"] .textLayer span').filter({ hasText: "Climate investment page 1." }).first();
     await expect(line).toBeVisible(); await expect(page.getByRole("button", { name: "Annotations (0)", exact: true })).toBeVisible();
+    const toolbar = page.getByRole("toolbar", { name: "Annotate selection" });
+    await expect(toolbar.getByRole("button", { name: "Highlight", exact: true })).toBeDisabled();
+    await expect(page.locator('.reader-annotation-heading,.reader-selection-toolbar')).toHaveCount(0);
+    expect(await page.locator('[data-annotation-toggle]').evaluate(e => e.previousElementSibling?.textContent)).toBe("Pages / Contents");
+    expect(await page.locator('[data-annotation-tools]').evaluate(e => e.previousElementSibling?.textContent)).toContain("OCR");
+    await select(line);
+    await expect(toolbar.getByRole("button", { name: "Highlight", exact: true })).toBeEnabled();
+    await page.evaluate(() => getSelection()?.removeAllRanges());
+    await expect(toolbar.getByRole("button", { name: "Highlight", exact: true })).toBeDisabled();
     await select(line); await page.getByRole("toolbar", { name: "Annotate selection" }).getByRole("button", { name: "Highlight", exact: true }).click();
     await page.getByLabel("Annotation comment", { exact: true }).fill("Review the investment assumptions."); await page.getByRole("button", { name: "Save annotation", exact: true }).click();
-    await expect(page.getByLabel("Reading annotations", { exact: true })).toContainText("Review the investment assumptions."); await page.getByRole("button", { name: "Close annotations", exact: true }).click();
+    await expect(page.getByLabel("Reading annotations", { exact: true })).toContainText("Review the investment assumptions."); await expect(page.getByRole("button", {name: "Manage / delete", exact: true})).toHaveCount(0);
+    await expect(page.locator('.reader-annotation-item-heading').getByRole('button', {name: 'Edit', exact: true})).toBeVisible();
+    await page.screenshot({path: info.outputPath('compact-annotations.png')});
+    await page.getByRole("button", { name: "Close annotations", exact: true }).click();
     for (const zoom of ["75%", "125%", "Fit width"]) {
       await page.getByRole("combobox", { name: "PDF zoom", exact: true }).click(); await page.getByRole("option", { name: zoom, exact: true }).click();
       await expect.poll(() => page.locator('.page[data-page-number="1"]').evaluate(root => {
@@ -41,7 +53,7 @@ test("PDF annotation geometry survives zoom, restart, export and return links; e
     await expect(page.locator('.reader-annotation-mark.focused').first()).toBeVisible();
     await page.getByRole("button", { name: "Export all to Note", exact: true }).click(); await expect(page.getByRole("dialog", { name: "Export annotations", exact: true })).toContainText("already been exported"); await page.getByRole("button", { name: "Cancel", exact: true }).click();
     await page.getByLabel("Reading annotations", { exact: true }).getByRole("button", { name: "Edit", exact: true }).click(); await page.getByLabel("Annotation style", { exact: true }).selectOption("underline"); await page.getByLabel("Annotation comment", { exact: true }).fill("Revised comment"); await page.getByRole("button", { name: "Save annotation", exact: true }).click(); await expect(page.locator('.reader-annotation-mark.underline').first()).toBeVisible();
-    await page.getByLabel("Reading annotations", { exact: true }).getByRole("button", { name: "Manage / delete", exact: true }).click(); await page.getByRole("button", { name: "Delete annotation", exact: true }).click(); await expect(page.getByRole("button", { name: "Annotations (0)", exact: true })).toBeVisible();
+    await page.getByLabel("Reading annotations", { exact: true }).getByRole("button", { name: "Edit", exact: true }).click(); await page.getByRole("button", { name: "Delete annotation", exact: true }).click(); await expect(page.getByRole("button", { name: "Annotations (0)", exact: true })).toBeVisible();
     expect(await fs.readFile(f.file)).toEqual(f.bytes);
   } finally { await app.close().catch(() => undefined); await cleanup(f.root); }
 });

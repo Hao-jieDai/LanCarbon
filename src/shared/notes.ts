@@ -17,7 +17,7 @@ export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 This update adds local PDF and EPUB annotations and reading-note exports.
 
-- **Annotate while reading:** select text and choose **Highlight**, **Underline** or **Comment**. Choose a color, add an optional comment, and save. Click a mark or use **Annotations** to edit or delete it. The list follows document order.
+- **Annotate while reading:** select text and choose **Highlight**, **Underline** or **Comment** in the fixed reading toolbar beside OCR (or the EPUB display controls). **Annotations** sits beside **Pages / Contents**. Choose a color, add an optional comment, and save. Click a mark or use **Annotations** to edit or delete it. The compact list follows document order, with **Edit** beside each item’s style and color; deletion is available inside Edit.
 - **Reliable local storage:** annotations are saved separately under **Data/Library/Annotations**, leaving original files unchanged. PDF locations use file pages and page-relative positions; EPUB locations use chapters and text anchors. Renaming or moving a document within Library preserves its annotations. A changed original keeps earlier annotations with a version warning instead of applying old locations to new text.
 - **Export to Note:** export all or selected annotations into a new editable Note containing original excerpts, comments, locations and **Return to original** links. PDF locations use actual file page numbers, which may differ from printed page labels. Return links work inside LanCarbon. Exports are snapshots; re-exporting warns when an existing exported Note is found and creates a new Note without overwriting your edits.
 - **Translation shortcut hint:** the floating panel now shows **Continuous translation (Z)**; Z toggles continuous mode after a PDF selection.
@@ -30,7 +30,7 @@ Your Notes, Books, model settings and chat history are retained. The system Read
 
 本次更新提供 PDF／EPUB 本地批注，以及批注导出为阅读笔记的完整流程。
 
-- **边读边批注**：选中文字，选择 **Highlight**（高亮）、**Underline**（划线）或 **Comment**（评论），设置颜色、按需输入评论后保存。点击标记或使用 **Annotations** 列表编辑、删除；列表按原文顺序排列。
+- **边读边批注**：选中文字，使用 OCR 旁（EPUB 显示设置旁）固定工具栏中的 **Highlight**（高亮）、**Underline**（划线）或 **Comment**（评论），设置颜色、按需输入评论后保存。点击标记或使用 **Annotations** 列表编辑、删除；**Annotations** 位于 **Pages / Contents** 旁；紧凑列表按原文顺序排列，**Edit** 位于类型、颜色同行，删除操作在编辑窗口内。
 - **独立本地保存**：批注保存在 **Data/Library/Annotations**，不改写 PDF／EPUB 原件。PDF 保存实际文件页码及页内相对位置；EPUB 保存章节及文字锚点。在 Library 内改名、移动后保留批注。更换原文件后，旧批注仍保留并提示版本变化，不把旧位置套用到新文字上。
 - **导出为 Note**：可导出全部或勾选的批注，生成含原文摘录、评论、位置和 **Return to original** 返回链接的普通可编辑 Note。PDF 使用实际文件页码，可能与印刷页码不同；返回链接在 LanCarbon 内使用。导出是快照；发现已有导出笔记时会提醒，重复导出创建新 Note，不覆盖用户修改。
 - **翻译快捷键提示**：浮窗显示 **Continuous translation (Z)**；PDF 选区后可按 Z 切换连续翻译。
