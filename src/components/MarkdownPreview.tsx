@@ -62,6 +62,8 @@ export function MarkdownPreview(props: MarkdownPreviewProps) {
         const link = (event.target as HTMLElement).closest("a");
         if (!link) return;
         event.preventDefault();
+        const documentId = link.getAttribute("data-reader-id"), annotationId = link.getAttribute("data-annotation-id");
+        if (documentId && annotationId) { window.dispatchEvent(new CustomEvent("lancarbon:open-pdf", { detail: { id: documentId, annotationId } })); return; }
         const resource = link.getAttribute("data-asset-id");
         if (resource && window.notesDesktop?.assets) { void (async () => { const result = await window.notesDesktop.assets!.list(); if (!result.ok) throw Error(result.error); const asset = result.assets.find(asset => asset.id === resource); if (asset && /\.(pdf|epub)$/i.test(asset.name) && window.notesDesktop.reader) { requestPdfReading(resource); return; } const saved = await window.notesDesktop.assets!.saveCopy(resource); if (!saved.ok) throw Error(saved.error); })().catch(error => setLinkMessage(error.message)); return; }
         const noteId = link.getAttribute("data-preview-note");

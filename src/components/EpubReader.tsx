@@ -1,10 +1,12 @@
+import { ReaderAnnotations, type AnnotationReaderProps } from "./ReaderAnnotations";
 import type { CitationTarget } from "../shared/grounding";
 import { useEffect, useMemo, useRef, useState } from "react";
 import DOMPurify from "dompurify";
 import type { EpubPosition, EpubSession, EpubMatch } from "../shared/epubReader";
 import { ThemedSelect } from "./ThemedSelect";
 
-export function EpubReader({id,citation}:{id:string;citation?:CitationTarget}) {
+export function EpubReader({id,citation,...annotationProps}:{id:string;citation?:CitationTarget} & AnnotationReaderProps) {
+  const root=useRef<HTMLElement>(null);
   const api=window.notesDesktop.epub!,viewport=useRef<HTMLDivElement>(null),prose=useRef<HTMLDivElement>(null),searchInput=useRef<HTMLInputElement>(null);
   const current=useRef<EpubSession|null>(null),position=useRef<EpubPosition|null>(null),timer=useRef<ReturnType<typeof setTimeout>|undefined>(undefined),restoring=useRef(true),pendingAnchor=useRef(""),pendingMatch=useRef<number|null>(null);
   const [session,setSession]=useState<EpubSession>(),[chapter,setChapter]=useState(0),[html,setHtml]=useState(""),[busy,setBusy]=useState(true),[error,setError]=useState(""),[notice,setNotice]=useState("");
@@ -53,7 +55,8 @@ export function EpubReader({id,citation}:{id:string;citation?:CitationTarget}) {
     return wrapper.innerHTML;
   },[html,htmlChapter,chapter,session?.token,citation?.requestId]);
   const scroll=()=>{if(restoring.current||!position.current||!viewport.current)return;const view=viewport.current;position.current={...position.current,progress:Math.max(0,Math.min(1,view.scrollTop/Math.max(1,view.scrollHeight-view.clientHeight)))};clearTimeout(timer.current);timer.current=setTimeout(()=>void persist().catch(error=>setNotice(error.message)),500);};
-  return <section className="editor-panel document-reader epub-reader" aria-label="EPUB reader">
+  return <section ref={root} className="editor-panel document-reader epub-reader" aria-label="EPUB reader">
+    {session && <ReaderAnnotations {...annotationProps} key={session.token} root={root} documentId={session.readingId} fingerprint={session.fingerprint} chapter={htmlChapter === chapter ? {...session.chapters[chapter], index:chapter} : undefined} navigate={a => { if(a.anchor.kind === "epub") { const anchor=a.anchor; const index=session.chapters.findIndex(item=>item.path===anchor.chapter); if(index>=0) move(index); } }}/>}
 
     <div className="pdf-reader-controls epub-controls" data-translation-exclude>
       <button className="toolbar-text-button" aria-pressed={sidebar} onClick={()=>setSidebar(value=>!value)}>Contents</button><button className="toolbar-text-button" aria-label="Previous EPUB chapter" disabled={!session||chapter===0||busy} onClick={()=>move(chapter-1)}>‹</button><span>{session?`${chapter+1} / ${session.chapters.length}`:"—"}</span><button className="toolbar-text-button" aria-label="Next EPUB chapter" disabled={!session||chapter>=session.chapters.length-1||busy} onClick={()=>move(chapter+1)}>›</button>

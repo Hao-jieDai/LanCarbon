@@ -1,7 +1,7 @@
 import { epubPassages } from "../src/shared/epubPassages";
 import { promises as fs } from "node:fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { inflateRawSync } from "node:zlib";
 import { DOMParser, XMLSerializer } from "@xmldom/xmldom";
 import type { LibraryStore } from "./library";
@@ -70,7 +70,7 @@ export class EpubReaderStore {
       if(!chapters.length||chapters.length>3000)throw Error("This EPUB has no readable chapters or exceeds the 3,000-chapter limit.");
       const toc:EpubSession["toc"]=[],nav=[...items.values()].find(item=>item.properties.split(/\s+/).includes("nav")),ncx=[...items.values()].find(item=>item.type==="application/x-dtbncx+xml");
       if(nav||ncx){const source=nav??ncx!,doc=xml(archive.read(source.file,2*MiB));const links=nav?elements(doc,"a").filter(element=>{let parent:Element|null=element.parentNode as Element;while(parent?.nodeType===1){if(parent.localName==="nav")return(parent.getAttribute("epub:type")??parent.getAttribute("type")??"toc").split(/\s+/).includes("toc");parent=parent.parentNode as Element;}return false;}):elements(doc,"navPoint");for(const link of links.slice(0,5000)){const href=nav?link.getAttribute("href"):elements(link,"content")[0]?.getAttribute("src"),dest=href?target(source.file,href):undefined,chapter=dest?chapters.findIndex(item=>item.path===dest.file):-1;if(chapter<0||!dest)continue;const title=(nav?link.textContent:elements(link,"text")[0]?.textContent)?.trim().slice(0,200)||chapters[chapter].title;let depth=0,parent=link.parentNode;while(parent&&parent!==doc.documentElement){if((parent as Element).localName===(nav?"ol":"navPoint"))depth++;parent=parent.parentNode;}toc.push({title,chapter,anchor:dest.anchor,depth:Math.min(7,Math.max(0,depth-(nav?1:0)))});if(!toc.some(item=>item!==toc.at(-1)&&item.chapter===chapter))chapters[chapter].title=title;}}
-      const readingId=entry.documentId??entry.id,positions=await this.positions(),session:EpubSession={token:randomUUID(),readingId,entry,title:elements(opf,"title")[0]?.textContent?.trim().slice(0,300)||entry.name,chapters,toc,position:positions[readingId]};
+      const readingId=entry.documentId??entry.id,positions=await this.positions(),session:EpubSession={token:randomUUID(),fingerprint:createHash("sha256").update(bytes).digest("hex"),readingId,entry,title:elements(opf,"title")[0]?.textContent?.trim().slice(0,300)||entry.name,chapters,toc,position:positions[readingId]};
       this.grant={archive,session,media};return session;
     });this.queue=action.catch(()=>undefined);return action;
   }

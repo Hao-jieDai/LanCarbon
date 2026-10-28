@@ -1,7 +1,7 @@
 import type { LibraryEntry } from "./library";
 import type { OcrPage, OcrStats } from "./ocr";
 export interface ReadingPosition { page: number; zoom: string; x: number; y: number; updatedAt?: string }
-export interface PdfSession { token: string; entry: LibraryEntry; readingId: string; length: number; initial: Uint8Array; position?: ReadingPosition }
+export interface PdfSession { token: string; fingerprint: string; entry: LibraryEntry; readingId: string; length: number; initial: Uint8Array; position?: ReadingPosition }
 export type ReaderResult<T> = ({ ok: true } & T) | { ok: false; error: string };
 export interface PdfReaderApi {
   open(id: string): Promise<ReaderResult<{ session: PdfSession }>>;

@@ -23,7 +23,7 @@ export class PdfReaderStore {
     if (entry.format !== "pdf") throw Error("Choose a PDF document.");
     const readingId = entry.documentId ?? entry.id, positions = await this.positions(), token = randomUUID();
     this.grant = { token, bytes, fingerprint: createHash("sha256").update(bytes).digest("hex"), fileIds: [entry.id, ...(entry.assetId ? [entry.assetId] : [])] }; // One immutable open-document snapshot; released when the reader closes.
-    return { token, readingId, entry, length: bytes.length, initial: Uint8Array.from(bytes.subarray(0, 65536)), position: positions[readingId] };
+    return { token, fingerprint: this.grant.fingerprint, readingId, entry, length: bytes.length, initial: Uint8Array.from(bytes.subarray(0, 65536)), position: positions[readingId] };
     }); this.queue = action.catch(() => undefined); return action;
   }
   range(token: string, begin: number, end: number): Uint8Array {

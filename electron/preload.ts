@@ -16,6 +16,12 @@ const api: NotesDesktopApi = {
     search: (text, ids, limit) => ipcRenderer.invoke("retrieval:search", text, ids, limit),
     onChanged: callback => { const listener = () => callback(); ipcRenderer.on("retrieval:changed", listener); return () => ipcRenderer.removeListener("retrieval:changed", listener); }
   },
+  annotations: {
+    list: id => ipcRenderer.invoke("annotations:list", id),
+    save: (id, draft, annotationId) => ipcRenderer.invoke("annotations:save", id, draft, annotationId),
+    remove: (id, annotationId) => ipcRenderer.invoke("annotations:remove", id, annotationId),
+    exportNote: (id, selected) => ipcRenderer.invoke("annotations:export", id, selected)
+  },
   epub: {
     open: id => ipcRenderer.invoke("epub:open", id),
     chapter: (token, index) => ipcRenderer.invoke("epub:chapter", token, index),

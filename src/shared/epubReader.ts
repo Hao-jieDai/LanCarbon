@@ -3,7 +3,7 @@ import type { ReaderResult } from "./pdfReader";
 export interface EpubPosition { chapter: string; progress: number; fontSize: number; lineHeight: number; width: number; updatedAt?: string }
 export interface EpubChapter { path: string; title: string }
 export interface EpubToc { title: string; chapter: number; anchor: string; depth: number }
-export interface EpubSession { token: string; readingId: string; entry: LibraryEntry; title: string; chapters: EpubChapter[]; toc: EpubToc[]; position?: EpubPosition }
+export interface EpubSession { token: string; fingerprint: string; readingId: string; entry: LibraryEntry; title: string; chapters: EpubChapter[]; toc: EpubToc[]; position?: EpubPosition }
 export interface EpubMatch { chapter: number; excerpt: string; occurrence: number }
 export interface EpubReaderApi {
   open(id: string): Promise<ReaderResult<{ session: EpubSession }>>;

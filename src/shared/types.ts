@@ -4,6 +4,7 @@ export type WorkspaceSortOrder = "updated" | "created" | "title";
 export type SaveState = "saved" | "saving" | "error";
 
 export interface Note {
+  annotationSourceId?: string;
   id: string;
   title: string;
   content: string;
@@ -171,6 +172,7 @@ export interface WindowPreferences {
 }
 
 export interface NotesDesktopApi {
+  annotations?: import("./annotations").AnnotationApi;
   reader?: import("./pdfReader").PdfReaderApi;
   epub?: import("./epubReader").EpubReaderApi;
   library?: import("./library").LibraryDesktopApi;

@@ -1,3 +1,4 @@
+import { parseAnnotationLink } from "../shared/annotations";
 import DOMPurify from "dompurify";
 import katex from "katex";
 import { all, defaultHandlers, type Handler } from "mdast-util-to-hast";
@@ -165,6 +166,8 @@ export function renderMystPreview(current: PreviewDocument, documents: PreviewDo
       if (typeof url === "string" && /^#[a-zA-Z][\w-]{0,200}$/.test(url) && current.navigationAnchors?.includes(url.slice(1))) {
         node.type = "previewNavigationLink"; node.url = url; return;
       }
+      const annotation = parseAnnotationLink(url);
+      if (annotation) { node.type = "previewAnnotationLink"; node.annotation = annotation; return; }
       const resource = typeof url === "string" && assetId(url);
       if (resource) {
         if (assets[resource]) { node.type = "previewAssetLink"; node.assetId = resource; }
@@ -222,6 +225,7 @@ export function renderMystPreview(current: PreviewDocument, documents: PreviewDo
         // MyST stores alignment on cells, while the mdast handler expects a
         // column array on the table. Preserve it through HTML sanitization.
         table: (h, node) => defaultHandlers.table(h, { ...node, align: node.children?.[0]?.children?.map((cell: GenericNode) => ["left", "center", "right"].includes(cell.align) ? cell.align : null) }),
+        previewAnnotationLink: (h, node) => h(node, "a", { href: "#", "data-reader-id": node.annotation.documentId, "data-annotation-id": node.annotation.annotationId }, all(h, node)),
         previewReference: (h, node) => h(node, "a", { href: `#${node.previewTarget.anchor}`, "data-preview-note": node.previewTarget.documentId, "data-preview-anchor": node.previewTarget.anchor }, all(h, node)),
         previewNavigationLink: (h, node) => h(node, "a", { href: node.url }, all(h, node)),
         previewMissingReference: (h, node) => h(node, "span", { className: "preview-unresolved", title: "Reference could not be resolved in this Book" }, all(h, node)),

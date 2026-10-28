@@ -13,19 +13,20 @@
 
 LanCarbon is a Windows desktop application that combines local writing and document reading with AI assistance. Keep original material in **Library**, explore it in **Workshop**, write your own **Notes**, and organize longer work as **Books**. Books can also become local websites or be published to GitHub Pages.
 
-### What's new in 2.5.2
+### What's new in 2.5.3
 
-This update improves PDF selection and search alignment, adds continuous selection translation, and provides a personal To do note.
+This update adds local PDF and EPUB annotations and reading-note exports.
 
-- **PDF reading:** text selection and search highlights now use the same page dimensions as the visible PDF at different zoom levels.
-- **Continuous translation:** select the first passage, then check **Continuous translation** in the floating panel. In a PDF, **Z** also toggles the mode after selection. Select the continuation on the next page to translate the combined original. **New passage** clears the accumulated text; unchecking restores ordinary selection translation. Switching documents clears the passage and turns continuous mode off. The combined text remains limited to 1,600 characters or 250 words. Each accepted addition requests a translation of the combined text; matching cached results can be reused.
-- **Personal To do:** new and existing users receive a pinned **To do** note. Use its checklist to add and check tasks, or edit Markdown task lines such as `- [ ] Read the paper`. Renaming, editing or unpinning it is preserved across upgrades. Deleting it allows a fresh default To do to be created on the next start; it does not restore deleted tasks.
+- **Annotate while reading:** select text and choose **Highlight**, **Underline** or **Comment**. Choose a color, add an optional comment, and save. Click a mark or use **Annotations** to edit or delete it. The list follows document order.
+- **Reliable local storage:** annotations are saved separately under **Data/Library/Annotations**, leaving original files unchanged. PDF locations use file pages and page-relative positions; EPUB locations use chapters and text anchors. Renaming or moving a document within Library preserves its annotations. A changed original keeps earlier annotations with a version warning instead of applying old locations to new text.
+- **Export to Note:** export all or selected annotations into a new editable Note containing original excerpts, comments, locations and **Return to original** links. PDF locations use actual file page numbers, which may differ from printed page labels. Return links work inside LanCarbon. Exports are snapshots; re-exporting warns when an existing exported Note is found and creates a new Note without overwriting your edits.
+- **Translation shortcut hint:** the floating panel now shows **Continuous translation (Z)**; Z toggles continuous mode after a PDF selection.
 
-Your Notes, Books, model settings and chat history are retained. The system ReadMe and tutorial synchronize with the app. To do is personal content and is not overwritten by tutorial synchronization. PDF/EPUB annotations, multi-tab writing and the writing-side AI panel are planned separately. Automated paper discovery and collection expansion are not available yet.
+Your Notes, Books, model settings and chat history are retained. The system ReadMe and tutorial synchronize with the app. Annotated PDF/EPUB file export, multi-tab writing and the writing-side AI panel are not included. Automated paper discovery and collection expansion are not available yet.
 
 ### Download and get started
 
-Download **LanCarbon-2.5.2-x64-Setup.exe** from its Release when available. Until this update is published, the latest-release link points to the currently published version. GitHub's Source code archives are for developers, not the Windows installer.
+Download **LanCarbon-2.5.3-x64-Setup.exe** from its Release when available. Until this update is published, the latest-release link points to the currently published version. GitHub's Source code archives are for developers, not the Windows installer.
 
 The installer is not digitally signed; Windows may show an Unknown publisher or SmartScreen notice. Close LanCarbon before upgrading; the installer reuses the existing installation location. Keep a data backup and a working installer for recovery.
 
@@ -62,19 +63,20 @@ Report reproducible problems through [GitHub Issues](https://github.com/Hao-jieD
 
 LanCarbon 是一款将本地写作、文档阅读与 AI 辅助结合起来的 Windows 桌面软件。用 **Library** 保存原始资料，在 **Workshop** 中理解和处理内容，用 **Notes** 记录自己的想法，再通过 **Books** 组织长期写作。Book 也可以构建成本地网站或发布到 GitHub Pages。
 
-### 2.5.2 的主要更新
+### 2.5.3 的主要更新
 
-本次更新修正 PDF 文字选取与搜索高亮的位置，增加连续选区翻译，并提供个人 To do 待办笔记。
+本次更新提供 PDF／EPUB 本地批注，以及批注导出为阅读笔记的完整流程。
 
-- **PDF 阅读**：文字选区与搜索高亮使用和可见 PDF 相同的页面尺寸，在不同缩放比例下保持对应。
-- **连续翻译**：先选第一段原文，再勾选浮窗中的 **Continuous translation**；在 PDF 中选取后也可按 **Z** 切换此模式。选取下一页的后续文字后，合并原文并整体翻译。**New passage** 清空累计内容；取消勾选恢复普通选区翻译。切换文档时清空累计内容并关闭连续模式。合并后仍限 1,600 个字符或 250 个词。每次有效追加都会请求翻译合并原文；命中缓存时可复用已有译文。
-- **个人 To do**：新用户和升级用户都会获得一个置顶 **To do** 笔记。可通过清单添加和勾选任务，也可编辑 `- [ ] 阅读论文` 等 Markdown 任务行。改名、正文修改和取消置顶会在升级时保留。删除后下次启动会创建新的默认 To do，但不会恢复已删除任务。
+- **边读边批注**：选中文字，选择 **Highlight**（高亮）、**Underline**（划线）或 **Comment**（评论），设置颜色、按需输入评论后保存。点击标记或使用 **Annotations** 列表编辑、删除；列表按原文顺序排列。
+- **独立本地保存**：批注保存在 **Data/Library/Annotations**，不改写 PDF／EPUB 原件。PDF 保存实际文件页码及页内相对位置；EPUB 保存章节及文字锚点。在 Library 内改名、移动后保留批注。更换原文件后，旧批注仍保留并提示版本变化，不把旧位置套用到新文字上。
+- **导出为 Note**：可导出全部或勾选的批注，生成含原文摘录、评论、位置和 **Return to original** 返回链接的普通可编辑 Note。PDF 使用实际文件页码，可能与印刷页码不同；返回链接在 LanCarbon 内使用。导出是快照；发现已有导出笔记时会提醒，重复导出创建新 Note，不覆盖用户修改。
+- **翻译快捷键提示**：浮窗显示 **Continuous translation (Z)**；PDF 选区后可按 Z 切换连续翻译。
 
-升级保留 Notes、Books、模型设置和聊天记录。系统 ReadMe 与教程随软件同步；To do 属于个人内容，不会被教程同步覆盖。PDF／EPUB 批注、多标签写作和写作侧栏 AI 将另行更新；自动文献发现与文献库自拓展尚未开放。
+升级保留 Notes、Books、模型设置和聊天记录，系统 ReadMe 与教程随软件同步。本次不包含带批注 PDF／EPUB 文件导出、多标签写作和写作侧栏 AI；自动文献发现与文献库自拓展尚未开放。
 
 ### 下载与开始使用
 
-本版本发布后，请从对应 Release 下载 **LanCarbon-2.5.2-x64-Setup.exe**。发布前，最新版本链接仍指向当前已公开版本。GitHub 的 Source code 压缩包面向开发者，不是 Windows 安装程序。
+本版本发布后，请从对应 Release 下载 **LanCarbon-2.5.3-x64-Setup.exe**。发布前，最新版本链接仍指向当前已公开版本。GitHub 的 Source code 压缩包面向开发者，不是 Windows 安装程序。
 
 安装包尚未进行数字签名，Windows 可能显示“未知发布者”或 SmartScreen 提醒。升级前关闭 LanCarbon；安装程序沿用原有安装位置。请保留数据备份和可用安装包以便恢复。
 

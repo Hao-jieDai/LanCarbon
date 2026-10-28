@@ -1186,3 +1186,39 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 @media(max-width:800px) { .chat-source-filters { grid-template-columns:1fr 1fr; } .chat-source-filters > input { grid-column:1/-1; } }
 .translation-progress { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .translation-progress p { margin: 8px 0; }
+.document-reader { position: relative; }
+.reader-annotation-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding: 4px 14px; border-bottom: 1px solid var(--line); flex-shrink: 0; font-size: 12px; }
+.reader-annotation-heading > span { color: var(--muted); }
+.reader-annotation-heading > strong { color: var(--accent); }
+.reader-annotation-ui button { color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; cursor: pointer; }
+.reader-annotation-ui button:hover:not(:disabled) { background: var(--surface-hover); }
+.reader-annotation-ui button:disabled { opacity: .5; cursor: default; }
+.reader-selection-toolbar { position: fixed; z-index: 110; display: flex; gap: 4px; padding: 5px; background: var(--surface); border: 1px solid var(--line); border-radius: 9px; box-shadow: 0 5px 20px #0003; }
+.reader-annotation-panel { position: absolute; top: 85px; bottom: 34px; right: 10px; z-index: 20; width: min(350px, calc(100% - 20px)); display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); box-shadow: 0 6px 28px #0003; overflow: hidden; }
+.reader-annotation-panel > header { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-bottom: 1px solid var(--line); }
+.reader-annotation-actions { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 0; }
+.reader-annotation-panel > .reader-annotation-actions { padding: 10px 12px 0; }
+.reader-annotation-help { padding: 0 12px; font-size: 12px; color: var(--muted); }
+.reader-annotation-list { overflow: auto; padding: 0 12px 12px; }
+.reader-annotation-list article { padding: 14px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+.reader-annotation-list article.selected { border-top-color: var(--accent); }
+.reader-annotation-list label { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.reader-annotation-location { margin-top: 8px; text-align: left; width: 100%; }
+.reader-annotation-list blockquote, .reader-annotation-dialog blockquote { margin: 12px 0; border-left: 3px solid var(--accent); padding: 4px 12px; white-space: pre-wrap; line-height: 1.6; max-height: 160px; overflow: auto; }
+.reader-annotation-comment { white-space: pre-wrap; }
+.reader-annotation-stale { font-size: 12px; color: var(--accent); }
+.reader-annotation-error { padding: 8px 14px; display: flex; align-items: center; gap: 12px; font-size: 13px; color: var(--ink); background: var(--surface); }
+.reader-annotation-error button { margin-left: auto; }
+.reader-annotation-dialog { width: min(580px, calc(100vw - 40px)); max-height: calc(100vh - 50px); overflow: auto; padding: 24px; border: 1px solid var(--line); border-radius: 14px; background: var(--paper); color: var(--ink); box-shadow: 0 16px 60px #0005; }
+.reader-annotation-dialog h2 { margin-top: 0; }
+.reader-annotation-dialog label { display: flex; flex-direction: column; gap: 6px; margin: 12px 0; }
+.reader-annotation-dialog select, .reader-annotation-dialog textarea { border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 8px; border-radius: 6px; font: inherit; }
+.reader-annotation-dialog textarea { min-height: 120px; resize: vertical; }
+.epub-prose { position: relative; }
+.reader-annotation-layer { position: absolute; inset: 0; pointer-events: none; user-select: none; z-index: 1; }
+.reader-annotation-mark { position: absolute; pointer-events: none; opacity: .32; }
+.reader-annotation-mark.underline { border-bottom: 2px solid; opacity: .9; }
+.reader-annotation-mark.comment { border-bottom: 2px dotted; opacity: .9; }
+.reader-annotation-mark.focused { outline: 1px solid var(--accent); }
+
+.modal-backdrop.reader-annotation-ui { z-index: 120; }

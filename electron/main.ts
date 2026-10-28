@@ -45,6 +45,7 @@ import { AIClient, redactAIError } from "./ai-client";
 import { AIService } from "./ai-service";
 import { PaperQAGrounder } from "./paperqa-grounding";
 import { paperQACompiler } from "./paperqa-bridge";
+import { AnnotationStore } from "./annotations";
 import { PdfReaderStore } from "./pdf-reader";
 import { EpubReaderStore } from "./epub-reader";
 import { AIBalanceStore } from "./ai-balances";
@@ -300,6 +301,8 @@ app.whenReady().then(async () => {
     }
     return libraryManager;
   };
+  const annotationStores = new Map<string, AnnotationStore>();
+  const annotations = () => { let value = annotationStores.get(dataDirectory); if (!value) { value = new AnnotationStore(dataDirectory, libraryStore()); annotationStores.set(dataDirectory, value); } return value; };
   const readerStores = new Map<string, PdfReaderStore>();
   const epubStores = new Map<string, EpubReaderStore>();
   const epub = () => { let value = epubStores.get(dataDirectory); if (!value) { value = new EpubReaderStore(dataDirectory, libraryStore()); epubStores.set(dataDirectory, value); } return value; };
@@ -391,6 +394,14 @@ app.whenReady().then(async () => {
     return result;
   };
   const assetError = (error: unknown) => ({ ok: false, canceled: error instanceof Error && error.message === "Import canceled", error: error instanceof Error ? error.message : "Resource operation failed", ...(error instanceof LibraryNameConflict ? { suggestedName: error.suggestedName } : {}) });
+  aiHandler("annotations:list", async (id: string) => { await syncEdits(); return annotations().list(id, store); });
+  aiHandler("annotations:save", async (id: string, draft: import("../src/shared/annotations").AnnotationDraft, annotationId?: string) => { await syncEdits(); return annotations().save(id, draft, annotationId); });
+  aiHandler("annotations:remove", async (id: string, annotationId: string) => { await annotations().remove(id, annotationId); return {}; });
+  aiHandler("annotations:export", async (id: string, selected?: string[]) => {
+    const target = annotations(), targetStore = store, targetData = dataDirectory;
+    const work = noteExports.catch(() => undefined).then(() => target.exportNote(id, selected, targetStore));
+    noteExports = work.catch(() => undefined); const result = await work; knowledgeStores.get(targetData)?.requestRefresh(); return result;
+  });
   aiHandler("reader:open", async (id: string) => { await stopReaderOcr(); await syncEdits(); return { session: await reader().open(id) }; });
   aiHandler("epub:open", async (id: string) => { await syncEdits(); return { session: await epub().open(id) }; });
   aiHandler("epub:chapter", async (token: string, index: number) => ({ html: epub().chapter(token, index) }));

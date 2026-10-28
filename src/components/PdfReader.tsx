@@ -1,3 +1,4 @@
+import { ReaderAnnotations, type AnnotationReaderProps } from "./ReaderAnnotations";
 import type { CitationTarget } from "../shared/grounding";
 import { useEffect, useRef, useState } from "react";
 import * as pdfjs from "pdfjs-dist";
@@ -33,7 +34,8 @@ function OutlineItems({ items, link, depth = 0 }: { items: NonNullable<Outline>;
   if (depth > 12) return null;
   return <ul>{items.map((item, index) => <li key={index}><button disabled={!item.dest} onClick={() => { if (item.dest) void link.goToDestination(item.dest); }}>{item.title || "Untitled section"}</button>{!!item.items.length && <OutlineItems items={item.items} link={link} depth={depth + 1}/>}</li>)}</ul>;
 }
-export function PdfReader({ id, onClose, citation }: { id: string; onClose(): void; citation?: CitationTarget }) {
+export function PdfReader({ id, onClose, citation, ...annotationProps }: { id: string; onClose(): void; citation?: CitationTarget } & AnnotationReaderProps) {
+  const root = useRef<HTMLElement>(null);
   const api = window.notesDesktop.reader!;
   const container = useRef<HTMLDivElement>(null), pages = useRef<HTMLDivElement>(null), searchInput = useRef<HTMLInputElement>(null);
   const engine = useRef<{ viewer: PDFViewer; link: PDFLinkService; bus: EventBus; document: pdfjs.PDFDocumentProxy } | null>(null);
@@ -155,7 +157,8 @@ export function PdfReader({ id, onClose, citation }: { id: string; onClose(): vo
   const close = () => { void persist().catch(() => undefined).finally(onClose); };
   const zoomOptions = [{ value: "page-width", label: "Fit width" }, { value: "page-fit", label: "Fit page" }, ...[0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4].map(value => ({ value: String(value), label: `${Math.round(value * 100)}%` }))];
   if (!zoomOptions.some(option => option.value === zoom)) zoomOptions.push({ value: zoom, label: `${Math.round(Number(zoom) * 100)}%` });
-  return <section className="editor-panel document-reader pdf-reader" aria-label="PDF reader">
+  return <section ref={root} className="editor-panel document-reader pdf-reader" aria-label="PDF reader">
+    {session && ready && <ReaderAnnotations {...annotationProps} key={session.token} root={root} documentId={session.readingId} fingerprint={session.fingerprint} navigate={a => { if (a.anchor.kind === "pdf") jump(Math.min(...a.anchor.rects.map(r => r.page))); }}/>}
 
     <div className="pdf-reader-controls" data-translation-exclude>
       <button className="toolbar-text-button" aria-pressed={sidebar !== "hidden"} onClick={() => setSidebar(value => value === "hidden" ? "pages" : "hidden")}>Pages / Contents</button>
