@@ -32,7 +32,7 @@ describe("workspace navigation preferences", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Beta/ }));
     fireEvent.change(screen.getByLabelText("Sort Notes"), { target: { value: "title" } });
     const titles = () => [...document.querySelectorAll(".note-card h3")].map(item => item.textContent);
-    expect(titles()).toEqual(["ReadMe", "Alpha", "Beta"]);
+    expect(titles()).toEqual(["ReadMe", "To do", "Alpha", "Beta"]);
     expect(screen.getByLabelText("Note title")).toHaveValue("Beta");
     fireEvent.keyDown(document, { key: "q", ctrlKey: true });
     expect(screen.getByRole("button", { name: "Books" })).toHaveAttribute("aria-pressed", "true");

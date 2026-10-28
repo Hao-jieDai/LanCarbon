@@ -13,23 +13,19 @@
 
 LanCarbon is a Windows desktop application that combines local writing and document reading with AI assistance. Keep original material in **Library**, explore it in **Workshop**, write your own **Notes**, and organize longer work as **Books**. Books can also become local websites or be published to GitHub Pages.
 
-### What's new in 2.5.1
+### What's new in 2.5.2
 
-This update brings the writing and publishing tools of 1.1.4 together with document management, reading and knowledge-library questions.
+This update improves PDF selection and search alignment, adds continuous selection translation, and provides a personal To do note.
 
-- **Library:** import PDF/EPUB documents, organize folders, handle duplicates, keep file versions and manage writing attachments. Rename, move and inspect references; use batch selection to move, export or delete files.
-- **Built-in reading:** read PDF and EPUB inside LanCarbon, use document outlines and search, keep reading positions and switch between up to ten open documents. Local English/Chinese OCR makes scanned PDF pages selectable and searchable.
-- **Workshop and AI Chat:** configure SiliconFlow, OpenRouter, DeepSeek or other compatible services and choose saved models for conversations. Set shared response guidelines, view available Thinking, and export conversations to PDF or editable Notes.
-- **Selection translation:** translate English words, phrases and short passages while writing or reading. Reuse a saved model or configure an independent translation connection; enable translation only when needed.
-- **Knowledge-library questions:** choose Library documents, Notes and Book pages as sources, ask follow-up questions or compare documents, then follow citations back to the original. Current full-text questions use the selected Chat model without requiring Embedding or Rerank setup.
-- **Usage and costs:** review tokens, request history and activity heatmaps; configure model prices, a reference exchange rate and estimated account balances. Group connections that share the same billed account.
-- **A reorganized tutorial:** *LanCarbon: From 0 to 1* provides separate Library and Workshop chapters, current screenshots, and consistent instructions for writing, publishing, reading and knowledge-library work.
+- **PDF reading:** text selection and search highlights now use the same page dimensions as the visible PDF at different zoom levels.
+- **Continuous translation:** select the first passage, then check **Continuous translation** in the floating panel. In a PDF, **Z** also toggles the mode after selection. Select the continuation on the next page to translate the combined original. **New passage** clears the accumulated text; unchecking restores ordinary selection translation. Switching documents clears the passage and turns continuous mode off. The combined text remains limited to 1,600 characters or 250 words. Each accepted addition requests a translation of the combined text; matching cached results can be reused.
+- **Personal To do:** new and existing users receive a pinned **To do** note. Use its checklist to add and check tasks, or edit Markdown task lines such as `- [ ] Read the paper`. Renaming, editing or unpinning it is preserved across upgrades. Deleting it allows a fresh default To do to be created on the next start; it does not restore deleted tasks.
 
-Notes, Books, existing model settings and chat history are retained on upgrade. Automated paper discovery and collection expansion are not available yet. Document questions support reading and comparison; check important figures, formulas and interpretations against the linked originals before using them in research.
+Your Notes, Books, model settings and chat history are retained. The system ReadMe and tutorial synchronize with the app. To do is personal content and is not overwritten by tutorial synchronization. PDF/EPUB annotations, multi-tab writing and the writing-side AI panel are planned separately. Automated paper discovery and collection expansion are not available yet.
 
 ### Download and get started
 
-Download **LanCarbon-2.5.1-x64-Setup.exe** from its Release when available. Until this update is published, the latest-release link points to the currently published version. GitHub's Source code archives are for developers, not the Windows installer.
+Download **LanCarbon-2.5.2-x64-Setup.exe** from its Release when available. Until this update is published, the latest-release link points to the currently published version. GitHub's Source code archives are for developers, not the Windows installer.
 
 The installer is not digitally signed; Windows may show an Unknown publisher or SmartScreen notice. Close LanCarbon before upgrading; the installer reuses the existing installation location. Keep a data backup and a working installer for recovery.
 
@@ -66,23 +62,19 @@ Report reproducible problems through [GitHub Issues](https://github.com/Hao-jieD
 
 LanCarbon 是一款将本地写作、文档阅读与 AI 辅助结合起来的 Windows 桌面软件。用 **Library** 保存原始资料，在 **Workshop** 中理解和处理内容，用 **Notes** 记录自己的想法，再通过 **Books** 组织长期写作。Book 也可以构建成本地网站或发布到 GitHub Pages。
 
-### 2.5.1 的主要更新
+### 2.5.2 的主要更新
 
-本次更新在 1.1.4 的写作与发布功能基础上，加入资料管理、文档阅读和个人知识库问答。
+本次更新修正 PDF 文字选取与搜索高亮的位置，增加连续选区翻译，并提供个人 To do 待办笔记。
 
-- **Library 资料管理：**导入 PDF／EPUB、组织文件夹、处理重复文件、保存版本并管理写作附件。支持改名、移动、查看引用，以及批量移动、导出和删除。
-- **内置阅读：**直接阅读 PDF 和 EPUB，使用目录与搜索，保留阅读进度，最多切换十个打开的文档。本地中英文 OCR 让扫描 PDF 的文字可以选取和搜索。
-- **Workshop 与 AI Chat：**配置 SiliconFlow、OpenRouter、DeepSeek 或其他兼容服务，为对话选择已保存的模型。支持共用回答规范、查看模型返回的 Thinking，以及导出 PDF 或可编辑 Note。
-- **划词翻译：**在写作和阅读时翻译英文单词、词组或短段落。可以复用已有模型或独立配置翻译连接，按需开启。
-- **个人知识库问答：**选择 Library 文档、Notes 和 Book 页面作为来源，继续追问或比较多份文档，并通过引用返回原文。当前全文问答使用选定的 Chat 模型，不要求先配置 Embedding 或 Rerank。
-- **用量与费用：**查看 Token、请求历史和活动热力图，设置模型价格、参考汇率和估算账户余额。实际共用一个计费账户的连接可以合并统计余额。
-- **重新组织的教程：***LanCarbon: From 0 to 1* 分设 Library 和 Workshop 章节，更新截图，并以统一的写法介绍写作、发布、阅读与知识库操作。
+- **PDF 阅读**：文字选区与搜索高亮使用和可见 PDF 相同的页面尺寸，在不同缩放比例下保持对应。
+- **连续翻译**：先选第一段原文，再勾选浮窗中的 **Continuous translation**；在 PDF 中选取后也可按 **Z** 切换此模式。选取下一页的后续文字后，合并原文并整体翻译。**New passage** 清空累计内容；取消勾选恢复普通选区翻译。切换文档时清空累计内容并关闭连续模式。合并后仍限 1,600 个字符或 250 个词。每次有效追加都会请求翻译合并原文；命中缓存时可复用已有译文。
+- **个人 To do**：新用户和升级用户都会获得一个置顶 **To do** 笔记。可通过清单添加和勾选任务，也可编辑 `- [ ] 阅读论文` 等 Markdown 任务行。改名、正文修改和取消置顶会在升级时保留。删除后下次启动会创建新的默认 To do，但不会恢复已删除任务。
 
-升级保留 Notes、Books、已有模型配置和聊天记录。自动文献发现与资料库自动拓展尚未开放。资料问答用于辅助阅读和比较；用于研究前，请通过原文核对重要数字、公式与解释。
+升级保留 Notes、Books、模型设置和聊天记录。系统 ReadMe 与教程随软件同步；To do 属于个人内容，不会被教程同步覆盖。PDF／EPUB 批注、多标签写作和写作侧栏 AI 将另行更新；自动文献发现与文献库自拓展尚未开放。
 
 ### 下载与开始使用
 
-本版本发布后，请从对应 Release 下载 **LanCarbon-2.5.1-x64-Setup.exe**。发布前，最新版本链接仍指向当前已公开版本。GitHub 的 Source code 压缩包面向开发者，不是 Windows 安装程序。
+本版本发布后，请从对应 Release 下载 **LanCarbon-2.5.2-x64-Setup.exe**。发布前，最新版本链接仍指向当前已公开版本。GitHub 的 Source code 压缩包面向开发者，不是 Windows 安装程序。
 
 安装包尚未进行数字签名，Windows 可能显示“未知发布者”或 SmartScreen 提醒。升级前关闭 LanCarbon；安装程序沿用原有安装位置。请保留数据备份和可用安装包以便恢复。
 

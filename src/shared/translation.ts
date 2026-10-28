@@ -33,3 +33,9 @@ export function translationPriceProviders(chat: AIProvider[], custom: AIProvider
   if (settings.mode === "custom" && provider && settings.modelId && !provider.models.some(model => model.id === settings.modelId)) provider.models.push({ id: settings.modelId, name: settings.modelName || settings.modelId, purpose: "chat" });
   return providers;
 }
+
+/** Join selected passages in user-selected order; do not guess hard hyphenation. */
+export function appendTranslationText(previous: string, selected: string): string {
+  const clean = (text: string) => text.replace(/\u00ad\s*/g, "").replace(/\s+/g, " ").trim();
+  return normalizeTranslationText([clean(previous), clean(selected)].filter(Boolean).join(" "));
+}

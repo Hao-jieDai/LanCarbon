@@ -11,6 +11,7 @@ import type { AssetConflictRequest, ResourceUsage, EditorNavigation } from "./sh
 import { addNoteToBook, createBook, createEmptyWorkspace, getBookForNote, isValidExportPath, movePage, removeBookLanguageHeadings, removePageFromBook, updatePageMetadata } from "./shared/books";
 import { createInitialNotes, createNote, ensureReleaseReadme, parseTags, sortNotes } from "./shared/notes";
 import { ensurePhase2Guide } from "./shared/releaseGuide";
+import { ensureTodoNote } from "./shared/todo";
 import { ensurePhase3Guide } from "./shared/phase3Guide";
 import { ensurePhase4Guide } from "./shared/phase4Guide";
 import { ensurePhase5Guide } from "./shared/phase5Guide";
@@ -124,9 +125,10 @@ export function App() {
       const phase4 = ensurePhase4Guide(phase3.workspace);
       const phase5 = ensurePhase5Guide(phase4.workspace);
       const languageHeadings = removeBookLanguageHeadings(phase5.workspace);
-      const next = languageHeadings.workspace;
+      const todo = ensureTodoNote(languageHeadings.workspace.notes);
+      const next = todo.changed ? { ...languageHeadings.workspace, notes: todo.notes } : languageHeadings.workspace;
       workspaceRef.current = next; setWorkspace(next);
-      const preferredNotes = result.isFirstRun ? next.notes : base.notes;
+      const preferredNotes = result.isFirstRun ? languageHeadings.workspace.notes : base.notes;
       const loose = preferredNotes.filter(note => !getBookForNote(next.books, note.id));
       const preferred = navigation();
       setActiveId(loose.find(note => note.id === preferred.noteId)?.id ?? sortNotes(loose, initialSort(NOTES_SORT_KEY))[0]?.id ?? null);
@@ -134,7 +136,7 @@ export function App() {
       setActiveBookId(preferredBook?.id ?? null);
       setActivePageId(preferredBook && preferred.pageId && preferredBook.pages[preferred.pageId] ? preferred.pageId : preferredBook?.homePageId ?? null);
       setLoaded(true);
-      if (result.isFirstRun || result.migrated || release.changed || guide.changed || phase3.changed || phase4.changed || phase5.changed || languageHeadings.changed) persist(next);
+      if (result.isFirstRun || result.migrated || release.changed || guide.changed || phase3.changed || phase4.changed || phase5.changed || languageHeadings.changed || todo.changed) persist(next);
     });
     void window.notesDesktop.getDataLocation().then(result => { if (!cancelled && result.ok) setDataLocation(result.path); });
     return () => { cancelled = true; clearTimeout(saveTimer.current); clearTimeout(toastTimer.current); };

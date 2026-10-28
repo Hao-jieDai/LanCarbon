@@ -8,63 +8,31 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.5.1";
+export const RELEASE_VERSION = "2.5.2";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 ## What's new
 
-This update extends the writing and publishing tools of 1.1.4 into a personal knowledge library: collect documents in **Library**, explore them in **Workshop**, and keep your own work in **Notes** and **Books**.
+This update improves PDF selection and search alignment, adds continuous selection translation, and provides a personal To do note.
 
-### Library and built-in reading
+- **PDF reading:** text selection and search highlights now use the same page dimensions as the visible PDF at different zoom levels.
+- **Continuous translation:** select the first passage, then check **Continuous translation** in the floating panel. In a PDF, **Z** also toggles the mode after selection. Select the continuation on the next page to translate the combined original. **New passage** clears the accumulated text; unchecking restores ordinary selection translation. Switching documents clears the passage and turns continuous mode off. The combined text remains limited to 1,600 characters or 250 words. Each accepted addition requests a translation of the combined text; matching cached results can be reused.
+- **Personal To do:** new and existing users receive a pinned **To do** note. Use its checklist to add and check tasks, or edit Markdown task lines such as \`- [ ] Read the paper\`. Renaming, editing or unpinning it is preserved across upgrades. Deleting it allows a fresh default To do to be created on the next start; it does not restore deleted tasks.
 
-Import and organize PDF/EPUB documents, manage folders and duplicates, follow writing references and keep file versions. Batch selection supports moving, exporting and deleting files. Read PDF and EPUB inside LanCarbon with search, document outlines, remembered reading positions and up to ten open tabs. Included English/Chinese OCR recognizes scanned PDF text locally.
-
-### AI Chat and knowledge-library questions
-
-Configure SiliconFlow, OpenRouter, DeepSeek or another compatible service, save models and select one in Chat. Set shared response guidelines, read available Thinking and export conversations as PDF or editable Notes. Choose Library documents, Notes and Book pages to ask source-based questions or compare materials, then open citations to read the originals. Current full-text questions use your selected Chat model; Embedding and Rerank setup is not required.
-
-### Selection translation
-
-Translate English words, phrases and short passages across writing and reading. Reuse a saved model or configure a separate translation connection. Turn **Translate** on when needed, or use **Ctrl+Alt+T**; long original and translated text scroll separately in the floating panel.
-
-### Usage, costs and balances
-
-Review request history, tokens and activity heatmaps. Set model prices and a reference USD/CNY rate for estimates. Enter an account balance to track later charges, group connections billed to the same account, or disable balance tracking for free-only use. Provider bills remain the source of actual charges.
-
-### Learn the workflow
-
-Open **Books → LanCarbon: From 0 to 1**. The tutorial introduces the four workspaces and offers separate Library and Workshop chapters, current screenshots and consistent instructions for writing/publishing and reading/knowledge-library work. The first five chapters retain the writing and publishing workflow.
-
-Your Notes, Books, model settings and chat history are retained. The system ReadMe and tutorial synchronize with the app; write personal content in your own Notes and Books. Automated paper discovery and collection expansion are not available yet. Check important source-based findings against the original before using them in research.
+Your Notes, Books, model settings and chat history are retained. The system ReadMe and tutorial synchronize with the app. To do is personal content and is not overwritten by tutorial synchronization. PDF/EPUB annotations, multi-tab writing and the writing-side AI panel are planned separately. Automated paper discovery and collection expansion are not available yet.
 
 ---
 
 ## 主要更新
 
-本次更新在 1.1.4 写作与发布功能的基础上，扩展为个人知识库工作流程：在 **Library** 收集文档，在 **Workshop** 中阅读提问，并用 **Notes** 和 **Books** 保存与整理自己的成果。
+本次更新修正 PDF 文字选取与搜索高亮的位置，增加连续选区翻译，并提供个人 To do 待办笔记。
 
-### Library 与内置阅读
+- **PDF 阅读**：文字选区与搜索高亮使用和可见 PDF 相同的页面尺寸，在不同缩放比例下保持对应。
+- **连续翻译**：先选第一段原文，再勾选浮窗中的 **Continuous translation**；在 PDF 中选取后也可按 **Z** 切换此模式。选取下一页的后续文字后，合并原文并整体翻译。**New passage** 清空累计内容；取消勾选恢复普通选区翻译。切换文档时清空累计内容并关闭连续模式。合并后仍限 1,600 个字符或 250 个词。每次有效追加都会请求翻译合并原文；命中缓存时可复用已有译文。
+- **个人 To do**：新用户和升级用户都会获得一个置顶 **To do** 笔记。可通过清单添加和勾选任务，也可编辑 \`- [ ] 阅读论文\` 等 Markdown 任务行。改名、正文修改和取消置顶会在升级时保留。删除后下次启动会创建新的默认 To do，但不会恢复已删除任务。
 
-导入、分类 PDF／EPUB，管理文件夹和重复文件，查看写作引用并保留文件版本。批量选择支持移动、导出和删除。可在软件内阅读 PDF 和 EPUB，使用搜索、目录、阅读进度及最多十个文件标签。随软件提供的中英文 OCR 在本地识别扫描 PDF 文字。
-
-### AI Chat 与个人知识库问答
-
-配置 SiliconFlow、OpenRouter、DeepSeek 或其他兼容服务，保存模型并在 Chat 中选择。可设置共用回答规范、查看模型提供的 Thinking，并将聊天导出为 PDF 或可编辑 Note。选择 Library 文档、Notes 和 Book 页面后，可以围绕资料提问和比较，并通过引用返回原文。当前全文问答使用选定的 Chat 模型，不要求配置 Embedding 或 Rerank。
-
-### 划词翻译
-
-在写作或阅读时翻译英文单词、词组和短段落，支持复用已保存模型或独立配置翻译连接。按需开启 **Translate**，也可使用 **Ctrl+Alt+T**；浮窗中的长原文和长译文分别滚动。
-
-### 用量、费用与余额
-
-查看请求历史、Token 用量和活动热力图，设置模型价格与美元／人民币参考汇率进行估算。手动输入账户余额后，统计后续费用；共用计费账户的连接可以合并，只使用免费模型时也可以关闭余额跟踪。实际费用以服务商账单为准。
-
-### 学习使用流程
-
-打开 **Books → LanCarbon: From 0 to 1**。教程重新介绍四个工作区，分设 Library 和 Workshop 章节，更新截图，并统一写作、发布、阅读与知识库操作说明的写法。前五章保留原有写作与发布流程。
-
-升级保留 Notes、Books、模型配置和聊天记录。系统 ReadMe 与教程随软件同步，个人内容请写在自己创建的 Notes 和 Books 中。自动文献发现与资料库自动拓展尚未开放。资料问答的重要结论用于研究前，请返回原文核对。`;
+升级保留 Notes、Books、模型设置和聊天记录。系统 ReadMe 与教程随软件同步；To do 属于个人内容，不会被教程同步覆盖。PDF／EPUB 批注、多标签写作和写作侧栏 AI 将另行更新；自动文献发现与文献库自拓展尚未开放。`;
 
 export function makeId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

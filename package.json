@@ -1,6 +1,6 @@
 {
   "name": "lancarbon",
-  "version": "2.5.1",
+  "version": "2.5.2",
   "description": "A desktop app for writing, reading and building a personal knowledge library",
   "main": "dist-electron/electron/main.js",
   "author": "LanCarbon",

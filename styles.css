@@ -760,6 +760,17 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .translation-window > header > strong { font-size: 13px; }
 .translation-window > header > div { display: flex; align-items: center; gap: 12px; }
 .translation-window .text-button { font-size: 11px; }
+.translation-continuous { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-shrink: 0; font-size: 11px; padding: 0 0 8px; }
+.translation-continuous label { display: flex; align-items: center; gap: 5px; }
+.translation-continuous input, .todo-checklist input[type="checkbox"] { accent-color: var(--accent); }
+.translation-append-hint { flex-shrink: 0; margin: 0 0 8px; font-size: 11px; line-height: 1.4; color: var(--muted); }
+.todo-checklist { flex-shrink: 0; margin-bottom: 16px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 13px; }
+.todo-checklist summary { cursor: pointer; color: var(--muted); }
+.todo-items { max-height: 200px; overflow: auto; margin: 8px 0; }
+.todo-items label { display: flex; align-items: flex-start; gap: 8px; margin: 7px 0; overflow-wrap: anywhere; }
+.todo-items input:checked + span { text-decoration: line-through; color: var(--muted); }
+.todo-checklist form { display: flex; gap: 10px; }
+.todo-checklist form input { min-width: 0; flex: 1; padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: 5px; }
 .translation-window .icon-button { width: 23px; height: 23px; font-size: 17px; }
 .translation-empty, .translation-window [role="status"] { color: var(--muted); font-size: 12px; line-height: 1.6; }
 .translation-window > header, .translation-model { flex-shrink: 0; }
@@ -1018,7 +1029,9 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .pdf-view-area { position: relative; flex: 1; min-width: 0; min-height: 0; background: var(--body-bg); }
 .pdf-scroll-container { position: absolute; inset: 0; overflow: auto; }
 .pdf-scroll-container .pdfViewer { --page-margin: 10px auto; padding-bottom: 10px; }
-.pdf-scroll-container .pdfViewer .page { box-shadow: 0 1px 6px #0003; }
+/* PDF.js sizes pages to their content. Border-box shrinks the canvas while the
+   text layer keeps viewport dimensions, shifting selection and find highlights. */
+.pdf-scroll-container .pdfViewer .page { box-sizing: content-box; box-shadow: 0 1px 6px #0003; }
 .pdf-scroll-container .textLayer { user-select: text; }
 .pdf-reader-footer { display: flex; justify-content: space-between; gap: 12px; padding: 7px 14px; color: var(--muted); border-top: 1px solid var(--line); font-size: 10px; flex-shrink: 0; }
 .pdf-reader-notice { display: flex; align-items: center; gap: 12px; flex-shrink: 0; margin: 0; padding: 8px 14px; background: var(--surface); color: var(--muted); font-size: 11px; }

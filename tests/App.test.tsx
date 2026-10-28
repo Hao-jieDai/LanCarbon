@@ -68,11 +68,11 @@ describe("App", () => {
     expect(api.inspectEnvironment).toHaveBeenCalled();
   });
 
-  it("首次运行只显示 ReadMe 并立即保存 v2 工作区", async () => {
+  it("首次运行打开 ReadMe 并保存包含个人 To do 的 v2 工作区", async () => {
     vi.mocked(api.loadWorkspace).mockResolvedValue({ ok: true, workspace: createEmptyWorkspace(), isFirstRun: true, migrated: false });
     render(<App />);
     expect(await screen.findByDisplayValue("ReadMe")).toBeInTheDocument();
-    await waitFor(() => expect(api.saveWorkspace).toHaveBeenCalledWith(expect.objectContaining({ version: 2, books: [], notes: [expect.objectContaining({ title: "ReadMe" })] })));
+    await waitFor(() => expect(api.saveWorkspace).toHaveBeenCalledWith(expect.objectContaining({ version: 2, books: [], notes: [expect.objectContaining({ title: "ReadMe" }), expect.objectContaining({ title: "To do", pinned: true })] })));
   });
 
   it("新建、编辑并自动保存普通笔记", async () => {
