@@ -1,14 +1,15 @@
-import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 export interface SelectOption { value: string; label: string; disabled?: boolean }
 interface Props {
   label: string; value: string; options: SelectOption[]; onChange(value: string): void;
   placeholder?: string; emptyMessage?: string; editable?: boolean; action?: boolean; disabled?: boolean; className?: string; title?: string;
+  icon?: ReactNode;
 }
 
 /** Application-owned popup, including inside native dialogs. No OS select UI. */
-export function ThemedSelect({ label, value, options, onChange, placeholder, emptyMessage = "Use a custom language name.", editable = false, action = false, disabled, className = "", title }: Props) {
+export function ThemedSelect({ label, value, options, onChange, placeholder, emptyMessage = "Use a custom language name.", editable = false, action = false, disabled, className = "", title, icon }: Props) {
   const id = useId();
   const host = useRef<HTMLDivElement>(null), popup = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false), [active, setActive] = useState(-1), [filter, setFilter] = useState("");
@@ -74,7 +75,7 @@ export function ThemedSelect({ label, value, options, onChange, placeholder, emp
   return <div ref={host} className={`themed-select ${editable ? "themed-select-editable" : ""} ${className}`} onBlur={event => { if (!host.current?.contains(event.relatedTarget as Node) && !popup.current?.contains(event.relatedTarget as Node)) setOpen(false); }}>
     {editable ? <input spellCheck={false} autoCorrect="off" autoCapitalize="off" {...aria} role="combobox" aria-autocomplete="list" disabled={disabled} value={value} placeholder={placeholder} autoComplete="off" onFocus={() => show()} onClick={() => { if (!open) show(); }} onKeyDown={keyDown} onChange={event => { if (!open) show(); onChange(event.target.value); setFilter(event.target.value); setActive(-1); }} /> :
       <button {...aria} type="button" role={action ? undefined : "combobox"} disabled={disabled} className="themed-select-trigger" title={title ?? label} onKeyDown={keyDown} onClick={() => open ? setOpen(false) : show()}>
-        <span>{options.find(option => option.value === value)?.label ?? placeholder ?? label}</span><span className="select-chevron" aria-hidden="true">⌄</span>
+        {icon ?? <><span>{options.find(option => option.value === value)?.label ?? placeholder ?? label}</span><span className="select-chevron" aria-hidden="true">⌄</span></>}
       </button>}
     {editable && <span className="select-chevron" aria-hidden="true">⌄</span>}
     {open && createPortal(<div ref={popup} id={id} role={action ? "menu" : "listbox"} aria-label={`${label} options`} className="themed-select-popup" style={position} onMouseDown={event => event.preventDefault()}>

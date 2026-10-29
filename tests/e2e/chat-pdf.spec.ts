@@ -28,12 +28,12 @@ test("exports a single multi-model chat offline with full Thinking, per-reply ci
     await app.evaluate(({ net, dialog }) => { (globalThis as any).pdfCalls = 0; net.fetch = async () => { (globalThis as any).pdfCalls++; throw Error("No API calls allowed"); }; dialog.showSaveDialog = (async (_window, options) => { (globalThis as any).pdfDialog = options; return { canceled: !!(globalThis as any).cancelPdf, filePath: (globalThis as any).pdfDestination }; }) as typeof dialog.showSaveDialog; });
     const page = await app.firstWindow(); await page.getByRole("main").waitFor();
     await page.getByRole("button", { name: "Workshop", exact: true }).click(); await page.getByRole("button", { name: "Chat", exact: true }).click();
-    await page.getByRole("button", { name: "科研对话 PDF", exact: true }).click();
+    await page.getByRole("button", { name: "Chat history", exact: true }).click(); await page.getByRole("menuitem", { name: "科研对话 PDF", exact: true }).click();
     expect(await page.locator(".ai-reasoning").first().getAttribute("open")).toBeNull();
     const full = info.outputPath("chat-thinking.pdf"), answer = info.outputPath("chat-answers.pdf"), excerpts = info.outputPath("chat-evidence.pdf");
     const exportTo = async (filename: string, thinking: boolean, appendix: boolean) => {
       await app.evaluate((_electron, filename) => { (globalThis as any).pdfDestination = filename; }, filename);
-      await page.locator(".ai-chat-heading").getByRole("button", { name: "Export PDF", exact: true }).click();
+      await page.getByRole("button", { name: "Export chat", exact: true }).click(); await page.getByRole("menuitem", { name: "Export PDF", exact: true }).click();
       const modal = page.getByRole("dialog", { name: "Export chat as PDF" });
       await expect(modal.getByLabel("Include Thinking", { exact: true })).toBeChecked();
       await expect(modal.getByLabel("Include cited evidence excerpts", { exact: true })).not.toBeChecked();

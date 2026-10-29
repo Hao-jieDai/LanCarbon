@@ -30,7 +30,7 @@ test("copies LaTeX into Notes and exports independent chat snapshots with scoped
     const originalBook = initial.workspace.books.find(item => item.id === book.id)!;
     await app.evaluate(({ net }) => { (globalThis as any).noteApiCalls = 0; net.fetch = async () => { (globalThis as any).noteApiCalls++; throw Error("No API calls in export tests"); }; });
     await page.getByRole("button", { name: "Workshop", exact: true }).click(); await page.getByRole("button", { name: "Chat", exact: true }).click();
-    await page.getByRole("button", { name: "Research discussion", exact: true }).click();
+    await page.getByRole("button", { name: "Chat history", exact: true }).click(); await page.getByRole("menuitem", { name: "Research discussion", exact: true }).click();
     await expect(page.locator(".ai-message-assistant").first().locator("math")).toHaveCount(2);
     // Capture the exact Clipboard API payload without replacing the user's operating-system clipboard.
     await page.evaluate(() => { navigator.clipboard.writeText = async text => { (window as any).copiedChat = text; }; });
@@ -42,7 +42,7 @@ test("copies LaTeX into Notes and exports independent chat snapshots with scoped
     await page.getByRole("button", { name: "Edit", exact: true }).click(); await page.getByLabel("Note content").fill(memo.content);
     const goChat = async () => { await page.getByRole("button", { name: "Workshop", exact: true }).click(); await page.getByRole("button", { name: "Chat", exact: true }).click(); };
     const exportNote = async (thinking: boolean, excerpts: boolean) => {
-      await page.locator(".ai-chat-heading").getByRole("button", { name: "Export to Note", exact: true }).click();
+      await page.getByRole("button", { name: "Export chat", exact: true }).click(); await page.getByRole("menuitem", { name: "Export to Note", exact: true }).click();
       const modal = page.getByRole("dialog", { name: "Export chat as Note" });
       await modal.getByLabel("Include Thinking", { exact: true }).setChecked(thinking); await modal.getByLabel("Include cited evidence excerpts", { exact: true }).setChecked(excerpts);
       await modal.getByRole("button", { name: "Export to Note", exact: true }).click(); await expect(modal).toHaveCount(0);
