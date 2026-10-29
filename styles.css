@@ -1252,7 +1252,6 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .ai-panel .chat-icon-button.quiet-button:hover, .ai-panel .chat-icon-menu .themed-select-trigger:hover { background: var(--surface); color: var(--ink); }
 .chat-icon-button svg, .chat-icon-menu svg { display: block; width: 18px; height: 18px; }
 .ai-composer-card { border: 1px solid var(--line); border-radius: 10px; background: var(--paper); overflow: hidden; }
-.ai-composer-card:focus-within { border-color: var(--accent); }
 .ai-panel .ai-composer-card textarea { display: block; min-height: 68px; max-height: 150px; padding: 8px 12px; border: 0; border-radius: 0; background: transparent; resize: vertical; }
 .ai-composer-card .chat-source-bar { margin: 0; padding: 8px 10px 0; gap: 8px; }
 .ai-panel .ai-composer-card .chat-source-bar .quiet-button { font-size: 11px; min-height: 26px; padding: 3px 7px; background: transparent; }
@@ -1269,4 +1268,9 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .ai-chat-compact .ai-chat-heading { padding: 8px 12px; }
 .ai-chat-compact .ai-chat-heading h1 { font-size: 12px; }
 
-.ai-chat-heading > .text-button { align-self: flex-start; font-size: 11px; }
+
+.ai-panel .ai-composer-card textarea:focus-visible { outline: none; box-shadow: none; }
+.editor-toolbar.workshop-chat-heading { justify-content: flex-start; gap: 18px; }
+.chat-view-switch { display: inline-flex; flex: none; align-items: center; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; }
+.chat-view-switch button { border: 0; border-radius: 5px; padding: 6px 10px; background: transparent; color: var(--muted); font: 11px/1.4 var(--sans); white-space: nowrap; }
+.chat-view-switch button[aria-pressed="true"] { background: var(--surface); color: var(--ink); }

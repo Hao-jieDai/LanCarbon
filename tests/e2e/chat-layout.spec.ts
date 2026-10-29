@@ -23,6 +23,13 @@ test("compact Chat layouts keep controls usable and separate page chats that can
     await page.getByRole("button",{name:"AI Chat",exact:true}).click();
     const right=page.getByLabel("Page sidebar",{exact:true}); await expect(right.getByText("Page discussion saved text.")).toBeVisible();
     const checkLayout=async (host: ReturnType<typeof page.locator>) => {
+      const input=host.getByLabel("Chat message"), card=host.locator(".ai-composer-card");
+      await input.evaluate(element => (element as HTMLTextAreaElement).blur());
+      const idleBorder=await card.evaluate(element=>getComputedStyle(element).borderColor);
+      await input.click();
+      expect(await input.evaluate(element=>getComputedStyle(element).outlineStyle)).toBe("none");
+      expect(await input.evaluate(element=>getComputedStyle(element).boxShadow)).toBe("none");
+      expect(await card.evaluate(element=>getComputedStyle(element).borderColor)).toBe(idleBorder);
       const result=await host.evaluate(element => {
         const rect=(selector:string)=>element.querySelector(selector)!.getBoundingClientRect();
         const hint=element.querySelector(".ai-composer-shortcut")!, h=hint.getBoundingClientRect();
@@ -38,6 +45,7 @@ test("compact Chat layouts keep controls usable and separate page chats that can
       await expect(page.getByRole("menuitem",{name:"Page discussion",exact:true})).toBeVisible();
       await expect(page.getByRole("menuitem",{name:"Independent discussion",exact:true})).toHaveCount(0);
       await right.getByRole("button",{name:"Chat history",exact:true}).press("Escape");
+      await right.getByLabel("Chat message").click();
       await page.screenshot({path:info.outputPath(`sidebar-${width}-${theme}.png`)});
     }
     await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setSize(1280,900));
@@ -45,8 +53,13 @@ test("compact Chat layouts keep controls usable and separate page chats that can
     await page.getByRole("button",{name:"Workshop",exact:true}).click(); await page.getByRole("button",{name:"Chat",exact:true}).click();
     const main=page.getByLabel("Workshop workspace",{exact:true});
     await expect(main.getByText("Independent discussion saved text.")).toBeVisible(); await checkLayout(main);
+    const views=main.getByRole("group",{name:"Chat views"});
+    await expect(views.getByRole("button",{name:"Workshop chats",exact:true})).toHaveAttribute("aria-pressed","true");
+    await expect(views.getByRole("button",{name:"Page chats",exact:true})).toBeInViewport();
+    expect(await views.evaluate(element=>element.closest(".editor-toolbar")?.querySelector(".foundation-breadcrumb")?.textContent)).toBe("Workshop / Chat");
     await main.getByLabel("Chat message").fill("Keep the independent draft");
-    await main.getByRole("button",{name:"Chat history",exact:true}).click(); await page.getByRole("menuitem",{name:"Page chats…",exact:true}).click();
+    await main.getByRole("button",{name:"Page chats",exact:true}).click();
+    await expect(views.getByRole("button",{name:"Page chats",exact:true})).toHaveAttribute("aria-pressed","true");
     await expect(main.getByLabel("Chat message")).toHaveValue("");
     await main.getByRole("button",{name:"Chat history",exact:true}).click(); await page.getByRole("menuitem",{name:"Page discussion",exact:true}).click();
     expect(await app.evaluate(()=>(globalThis as any).layoutCalls.length)).toBe(0);
@@ -57,7 +70,7 @@ test("compact Chat layouts keep controls usable and separate page chats that can
     await main.getByRole("button",{name:"More chat actions",exact:true}).click(); await page.getByRole("menuitem",{name:"Delete chat",exact:true}).click();
     await page.getByRole("button",{name:"Delete conversation",exact:true}).click();
     await expect(main.getByText("Deleted-page discussion saved text.")).toBeVisible();
-    await main.getByRole("button",{name:"Back to Workshop chats",exact:true}).click(); await expect(main.getByLabel("Chat message")).toHaveValue("Keep the independent draft");
+    await main.getByRole("button",{name:"Workshop chats",exact:true}).click(); await expect(main.getByLabel("Chat message")).toHaveValue("Keep the independent draft");
     await page.screenshot({path:info.outputPath("workshop-chat.png")});
     saved=await page.evaluate(()=>window.notesDesktop.ai!.chats()); if(!saved.ok)throw Error(saved.error);
     expect(saved.chats.map(c=>c.id).sort()).toEqual([workshop.id,orphan.id].sort());

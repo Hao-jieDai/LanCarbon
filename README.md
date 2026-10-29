@@ -21,7 +21,7 @@ This update adds writing tabs and a shared right sidebar for page chat and readi
 - **AI Chat beside your writing:** open **AI Chat** in a Note or Book page. The default source is the current Note/page; Book pages also offer **Current section** and **Whole Book**. A section includes its top-level page and descendants. Each page has its own conversations and session drafts. Sending saves the latest text first and uses the existing model connections and source-citation workflow; opening or switching tabs does not call a model.
 - **One right sidebar:** Notes and Books show AI Chat, while PDF and EPUB show **Annotations**. Opening the right sidebar closes the left workspace list; opening the left list closes the right. Reader Pages / Contents and Annotations also close one another. Annotation controls, local storage and Note exports remain available.
 
-- **Cleaner Chat controls:** both Chat views put New chat, history, export, settings and more actions in an icon row above the input. Choose a model inside the input card. Workshop conversations and page conversations have separate histories; **Chat history → Page chats…** in Workshop opens a separate list for continuing, exporting and deleting page chats, including records from deleted pages. The send/line-break hint uses the full available width.
+- **Cleaner Chat controls:** both Chat views put New chat, history, export, settings and more actions in an icon row above the input. Choose a model inside the input card. Workshop conversations and page conversations have separate histories; **Page chats** beside **Workshop / Chat** opens a separate list for continuing, exporting and deleting page chats, including records from deleted pages. The send/line-break hint uses the full available width. Focusing the message box keeps its border unchanged and adds no highlight outline.
 
 Your personal Notes, Books, annotations, model settings and chat history are retained. The system ReadMe and tutorial synchronize with the app. Mac/tablet adaptation and automated paper discovery/collection expansion remain deferred.
 
@@ -72,7 +72,7 @@ LanCarbon 是一款将本地写作、文档阅读与 AI 辅助结合起来的 Wi
 - **边写边问**：在 Note 或 Book 页面点击 **AI Chat**，默认以当前 Note／页面为资料；Book 页面还可选择 **Current section**（所属顶层章节及其子页面）或 **Whole Book**。每页分别保留聊天记录和本次使用中的输入草稿。发送前保存最新正文，复用已有模型连接及来源引用流程；打开或切换标签不会调用模型。
 - **统一右侧栏**：Notes／Books 显示 AI Chat，PDF／EPUB 显示 **Annotations**。打开右侧栏自动收起左侧工作区列表，打开左侧列表自动收起右侧栏；阅读器的 Pages / Contents 与 Annotations 也互斥。批注工具、本地保存和导出 Note 继续可用。
 
-- **简洁聊天界面**：两处 Chat 将新建、历史、导出、设置和更多操作集中为输入框上方的小图标，模型选择嵌入输入框底部。Workshop 独立聊天与随页聊天分别管理；Workshop 的 **Chat history → Page chats…** 集中查看、继续提问、导出和删除随页聊天，包括已删除页面的记录。发送／换行提示使用整行可用宽度。
+- **简洁聊天界面**：两处 Chat 将新建、历史、导出、设置和更多操作集中为输入框上方的小图标，模型选择嵌入输入框底部。Workshop 独立聊天与随页聊天分别管理；顶部 **Workshop / Chat** 旁的 **Page chats** 按钮 集中查看、继续提问、导出和删除随页聊天，包括已删除页面的记录。发送／换行提示使用整行可用宽度，点击输入框不再出现高亮轮廓或变色边框。
 
 升级保留个人 Notes、Books、批注、模型配置和聊天记录，系统 ReadMe 与教程随软件同步。Mac／平板适配、自动文献发现和文献库自拓展继续暂缓。
 

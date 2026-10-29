@@ -29,7 +29,7 @@ it("keeps Workshop, page history and orphan page chats separate through live upd
   expect(screen.queryByText("Content of Page A")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "Chat history" }));
   expect(screen.queryByRole("menuitem", { name: "Page A" })).toBeNull();
-  fireEvent.click(screen.getByRole("menuitem", { name: "Page chats…" }));
+  fireEvent.click(screen.getByRole("button", { name: "Page chats" }));
   expect(screen.getByLabelText("Chat message")).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Chat history" }));
   expect(screen.queryByRole("menuitem", { name: "Workshop legacy" })).toBeNull();
@@ -40,13 +40,12 @@ it("keeps Workshop, page history and orphan page chats separate through live upd
   fireEvent.click(screen.getByRole("button", { name: "Delete conversation" }));
   await screen.findByText("Content of Page A");
   emit(conversation("Page B", "page-b"));
-  fireEvent.click(screen.getByRole("button", { name: "Back to Workshop chats" }));
+  fireEvent.click(screen.getByRole("button", { name: "Workshop chats" }));
   expect(screen.getByText("Content of Workshop legacy")).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "New chat" }));
   await screen.findByText("Content of New conversation");
   expect(api.createChat).toHaveBeenCalledWith("fixture", "chat", undefined);
-  fireEvent.click(screen.getByRole("button", { name: "Chat history" }));
-  fireEvent.click(screen.getByRole("menuitem", { name: "Page chats…" }));
+  fireEvent.click(screen.getByRole("button", { name: "Page chats" }));
   fireEvent.click(screen.getByRole("button", { name: "Chat history" }));
   expect(screen.getByRole("menuitem", { name: "Page B" })).toBeVisible();
   expect(screen.queryByRole("menuitem", { name: "Deleted page" })).toBeNull();

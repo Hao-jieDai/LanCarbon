@@ -12,7 +12,7 @@
 
 写作侧栏入口在 `src/shared/writingWorkspace.ts`、`src/components/WritingChat.tsx`。默认当前页，章节范围包含所属顶层章节和后代，整本范围使用 Book ID；发送前先保存工作区，再复用 ai:set-sources 与 ai:send。会话的 contextNoteId 由 AIChatStore 校验和持久化，旧会话无此字段也可正常读取。不能从当前界面页或全局最后聊天 ID 猜测正在生成回答的所属页面。
 
-Chat 共用输入卡片与图标工具栏。Workshop 默认仅列出无 contextNoteId 的独立会话，Chat history → Page chats… 单独列出全部随页会话，允许继续提问、调整来源、导出和删除。两个列表更新时必须保留另一类记录；不要迁移、重建或删除旧 JSON 来实现分类。页面侧栏继续按当前 Note 过滤；Workshop 的随页分类使用会话原有来源，不擅自绑定正在编辑的页面。修改后应运行 tests/chat-layout.test.tsx 及 tests/e2e/chat-layout.spec.ts，核对分类／删除同步／来源／窄窗口提示宽度。
+Chat 共用输入卡片与图标工具栏。Workshop 默认仅列出无 contextNoteId 的独立会话，顶部 Workshop / Chat 旁的 Chat / Page chats 切换按钮 单独列出全部随页会话，允许继续提问、调整来源、导出和删除。两个列表更新时必须保留另一类记录；不要迁移、重建或删除旧 JSON 来实现分类。页面侧栏继续按当前 Note 过滤；Workshop 的随页分类使用会话原有来源，不擅自绑定正在编辑的页面。修改后应运行 tests/chat-layout.test.tsx 及 tests/e2e/chat-layout.spec.ts，核对分类／删除同步／来源／窄窗口提示宽度。
 
 ## 2. 实际运行流程及代码入口
 
