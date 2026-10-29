@@ -120,6 +120,7 @@ export class AIChatStore extends Serialized {
     let interrupted = false;
     const ids = new Set<string>();
     for (const chat of data.chats) {
+      if (chat.contextNoteId !== undefined) validId(chat.contextNoteId);
       validId(chat.id); if (ids.has(chat.id) || typeof chat.title !== "string" || !Array.isArray(chat.messages) || typeof chat.providerId !== "string" || typeof chat.modelId !== "string") throw new Error("Invalid conversation data"); ids.add(chat.id);
       if (chat.sourceScope) chat.sourceScope = validKnowledgeScope(chat.sourceScope);
       for (const message of chat.messages) { validId(message.id); if (message.sourceScope) message.sourceScope = validKnowledgeScope(message.sourceScope);
@@ -141,7 +142,7 @@ export class AIChatStore extends Serialized {
   async list(): Promise<AIChat[]> { return this.serial(async () => structuredClone(await this.read())); }
   async get(id: string): Promise<AIChat> { validId(id); return this.serial(async () => { const chat = (await this.read()).find(item => item.id === id); if (!chat) throw new Error("Conversation not found"); return structuredClone(chat); }); }
   async update(id: string, change: (chat: AIChat) => void): Promise<AIChat> { validId(id); return this.serial(async () => { const chats = await this.read(), previous = chats.find(item => item.id === id); if (!previous) throw new Error("Conversation not found"); const chat = structuredClone(previous); change(chat); chat.updatedAt = new Date().toISOString(); await this.files.save(chat); this.loaded = chats.map(item => item.id === id ? chat : item); return structuredClone(chat); }); }
-  async create(providerId: string, modelId: string): Promise<AIChat> { return this.serial(async () => { const chats = await this.read(), now = new Date().toISOString(); const chat: AIChat = { id: randomUUID(), title: "New chat", providerId, modelId, messages: [], createdAt: now, updatedAt: now }; await this.files.save(chat); await this.files.index([...chats, chat]); this.loaded = [...chats, chat]; return structuredClone(chat); }); }
+  async create(providerId: string, modelId: string, contextNoteId?: string): Promise<AIChat> { if (contextNoteId !== undefined) validId(contextNoteId); return this.serial(async () => { const chats = await this.read(), now = new Date().toISOString(); const chat: AIChat = { id: randomUUID(), title: "New chat", ...(contextNoteId ? { contextNoteId } : {}), providerId, modelId, messages: [], createdAt: now, updatedAt: now }; await this.files.save(chat); await this.files.index([...chats, chat]); this.loaded = [...chats, chat]; return structuredClone(chat); }); }
   async rename(id: string, title: string): Promise<AIChat> { const text = bounded(title, "chat title", 120); if (!text) throw new Error("Enter a chat title"); return this.update(id, chat => { chat.title = text; }); }
   async remove(id: string): Promise<void> { validId(id); return this.serial(async () => { const chats = (await this.read()).filter(chat => chat.id !== id); await this.files.remove(id, chats); this.loaded = chats; }); }
 }

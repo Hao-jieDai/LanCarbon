@@ -45,7 +45,7 @@ test("upgrades the system tutorial while preserving user Notes and Books", async
     await page.getByLabel("Rendered preview").getByRole("link", { name: "Workshop", exact: true }).first().click();
     await expect(page.getByLabel("Note title")).toHaveValue("7. Workshop");
     await page.getByRole("button", { name: "Notes", exact: true }).click();
-    await page.getByRole("button", { name: /Personal Note/ }).click();
+    await page.locator(".note-list").getByRole("button", { name: /Personal Note/ }).click();
     await page.getByRole("button", { name: "Edit", exact: true }).click();
     await expect(page.getByLabel("Note content")).toContainText("Never replace my content");
   } finally { await application.close(); }

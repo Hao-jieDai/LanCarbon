@@ -9,6 +9,8 @@ import { createBook, validateWorkspace } from "../../src/shared/books";
 import { defaultRetrievalSettings } from "../../src/shared/retrieval";
 import { readerPdfFixture } from "../fixtures/reader";
 import { readerEpubFixture } from "../fixtures/epub";
+// Native retrieval is the development path; installed builds use the PaperQA suite.
+test.skip(!!process.env.E2E_EXECUTABLE, "Use paperqa-dev.spec.ts for packaged full-text grounding.");
 const launch = (root: string) => electron.launch({ ...(process.env.E2E_EXECUTABLE ? { executablePath: process.env.E2E_EXECUTABLE } : {}), args: ["--in-process-gpu", "--disable-gpu", "--no-sandbox", ...(process.env.E2E_EXECUTABLE ? [] : [path.resolve(".")])], env: { ...process.env, LANCARBON_ROOT: root, E2E_USER_DATA_DIR: "" } });
 async function cleanup(root: string) { const target = path.resolve(root); if (!target.startsWith(path.resolve(os.tmpdir()) + path.sep) || !path.basename(target).startsWith("lancarbon-grounded-ui-")) throw Error("Unsafe cleanup"); await fs.rm(target, { recursive: true, force: true, maxRetries: 5, retryDelay: 300 }); }
 async function mock(app: ElectronApplication) {

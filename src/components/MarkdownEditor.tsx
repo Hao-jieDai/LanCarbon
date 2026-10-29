@@ -1,7 +1,7 @@
 import { indentWithTab } from "@codemirror/commands";
 import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
-import { Compartment, EditorState, Prec } from "@codemirror/state";
+import { Compartment, EditorState, Prec, StateEffect } from "@codemirror/state";
 import { EditorView, keymap, placeholder } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
 import { basicSetup } from "codemirror";
@@ -16,7 +16,10 @@ import type { Note, Book } from "../shared/types";
 import { ImageSettingsDialog } from "./ImageSettingsDialog";
 import { BibliographyPanel } from "./BibliographyPanel";
 
+export interface EditorSession { state?: EditorState; scrollTop?: number; articleScrollTop?: number }
+
 interface MarkdownEditorProps {
+  session?: EditorSession;
   navigation?: EditorNavigation | null;
   onNavigated?(): void;
   bibliographyBook?: Book;
@@ -84,7 +87,7 @@ function editorTheme(theme: Theme) {
   ];
 }
 
-export function MarkdownEditor({ value, theme, visible = true, onChange, resourceNotes = [], resourceBooks = [], beforeResourceChange, onResourcesChanged,bibliographyBook,onBibliographyBookChange,navigation,onNavigated }: MarkdownEditorProps) {
+export function MarkdownEditor({ session, value, theme, visible = true, onChange, resourceNotes = [], resourceBooks = [], beforeResourceChange, onResourcesChanged,bibliographyBook,onBibliographyBookChange,navigation,onNavigated }: MarkdownEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
@@ -145,11 +148,7 @@ export function MarkdownEditor({ value, theme, visible = true, onChange, resourc
 
   useEffect(() => {
     if (!hostRef.current) return;
-    const view = new EditorView({
-      parent: hostRef.current,
-      state: EditorState.create({
-        doc: value,
-        extensions: [
+    const extensions = [
           basicSetup,
           markdown({ base: markdownLanguage }),
           Prec.highest(keymap.of([
@@ -168,12 +167,15 @@ export function MarkdownEditor({ value, theme, visible = true, onChange, resourc
             if (update.docChanged) onChangeRef.current(update.state.doc.toString());
             if (update.docChanged || update.selectionSet) setRevision(value => value + 1);
           })
-        ]
-      })
-    });
+        ];
+    const state = session?.state?.doc.toString() === value
+      ? session.state.update({ effects: StateEffect.reconfigure.of(extensions) }).state
+      : EditorState.create({ doc: value, extensions });
+    const view = new EditorView({ parent: hostRef.current, state });
+    if (session?.scrollTop) requestAnimationFrame(() => { if (viewRef.current === view) view.scrollDOM.scrollTop = session.scrollTop!; });
     viewRef.current = view;
     setEditorView(view);
-    return () => { viewRef.current = null; view.destroy(); };
+    return () => { if (session) { session.state = view.state; session.scrollTop = view.scrollDOM.scrollTop; } viewRef.current = null; view.destroy(); };
     // The editor belongs to one note. External value/theme changes are handled
     // by the focused effects below without recreating selection or undo history.
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -36,6 +36,14 @@ test("PDF annotation geometry survives zoom, restart, export and return links; e
     await page.getByLabel("Annotation comment", { exact: true }).fill("Review the investment assumptions."); await page.getByRole("button", { name: "Save annotation", exact: true }).click();
     await expect(page.getByLabel("Reading annotations", { exact: true })).toContainText("Review the investment assumptions."); await expect(page.getByRole("button", {name: "Manage / delete", exact: true})).toHaveCount(0);
     await expect(page.locator('.reader-annotation-item-heading').getByRole('button', {name: 'Edit', exact: true})).toBeVisible();
+    await expect(page.getByLabel("Page sidebar", {exact:true})).toBeVisible();
+    await expect(page.locator('.sidebar')).toBeHidden();
+    const documentBox = await page.locator('.document-reader').boundingBox(), sidebarBox = await page.getByLabel("Page sidebar", {exact:true}).boundingBox();
+    expect(documentBox!.x + documentBox!.width).toBeLessThanOrEqual(sidebarBox!.x + 1);
+    await page.getByRole("button", {name:"Pages / Contents",exact:true}).click();
+    await expect(page.getByLabel("Reading annotations", {exact:true})).toBeHidden();
+    await page.getByRole("button", {name:"Annotations (1)",exact:true}).click();
+    await expect(page.locator('.pdf-reader-sidebar')).toHaveCount(0);
     await page.screenshot({path: info.outputPath('compact-annotations.png')});
     await page.getByRole("button", { name: "Close annotations", exact: true }).click();
     for (const zoom of ["75%", "125%", "Fit width"]) {

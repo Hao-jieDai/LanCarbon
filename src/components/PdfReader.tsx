@@ -44,6 +44,7 @@ export function PdfReader({ id, onClose, citation, ...annotationProps }: { id: s
   const [ready, setReady] = useState(false), [error, setError] = useState(""), [notice, setNotice] = useState("");
   const [page, setPage] = useState(1), [pageDraft, setPageDraft] = useState("1"), [zoom, setZoom] = useState("page-width");
   const [sidebar, setSidebar] = useState<"pages" | "outline" | "hidden">("hidden"), [outline, setOutline] = useState<Outline>(null);
+  useEffect(() => { if (annotationProps.rightOpen) setSidebar("hidden"); }, [annotationProps.rightOpen]);
   const [query, setQuery] = useState(""), [matches, setMatches] = useState(""), [revision, setRevision] = useState(0), [newVersion, setNewVersion] = useState(false);
   const [passwordNeeded, setPasswordNeeded] = useState(false), [password, setPassword] = useState(""), passwordCallback = useRef<((value: string) => void) | null>(null);
   const [ocrBusy, setOcrBusy] = useState(false), [ocrMessage, setOcrMessage] = useState("");
@@ -161,7 +162,7 @@ export function PdfReader({ id, onClose, citation, ...annotationProps }: { id: s
     {session && ready && <ReaderAnnotations {...annotationProps} key={session.token} root={root} documentId={session.readingId} fingerprint={session.fingerprint} navigate={a => { if (a.anchor.kind === "pdf") jump(Math.min(...a.anchor.rects.map(r => r.page))); }}/>}
 
     <div className="pdf-reader-controls" data-translation-exclude>
-      <button className="toolbar-text-button" aria-pressed={sidebar !== "hidden"} onClick={() => setSidebar(value => value === "hidden" ? "pages" : "hidden")}>Pages / Contents</button><span data-annotation-toggle/>
+      <button className="toolbar-text-button" aria-pressed={sidebar !== "hidden"} onClick={() => { if (sidebar === "hidden") annotationProps.onRightOpen?.(false); setSidebar(value => value === "hidden" ? "pages" : "hidden"); }}>Pages / Contents</button><span data-annotation-toggle/>
       <div className="pdf-page-controls"><button className="toolbar-text-button" aria-label="Previous PDF page" disabled={!ready || page <= 1} onClick={() => jump(page - 1)}>‹</button><form onSubmit={event => { event.preventDefault(); const value = Number(pageDraft); if (Number.isInteger(value)) jump(value); else setPageDraft(String(page)); }}><input aria-label="PDF page number" inputMode="numeric" value={pageDraft} disabled={!ready} onChange={event => setPageDraft(event.target.value)} onBlur={() => setPageDraft(String(page))}/><span>/ {document?.numPages ?? "—"}</span></form><button className="toolbar-text-button" aria-label="Next PDF page" disabled={!ready || page >= (document?.numPages ?? 0)} onClick={() => jump(page + 1)}>›</button></div>
       <ThemedSelect label="PDF zoom" value={zoom} options={zoomOptions} onChange={value => { if (engine.current) engine.current.viewer.currentScaleValue = value; }}/>
       <ThemedSelect action label="PDF OCR" placeholder="OCR" value="" options={[{ value: "page", label: "Recognize page" }, { value: "document", label: "Recognize PDF" }]} disabled={!ready || ocrBusy || !api.recognize} onChange={value => { if (value === "page") void recognize(page, true); if (value === "document") void recognize(); }}/>

@@ -103,26 +103,24 @@ describe("App", () => {
     await waitFor(() => expect(editor).toHaveFocus());
   });
 
-  it("跨笔记、Book、新页面与删除保持用户选择的预览模式", async () => {
+  it("每个写作标签分别保留预览状态，新页面从编辑模式开始", async () => {
     const user = userEvent.setup(); render(<App />); await screen.findByDisplayValue("第一篇");
     await user.click(screen.getByRole("button", { name: "Preview" }));
     await user.click(screen.getAllByRole("button", { name: /New Note/ })[0]);
+    expect(screen.getByLabelText("Note content")).toBeVisible();
+    await user.click(screen.getByRole("tab", { name: /第一篇/ }));
     expect(screen.getByLabelText("Rendered preview")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Delete note" }));
-    expect(screen.getByRole("button", { name: "Preview" })).toHaveAttribute("aria-pressed", "true");
     await user.click(screen.getByRole("button", { name: /^Books$/ }));
     await user.click(screen.getByRole("button", { name: "New Book" }));
     await user.type(screen.getByLabelText("Book Name"), "Mode Book");
     await user.click(screen.getByRole("button", { name: "Create Book" }));
+    await user.click(screen.getByRole("button", { name: "Preview" }));
     await user.click(screen.getByRole("button", { name: "＋ Section" }));
-    expect(screen.getByLabelText("Rendered preview")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "＋ Child Page" }));
-    expect(screen.getByLabelText("Rendered preview")).toBeVisible();
-    await user.click(screen.getByRole("button", { name: "Edit" }));
-    await user.click(screen.getByRole("button", { name: "Notes" }));
-    await user.click(screen.getByRole("button", { name: /第一篇/ }));
     expect(screen.getByLabelText("Note content")).toBeVisible();
-    expect(screen.getByRole("button", { name: "Edit" })).toHaveAttribute("aria-pressed", "true");
+    await user.click(screen.getByRole("tab", { name: /Mode Book/ }));
+    expect(screen.getByLabelText("Rendered preview")).toBeVisible();
+    await user.click(screen.getByRole("tab", { name: /第一篇/ }));
+    expect(screen.getByRole("button", { name: "Preview" })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("保留搜索、标签搜索和置顶筛选", async () => {
@@ -130,16 +128,16 @@ describe("App", () => {
     vi.mocked(api.loadWorkspace).mockResolvedValue({ ok: true, workspace: createEmptyWorkspace([savedNote, other]), isFirstRun: false, migrated: false });
     const user = userEvent.setup(); render(<App />); await screen.findByDisplayValue("旅行");
     await user.type(screen.getByLabelText("Search notes"), "测试");
-    expect(screen.getByRole("button", { name: /第一篇/ })).toBeInTheDocument(); expect(screen.queryByRole("button", { name: /旅行/ })).not.toBeInTheDocument();
+    expect(within(document.querySelector(".sidebar")!).getByRole("button", { name: /第一篇/ })).toBeInTheDocument(); expect(within(document.querySelector(".sidebar")!).queryByRole("button", { name: /旅行/ })).not.toBeInTheDocument();
     await user.clear(screen.getByLabelText("Search notes")); await user.click(screen.getByRole("button", { name: "Pinned" }));
-    expect(screen.getByRole("button", { name: /旅行/ })).toBeInTheDocument(); expect(screen.queryByRole("button", { name: /第一篇/ })).not.toBeInTheDocument();
+    expect(within(document.querySelector(".sidebar")!).getByRole("button", { name: /旅行/ })).toBeInTheDocument(); expect(within(document.querySelector(".sidebar")!).queryByRole("button", { name: /第一篇/ })).not.toBeInTheDocument();
   });
 
   it("支持置顶、删除和清空普通笔记", async () => {
     const user = userEvent.setup(); render(<App />); await screen.findByDisplayValue("第一篇");
     await user.click(screen.getByRole("button", { name: "Pin note" }));
     await waitFor(() => expect(api.saveWorkspace).toHaveBeenCalledWith(expect.objectContaining({ notes: expect.arrayContaining([expect.objectContaining({ id: "one", pinned: true })]) })));
-    await user.click(screen.getByRole("button", { name: "Delete note" })); expect(await screen.findByDisplayValue("ReadMe")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Delete note" })); await waitFor(() => expect(screen.getByLabelText("Note title")).not.toHaveValue("第一篇"));
     expect(window.confirm).not.toHaveBeenCalled();
     await user.clear(screen.getByLabelText("Note title")); await user.type(screen.getByLabelText("Note title"), "Editable after delete");
     expect(screen.getByLabelText("Note title")).toHaveValue("Editable after delete");
@@ -160,8 +158,8 @@ describe("App", () => {
     const user = userEvent.setup(); render(<App />); await screen.findByDisplayValue("第一篇");
     await user.click(screen.getByRole("button", { name: /^Books$/ })); await user.click(screen.getByRole("button", { name: "Delete" }));
     expect(window.confirm).not.toHaveBeenCalled();
-    expect(await screen.findByRole("button", { name: /第一篇/ })).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: /第一篇/ }));
+    expect(await within(document.querySelector(".sidebar")!).findByRole("button", { name: /第一篇/ })).toBeInTheDocument();
+    await user.click(within(document.querySelector(".sidebar")!).getByRole("button", { name: /第一篇/ }));
     await user.clear(screen.getByLabelText("Note title")); await user.type(screen.getByLabelText("Note title"), "Still editable");
     expect(screen.getByLabelText("Note title")).toHaveValue("Still editable");
     await waitFor(() => {
@@ -204,7 +202,7 @@ describe("App", () => {
     await user.click(screen.getByRole("button", { name: "＋ Section" })); expect(screen.getByDisplayValue("New Section")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "＋ Child Page" })); expect(screen.getByDisplayValue("Untitled Page")).toBeInTheDocument();
     const savesBeforeDrag = vi.mocked(api.saveWorkspace).mock.calls.length;
-    const sourceRow = screen.getByRole("button", { name: /Untitled Page/ });
+    const sourceRow = within(document.querySelector(".sidebar")!).getByRole("button", { name: /Untitled Page/ });
     const targetRow = screen.getByRole("button", { name: "测试 Book" });
     Object.defineProperty(document, "elementFromPoint", { configurable: true, value: vi.fn(() => targetRow) });
     vi.spyOn(targetRow, "getBoundingClientRect").mockReturnValue({ x: 0, y: 100, top: 100, left: 0, right: 300, bottom: 136, width: 300, height: 36, toJSON: () => ({}) });
@@ -232,7 +230,7 @@ describe("App", () => {
 
   it("显示并可更改数据位置", async () => {
     const user = userEvent.setup(); render(<App />); await screen.findByDisplayValue("第一篇");
-    await user.click(screen.getByRole("button", { name: "Data Location" }));
+    await user.click(within(document.querySelector(".sidebar")!).getByRole("button", { name: "Data Location" }));
     expect(await screen.findByLabelText("Current data folder")).toHaveValue("D:\\LanCarbon\\Data");
     await user.click(screen.getByRole("button", { name: "Change Location" }));
     await waitFor(() => expect(api.changeDataLocation).toHaveBeenCalled());
@@ -269,7 +267,7 @@ describe("App", () => {
   it("PDF 导出先保存最新编辑，并显示持久的结果提示", async () => {
     render(<App />); await screen.findByDisplayValue("第一篇");
     fireEvent.change(screen.getByLabelText("Note title"), { target: { value: "Latest PDF title" } });
-    fireEvent.click(screen.getByRole("button", { name: "Export PDF" }));
+    fireEvent.click(within(document.querySelector(".editor-toolbar")!).getByRole("button", { name: "Export PDF" }));
     await waitFor(() => expect(api.exportPdf).toHaveBeenCalledWith(savedNote.id));
     const calls = vi.mocked(api.saveWorkspace).mock.calls;
     expect(calls.at(-1)?.[0].notes.find(note => note.id === savedNote.id)?.title).toBe("Latest PDF title");
@@ -280,9 +278,9 @@ describe("App", () => {
   it("保存失败时不启动 PDF 导出，并允许重试", async () => {
     render(<App />); await screen.findByDisplayValue("第一篇");
     vi.mocked(api.saveWorkspace).mockResolvedValue({ ok: false, error: "Disk is not writable" });
-    fireEvent.click(screen.getByRole("button", { name: "Export PDF" }));
+    fireEvent.click(within(document.querySelector(".editor-toolbar")!).getByRole("button", { name: "Export PDF" }));
     expect(await screen.findByText("Disk is not writable")).toBeInTheDocument();
-    expect(api.exportPdf).not.toHaveBeenCalled(); expect(screen.getByRole("button", { name: "Export PDF" })).toBeEnabled();
+    expect(api.exportPdf).not.toHaveBeenCalled(); expect(within(document.querySelector(".editor-toolbar")!).getByRole("button", { name: "Export PDF" })).toBeEnabled();
   });
 
   it("支持主题和快捷键，并显示保存错误", async () => {

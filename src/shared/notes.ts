@@ -9,33 +9,31 @@ export const MAX_TAGS = 12;
 export const MAX_TAG_LENGTH = 40;
 export const GUIDE_NOTE_ID = "lancarbon-usage-guide";
 export const RELEASE_README_ID = "lancarbon-release-readme";
-export const RELEASE_VERSION = "2.5.3";
+export const RELEASE_VERSION = "2.5.4";
 
 export const RELEASE_README_CONTENT = `# LanCarbon ${RELEASE_VERSION}
 
 ## What's new
 
-This update adds local PDF and EPUB annotations and reading-note exports.
+This update adds writing tabs and a shared right sidebar for page chat and reading annotations.
 
-- **Annotate while reading:** select text and choose **Highlight**, **Underline** or **Comment** in the fixed reading toolbar beside OCR (or the EPUB display controls). **Annotations** sits beside **Pages / Contents**. Choose a color, add an optional comment, and save. Click a mark or use **Annotations** to edit or delete it. The compact list follows document order, with **Edit** beside each item’s style and color; deletion is available inside Edit.
-- **Reliable local storage:** annotations are saved separately under **Data/Library/Annotations**, leaving original files unchanged. PDF locations use file pages and page-relative positions; EPUB locations use chapters and text anchors. Renaming or moving a document within Library preserves its annotations. A changed original keeps earlier annotations with a version warning instead of applying old locations to new text.
-- **Export to Note:** export all or selected annotations into a new editable Note containing original excerpts, comments, locations and **Return to original** links. PDF locations use actual file page numbers, which may differ from printed page labels. Return links work inside LanCarbon. Exports are snapshots; re-exporting warns when an existing exported Note is found and creates a new Note without overwriting your edits.
-- **Translation shortcut hint:** the floating panel now shows **Continuous translation (Z)**; Z toggles continuous mode after a PDF selection.
+- **Writing tabs:** keep multiple Notes and pages from different Books open, displaying one at a time. Switching retains the current session's cursor, undo history, scroll position and Edit / Preview choice. Closing a tab does not delete its page; open tabs return after restart.
+- **AI Chat beside your writing:** open **AI Chat** in a Note or Book page. The default source is the current Note/page; Book pages also offer **Current section** and **Whole Book**. A section includes its top-level page and descendants. Each page has its own conversations and session drafts. Sending saves the latest text first and uses the existing model connections and source-citation workflow; opening or switching tabs does not call a model.
+- **One right sidebar:** Notes and Books show AI Chat, while PDF and EPUB show **Annotations**. Opening the right sidebar closes the left workspace list; opening the left list closes the right. Reader Pages / Contents and Annotations also close one another. Annotation controls, local storage and Note exports remain available.
 
-Your Notes, Books, model settings and chat history are retained. The system ReadMe and tutorial synchronize with the app. Annotated PDF/EPUB file export, multi-tab writing and the writing-side AI panel are not included. Automated paper discovery and collection expansion are not available yet.
+Your personal Notes, Books, annotations, model settings and chat history are retained. The system ReadMe and tutorial synchronize with the app. Mac/tablet adaptation and automated paper discovery/collection expansion remain deferred.
 
 ---
 
 ## 主要更新
 
-本次更新提供 PDF／EPUB 本地批注，以及批注导出为阅读笔记的完整流程。
+本次更新增加多标签写作，以及用于随页聊天和阅读批注的统一右侧栏。
 
-- **边读边批注**：选中文字，使用 OCR 旁（EPUB 显示设置旁）固定工具栏中的 **Highlight**（高亮）、**Underline**（划线）或 **Comment**（评论），设置颜色、按需输入评论后保存。点击标记或使用 **Annotations** 列表编辑、删除；**Annotations** 位于 **Pages / Contents** 旁；紧凑列表按原文顺序排列，**Edit** 位于类型、颜色同行，删除操作在编辑窗口内。
-- **独立本地保存**：批注保存在 **Data/Library/Annotations**，不改写 PDF／EPUB 原件。PDF 保存实际文件页码及页内相对位置；EPUB 保存章节及文字锚点。在 Library 内改名、移动后保留批注。更换原文件后，旧批注仍保留并提示版本变化，不把旧位置套用到新文字上。
-- **导出为 Note**：可导出全部或勾选的批注，生成含原文摘录、评论、位置和 **Return to original** 返回链接的普通可编辑 Note。PDF 使用实际文件页码，可能与印刷页码不同；返回链接在 LanCarbon 内使用。导出是快照；发现已有导出笔记时会提醒，重复导出创建新 Note，不覆盖用户修改。
-- **翻译快捷键提示**：浮窗显示 **Continuous translation (Z)**；PDF 选区后可按 Z 切换连续翻译。
+- **多标签切换**：可同时保留多个 Notes、不同 Books 的页面，每次显示一个。切换时保留本次使用中的光标、撤销记录、滚动位置及 Edit / Preview 状态。关闭标签不删除内容；重启后恢复已打开的标签。
+- **边写边问**：在 Note 或 Book 页面点击 **AI Chat**，默认以当前 Note／页面为资料；Book 页面还可选择 **Current section**（所属顶层章节及其子页面）或 **Whole Book**。每页分别保留聊天记录和本次使用中的输入草稿。发送前保存最新正文，复用已有模型连接及来源引用流程；打开或切换标签不会调用模型。
+- **统一右侧栏**：Notes／Books 显示 AI Chat，PDF／EPUB 显示 **Annotations**。打开右侧栏自动收起左侧工作区列表，打开左侧列表自动收起右侧栏；阅读器的 Pages / Contents 与 Annotations 也互斥。批注工具、本地保存和导出 Note 继续可用。
 
-升级保留 Notes、Books、模型设置和聊天记录，系统 ReadMe 与教程随软件同步。本次不包含带批注 PDF／EPUB 文件导出、多标签写作和写作侧栏 AI；自动文献发现与文献库自拓展尚未开放。`;
+升级保留个人 Notes、Books、批注、模型配置和聊天记录，系统 ReadMe 与教程随软件同步。Mac／平板适配、自动文献发现和文献库自拓展继续暂缓。`;
 
 export function makeId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;

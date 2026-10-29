@@ -248,7 +248,7 @@ app.whenReady().then(async () => {
   aiHandler("ai:test", async (id: string, model: string) => ({ message: await aiService.test(id, model, message => mainWindow?.webContents.send("ai:test-progress", message)) }));
   aiHandler("ai:stop-test", async () => { await aiService.stopTest(); return {}; });
   aiHandler("ai:chats", async () => ({ chats: await chats().list() }));
-  aiHandler("ai:create-chat", async (provider: string, model: string) => ({ chat: await chats().create(provider, model) }));
+  aiHandler("ai:create-chat", async (provider: string, model: string, contextNoteId?: string) => ({ chat: await chats().create(provider, model, contextNoteId) }));
   aiHandler("ai:rename-chat", async (id: string, title: string) => ({ chat: await chats().rename(id, title) }));
   aiHandler("ai:delete-chat", async (id: string) => { await aiService.remove(id); return {}; });
   const chatGrounder = new ChatGrounder(() => knowledge(), () => retrieval(), async () => (await retrievalSettings.get()).enabled);

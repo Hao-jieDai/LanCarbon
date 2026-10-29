@@ -4,6 +4,9 @@ import { BookSettingsDialog, ChooseBookDialog, CreateBookDialog, DataLocationDia
 import { BookBuildPanel } from "./components/BookBuildPanel";
 import { GitHubPublishingPanel } from "./components/GitHubPublishingPanel";
 import { EnvironmentSetupPanel } from "./components/EnvironmentSetupPanel";
+import { WritingChat } from "./components/WritingChat";
+import { writingLocation, writingTabIds } from "./shared/writingWorkspace";
+import type { EditorSession } from "./components/MarkdownEditor";
 import { Editor } from "./components/Editor";
 import { Sidebar } from "./components/Sidebar";
 import { AssetConflictDialog } from "./components/AssetConflictDialog";
@@ -28,7 +31,7 @@ const PdfReader = lazy(() => import("./components/PdfReader").then(module => ({ 
 const EpubReader = lazy(() => import("./components/EpubReader").then(module => ({ default: module.EpubReader })));
 const NAVIGATION_KEY = "lancarbon-navigation-v1";
 const SIDEBAR_KEY = "lancarbon-sidebar-collapsed";
-interface WorkspaceNavigation { readerTabs?: ReaderTab[]; pdfId?: string; mode?: WorkspaceMode; noteId?: string; bookId?: string; pageId?: string; researchPage?: ResearchPage; libraryAssetId?: string; libraryCollection?: LibraryCollection; libraryFolderId?: string | null }
+interface WorkspaceNavigation { writingTabs?: string[]; readerTabs?: ReaderTab[]; pdfId?: string; mode?: WorkspaceMode; noteId?: string; bookId?: string; pageId?: string; researchPage?: ResearchPage; libraryAssetId?: string; libraryCollection?: LibraryCollection; libraryFolderId?: string | null }
 function navigation(): WorkspaceNavigation {
   try {
     const value = JSON.parse(localStorage.getItem(NAVIGATION_KEY) ?? "{}");
@@ -48,6 +51,10 @@ export function App() {
   const [workspace, setWorkspace] = useState<WorkspaceFile>(createEmptyWorkspace());
   const [mode, setMode] = useState<WorkspaceMode>(() => { const value = navigation().mode; return value && ["notes", "book", "research", "library"].includes(value) ? value : "notes"; });
   const [readerTabs,setReaderTabs]=useState<ReaderTab[]>(()=>{const value=navigation(),tabs=savedReaderTabs(value.readerTabs);return tabs.length?tabs:validReaderId(value.pdfId)?[{id:value.pdfId,name:"PDF",format:"pdf"}]:[];});
+  const [writingTabs, setWritingTabs] = useState<string[]>(() => writingTabIds(navigation().writingTabs));
+  const writingTabsRef = useRef(writingTabs); writingTabsRef.current = writingTabs;
+  const editorSessions = useRef(new Map<string, EditorSession>());
+  const [viewModes, setViewModes] = useState<Record<string, "edit" | "preview">>({});
   const tabsRef=useRef(readerTabs);tabsRef.current=readerTabs;
   const openRequests=useRef<Promise<unknown>>(Promise.resolve());
   const [pdfId, setPdfId] = useState<string | null>(() => {const value=navigation();return validReaderId(value.pdfId)?value.pdfId:null;});
@@ -61,8 +68,6 @@ export function App() {
   const [libraryFolders, setLibraryFolders] = useState<LibraryFolder[]>([]);
   const [loadError, setLoadError] = useState("");
   const lastWritingMode = useRef<"notes" | "book">("notes");
-  // View mode belongs to the workspace session, not a keyed note editor.
-  const [viewMode, setViewMode] = useState<"edit" | "preview">("edit");
   const [previewNavigation, setPreviewNavigation] = useState<{ noteId: string; anchor: string; sequence: number } | null>(null);
   const [editorNavigation, setEditorNavigation] = useState<EditorNavigation | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -74,7 +79,11 @@ export function App() {
   const [booksSort, setBooksSort] = useState<WorkspaceSortOrder>(() => initialSort(BOOKS_SORT_KEY));
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => { try { return localStorage.getItem(SIDEBAR_KEY) === "true"; } catch { return false; } });
-  const openSidebar = useCallback(() => { setSidebarCollapsed(false); document.body.classList.toggle("sidebar-open", window.innerWidth <= 760); }, []);
+  const [rightOpen, setRightOpen] = useState(false);
+  const [chatOpened, setChatOpened] = useState(false);
+  const [annotationTarget, setAnnotationTarget] = useState<HTMLDivElement | null>(null);
+  const changeRightOpen = useCallback((open: boolean) => { setRightOpen(open); if (open) { setChatOpened(true); setSidebarCollapsed(true); document.body.classList.remove("sidebar-open"); } }, []);
+  const openSidebar = useCallback(() => { setRightOpen(false); setSidebarCollapsed(false); document.body.classList.toggle("sidebar-open", window.innerWidth <= 760); }, []);
   const collapseSidebar = useCallback(() => {
     setSidebarCollapsed(true); document.body.classList.remove("sidebar-open");
     requestAnimationFrame(() => (document.querySelector<HTMLButtonElement>(".reader-sidebar-toggle") ?? document.querySelector<HTMLButtonElement>(".editor-panel:not([hidden]) .mobile-menu"))?.focus());
@@ -153,13 +162,43 @@ export function App() {
   useEffect(() => {
     if (!loaded || loadError) return;
     if (mode === "notes" || mode === "book") lastWritingMode.current = mode;
-    try { localStorage.setItem(NAVIGATION_KEY, JSON.stringify({ mode, noteId: activeId, bookId: activeBookId, pageId: activePageId, researchPage, libraryAssetId, libraryCollection, libraryFolderId, readerTabs, ...(pdfId ? { pdfId } : {}) })); } catch { /* optional UI state */ }
-  }, [loaded, loadError, mode, activeId, activeBookId, activePageId, researchPage, libraryAssetId, libraryCollection, libraryFolderId, pdfId, readerTabs]);
+    try { localStorage.setItem(NAVIGATION_KEY, JSON.stringify({ mode, noteId: activeId, bookId: activeBookId, pageId: activePageId, researchPage, libraryAssetId, libraryCollection, libraryFolderId, readerTabs, writingTabs, ...(pdfId ? { pdfId } : {}) })); } catch { /* optional UI state */ }
+  }, [loaded, loadError, mode, activeId, activeBookId, activePageId, researchPage, libraryAssetId, libraryCollection, libraryFolderId, pdfId, readerTabs, writingTabs]);
 
   const activeBook = useMemo(() => workspace.books.find(book => book.id === activeBookId) ?? null, [workspace.books, activeBookId]);
   const activePage = activeBook && activePageId ? activeBook.pages[activePageId] ?? null : null;
   const activeNoteId = mode === "book" ? activePage?.noteId ?? null : activeId;
   const activeNote = useMemo(() => workspace.notes.find(note => note.id === activeNoteId) ?? null, [workspace.notes, activeNoteId]);
+  const viewMode = viewModes[activeNoteId ?? ""] ?? "edit";
+  const setViewMode = (value: "edit" | "preview") => setViewModes(previous => ({ ...previous, [activeNoteId ?? ""]: value }));
+  const writingActive = !activeReader && (mode === "notes" || mode === "book") && !!activeNote;
+  const showRight = rightOpen && (!!activeReader || writingActive);
+  const lastChatContext = useRef<{ note: Note; inBook: boolean } | null>(null);
+  if (writingActive && activeNote) lastChatContext.current = { note: activeNote, inBook: mode === "book" };
+  const chatContext = lastChatContext.current;
+  const sessionFor = (id: string) => { let session = editorSessions.current.get(id); if (!session) { session = {}; editorSessions.current.set(id, session); } return session; };
+  useEffect(() => {
+    if (!loaded || loadError) return;
+    setWritingTabs(previous => {
+      const next = writingTabIds(previous, workspace);
+      if (writingActive && activeNote && !next.includes(activeNote.id)) next.push(activeNote.id);
+      return JSON.stringify(previous) === JSON.stringify(next) ? previous : next;
+    });
+  }, [loaded, loadError, workspace.notes, workspace.books, writingActive, activeNoteId]);
+  useEffect(() => { for (const id of editorSessions.current.keys()) if (!writingTabs.includes(id) && id !== activeNoteId) editorSessions.current.delete(id); }, [writingTabs, activeNoteId]);
+  const activateWriting = (id: string) => {
+    const target = writingLocation(workspaceRef.current, id); if (!target) return;
+    setPdfId(null); setPreviewNavigation(null); setEditorNavigation(null);
+    if (target.book && target.page) { setMode("book"); setActiveBookId(target.book.id); setActivePageId(target.page.id); }
+    else { setMode("notes"); setActiveId(id); }
+  };
+  const selectWriting = async (id: string) => { const saved = await saveNow(); if (!saved.ok) { showToast(saved.error); return; } activateWriting(id); };
+  const closeWriting = async (id: string) => {
+    const saved = await saveNow(); if (!saved.ok) { showToast(saved.error); return; }
+    const previous = writingTabsRef.current, next = previous.filter(value => value !== id);
+    if (writingActive && activeNoteId === id) { const target = next[Math.min(previous.indexOf(id), next.length - 1)]; if (target) activateWriting(target); else { setMode("notes"); setActiveId(null); } }
+    writingTabsRef.current = next; setWritingTabs(next);
+  };
   const previewDocuments = useMemo<PreviewDocument[]>(() => {
     if (mode !== "book" || !activeBook) return activeNote ? [{ id: activeNote.id, title: activeNote.title, content: activeNote.content }] : [];
     const notesById = new Map(workspace.notes.map(note => [note.id, note]));
@@ -171,7 +210,7 @@ export function App() {
   const navigatePreview = (noteId: string, anchor: string) => {
     const page = activeBook && Object.values(activeBook.pages).find(item => item.noteId === noteId);
     if (mode !== "book" || !page) return;
-    setActivePageId(page.id); setPreviewNavigation({ noteId, anchor, sequence: Date.now() });
+    setActivePageId(page.id); setViewModes(previous => ({ ...previous, [noteId]: "preview" })); setPreviewNavigation({ noteId, anchor, sequence: Date.now() });
   };
 
   const addOrdinaryNote = useCallback(() => {
@@ -328,9 +367,10 @@ export function App() {
   };
 
   const annotationReaderProps = {
+    panelTarget: annotationTarget, rightOpen: showRight, onRightOpen: changeRightOpen,
     annotationId: readerAnnotation?.documentId === activeReader?.id ? readerAnnotation?.id : undefined,
     beforeExport: async () => { const result = await saveNow(); if (!result.ok) throw Error(result.error); },
-    onNoteExported: (next: WorkspaceFile, noteId: string) => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); setPdfId(null); setActiveId(noteId); setMode("notes"); setViewMode("preview"); }
+    onNoteExported: (next: WorkspaceFile, noteId: string) => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); setPdfId(null); setActiveId(noteId); setMode("notes"); setViewModes(previous => ({ ...previous, [noteId]: "preview" })); }
   };
   const openDataLocation = async () => {
     const result = await window.notesDesktop.openDataLocation();
@@ -357,7 +397,7 @@ export function App() {
     if (!noteId || !current.notes.some(note => note.id === noteId) || (usage.bookId && !page)) { showToast("This reference is no longer available"); return; }
     if (book && page) { setMode("book"); setActiveBookId(book.id); setActivePageId(page.id); }
     else { setMode("notes"); setActiveId(noteId); }
-    setPdfId(null); setViewMode("edit"); setPreviewNavigation(null);
+    setPdfId(null); setViewModes(previous => ({ ...previous, [noteId]: "edit" })); setPreviewNavigation(null);
     if (usage.kind === "settings") setShowBookSettings(true);
     else setEditorNavigation({ noteId, line: usage.line || 1, sequence: Date.now(), bibliography: usage.kind === "bibliography" });
   };
@@ -373,13 +413,18 @@ export function App() {
   if (!loaded) return <div className="loading-screen" role="status">Loading notes…</div>;
   if (loadError) return <div className="loading-screen"><section className="foundation-card" role="alert"><h1>Workspace unavailable</h1><p>{loadError}</p><p>Your workspace is protected. Close LanCarbon and choose a compatible version or recover your backup.</p></section></div>;
   return <>
-    <main className={`app-shell${readerTabs.length ? " has-reader-tabs" : ""}${activeReader ? " reader-active" : ""}${sidebarCollapsed ? " sidebar-collapsed" : ""}`} aria-label="LanCarbon application">
+    <main className={`app-shell${readerTabs.length || writingTabs.length ? " has-reader-tabs" : ""}${activeReader ? " reader-active" : ""}${sidebarCollapsed ? " sidebar-collapsed" : ""}${showRight ? " right-sidebar-open" : ""}`} aria-label="LanCarbon application">
       <Sidebar onCollapse={collapseSidebar} libraryFolders={libraryFolders} libraryFolderId={libraryFolderId} onLibraryFolderChange={setLibraryFolderId} libraryCollection={libraryCollection} onLibraryCollectionChange={setLibraryCollection} researchPage={researchPage} onResearchPageChange={setResearchPage} notesSort={notesSort} booksSort={booksSort} onNotesSortChange={setNotesSort} onBooksSortChange={setBooksSort} notes={workspace.notes} books={workspace.books} mode={mode} activeBookId={activeBookId} activePageId={activePageId} activeId={activeId} query={query} filter={filter} theme={theme} searchRef={searchRef} onModeChange={next => { setPdfId(null); switchMode(next); }} onBookChange={switchBook} onQueryChange={setQuery} onFilterChange={setFilter} onSelectNote={id => { setPdfId(null); setActiveId(id); document.body.classList.remove("sidebar-open"); }} onSelectPage={id => { setPdfId(null); setActivePageId(id); document.body.classList.remove("sidebar-open"); }} onNewNote={addOrdinaryNote} onNewBook={() => setShowCreateBook(true)} onNewPage={addBookPage} onMovePage={(pageId, targetId, placement) => { if (!activeBook) return; const updated = movePage(activeBook, pageId, targetId, placement); persist({ ...workspaceRef.current, books: workspaceRef.current.books.map(book => book.id === activeBook.id ? updated : book) }); }} onBookSettings={() => setShowBookSettings(true)} onExportBook={() => void exportBook()} onBuildBook={() => void checkAndBuildBook()} onPublishBook={() => void openPublishBook()} onDeleteBook={deleteBook} onClear={clearLoose} onEnvironmentSetup={() => setShowEnvironmentSetup(true)} onDataLocation={() => setShowDataLocation(true)} onThemeChange={value => { setTheme(value); showToast(value === "light" ? "Switched to light theme" : "Switched to dark theme"); }} onClose={() => document.body.classList.remove("sidebar-open")} />
-      {(mode === "notes" || mode === "book") && <Editor navigation={editorNavigation?.noteId === activeNoteId ? editorNavigation : null} onNavigated={() => setEditorNavigation(null)} onExportPdf={() => void exportPdf()} pdfExporting={pdfExporting} pdfNotice={pdfNotice} onDismissPdfNotice={() => setPdfNotice("")} bibliographyBook={mode === "book" ? activeBook ?? undefined : undefined} onBibliographyBookChange={updated => persist({...workspaceRef.current,books:workspaceRef.current.books.map(book=>book.id===updated.id?updated:book)})} onResourcesChanged={next => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); }} resourceBooks={workspace.books} beforeResourceChange={async () => { const result = await saveNow(); if (!result.ok) throw new Error(result.error); }} resourceNotes={workspace.notes} key={`${mode}:${activeNoteId ?? "empty"}`} previewDocuments={previewDocuments} previewNavigation={previewNavigation} onPreviewNavigate={navigatePreview} onPreviewNavigated={() => setPreviewNavigation(null)} note={activeNote} saveState={saveState} theme={theme} viewMode={viewMode} onViewModeChange={setViewMode} bookContext={activePage ? { isHome: activePage.id === activeBook?.homePageId } : undefined} booksAvailable={workspace.books.length > 0} onChange={updateActive} onNew={mode === "book" ? () => addBookPage(false) : addOrdinaryNote} onPin={togglePin} onDelete={deleteActive} onAddToBook={mode === "notes" ? addActiveToBook : undefined} onRemoveFromBook={mode === "book" && activePage ? removeActiveFromBook : undefined} onPageProperties={mode === "book" && activePage ? () => setShowPageProperties(true) : undefined} onOpenSidebar={openSidebar} />}
-      <ResearchWorkspace onNoteExported={(next, noteId) => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); setPdfId(null); setActiveId(noteId); setMode("notes"); setViewMode("preview"); }} beforeChange={async()=>{const result=await saveNow();if(!result.ok)throw Error(result.error);}} onCitationOpen={target=>{if(target.source.kind==="file"){window.dispatchEvent(new CustomEvent("lancarbon:open-pdf",{detail:{id:target.source.entityId,citation:target}}));}else{const location=target.source.locations[0];void navigateResource({id:target.source.entityId,noteId:location.noteId??target.source.entityId,bookId:location.bookId,title:target.source.title,location:location.label,line:target.anchor.line??1});}}} key={`research:${dataLocation}`} visible={mode === "research"} page={researchPage} onPageChange={setResearchPage} onOpenSidebar={openSidebar} />
+      {(mode === "notes" || mode === "book") && <Editor session={activeNoteId ? sessionFor(activeNoteId) : undefined} rightOpen={showRight} onToggleChat={() => changeRightOpen(!showRight)} navigation={editorNavigation?.noteId === activeNoteId ? editorNavigation : null} onNavigated={() => setEditorNavigation(null)} onExportPdf={() => void exportPdf()} pdfExporting={pdfExporting} pdfNotice={pdfNotice} onDismissPdfNotice={() => setPdfNotice("")} bibliographyBook={mode === "book" ? activeBook ?? undefined : undefined} onBibliographyBookChange={updated => persist({...workspaceRef.current,books:workspaceRef.current.books.map(book=>book.id===updated.id?updated:book)})} onResourcesChanged={next => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); }} resourceBooks={workspace.books} beforeResourceChange={async () => { const result = await saveNow(); if (!result.ok) throw new Error(result.error); }} resourceNotes={workspace.notes} key={`${mode}:${activeNoteId ?? "empty"}`} previewDocuments={previewDocuments} previewNavigation={previewNavigation} onPreviewNavigate={navigatePreview} onPreviewNavigated={() => setPreviewNavigation(null)} note={activeNote} saveState={saveState} theme={theme} viewMode={viewMode} onViewModeChange={setViewMode} bookContext={activePage ? { isHome: activePage.id === activeBook?.homePageId } : undefined} booksAvailable={workspace.books.length > 0} onChange={updateActive} onNew={mode === "book" ? () => addBookPage(false) : addOrdinaryNote} onPin={togglePin} onDelete={deleteActive} onAddToBook={mode === "notes" ? addActiveToBook : undefined} onRemoveFromBook={mode === "book" && activePage ? removeActiveFromBook : undefined} onPageProperties={mode === "book" && activePage ? () => setShowPageProperties(true) : undefined} onOpenSidebar={openSidebar} />}
+      <ResearchWorkspace onNoteExported={(next, noteId) => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); setPdfId(null); setActiveId(noteId); setMode("notes"); setViewModes(previous => ({ ...previous, [noteId]: "preview" })); }} beforeChange={async()=>{const result=await saveNow();if(!result.ok)throw Error(result.error);}} onCitationOpen={target=>{if(target.source.kind==="file"){window.dispatchEvent(new CustomEvent("lancarbon:open-pdf",{detail:{id:target.source.entityId,citation:target}}));}else{const location=target.source.locations[0];void navigateResource({id:target.source.entityId,noteId:location.noteId??target.source.entityId,bookId:location.bookId,title:target.source.title,location:location.label,line:target.anchor.line??1});}}} key={`research:${dataLocation}`} visible={mode === "research"} page={researchPage} onPageChange={setResearchPage} onOpenSidebar={openSidebar} />
       {mode === "library" && <LibraryWorkspace beforeChange={async () => { const result = await saveNow(); if (!result.ok) throw Error(result.error); }} onResourcesChanged={next => { clearTimeout(saveTimer.current); workspaceRef.current = next; setWorkspace(next); setSaveState("saved"); }} folderId={libraryFolderId} onFolderChange={setLibraryFolderId} onFoldersChange={setLibraryFolders} collection={libraryCollection} onCollectionChange={setLibraryCollection} onNavigate={usage => void navigateResource(usage)} key={dataLocation} notes={workspace.notes} books={workspace.books} selectedId={libraryAssetId} onSelect={setLibraryAssetId} onOpenSidebar={openSidebar} />}
-      {!!readerTabs.length&&<div className="reader-tab-bar" data-translation-exclude><button className="icon-button reader-sidebar-toggle" title="Show sidebar" aria-label="Open workspace list" onClick={openSidebar}>☰</button><div className="reader-tabs-scroll" role="tablist" aria-label="Open files" onKeyDown={event=>{if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;const tabs=Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="tab"]')),index=tabs.indexOf(event.target as HTMLButtonElement);if(index<0)return;event.preventDefault();const next=event.key==="Home"?0:event.key==="End"?tabs.length-1:(index+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;tabs[next].focus();tabs[next].click();}} data-translation-exclude><button role="tab" className="reader-workspace-tab" aria-selected={!activeReader} onClick={()=>setPdfId(null)}>Workspace</button>{readerTabs.map(tab=><div className={pdfId===tab.id?"reader-tab selected":"reader-tab"} key={tab.id}><button role="tab" aria-selected={pdfId===tab.id} title={tab.name} onClick={()=>setPdfId(tab.id)}><span className="reader-tab-format" aria-hidden="true">{tab.format.toUpperCase()}</span><span className="reader-tab-name">{tab.name}</span></button><button className="reader-tab-close" aria-label={`Close ${tab.name}`} title="Close file" onClick={()=>closeReaderTab(tab.id)}>×</button></div>)}</div></div>}
+      {!!(readerTabs.length || writingTabs.length)&&<div className="reader-tab-bar" data-translation-exclude><button className="icon-button reader-sidebar-toggle" title="Show sidebar" aria-label="Open workspace list" onClick={openSidebar}>☰</button><div className="reader-tabs-scroll" role="tablist" aria-label="Open files" onKeyDown={event=>{if(!["ArrowLeft","ArrowRight","Home","End"].includes(event.key))return;const tabs=Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button[role="tab"]')),index=tabs.indexOf(event.target as HTMLButtonElement);if(index<0)return;event.preventDefault();const next=event.key==="Home"?0:event.key==="End"?tabs.length-1:(index+(event.key==="ArrowRight"?1:-1)+tabs.length)%tabs.length;tabs[next].focus();tabs[next].click();}} data-translation-exclude><button role="tab" className="reader-workspace-tab" aria-selected={!activeReader && !writingActive} onClick={()=>setPdfId(null)}>Workspace</button>{writingTabs.map(id => { const target = writingLocation(workspace, id); if (!target) return null; const name = target.note.title || "Untitled"; return <div className={`writing-tab${writingActive && activeNoteId === id ? " selected" : ""}`} key={id}><button role="tab" aria-selected={writingActive && activeNoteId === id} title={target.book ? `${target.book.settings.title} / ${name}` : name} onClick={() => void selectWriting(id)}><span className="reader-tab-format" aria-hidden="true">{target.book ? "Book" : "Note"}</span><span className="reader-tab-name">{name}</span></button><button className="reader-tab-close" aria-label={`Close page ${name}`} onClick={() => void closeWriting(id)}>×</button></div>; })}{readerTabs.map(tab=><div className={pdfId===tab.id?"reader-tab selected":"reader-tab"} key={tab.id}><button role="tab" aria-selected={pdfId===tab.id} title={tab.name} onClick={()=>setPdfId(tab.id)}><span className="reader-tab-format" aria-hidden="true">{tab.format.toUpperCase()}</span><span className="reader-tab-name">{tab.name}</span></button><button className="reader-tab-close" aria-label={`Close ${tab.name}`} title="Close file" onClick={()=>closeReaderTab(tab.id)}>×</button></div>)}</div></div>}
       {activeReader&&<Suspense fallback={<section className="editor-panel document-reader pdf-reader" role="status">Opening reader…</section>}>{activeReader.format==="epub"?<EpubReader {...annotationReaderProps} citation={readerCitation?.source.entityId===activeReader.id?readerCitation:undefined} key={`${dataLocation}:${activeReader.id}:${readerAnnotation?.documentId===activeReader.id?readerAnnotation.requestId:""}:${readerCitation?.source.entityId===activeReader.id?readerCitation.requestId:""}`} id={activeReader.id}/>:<PdfReader {...annotationReaderProps} citation={readerCitation?.source.entityId===activeReader.id?readerCitation:undefined} key={`${dataLocation}:${activeReader.id}:${readerAnnotation?.documentId===activeReader.id?readerAnnotation.requestId:""}:${readerCitation?.source.entityId===activeReader.id?readerCitation.requestId:""}`} id={activeReader.id} onClose={()=>setPdfId(null)}/>}</Suspense>}
+      <aside className="workspace-right-sidebar ai-panel" aria-label="Page sidebar" hidden={!showRight} data-translation-exclude>
+        <div ref={setAnnotationTarget} className="annotation-sidebar-host" hidden={!activeReader}/>
+        {!activeReader && <header className="workspace-right-heading"><strong>AI Chat</strong><button className="quiet-button" aria-label="Close AI Chat" onClick={() => changeRightOpen(false)}>×</button></header>}
+        {chatOpened && chatContext && <WritingChat key={dataLocation} dataLocation={dataLocation} noteId={chatContext.note.id} title={chatContext.note.title} inBook={chatContext.inBook} visible={showRight && !activeReader} getWorkspace={() => workspaceRef.current} beforeChange={annotationReaderProps.beforeExport} onNoteExported={annotationReaderProps.onNoteExported} onSettings={() => { changeRightOpen(false); switchMode("research"); setResearchPage("settings"); }} onCitationOpen={target => { if (target.source.kind === "file") window.dispatchEvent(new CustomEvent("lancarbon:open-pdf", {detail:{id:target.source.entityId,citation:target}})); else { const location = target.source.locations[0]; void navigateResource({id:target.source.entityId,noteId:location.noteId ?? target.source.entityId,bookId:location.bookId,title:target.source.title,location:location.label,line:target.anchor.line ?? 1}); } }}/>}
+      </aside>
     </main>
     <TranslationWidget key={dataLocation} scope={`${pdfId ?? ""}:${mode}:${activeNoteId}:${viewMode}`} onSettings={() => { switchMode("research"); setResearchPage("translation"); }}/>
     <button className="sidebar-backdrop" aria-label="Close notes list" onClick={() => document.body.classList.remove("sidebar-open")} />

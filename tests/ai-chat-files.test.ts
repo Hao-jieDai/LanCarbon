@@ -83,3 +83,13 @@ it("does not resurrect deleted legacy chats or accept traversal IDs in a damaged
   await fs.writeFile(path.join(folder(), "index.json"), JSON.stringify({ version: 2, ids: ["../outside"] }));
   await expect(new AIChatStore(root).list()).rejects.toThrow("Invalid chat index");
 });
+
+it("retains page conversation ownership across disk reload and rejects invalid page IDs", async () => {
+  const store = new AIChatStore(root);
+  const first = await store.create("fixture", "model", "note-one"), second = await store.create("fixture", "model", "note-two");
+  await store.rename(first.id, "Page discussion");
+  const restored = await new AIChatStore(root).list();
+  expect(restored.find(chat => chat.id === first.id)?.contextNoteId).toBe("note-one");
+  expect(restored.find(chat => chat.id === second.id)?.contextNoteId).toBe("note-two");
+  await expect(store.create("fixture", "model", "../invalid")).rejects.toThrow();
+});

@@ -10,7 +10,7 @@ export interface AIModel { id: string; name: string; purpose: AIModelPurpose }
 export interface AIProvider { id: string; kind: AIProviderKind; name: string; baseUrl: string; models: AIModel[]; defaultModel: string; hasKey: boolean; maskedKey?: string }
 export interface AIProviderInput { id: string; kind: AIProviderKind; name: string; baseUrl: string; models: AIModel[]; defaultModel: string; apiKey?: string; clearKey?: boolean }
 export interface AIMessage { grounding?: ChatGrounding; sourceScope?: KnowledgeScope; id: string; role: "user" | "assistant"; content: string; reasoning?: string; progress?: string; finishReason?: string; status: "complete" | "streaming" | "stopped" | "error"; providerId?: string; providerName?: string; modelId?: string; modelName?: string; error?: string; createdAt: string }
-export interface AIChat { sourceScope?: KnowledgeScope; id: string; title: string; providerId: string; modelId: string; messages: AIMessage[]; createdAt: string; updatedAt: string }
+export interface AIChat { contextNoteId?: string; sourceScope?: KnowledgeScope; id: string; title: string; providerId: string; modelId: string; messages: AIMessage[]; createdAt: string; updatedAt: string }
 export interface ChatPdfOptions { includeThinking: boolean; includeEvidence: boolean }
 export type ChatPdfResult = { ok: true; destination: string; warnings: string[] } | { ok: false; canceled?: boolean; error: string };
 export type AIResult<T> = ({ ok: true } & T) | { ok: false; error: string };
@@ -30,7 +30,7 @@ export interface AIDesktopApi {
   setSources(id: string, scope: KnowledgeScope): Promise<AIResult<{ chat: AIChat }>>;
   openCitation(chatId: string, messageId: string, label: string): Promise<AIResult<{ target: CitationTarget }>>;
   chats(): Promise<AIResult<{ chats: AIChat[] }>>;
-  createChat(providerId: string, modelId: string): Promise<AIResult<{ chat: AIChat }>>;
+  createChat(providerId: string, modelId: string, contextNoteId?: string): Promise<AIResult<{ chat: AIChat }>>;
   renameChat(id: string, title: string): Promise<AIResult<{ chat: AIChat }>>;
   deleteChat(id: string): Promise<AIResult<object>>;
   exportPdf(id: string, options: ChatPdfOptions): Promise<ChatPdfResult>;

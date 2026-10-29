@@ -1,15 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { TodoChecklist } from "./TodoChecklist";
 import { TODO_NOTE_ID } from "../shared/todo";
 import { getStats, parseTags } from "../shared/notes";
 import type { Note, Book, SaveState, Theme } from "../shared/types";
 import { DeleteIcon, PinIcon } from "./Icons";
-import { MarkdownEditor } from "./MarkdownEditor";
+import { MarkdownEditor, type EditorSession } from "./MarkdownEditor";
 import { MarkdownPreview } from "./MarkdownPreview";
 import type { PreviewDocument } from "../preview/mystPreview";
 import type { EditorNavigation } from "../shared/assets";
 
 interface EditorProps {
+  session?: EditorSession;
+  rightOpen?: boolean;
+  onToggleChat?(): void;
   navigation?: EditorNavigation | null;
   onNavigated?(): void;
   bibliographyBook?: Book;
@@ -54,6 +57,8 @@ const statusCopy: Record<SaveState, string> = {
 };
 
 export function Editor(props: EditorProps) {
+  const article = useRef<HTMLElement>(null);
+  useLayoutEffect(() => { const element = article.current; if (element && props.session) element.scrollTop = props.session.articleScrollTop ?? 0; return () => { if (element && props.session) props.session.articleScrollTop = element.scrollTop; }; }, [props.session]);
   const stats = getStats(props.note?.content ?? "");
   const [tagsDraft, setTagsDraft] = useState("");
   const { viewMode, onViewModeChange: setViewMode } = props;
@@ -78,6 +83,7 @@ export function Editor(props: EditorProps) {
           </div>}
         </div>
         <div className="toolbar-actions">
+          {props.onToggleChat && <button className="toolbar-text-button" aria-pressed={props.rightOpen} onClick={props.onToggleChat}>AI Chat</button>}
           {props.onExportPdf && <button className="toolbar-text-button" disabled={!props.note || props.pdfExporting} title="Export only the current Note or Book page as an A4 PDF" onClick={props.onExportPdf}>{props.pdfExporting ? "Exporting PDF…" : "Export PDF"}</button>}
           {props.onAddToBook && <button className="toolbar-text-button" disabled={!props.note || !props.booksAvailable} onClick={props.onAddToBook}>Add to Book</button>}
           {props.onPageProperties && <button className="toolbar-text-button" onClick={props.onPageProperties}>Page Properties</button>}
@@ -89,12 +95,12 @@ export function Editor(props: EditorProps) {
       {props.pdfNotice && <div className="pdf-notice" role="status"><span>{props.pdfNotice}</span><button type="button" className="icon-button" aria-label="Dismiss PDF export notice" onClick={props.onDismissPdfNotice}>×</button></div>}
 
       {props.note ? (
-        <article className="editor" spellCheck={false}>
+        <article ref={article} className="editor" spellCheck={false}>
           <div className="date-line">{longDate(props.note.updatedAt)}</div>
           <input spellCheck={false} autoCorrect="off" autoCapitalize="off" className="title-input" aria-label="Note title" placeholder="Untitled Note" maxLength={120} value={props.note.title} onChange={event => props.onChange({ title: event.target.value })} />
           <div className="accent-line" />
           {props.note.id === TODO_NOTE_ID && <TodoChecklist content={props.note.content} onChange={content => props.onChange({ content })}/>}
-          <MarkdownEditor navigation={props.navigation} onNavigated={props.onNavigated} bibliographyBook={props.bibliographyBook} onBibliographyBookChange={props.onBibliographyBookChange} onResourcesChanged={props.onResourcesChanged} key={props.note.id} resourceNotes={props.resourceNotes} resourceBooks={props.resourceBooks} beforeResourceChange={props.beforeResourceChange} value={props.note.content} theme={props.theme} visible={viewMode === "edit"} onChange={content => props.onChange({ content })} />
+          <MarkdownEditor session={props.session} navigation={props.navigation} onNavigated={props.onNavigated} bibliographyBook={props.bibliographyBook} onBibliographyBookChange={props.onBibliographyBookChange} onResourcesChanged={props.onResourcesChanged} key={props.note.id} resourceNotes={props.resourceNotes} resourceBooks={props.resourceBooks} beforeResourceChange={props.beforeResourceChange} value={props.note.content} theme={props.theme} visible={viewMode === "edit"} onChange={content => props.onChange({ content })} />
           <MarkdownPreview content={props.note.content} visible={viewMode === "preview"} document={props.previewDocuments?.find(doc => doc.id === props.note?.id)} documents={props.previewDocuments} navigation={props.previewNavigation} onNavigate={props.onPreviewNavigate} onNavigated={props.onPreviewNavigated} />
           <div className="tag-area"><span className="tag-prefix">#</span><input spellCheck={false} autoCorrect="off" autoCapitalize="off" aria-label="Tags" placeholder="Add tags, separated by commas" value={tagsDraft} onChange={event => { setTagsDraft(event.target.value); props.onChange({ tags: parseTags(event.target.value) }); }} /></div>
         </article>

@@ -1225,3 +1225,51 @@ button.usage-heat-cell:hover, button.usage-heat-cell:focus-visible { outline: 2p
 .reader-annotation-item-heading > button { padding: 3px 8px; font-size: 12px; }
 .reader-annotation-list blockquote { margin: 6px 0; padding: 2px 8px; line-height: 1.5; font-size: 13px; max-height: 120px; }
 .reader-annotation-panel > .reader-annotation-actions button { font-size: 12px; padding: 5px 8px; }
+
+/* Writing tabs and the shared page sidebar. */
+.writing-tab { display: flex; align-items: stretch; flex: 0 0 180px; min-width: 110px; max-width: 250px; border-radius: 7px 7px 0 0; }
+.writing-tab > [role="tab"] { flex: 1; min-width: 0; display: flex; gap: 8px; align-items: center; text-align: left; padding: 0 6px 0 10px; }
+.writing-tab.selected { background: var(--paper); box-shadow: inset 0 2px var(--accent); }
+.writing-tab.selected > [role="tab"] { color: var(--ink); }
+.writing-tab .reader-tab-close { flex: none; width: 27px; font-size: 17px; border-radius: 5px; }
+.workspace-right-sidebar { min-width: 0; min-height: 0; height: calc(100vh - 40px); grid-column: 2; grid-row: 2; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: var(--paper); overflow: hidden; }
+.workspace-right-sidebar[hidden], .writing-chat[hidden], .annotation-sidebar-host[hidden] { display: none; }
+.app-shell.right-sidebar-open { grid-template-columns: minmax(0, 1fr) 390px; }
+.app-shell.right-sidebar-open > .reader-tab-bar { grid-column: 1 / -1; }
+.workspace-right-heading { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--line); }
+.workspace-right-heading button { padding: 3px 9px; }
+.annotation-sidebar-host { height: 100%; min-height: 0; }
+.annotation-sidebar-host .reader-annotation-panel { position: static; width: 100%; height: 100%; border: 0; border-radius: 0; box-shadow: none; }
+.writing-chat { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.ai-chat-layout.ai-chat-compact { display: flex; min-height: 0; }
+.ai-chat-compact .ai-chat-main { width: 100%; min-width: 0; }
+.ai-chat-compact .ai-chat-heading { padding: 6px 12px; gap: 6px; flex-wrap: wrap; }
+.ai-chat-compact .ai-chat-heading h1 { font-size: 13px; margin: 0; }
+.ai-chat-compact .ai-actions { flex-wrap: wrap; gap: 6px; }
+.ai-chat-compact .ai-chat-heading .quiet-button { padding: 3px 5px; font-size: 10px; }
+.ai-chat-compact .ai-chat-model { padding: 6px 12px; gap: 6px; flex-wrap: wrap; }
+.ai-chat-compact .ai-thread { padding: 10px 12px; }
+.ai-chat-compact .ai-composer { padding: 8px 12px; }
+.ai-chat-compact .ai-composer textarea { min-height: 70px; max-height: 150px; }
+.ai-chat-compact .ai-composer-actions { align-items: flex-start; gap: 8px; }
+.ai-chat-compact .ai-composer-actions > span { max-width: 170px; font-size: 10px; }
+.ai-chat-compact .ai-chat-empty { padding: 20px 2px; }
+.ai-chat-compact .ai-chat-empty h2 { font-size: 18px; }
+.ai-chat-compact .ai-message { padding: 10px; overflow-wrap: anywhere; }
+.writing-chat-page { margin: 8px 12px 4px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.writing-chat-controls { display: flex; gap: 6px; align-items: center; padding: 4px 12px; }
+.writing-chat-controls > :first-child { flex: 1; min-width: 0; }
+.writing-chat-controls button { font-size: 12px; }
+.writing-source-hint { font-size: 11px; color: var(--muted); margin: 0 0 6px; }
+@media (max-width: 1000px) and (min-width: 761px) { .app-shell.right-sidebar-open { grid-template-columns: minmax(0, 1fr) 340px; } }
+@media (max-width: 760px) { .workspace-right-sidebar { position: fixed; top: 40px; bottom: 0; right: 0; width: min(390px, 90vw); z-index: 35; box-shadow: -8px 0 25px #0003; } }
+
+.ai-chat-compact .ai-chat-heading h1 { display: none; }
+.ai-chat-compact .themed-select-trigger > span:first-child { overflow: hidden; text-overflow: ellipsis; }
+.ai-chat-compact .themed-select-trigger .select-chevron { flex: none; }
+.ai-chat-compact .ai-chat-model > .themed-select { flex: 1; min-width: 120px; }
+.ai-chat-compact .ai-chat-heading .ai-actions { justify-content: flex-start; }
+.workspace-right-sidebar { font-family: var(--sans); }
+
+.ai-chat-compact .quiet-button, .workspace-right-heading .quiet-button { min-height: 28px; padding: 4px 8px; }
+.ai-chat-compact .themed-select-trigger { min-height: 30px; padding: 5px 9px; }
